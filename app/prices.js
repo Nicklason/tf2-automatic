@@ -1,5 +1,5 @@
 const TF2Prices = require('tf2-prices');
-const fs = require('fs');
+const fs = require('graceful-fs');
 
 const Offer = require('./offer.js');
 const utils = require('./utils.js');
@@ -23,8 +23,44 @@ exports.list = list;
 exports.key = key;
 exports.getPrice = function(name) { return Prices.getPrice(name); }
 
+exports.findMatch = findMatch;
+
 exports.handleBuyOrders = handleBuyOrders;
 exports.handleSellOrders = handleSellOrders;
+
+exports.addItems = function(items, callback) { Prices.addItems(items, callback); }
+exports.removeItems = function (items, callback) { Prices.removeItems(items, callback); }
+
+exports.update = function(callback) { Prices._fetchPrices(callback); }
+
+function findMatch(search) {
+    search = search.toLowerCase();
+
+    let match = [];
+    const pricelist = list();
+    for (let i = 0; i < pricelist.length; i++) {
+        const priceObj = pricelist[i];
+        const name = priceObj.item.name;
+        if (name.toLowerCase() == search) {
+            return priceObj;
+        } else if (name.toLowerCase().indexOf(search) != -1) {
+            match.push(priceObj);
+        }
+    }
+
+    if (match.length == 0) {
+        return null;
+    } else if (match.length == 1) {
+        return match[0];
+    }
+
+    for (let i = 0; i < match.length; i++) {
+        const name = match[i].item.name;
+        match[i] = name;
+    }
+
+    return match;
+}
 
 function key() {
     return Prices.currencies.keys.price.value;
@@ -130,8 +166,7 @@ function priceChanged(state, item, price) {
             break;
     }
 
-    // Always create a listing for an item if it is new / updated
-    if (state == 1) {
+    if (state == 1 || state == 2) {
         const limit = config.getLimit(item.name);
         const inInv = Inventory.getAmount(item.name);
         if (!(limit != -1 && inInv >= limit)) {
@@ -140,18 +175,9 @@ function priceChanged(state, item, price) {
                 item: item,
                 currencies: price.buy,
                 details: Backpack.listingComment(0, item.name, price.buy)
-            });
+            }, state == 2);
         }
-    } else if (state == 2) {
-        const limit = config.getLimit(item.name);
-        const inInv = Inventory.getAmount(item.name);
-        if (limit != -1 && limit > inInv) {
-            Backpack.createListing({
-                intent: 0,
-                item: item,
-                currencies: price.buy,
-                details: Backpack.listingComment(0, item.name, price.buy)
-            }, true);
+        if (state == 2) {
             Backpack.updateSellOrders(item.name, price);
         }
     } else {

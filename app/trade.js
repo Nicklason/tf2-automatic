@@ -1,5 +1,5 @@
 const TradeOfferManager = require('steam-tradeoffer-manager');
-const fs = require('fs');
+const fs = require('graceful-fs');
 
 const utils = require('./utils.js');
 const Offer = require('./offer.js');

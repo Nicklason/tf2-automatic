@@ -10,6 +10,7 @@ exports.register = function (automatic) {
     config = automatic.config;
 };
 
+exports.findMatch = findMatch;
 exports.getItem = getItem;
 exports.getQuality = getQuality;
 exports.getEffectId = getEffectId;
@@ -19,6 +20,41 @@ exports.getProperItem = getProperItem;
 
 exports.summary = summary;
 exports.getItems = getItems;
+
+function findMatch(search) {
+    search = search.toLowerCase();
+
+    let match = [];
+    const schema = Items.schema.items;
+    for (let i = 0; i < schema.length; i++) {
+        let name = schema[i].item_name;
+        if (schema[i].proper_name == true) {
+            name = "The " + name;
+        }
+
+        if (name.toLowerCase() == search) {
+            return schema[i].defindex;
+        } else if (name.toLowerCase().indexOf(search) != -1) {
+            match.push(schema[i]);
+        }
+    }
+
+    if (match.length == 0) {
+        return null;
+    } else if (match.length == 1) {
+        return match[0].defindex;
+    }
+
+    for (let i = 0; i < match.length; i++) {
+        let name = schema[i].item_name;
+        if (schema[i].proper_name == true) {
+            name = "The " + name;
+        }
+        match[i] = name;
+    }
+
+    return match;
+}
 
 function summary(items) {
     let summary = {};

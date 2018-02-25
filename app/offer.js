@@ -108,6 +108,18 @@ class Offer {
             return false;
         }
 
+        if (item.market_name.indexOf('Festivized ') != -1) {
+            return false;
+        }
+
+        if (item.market_name.indexOf('Festive ') != -1) {
+            return false;
+        }
+
+        if (Offer.isKillstreak(item) != 0) {
+            return false;
+        }
+
         return ["Primary weapon", "Secondary weapon", "Melee weapon", "Primary PDA", "Secondary PDA"].indexOf(type) !== -1;
     }
 
@@ -230,10 +242,10 @@ class Offer {
     }
 
     static isSkin(item) {
-        var wears = ["Factory New", "Minimal Wear", "Field - Tested", "Well - Worn", "Battle Scarred"];
+        const wears = ["Factory New", "Minimal Wear", "Field-Tested", "Well-Worn", "Battle Scarred"];
 
-        for (var i = 0; i < wears.length; i++) {
-            var wear = wears[i];
+        for (let i = 0; i < wears.length; i++) {
+            const wear = wears[i];
             if (item.market_name.indexOf(wear) !== -1) {
                 return true;
             }

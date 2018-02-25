@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require('graceful-fs');
 
 const Offer = require('./offer.js');
 const utils = require('./utils.js');

@@ -35,6 +35,9 @@ let Automatic = {
     inventory: [],
     getOwnSteamID() {
         return Automatic.client.steamID ? Automatic.client.steamID.getSteamID64() : null;
+    },
+    isOwner(steamid64) {
+        return config.get().owners.includes(steamid64);
     }
 };
 

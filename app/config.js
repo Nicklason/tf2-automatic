@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require('graceful-fs');
 
 const CONFIG_FILENAME = 'config.json';
 const ACCOUNTS_FILENAME = 'accounts.json';

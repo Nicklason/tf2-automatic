@@ -4,6 +4,7 @@ const async = require('async');
 const utils = require('./utils.js');
 const Login = require('./login.js');
 const Trade = require('./trade.js');
+const Messages = require('./messages.js');
 
 let Automatic, client, log, config, Items, Backpack, Prices, Inventory;
 
@@ -25,6 +26,7 @@ exports.register = function(automatic) {
 
     Login.register(automatic);
     Trade.register(automatic);
+    Messages.register(automatic);
 };
 
 exports.connect = function () {
@@ -101,7 +103,7 @@ function ready(err) {
     Trade.init();
     client.gamesPlayed([require('../package.json').name, 440]);
     client.setPersona(SteamUser.EPersonaState.Online);
-    client.on('friendMessage', friendMessage);
+    Messages.init();
 }
 
 function sessionExpired(err) {
@@ -113,9 +115,4 @@ function confKeyNeeded(tag, callback) {
     log.debug('New confirmation key needed, generating new one.');
     var time = Math.floor(Date.now() / 1000);
     callback(null, time, SteamTotp.getConfirmationKey(self.options.identity_secret, time, tag));
-}
-
-function friendMessage(steamID, message) {
-    let steamID64 = steamID.getSteamID64();
-    log.info('Message from ' + steamID64 + ': ' + message);
 }

@@ -1,6 +1,6 @@
 {
   "name": "tf2-automatic",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fully automated TF2 trading bot advertising on www.backpack.tf",
   "main": "automatic.js",
   "author": {
@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "bptf-listings": "^2.2.5",
+    "graceful-fs": "^4.1.11",
     "moment": "^2.20.1",
     "steam-totp": "^2.0.1",
     "steam-tradeoffer-manager": "^2.9.3",
