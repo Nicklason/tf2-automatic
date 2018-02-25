@@ -98,7 +98,6 @@ utils.request.get({
     if (err) {
         log.warn("Cannot check for updates: " + err.message);
     } else {
-        console.log(body);
         const current = version.split('.');
         const latest = body.version.split('.');
 
