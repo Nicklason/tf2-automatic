@@ -3,21 +3,33 @@
   "version": "1.0.1",
   "description": "Fully automated TF2 trading bot advertising on www.backpack.tf",
   "main": "automatic.js",
-  "author": {
-    "name": "Nicklas Marc Pedersen",
-    "url": "https://steamcommunity.com/id/nicklason/"
-  },
-  "license": "MIT",
   "dependencies": {
     "bptf-listings": "^2.2.5",
     "graceful-fs": "^4.1.11",
     "moment": "^2.20.1",
     "steam-totp": "^2.0.1",
     "steam-tradeoffer-manager": "^2.9.3",
-    "steam-user": "^3.25.0",
+    "steam-user": "^3.25.1",
     "steamcommunity": "^3.34.1",
-    "tf2-items": "^1.1.4",
+    "tf2-items": "^1.1.6",
     "tf2-prices": "^1.0.7",
     "winston": "^2.4.0"
-  }
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nicklason/tf2-automatic.git"
+  },
+  "author": {
+    "name": "Nicklas Marc Pedersen",
+    "url": "https://steamcommunity.com/id/nicklason/"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Nicklason/tf2-automatic/issues"
+  },
+  "homepage": "https://github.com/Nicklason/tf2-automatic#readme"
 }

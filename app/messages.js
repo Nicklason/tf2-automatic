@@ -238,7 +238,7 @@ function friendMessage(steamID, message) {
             client.chatMessage(steamID64, "The pricelist has been refreshed.");
         });
     } else {
-        self.client.chatMessage(steamid64, "I don't know what you mean, please type \"!help\" for all my commands!");
+        client.chatMessage(steamID64, "I don't know what you mean, please type \"!help\" for all my commands!");
     }
 }
 
