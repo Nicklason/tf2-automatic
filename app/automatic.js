@@ -91,6 +91,28 @@ log.info("tf2-automatic v%s starting", version);
 
 process.nextTick(client.connect);
 
+utils.request.get({
+    url: "https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json",
+    json: true
+}, function(err, body) {
+    if (err) {
+        log.warn("Cannot check for updates: " + err.message);
+    } else {
+        console.log(body);
+        const current = version.split('.');
+        const latest = body.version.split('.');
+
+        const curv = current[0] * 100000 + current[1] * 10000 + current[2] * 1000;
+        const latestv = latest[0] * 100000 + latest[1] * 10000 + latest[2] * 1000;
+        if (latestv > curv) {
+            log.info("===================================================");
+            log.info("Update available! Current: v%s, Latest: v%s", version, body.version);
+            log.info("Download it here: https://github.com/Nicklason/tf2-automatic");
+            log.info("===================================================");
+        }
+    }
+});
+
 process.on('uncaughtException', (err) => {
     log.error([
         "tf2-automatic crashed! Please create an issue with the following log:",
