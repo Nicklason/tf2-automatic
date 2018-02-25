@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "Fully automated TF2 trading bot advertising on www.backpack.tf",
   "main": "automatic.js",
-  "author": "Nicklas Marc Pedersen",
+  "author": {
+    "name": "Nicklas Marc Pedersen",
+    "url": "https://steamcommunity.com/id/nicklason/"
+  },
   "license": "MIT",
   "dependencies": {
     "bptf-listings": "^2.2.5",
