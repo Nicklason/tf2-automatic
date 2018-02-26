@@ -103,9 +103,7 @@ utils.request.get({
 
         const curv = current[0] * 100000 + current[1] * 10000 + current[2] * 1000;
         const latestv = latest[0] * 100000 + latest[1] * 10000 + latest[2] * 1000;
-        console.log(latestv, curv);
         if (latestv > curv) {
-            console.log("new version");
             log.info("============================================================");
             log.info("Update available! Current: v%s, Latest: v%s", version, body.version);
             log.info("Download it here: https://github.com/Nicklason/tf2-automatic");
