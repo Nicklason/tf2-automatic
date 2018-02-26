@@ -584,7 +584,7 @@ function listingCreated(name) {
 }
 
 function listingRemoved(id) {
-    log.debug("Removed a listing with the id " + id);
+    log.info("Removed a listing with the id \"" + id + "\"");
 }
 
 function listingError(type, name, error) {
