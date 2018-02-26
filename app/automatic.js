@@ -40,7 +40,7 @@ let Automatic = {
         return Automatic.config.get().owners.includes(steamid64);
     },
     alert(type, message) {
-        const notify = Automatic.config.get().notify || "all";
+        const notify = Automatic.config.get().notify || "none";
         if (notify == "all" || notify == type) {
             const owners = config.get().owners;
             message = "[Alert!] " + message;
