@@ -73,7 +73,7 @@ function handleBuyOrders(offer) {
     for (const name in summary) {
         const amount = summary[name];
 
-        const price = getPrice(name, true); // true because it is our item, we are selling it.
+        const price = getPrice(name, false); // false because it is their item, we are buying it.
         if (price != null) {
             const limit = config.getLimit(name);
             const inInv = Inventory.getAmount(name);
