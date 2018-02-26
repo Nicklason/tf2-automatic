@@ -157,12 +157,15 @@ function priceChanged(state, item, price) {
     switch (state) {
         case 1:
             log.info("\"" + item.name + "\" has been added to the pricelist");
+            Automatic.alert('price', "\"" + item.name + "\" has been added to the pricelist. I am buying it for " + utils.currencyAsText(price.buy) + " and selling for " + utils.currencyAsText(price.sell) + ".");
             break;
         case 2:
             log.info("Price changed for \"" + item.name + "\"");
+            Automatic.alert('price', "Price changed for \"" + item.name + "\". I am now buying for " + utils.currencyAsText(price.buy) + " and selling for " + utils.currencyAsText(price.sell) + ".");
             break;
         case 3:
             log.info("\"" + item.name + "\" is no longer in the pricelist");
+            Automatic.alert('price', "\"" + item.name + "\" is no longer in the pricelist");
             break;
     }
 

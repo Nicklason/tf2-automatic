@@ -24,6 +24,7 @@ const defaultConfig = {
         "sell": "I am selling my %name% for %price%"
     },
     "stocklimit": 1,
+    "notify": "all", // "all" / "none" / "price" / "trade"
     "logs": {
         "console": {
             "type": "Console",

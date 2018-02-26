@@ -13,12 +13,13 @@ exports.register = function (automatic) {
 
 exports.init = function() {
     client.on('friendMessage', friendMessage);
-}
+};
 
 function friendMessage(steamID, message) {
     message = message.trim();
     let steamID64 = steamID.getSteamID64();
     log.info('Message from ' + steamID64 + ': ' + message);
+    Automatic.alert('xd', 'Message from ' + steamID64 + ': ' + message);
     const command = isCommand(message);
     if (command == "help") {
         let reply = "Here's a list of all my commands: !help, !stock, !price";
@@ -194,8 +195,6 @@ function friendMessage(steamID, message) {
 
         Prices.addItems([item], function(err, added) {
             if (err) {
-                log.warn("Failed to add item to pricelist");
-                log.debug(err.stack);
                 client.chatMessage(steamID64, "I failed to add the item to the pricelist: " + (err.reason || err.message));
                 return;
             }
@@ -203,7 +202,7 @@ function friendMessage(steamID, message) {
             if (added == 1) {
                 const name = Items.getName(item);
                 config.addLimit(name, limit);
-                
+
                 let reply = "\"" + name + "\" has been added to the pricelist";
                 if (limit != null) {
                     reply += " with a limit of " + limit;
@@ -232,8 +231,6 @@ function friendMessage(steamID, message) {
 
         Prices.removeItems(items, function(err, removed) {
             if (err) {
-                log.warn("Failed to remove item(s) from pricelist");
-                log.debug(err.stack);
                 client.chatMessage(steamID64, "I failed to remove the item(s) from the pricelist: " + (err.reason || err.message));
                 return;
             }
@@ -247,8 +244,6 @@ function friendMessage(steamID, message) {
     } else if (command == "update" && Automatic.isOwner(steamID64)) {
         Prices.update(function(err) {
             if (err) {
-                log.warn("Failed to update pricelist");
-                log.debug(err.stack);
                 if (err.message == "Too Many Requests") {
                     client.chatMessage(steamID64, "I failed to update the pricelist, try again in " + (err.retryAfter / 1000) + " " + utils.plural("second", err.retryAfter / 1000) + ".");
                 } else {

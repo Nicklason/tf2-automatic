@@ -77,8 +77,10 @@ function handleOffer(tradeoffer) {
 
     offer.log("info", `received from ${offer.partnerID64()}`);
 
-    if (offer.fromOwner()) {
-        offer.log("info", `is from owner, accepting`);
+    if (offer.fromOwner() && true == false) {
+        offer.log("info", `is from owner, accepting.`);
+        Automatic.alert("trade", "Offer from owner, accepting.");
+
         offer.accept().then(function (status) {
             offer.log("trade", 'successfully accepted' + ( status == 'pending' ? '; confirmation required' : '' ));
         }).catch(function (err) {
@@ -90,6 +92,8 @@ function handleOffer(tradeoffer) {
     if (offer.isOneSided()) {
         if (offer.isGiftOffer() && config.get('acceptGifts') == true) {
             offer.log("info", `is a gift offer asking for nothing in return, accepting.`);
+            Automatic.alert("trade", "Gift offer asking for nothing in return, accepting.");
+
             offer.accept().then(function (status) {
                 offer.log("trade", 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
             }).catch(function(err) {
@@ -97,6 +101,8 @@ function handleOffer(tradeoffer) {
             });
         } else {
             offer.log("info", "is a gift offer, declining.");
+            Automatic.alert("trade", "Gift offer, declining.");
+
             offer.decline().then(function() {
                 offer.log("debug", "declined");
             });
@@ -106,6 +112,8 @@ function handleOffer(tradeoffer) {
 
     if (offer.games.length !== 1 || offer.games[0] !== 440) {
         offer.log("info", `contains non-TF2 items (${offer.games.join(', ')}), declining.`);
+        Automatic.alert("trade", `Contains non-TF2 items, declining.`);
+
         offer.decline().then(function () {
             offer.log("debug", "declined");
         });
@@ -185,8 +193,12 @@ function checkReceivedOffer(id, callback) {
 
         // Make sure that the offer does not only contain metal.
         if (offer.offeringItems.us == false && offer.offeringItems.them == false && offer.offeringKeys == false && offer.offeringKeys == false && offer.currencies.our >= offer.currencies.their) {
-            offer.log("info", "we and the user are both offering only metal, declining.");
+            offer.log("info", "we are both offering only metal, declining.");
             offer.logDetails("info");
+
+            Automatic.alert("trade", "We are both only offering metal, declining.");
+            Automatic.alert("trade", "Summary: " + offer.summary());
+
             offer.decline().then(function () { offer.log("debug", "declined") });
             callback(null, true);
             return;
@@ -203,6 +215,10 @@ function checkReceivedOffer(id, callback) {
             if (priceObj == null) {
                 offer.log("info", "user is trying to buy / sell keys, but we are not banking them, declining.");
                 offer.logDetails("info");
+
+                Automatic.alert("trade", "User is trying to buy / sell keys, but we are not banking them, declining.");
+                Automatic.alert("trade", "Summary: " + offer.summary());
+
                 offer.decline().then(function () { offer.log("debug", "declined") });
                 callback(null, true);
                 return;
@@ -219,13 +235,19 @@ function checkReceivedOffer(id, callback) {
 
         const enough = offeringEnough(our, their, tradingKeys);
         if (enough != true) {
+            let msg = "";
             if (enough.required.metal > enough.given.metal) {
                 offer.log("info", `is not offering enough metal (required = ${enough.required.metal}, given = ${enough.given.metal}), declining.`);
+                Automatic.alert("trade", `User is not offering enough metal (required = ${enough.required.metal}, given = ${enough.given.metal}), declining.`);
             }
             if (enough.required.keys > enough.given.keys) {
                 offer.log("info", `is not offering enough keys (required = ${enough.required.keys}, given = ${enough.given.keys}), declining.`);
+                Automatic.alert("trade", `User is not offering enough keys (required = ${enough.required.keys}, given = ${enough.given.keys}), declining.`);
             }
             offer.logDetails("info");
+
+            Automatic.alert("trade", "Summary: " + offer.summary());
+
             offer.decline().then(function () { offer.log("debug", "declined") });
             callback(null, true);
             return;
@@ -237,6 +259,7 @@ function checkReceivedOffer(id, callback) {
                 return;
             } else if (banned) {
                 offer.log("info", "user is " + reason + ", declining.");
+                Automatic.alert("trade", "User is " + reason + ", declining.");
                 offer.decline().then(function () { offer.log("debug", "declined") });
                 callback(null, true);
                 return;
@@ -270,8 +293,10 @@ function finalizeOffer(offer) {
 }
 
 function acceptOffer(offer) {
-    let message = offer.summary();
-    offer.log("trade", "is offering enough, accepting. Summary:\r\n" + message);
+    const summary = offer.summary();
+    offer.log("trade", "is offering enough, accepting. Summary:\n" + summary);
+    Automatic.alert("trade", "User is offering enough, accepting. Summary:\n" + summary);
+
     offer.accept().then(function (status) {
         offer.log("trade", 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
     }).catch(function (err) {

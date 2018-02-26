@@ -37,7 +37,17 @@ let Automatic = {
         return Automatic.client.steamID ? Automatic.client.steamID.getSteamID64() : null;
     },
     isOwner(steamid64) {
-        return config.get().owners.includes(steamid64);
+        return Automatic.config.get().owners.includes(steamid64);
+    },
+    alert(type, message) {
+        const notify = Automatic.config.get().notify || "all";
+        if (notify == "all" || notify == type) {
+            const owners = config.get().owners;
+            message = "[Alert!] " + message;
+            owners.forEach(function (owner) {
+                Automatic.client.chatMessage(owner, message);
+            });
+        }
     }
 };
 
