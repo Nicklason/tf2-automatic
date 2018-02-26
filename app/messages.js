@@ -80,7 +80,7 @@ function friendMessage(steamID, message) {
             return;
         }
 
-        const match = Prices.findMatch(name);
+        let match = Prices.findMatch(name);
         if (match == null) {
             client.chatMessage(steamID64, "I could not find any items in my pricelist that contains \"" + name + "\", I might not be trading the item you are looking for.");
             return;
