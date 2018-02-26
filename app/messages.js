@@ -19,7 +19,6 @@ function friendMessage(steamID, message) {
     message = message.trim();
     let steamID64 = steamID.getSteamID64();
     log.info('Message from ' + steamID64 + ': ' + message);
-    Automatic.alert('xd', 'Message from ' + steamID64 + ': ' + message);
     const command = isCommand(message);
     if (command == "help") {
         let reply = "Here's a list of all my commands: !help, !stock, !price";

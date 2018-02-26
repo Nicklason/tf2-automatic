@@ -77,7 +77,7 @@ function handleOffer(tradeoffer) {
 
     offer.log("info", `received from ${offer.partnerID64()}`);
 
-    if (offer.fromOwner() && true == false) {
+    if (offer.fromOwner()) {
         offer.log("info", `is from owner, accepting.`);
         Automatic.alert("trade", "Offer from owner, accepting.");
 
