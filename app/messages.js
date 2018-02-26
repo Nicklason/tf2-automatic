@@ -161,6 +161,20 @@ function friendMessage(steamID, message) {
             return;
         }
 
+        let limit = null;
+        if (input.limit && input.limit != "") {
+            limit = parseInt(input.limit);
+            if (limit == NaN) {
+                client.chatMessage(steamID64, "\"" + input.limit + "\" is not a valid limit. Here's an example: \"!add name=" + match + "&limit=2\"");
+                return;
+            }
+
+            if (limit < -1) {
+                client.chatMessage(steamID64, "\"" + input.limit + "\" is not a valid limit. You can use -1 for unlimited, 0 for no buying, 1 for a limit of 1...");
+                return;
+            }
+        }
+
         let item = {
             defindex: match,
             quality: 6,
@@ -187,7 +201,15 @@ function friendMessage(steamID, message) {
             }
 
             if (added == 1) {
-                client.chatMessage(steamID64, "\"" + Items.getName(item) + "\" has been added to the pricelist (might take some time to show).");
+                const name = Items.getName(item);
+                config.addLimit(name, limit);
+                
+                let reply = "\"" + name + "\" has been added to the pricelist";
+                if (limit != null) {
+                    reply += " with a limit of " + limit;
+                }
+                reply += " (might take some time to update).";
+                client.chatMessage(steamID64, reply);
             } else {
                 client.chatMessage(steamID64, "No items were added, something might have went wrong.");
             }
@@ -217,9 +239,9 @@ function friendMessage(steamID, message) {
             }
 
             if (removed > 0) {
-                client.chatMessage(steamID64, removed + " " + utils.plural("item", removed) + " has been removed from the pricelist (might take some time to show).");
+                client.chatMessage(steamID64, removed + " " + utils.plural("item", removed) + " has been removed from the pricelist (might take some time to update).");
             } else {
-                client.chatMessage(steamID64, "No items were removed, something might have went wrong.");
+                client.chatMessage(steamID64, "No items were removed. Try and write out the name exactly as it is in the pricelist.");
             }
         });
     } else if (command == "update" && Automatic.isOwner(steamID64)) {

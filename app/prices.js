@@ -78,7 +78,7 @@ function handleBuyOrders(offer) {
             const limit = config.getLimit(name);
             const inInv = Inventory.getAmount(name);
             if (limit != -1 && amount + inInv > limit) {
-                offer.log("info", "item will be, or is already overstocked (" + inInv + "/" + limit + ") (" + name + "), skipping");
+                offer.log("info", "item will be, or is already overstocked with " + inInv + "/" + limit + " in inventory (" + name + "), skipping");
                 offer.logDetails("info");
                 return false;
             }

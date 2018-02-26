@@ -4,19 +4,19 @@ const CONFIG_FILENAME = 'config.json';
 const ACCOUNTS_FILENAME = 'accounts.json';
 const STOCKLIMIT_FILENAME = 'limits.json';
 const defaultLimits = {
-    "The Team Captain": 3,
-    "Name Tag": 3,
-    "Non-Craftable Tour of Duty Ticket": 10,
+    "The Team Captain": 1,
+    "Name Tag": 1,
+    "Non-Craftable Tour of Duty Ticket": 1,
     "Mann Co. Supply Crate Key": -1,
     "Strange Frying Pan": 1,
-    "Strange Australium Rocket Launcher": 1,
+    "Strange Australium Rocket Launcher": 0,
     "Professional Killstreak AWPer Hand": 1
 };
 const defaultConfig = {
     "pricesKey": "<your key to the pricing api>",
     "bptfKey": "<your api key for the bptf api>",
     "dateFormat": "DD-MM-YYYY HH:mm:ss",
-    "acceptGifts": false,
+    "acceptGifts": true,
     "acceptBanned": false,
     "acceptEscrow": false,
     "comment": {
@@ -33,7 +33,7 @@ const defaultConfig = {
         "file": {
             "type": "File",
             "filename": "automatic.log",
-            "level": "info",
+            "level": "debug",
             "json": false
         },
         "trade": {
@@ -126,6 +126,16 @@ exports.init = function () {
     return msg.trim();
 };
 
+function addLimit(name, limit) {
+    limits[name] = limit;
+    saveJSON(STOCKLIMIT_FILENAME, limits);
+}
+
+function removeLimit(name) {
+    delete limits[name];
+    saveJSON(STOCKLIMIT_FILENAME, limits);
+}
+
 function getLimit(name) {
     return limits[name] || config.stocklimit;
 }
@@ -162,3 +172,5 @@ exports.getAccount = getAccount;
 exports.lastAccount = lastAccount;
 exports.getDetails = getDetails;
 exports.getLimit = getLimit;
+exports.addLimit = addLimit;
+exports.removeLimit = removeLimit;

@@ -101,8 +101,8 @@ utils.request.get({
         const current = version.split('.');
         const latest = body.version.split('.');
 
-        const curv = current[0] * 100000 + current[1] * 10000 + current[2] * 1000;
-        const latestv = latest[0] * 100000 + latest[1] * 10000 + latest[2] * 1000;
+        const curv = current[0] * 100 + current[1] * 10 + current[2];
+        const latestv = latest[0] * 100 + latest[1] * 10 + latest[2];
         if (latestv > curv) {
             log.info("============================================================");
             log.info("Update available! Current: v%s, Latest: v%s", version, body.version);

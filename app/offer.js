@@ -386,7 +386,7 @@ class Offer {
     }
 
     summary() {
-        let message = "Asked: " + utils.currencyAsText(this.currencies.our) + " (" + this.summarizeItems(this.offer.itemsToGive) + ")\r\nOffered: " + utils.currencyAsText(this.currencies.their) + " (" + this.summarizeItems(this.offer.itemsToReceive) + ")";
+        let message = "Asked: " + utils.currencyAsText(this.currencies.our) + " (" + this.summarizeItems(this.offer.itemsToGive) + ")\nOffered: " + utils.currencyAsText(this.currencies.their) + " (" + this.summarizeItems(this.offer.itemsToReceive) + ")";
         return message;
     }
     get(property) {
@@ -421,7 +421,7 @@ class Offer {
         Automatic.log[level]('Offer #' + this.id() + ' ' + msg);
     }
     logDetails(level) {
-        this.log(level, `Offer details:\r\n${this.summary({ includeBuyOrders: false })}`);
+        this.log(level, `Offer details:\n${this.summary({ includeBuyOrders: false })}`);
     }
 }
 
