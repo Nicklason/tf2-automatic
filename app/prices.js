@@ -175,11 +175,9 @@ function priceChanged(state, item, price) {
                 item: item,
                 currencies: price.buy,
                 details: Backpack.listingComment(0, item.name, price.buy)
-            }, state == 2);
+            }, true);
         }
-        if (state == 2) {
-            Backpack.updateSellOrders(item.name, price);
-        }
+        Backpack.updateSellOrders(item.name, price);
     } else {
         let listing = Backpack.findBuyOrder(item.name);
         if (listing) {
