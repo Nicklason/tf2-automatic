@@ -120,6 +120,73 @@ class Offer {
             return false;
         }
 
+        // Yes, I know...
+        const otherItemsThatAreNOTRandomCraftWeapons = [
+            "C.A.P.P.E.R",
+            "Horseless Headless Horsemann's",
+            "Three-Rune Blade",
+            "Nostromo Napalmer",
+            "AWPer Hand",
+            "Quäckenbirdt",
+            "Sharp Dresser",
+            "Conscientious Objector",
+            "Frying Pan",
+            "Batsaber",
+            "Black Rose",
+            "Scattergun",
+            "Rocket Launcher",
+            "Sniper Rifle",
+            "Shotgun",
+            "Grenade Launcher",
+            "Shooting Star",
+            "Big Kill",
+            "Giger Counter",
+            "Maul",
+            "Unarmed Combat",
+            "Crossing Guard",
+            "Wanga Prick",
+            "Freedom Staff",
+            "Ham Shank",
+            "Ap-Sap",
+            "Pistol",
+            "Bat",
+            "Flame Thrower",
+            "Construction PDA",
+            "Fire Axe",
+            "Stickybomb Launcher",
+            "Minigun",
+            "Medi Gun",
+            "SMG",
+            "Knife",
+            "Invis Watch",
+            "Sapper", 
+            "Mutated Milk",
+            "Bread Bite",
+            "Snack Attack",
+            "Self - Aware Beauty Mark",
+            "Shovel",
+            "Bottle",
+            "Wrench",
+            "Bonesaw",
+            "Kukri",
+            "Fists",
+            "Syringe Gun",
+            "Revolver",
+            "Shotgun",
+            "SMG",
+            "Sapper",
+            "Grenade Launcher",
+            "Bonesaw",
+            "Revolver"
+        ];
+
+        for (let i = 0; i < otherItemsThatAreNOTRandomCraftWeapons.length; i++) {
+            const name = otherItemsThatAreNOTRandomCraftWeapons[i];
+            if (item.market_name.indexOf(name) != -1) {
+                return false;
+            }
+        }
+
         return ["Primary weapon", "Secondary weapon", "Melee weapon", "Primary PDA", "Secondary PDA"].indexOf(type) !== -1;
     }
 
