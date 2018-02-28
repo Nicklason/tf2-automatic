@@ -192,12 +192,10 @@ function checkReceivedOffer(id, callback) {
         }
 
         // Make sure that the offer does not only contain metal.
-        if (offer.offeringItems.us == false && offer.offeringItems.them == false && offer.offeringKeys == false && offer.offeringKeys == false && offer.currencies.our >= offer.currencies.their) {
-            offer.log("info", "we are both offering only metal, declining.");
-            offer.logDetails("info");
+        if (offer.offeringItems.us == false && offer.offeringItems.them == false && offer.offeringKeys == false && offer.offeringKeys == false && offer.currencies.our.metal >= offer.currencies.their.metal) {
+            offer.log("info", "we are both offering only metal, declining. Summary:\n" + offer.summary());
 
             Automatic.alert("trade", "We are both only offering metal, declining.");
-            Automatic.alert("trade", "Summary: " + offer.summary());
 
             offer.decline().then(function () { offer.log("debug", "declined") });
             callback(null, true);
@@ -213,11 +211,9 @@ function checkReceivedOffer(id, callback) {
             // We are buying / selling keys
             const priceObj = Prices.getPrice("Mann Co. Supply Crate Key");
             if (priceObj == null) {
-                offer.log("info", "user is trying to buy / sell keys, but we are not banking them, declining.");
-                offer.logDetails("info");
+                offer.log("info", "user is trying to buy / sell keys, but we are not banking them, declining. Summary:\n" + offer.summary());
 
-                Automatic.alert("trade", "User is trying to buy / sell keys, but we are not banking them, declining.");
-                Automatic.alert("trade", "Summary: " + offer.summary());
+                Automatic.alert("trade", "User is trying to buy / sell keys, but we are not banking them, declining. Summary: " + offer.summary());
 
                 offer.decline().then(function () { offer.log("debug", "declined") });
                 callback(null, true);
@@ -235,18 +231,9 @@ function checkReceivedOffer(id, callback) {
 
         const enough = offeringEnough(our, their, tradingKeys);
         if (enough != true) {
-            let msg = "";
-            if (enough.required.metal > enough.given.metal) {
-                offer.log("info", `is not offering enough metal (required = ${enough.required.metal}, given = ${enough.given.metal}), declining.`);
-                Automatic.alert("trade", `User is not offering enough metal (required = ${enough.required.metal}, given = ${enough.given.metal}), declining.`);
-            }
-            if (enough.required.keys > enough.given.keys) {
-                offer.log("info", `is not offering enough keys (required = ${enough.required.keys}, given = ${enough.given.keys}), declining.`);
-                Automatic.alert("trade", `User is not offering enough keys (required = ${enough.required.keys}, given = ${enough.given.keys}), declining.`);
-            }
-            offer.logDetails("info");
+            offer.log("info", "is not offering enough, declining. Summary:\n" + offer.summary());
 
-            Automatic.alert("trade", "Summary: " + offer.summary());
+            Automatic.alert("trade", "User is not offering enough, declining. Summary:\n" + offer.summary());
 
             offer.decline().then(function () { offer.log("debug", "declined") });
             callback(null, true);

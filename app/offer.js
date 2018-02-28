@@ -487,9 +487,6 @@ class Offer {
     log(level, msg) {
         Automatic.log[level]('Offer #' + this.id() + ' ' + msg);
     }
-    logDetails(level) {
-        this.log(level, `Offer details:\n${this.summary()}`);
-    }
 }
 
 module.exports = Offer;
