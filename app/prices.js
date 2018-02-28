@@ -21,17 +21,17 @@ exports.register = function (automatic) {
 
 exports.list = list;
 exports.key = key;
-exports.getPrice = function(name) { return Prices.getPrice(name); }
+exports.getPrice = function (name) { return Prices.getPrice(name); }
 
 exports.findMatch = findMatch;
 
 exports.handleBuyOrders = handleBuyOrders;
 exports.handleSellOrders = handleSellOrders;
 
-exports.addItems = function(items, callback) { Prices.addItems(items, callback); }
+exports.addItems = function (items, callback) { Prices.addItems(items, callback); }
 exports.removeItems = function (items, callback) { Prices.removeItems(items, callback); }
 
-exports.update = function(callback) { Prices._fetchPrices(callback); }
+exports.update = function (callback) { Prices._fetchPrices(callback); }
 
 function findMatch(search) {
     search = search.toLowerCase();
@@ -66,6 +66,7 @@ function key() {
     return Prices.currencies.keys.price.value;
 }
 
+// Get price of their items.
 function handleBuyOrders(offer) {
     const their = offer.items.their;
     const items = Items.getItems(their);
@@ -78,8 +79,8 @@ function handleBuyOrders(offer) {
             const limit = config.getLimit(name);
             const inInv = Inventory.getAmount(name);
             if (limit != -1 && amount + inInv > limit) {
-                offer.log("info", "item will be, or is already overstocked with " + inInv + "/" + limit + " in inventory (" + name + "), skipping");
-                offer.logDetails("info");
+                offer.log("info", "\"" + name + "\" will be, or is already overstocked (" + inInv + "/" + limit + "), skipping. Summary:\n" + offer.summary());
+                Automatic.alert("\"" + name + "\" will be, or is already overstocked (" + inInv + "/" + limit + "), skipping. Summary:\n" + offer.summary());
                 return false;
             }
 
@@ -93,6 +94,7 @@ function handleBuyOrders(offer) {
     }
 }
 
+// Get price of our items.
 function handleSellOrders(offer) {
     const our = offer.items.our;
     const items = Items.getItems(our);
@@ -109,13 +111,14 @@ function handleSellOrders(offer) {
                 offer.currencies.our.metal = utils.addRefined(offer.currencies.our.metal, price.metal, amount);
             }
         } else {
-            offer.log("info", "contains an item that is not in the pricelist (" + name + "), skipping");
-            offer.logDetails("info");
+            offer.log("info", "contains an item that is not in the pricelist (" + name + "), skipping. Summary:\n" + offer.summary());
+            Automatic.alert("Contains an item that is not in the pricelist (" + name + "), skipping. Summary:\n" + offer.summary());
             return false;
         }
     }
 }
 
+// If our is true, we will get the sell price, if not, then the buy price.
 function getPrice(name, our) {
     if (name == "Scrap Metal") {
         return { metal: 0.11 };
@@ -192,7 +195,7 @@ function priceChanged(state, item, price) {
 
 function pricesRefreshed(pricelist) {
     log.debug('Pricelist has been refreshed.');
-    fs.writeFile(PRICES_FILENAME, JSON.stringify(pricelist), function(err) {
+    fs.writeFile(PRICES_FILENAME, JSON.stringify(pricelist), function (err) {
         if (err) {
             log.warn("Error writing price data: " + err);
         }
