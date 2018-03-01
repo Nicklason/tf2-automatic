@@ -194,7 +194,6 @@ function checkReceivedOffer(id, callback) {
         // Make sure that the offer does not only contain metal.
         if (offer.offeringItems.us == false && offer.offeringItems.them == false && offer.offeringKeys == false && offer.offeringKeys == false && offer.currencies.our.metal >= offer.currencies.their.metal) {
             offer.log("info", "we are both offering only metal, declining. Summary:\n" + offer.summary());
-
             Automatic.alert("trade", "We are both only offering metal, declining.");
 
             offer.decline().then(function () { offer.log("debug", "declined") });
@@ -212,7 +211,6 @@ function checkReceivedOffer(id, callback) {
             const priceObj = Prices.getPrice("Mann Co. Supply Crate Key");
             if (priceObj == null) {
                 offer.log("info", "user is trying to buy / sell keys, but we are not banking them, declining. Summary:\n" + offer.summary());
-
                 Automatic.alert("trade", "User is trying to buy / sell keys, but we are not banking them, declining. Summary: " + offer.summary());
 
                 offer.decline().then(function () { offer.log("debug", "declined") });
@@ -232,7 +230,6 @@ function checkReceivedOffer(id, callback) {
         const enough = offeringEnough(our, their, tradingKeys);
         if (enough != true) {
             offer.log("info", "is not offering enough, declining. Summary:\n" + offer.summary());
-
             Automatic.alert("trade", "User is not offering enough, declining. Summary:\n" + offer.summary());
 
             offer.decline().then(function () { offer.log("debug", "declined") });
@@ -381,7 +378,9 @@ function offerAccepted(offer) {
     offer.getReceivedItems(true, function(err, receivedItems) {
         if (err) {
             log.warn("Failed to get received items from offer, retrying in 30 seconds...");
-            log.debug(err.stack);
+            if (err.message == "Not Logged In") {
+                client.webLogOn();
+            }
             setTimeout(function() {
                 offerAccepted(offer);
             }, 30 * 1000);

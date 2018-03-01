@@ -175,7 +175,10 @@ function priceChanged(state, item, price) {
     if (state == 1 || state == 2) {
         const limit = config.getLimit(item.name);
         const inInv = Inventory.getAmount(item.name);
+        // Checking if the item is not overstocked.
         if (!(limit != -1 && inInv >= limit)) {
+            log.debug("\"" + item.name + "\" is not overstocked, will update buy order.");
+            // Create a new listing for the item, and remove the listing if there already is one.
             Backpack.createListing({
                 intent: 0,
                 item: item,
@@ -183,6 +186,7 @@ function priceChanged(state, item, price) {
                 details: Backpack.listingComment(0, item.name, price.buy)
             }, true);
         }
+        // Update sell orders for the item with new prices.
         Backpack.updateSellOrders(item.name, price);
     } else {
         let listing = Backpack.findBuyOrder(item.name);
