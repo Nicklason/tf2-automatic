@@ -80,7 +80,7 @@ function handleBuyOrders(offer) {
             const inInv = Inventory.getAmount(name);
             if (limit != -1 && amount + inInv > limit) {
                 offer.log("info", "\"" + name + "\" will be, or is already overstocked (" + inInv + "/" + limit + "), skipping. Summary:\n" + offer.summary());
-                Automatic.alert("\"" + name + "\" will be, or is already overstocked (" + inInv + "/" + limit + "), skipping. Summary:\n" + offer.summary());
+                Automatic.alert("trade", "\"" + name + "\" will be, or is already overstocked (" + inInv + "/" + limit + "), skipping. Summary:\n" + offer.summary());
                 return false;
             }
 
@@ -112,7 +112,7 @@ function handleSellOrders(offer) {
             }
         } else {
             offer.log("info", "contains an item that is not in the pricelist (" + name + "), skipping. Summary:\n" + offer.summary());
-            Automatic.alert("Contains an item that is not in the pricelist (" + name + "), skipping. Summary:\n" + offer.summary());
+            Automatic.alert("trade", "Contains an item that is not in the pricelist (" + name + "), skipping. Summary:\n" + offer.summary());
             return false;
         }
     }
