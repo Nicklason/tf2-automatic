@@ -140,6 +140,7 @@ class Offer {
             "Grenade Launcher",
             "Shooting Star",
             "Big Kill",
+            "Fishcake",
             "Giger Counter",
             "Maul",
             "Unarmed Combat",
