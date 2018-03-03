@@ -11,6 +11,7 @@ let Automatic, client, log, config, Items, Backpack, Prices, Inventory;
 let started = false;
 
 exports.register = function(automatic) {
+    Automatic = automatic;
     client = automatic.client;
     community = automatic.community;
     manager = automatic.manager;
@@ -21,8 +22,7 @@ exports.register = function(automatic) {
     Backpack = automatic.backpack;
     Prices = automatic.prices;
     Inventory = automatic.inventory;
-
-    Automatic = automatic;
+    Friends = automatic.friends;
 
     Login.register(automatic);
     Trade.register(automatic);
@@ -104,6 +104,8 @@ function ready(err) {
     client.gamesPlayed([require('../package.json').name, 440]);
     client.setPersona(SteamUser.EPersonaState.Online);
     Messages.init();
+
+    Friends.init();
 }
 
 function sessionExpired(err) {

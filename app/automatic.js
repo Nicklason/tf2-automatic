@@ -24,6 +24,7 @@ const backpack = require('./backpacktf.js');
 const items = require('./items.js');
 const prices = require('./prices.js');
 const inventory = require('./inventory.js');
+const friends = require('./friends.js');
 const offer = require('./offer.js');
 const confirmations = require('./confirmations.js');
 
@@ -36,13 +37,17 @@ let Automatic = {
     getOwnSteamID() {
         return Automatic.client.steamID ? Automatic.client.steamID.getSteamID64() : null;
     },
-    isOwner(steamid64) {
-        return Automatic.config.get().owners.includes(steamid64);
+    isOwner(steamID64) {
+        return Automatic.config.get().owners.includes(steamID64);
     },
     alert(type, message) {
         const notify = Automatic.config.get().notify || "none";
         if (notify == "all" || notify == type) {
             const owners = config.get().owners;
+            if (owners.length == 1 && owners[0] == "<steamid64s>") {
+                return;
+            }
+
             message = "[Alert!] " + message;
             owners.forEach(function (owner) {
                 Automatic.client.chatMessage(owner, message);
@@ -72,6 +77,7 @@ Automatic.items = items;
 Automatic.backpack = backpack;
 Automatic.prices = prices;
 Automatic.inventory = inventory;
+Automatic.friends = friends;
 
 function register(...args) {
     args.forEach(function(component) {
@@ -89,6 +95,7 @@ register(
     prices,
     inventory,
     client,
+    friends,
     offer,
     confirmations
 );

@@ -15,12 +15,14 @@ exports.register = function (automatic) {
     Automatic = automatic;
     manager = automatic.manager;
     client = automatic.client;
+    log = automatic.log;
+    config = automatic.config;
+
     Inventory = automatic.inventory;
     Backpack = automatic.backpack;
     Prices = automatic.prices;
     Items = automatic.items;
-    log = automatic.log;
-    config = automatic.config;
+    Friends = automatic.friends;
 
     if (fs.existsSync(config.lastAccount() + "." + POLLDATA_FILENAME)) {
         try {
@@ -113,6 +115,7 @@ function handleOffer(tradeoffer) {
     if (offer.games.length !== 1 || offer.games[0] !== 440) {
         offer.log("info", `contains non-TF2 items (${offer.games.join(', ')}), declining.`);
         Automatic.alert("trade", `Contains non-TF2 items, declining.`);
+        Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "The offer contains non-TF2 items" });
 
         offer.decline().then(function () {
             offer.log("debug", "declined");
@@ -212,6 +215,7 @@ function checkReceivedOffer(id, callback) {
             if (priceObj == null) {
                 offer.log("info", "user is trying to buy / sell keys, but we are not banking them, declining. Summary:\n" + offer.summary());
                 Automatic.alert("trade", "User is trying to buy / sell keys, but we are not banking them, declining. Summary: " + offer.summary());
+                Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "I am not banking keys" });
 
                 offer.decline().then(function () { offer.log("debug", "declined") });
                 callback(null, true);
@@ -231,6 +235,7 @@ function checkReceivedOffer(id, callback) {
         if (enough != true) {
             offer.log("info", "is not offering enough, declining. Summary:\n" + offer.summary());
             Automatic.alert("trade", "User is not offering enough, declining. Summary:\n" + offer.summary());
+            Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You are not offering enough (missing " + utils.currencyAsText(enough.missing) + ")" });
 
             offer.decline().then(function () { offer.log("debug", "declined") });
             callback(null, true);
@@ -244,6 +249,8 @@ function checkReceivedOffer(id, callback) {
             } else if (banned) {
                 offer.log("info", "user is " + reason + ", declining.");
                 Automatic.alert("trade", "User is " + reason + ", declining.");
+                Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You are " + reason });
+                
                 offer.decline().then(function () { offer.log("debug", "declined") });
                 callback(null, true);
                 return;
@@ -260,6 +267,8 @@ function finalizeOffer(offer) {
     checkEscrow(offer).then(function (escrow) {
         if (!escrow) {
             acceptOffer(offer);
+        } else {
+            Friends.alert(offer.partnerID64(), { type: "trade", status: "skipped", reason: "The trade would be held" });
         }
     }).catch(function(err) {
         if (err.message === "This trade offer is no longer valid") {
@@ -317,6 +326,8 @@ function offeringEnough(our, their, tradingKeys = false) {
         reqMetal = utils.scrapToRefined(ourValue);
     }
 
+    let missing = utils.scrapToRefined(ourValue - theirValue);
+
     return {
         given: {
             keys: givenKeys,
@@ -325,6 +336,9 @@ function offeringEnough(our, their, tradingKeys = false) {
         required: {
             keys: reqKeys,
             metal: reqMetal
+        },
+        missing: {
+            metal: missing
         }
     };
 }

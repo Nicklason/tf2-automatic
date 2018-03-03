@@ -63,6 +63,7 @@ accounts.json
 limits.json
 prices.json
 queue.json
+alerts.json
 *.inventory.json
 *.polldata.json
 

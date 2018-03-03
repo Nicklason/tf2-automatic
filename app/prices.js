@@ -79,8 +79,9 @@ function handleBuyOrders(offer) {
             const limit = config.getLimit(name);
             const inInv = Inventory.getAmount(name);
             if (limit != -1 && amount + inInv > limit) {
-                offer.log("info", "\"" + name + "\" will be, or is already overstocked (" + inInv + "/" + limit + "), skipping. Summary:\n" + offer.summary());
-                Automatic.alert("trade", "\"" + name + "\" will be, or is already overstocked (" + inInv + "/" + limit + "), skipping. Summary:\n" + offer.summary());
+                offer.log("info", "\"" + name + "\" will be, or is already overstocked (I have " + inInv + "/" + limit + "), skipping. Summary:\n" + offer.summary());
+                Automatic.alert("trade", "\"" + name + "\" will be, or is already overstocked (I have " + inInv + "/" + limit + "), skipping. Summary:\n" + offer.summary());
+                Friends.alert(offer.partnerID64(), { type: "trade", status: "skipped", reason: "\"" + name + "\" will be, or is already overstocked (I have " + inInv + "/" + limit + ")" });
                 return false;
             }
 
@@ -113,6 +114,7 @@ function handleSellOrders(offer) {
         } else {
             offer.log("info", "contains an item that is not in the pricelist (" + name + "), skipping. Summary:\n" + offer.summary());
             Automatic.alert("trade", "Contains an item that is not in the pricelist (" + name + "), skipping. Summary:\n" + offer.summary());
+            Friends.alert(offer.partnerID64(), { type: "trade", status: "skipped", reason: "You are taking an item that is not in my pricelist (" + name + ")" });
             return false;
         }
     }
