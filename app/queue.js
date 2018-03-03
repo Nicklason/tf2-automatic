@@ -53,12 +53,12 @@ function removeID(id) {
 function enqueueReceivedOffer(offer) {
     log.debug('Adding offer to queue');
 
-    if (inQueue(offer.id())) {
+    if (offerInQueue(offer.id())) {
         log.warn("Caught an offer that was getting queued, but was already added.");
         return;
     }
 
-    var trade = {
+    const trade = {
         partner: offer.partnerID64(),
         received: true,
         id: offer.id(),
@@ -69,11 +69,46 @@ function enqueueReceivedOffer(offer) {
         time: utils.epoch()
     };
     queue.push(trade);
-    
     saveQueue();
 }
 
-function inQueue(id) {
+function enqueueRequestedOffer(steamID64, details, callback) {
+    log.debug("Adding requested offer to queue");
+
+    if (steamIDInQueue(steamID64)) {
+        log.warn("User is already in the queue");
+        callback(false);
+        return;
+    }
+
+    const trade = {
+        partner: steamID64,
+        received: false,
+        status: "Queued",
+        details: {
+            name: details.name,
+            amount: details.amount,
+            intent: details.intent
+        },
+        time: utils.epoch()
+    };
+
+    queue.push(trade);
+    saveQueue();
+}
+
+function steamIDInQueue(steamID64) {
+    for (let i = 0; i < queue.length; i++) {
+        const offer = queue[i];
+        if (offer.partnerID64 == steamID64) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function offerInQueue(id) {
     for (let i = 0; i < queue.length; i++) {
         const offer = queue[i];
         if (offer.id == id) {
