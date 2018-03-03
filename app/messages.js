@@ -192,7 +192,7 @@ function friendMessage(steamID, message) {
 			defindex: match,
 			quality: 6,
 			craftable: input.craftable ? input.craftable == 'true' : true,
-			killstreak: input.killstreak || 0,
+			killstreak: parseInt(input.killstreak) || 0,
 			australium: input.australium ? input.australium == 'true' : false
 		};
 
