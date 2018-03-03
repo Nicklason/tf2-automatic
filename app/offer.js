@@ -335,7 +335,7 @@ class Offer {
             if (name.startsWith('Strange ')) {
                 name = "Strange " + effect + " " + name.substr(name.indexOf(' ') + 1);
             } else {
-                name = effect + name;
+                name = effect + " " + name;
             }
         }
 
