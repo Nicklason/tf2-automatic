@@ -1,17 +1,9 @@
 const fs = require('graceful-fs');
 
-const CONFIG_FILENAME = 'config.json';
-const ACCOUNTS_FILENAME = 'accounts.json';
-const STOCKLIMIT_FILENAME = 'limits.json';
-const defaultLimits = {
-    "The Team Captain": 1,
-    "Name Tag": 1,
-    "Non-Craftable Tour of Duty Ticket": 1,
-    "Mann Co. Supply Crate Key": -1,
-    "Strange Frying Pan": 1,
-    "Strange Australium Rocket Launcher": 0,
-    "Professional Killstreak AWPer Hand": 1
-};
+const FOLDER_NAME = 'temp';
+const CONFIG_FILENAME = FOLDER_NAME + '/config.json';
+const ACCOUNT_FILENAME = FOLDER_NAME + '/account.json';
+const STOCKLIMIT_FILENAME = FOLDER_NAME + '/limits.json';
 const defaultConfig = {
     "pricesKey": "<your key to the pricing api>",
     "bptfKey": "<your api key for the bptf api>",
@@ -47,18 +39,16 @@ const defaultConfig = {
     "owners": ["<steamid64s>"]
 };
 
-const defaultAccounts = {
-    "<name>": {
+const defaultAccount = {
+        "name": "",
         "password": "",
         "shared_secret": "",
         "identity_secret": "",
         "bptfToken": ""
-    },
-    "accountToUse": "<name>"
 };
 
 let config = {};
-let accounts = {};
+let account = {};
 let limits = {};
 
 function parseJSON(file) {
@@ -90,38 +80,38 @@ exports.write = function (conf) {
 
 exports.init = function () {
     let msg = "";
+    if (!fs.existsSync(FOLDER_NAME)) {
+        fs.mkdir(FOLDER_NAME);
+        msg += "Created temp folder. ";
+    }
 
     if (fs.existsSync(CONFIG_FILENAME)) {
         config = parseJSON(CONFIG_FILENAME);
         if (typeof config === 'string') {
-            msg = "Cannot load " + CONFIG_FILENAME + ". " + config.toString() + ". Using default config.";
+            msg += "Cannot load " + CONFIG_FILENAME + ". " + config.toString() + ". Using default config. ";
             config = defaultConfig;
         }
     } else {
         exports.write(defaultConfig);
-        msg = "Config has been generated.";
+        msg += "Config has been generated. ";
     }
 
-    if (fs.existsSync(ACCOUNTS_FILENAME)) {
-        accounts = parseJSON(ACCOUNTS_FILENAME);
-        if (typeof accounts === "string") {
-            msg += " Cannot load " + ACCOUNTS_FILENAME + ". " + accounts.toString() + ". No saved account details are available.";
-            accounts = {};
+    if (fs.existsSync(ACCOUNT_FILENAME)) {
+        account = parseJSON(ACCOUNT_FILENAME);
+        if (typeof account === "string") {
+            msg += "Cannot load " + ACCOUNT_FILENAME + ". " + account.toString() + ". No saved account details are available. ";
+            account = {};
         }
     } else {
-        saveJSON(ACCOUNTS_FILENAME, defaultAccounts);
-        msg += " Initialized new account storage.";
+        saveJSON(ACCOUNT_FILENAME, defaultAccount);
+        msg += "Initialized new account storage. ";
     }
 
     if (fs.existsSync(STOCKLIMIT_FILENAME)) {
         limits = parseJSON(STOCKLIMIT_FILENAME);
         if (typeof limits === "string") {
-            msg += " Cannot load " + STOCKLIMIT_FILENAME + ". " + limits.toString() + ". Using default limits.";
-            limits = defaultLimits;
+            msg += "Cannot load " + STOCKLIMIT_FILENAME + ". " + limits.toString() + ". ";
         }
-    } else {
-        saveJSON(STOCKLIMIT_FILENAME, defaultLimits);
-        msg += " Created limits schema.";
     }
 
     return msg.trim();
@@ -141,37 +131,11 @@ function getLimit(name) {
     return limits[name] || config.stocklimit;
 }
 
-function getAccount(name) {
-    if (name === undefined) {
-        return accounts[lastAccount()];
-    }
-
-    return accounts[name];
-}
-
-function lastAccount() {
-    return accounts.accountToUse || null;
-}
-
-function getDetails(name) {
-    if (!name) {
-        return null;
-    }
-
-    let account = getAccount(name);
-
-    let details = {
-        name: name,
-        password: account.password,
-        shared_secret: account.shared_secret,
-        identity_secret: account.identity_secret
-    };
-    return details;
+function getAccount() {
+    return account;
 }
 
 exports.getAccount = getAccount;
-exports.lastAccount = lastAccount;
-exports.getDetails = getDetails;
 exports.getLimit = getLimit;
 exports.addLimit = addLimit;
 exports.removeLimit = removeLimit;

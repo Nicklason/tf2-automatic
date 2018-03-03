@@ -5,7 +5,8 @@ const utils = require('./utils.js');
 
 let Automatic, client, log, config;
 
-const ALERTS_FILENAME = 'alerts.json';
+const FOLDER_NAME = 'temp';
+const ALERTS_FILENAME = FOLDER_NAME + '/alerts.json';
 
 let alerts = {};
 

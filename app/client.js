@@ -30,12 +30,11 @@ exports.register = function(automatic) {
 };
 
 exports.connect = function () {
-    let name = config.lastAccount();
-    let details = config.getDetails(name);
+    const account = config.getAccount();
 
-    if (name != '<name>' && name != '' && details.password != '' && details.shared_secret != '' && details.identity_secret != '') {
+    if (account.name != '' && account.password != '' && account.shared_secret != '' && account.identity_secret != '') {
         log.info("Connecting to Steam...");
-        Login.performLogin(details, handleLogin);
+        Login.performLogin(account, handleLogin);
     } else {
         utils.fatal(log, "No account found / missing details, please add an account and try again.");
     }

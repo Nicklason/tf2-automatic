@@ -5,7 +5,8 @@ const utils = require('./utils.js');
 
 let Automatic, log, config, manager, client, Items;
 
-const INVENTORY_FILENAME = 'inventory.json';
+const FOLDER_NAME = 'temp';
+const INVENTORY_FILENAME = FOLDER_NAME + '/inventory.json';
 
 let inventory = [], summary = [];
 
@@ -41,7 +42,7 @@ function getAmount(name) {
 
 function save(newInv) {
     update(newInv);
-    fs.writeFile(config.lastAccount() + ".inventory.json", JSON.stringify(newInv), function(err) {
+    fs.writeFile(INVENTORY_FILENAME, JSON.stringify(newInv), function(err) {
         if (err) {
             log.warn("Error writing inventory data: " + err);
         }

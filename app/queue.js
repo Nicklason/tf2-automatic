@@ -4,7 +4,8 @@ const utils = require('./utils.js');
 
 let Automatic, log, config, manager, client;
 
-const QUEUE_FILENAME = 'queue.json';
+const FOLDER_NAME = 'temp';
+const QUEUE_FILENAME = FOLDER_NAME + '/queue.json';
 
 let queue = [], _wait;
 

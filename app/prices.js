@@ -8,7 +8,8 @@ let Automatic, log, config, Prices, Backpack, Items, Inventory;
 
 let _wait;
 
-const PRICES_FILENAME = 'prices.json';
+const FOLDER_NAME = 'temp';
+const PRICES_FILENAME = FOLDER_NAME + '/prices.json';
 
 exports.register = function (automatic) {
     Automatic = automatic;
@@ -112,9 +113,9 @@ function handleSellOrders(offer) {
                 offer.currencies.our.metal = utils.addRefined(offer.currencies.our.metal, price.metal, amount);
             }
         } else {
-            offer.log("trade", "contains an item that is not in the pricelist (" + name + "), skipping. Summary:\n" + offer.summary());
-            Automatic.alert("trade", "Contains an item that is not in the pricelist (" + name + "), skipping. Summary:\n" + offer.summary());
-            Friends.alert(offer.partnerID64(), { type: "trade", status: "skipped", reason: "You are taking an item that is not in my pricelist (" + name + ")" });
+            offer.log("trade", "contains an item that is not in the pricelist (" + name + "), declining. Summary:\n" + offer.summary());
+            Automatic.alert("trade", "Contains an item that is not in the pricelist (" + name + "), declining. Summary:\n" + offer.summary());
+            Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You are taking an item that is not in my pricelist (" + name + ")" });
             return false;
         }
     }

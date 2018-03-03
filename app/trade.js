@@ -7,7 +7,7 @@ const queue = require('./queue.js');
 
 let Automatic, manager, Prices, items, log, config;
 
-const POLLDATA_FILENAME = 'polldata.json';
+const POLLDATA_FILENAME = 'temp/polldata.json';
 
 let ready = false, received = [], doingQueue = false;
 
@@ -24,9 +24,9 @@ exports.register = function (automatic) {
     Items = automatic.items;
     Friends = automatic.friends;
 
-    if (fs.existsSync(config.lastAccount() + "." + POLLDATA_FILENAME)) {
+    if (fs.existsSync(POLLDATA_FILENAME)) {
         try {
-            manager.pollData = JSON.parse(fs.readFileSync(config.lastAccount() + "." + POLLDATA_FILENAME));
+            manager.pollData = JSON.parse(fs.readFileSync(POLLDATA_FILENAME));
         } catch (e) {
             log.verbose("polldata is corrupt: " + e);
         }
@@ -469,7 +469,7 @@ function checkOfferCount() {
 }
 
 function savePollData(pollData) {
-    fs.writeFile(config.lastAccount() + "." + POLLDATA_FILENAME, JSON.stringify(pollData), function (err) {
+    fs.writeFile(POLLDATA_FILENAME, JSON.stringify(pollData), function (err) {
         if (err) {
             log.warn("Error writing poll data: " + err);
         }
