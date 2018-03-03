@@ -9,7 +9,7 @@ let Automatic, manager, Prices, items, log, config;
 
 const POLLDATA_FILENAME = 'temp/polldata.json';
 
-let ready = false, received = [], doingQueue = false;
+let ready = false, received = [], doingQueue = false, inTrade = [];
 
 exports.register = function (automatic) {
     Automatic = automatic;
@@ -36,7 +36,8 @@ exports.register = function (automatic) {
 
     manager.on('pollData', savePollData);
     manager.on('newOffer', handleOffer);
-    manager.on('receivedOfferChanged', receivedOfferChanged);
+    manager.on('receivedOfferChanged', offerChanged);
+    manager.on('sentOfferChanged', offerChanged);
 };
 
 exports.init = function() {
@@ -122,6 +123,8 @@ function handleOffer(tradeoffer) {
         });
         return;
     }
+
+    addItemsInTrade(offer.items.our);
 
     queue.receivedOffer(offer);
     if (!doingQueue) {
@@ -267,8 +270,6 @@ function finalizeOffer(offer) {
     checkEscrow(offer).then(function (escrow) {
         if (!escrow) {
             acceptOffer(offer);
-        } else {
-            Friends.alert(offer.partnerID64(), { type: "trade", status: "skipped", reason: "The trade would be held" });
         }
     }).catch(function(err) {
         if (err.message === "This trade offer is no longer valid") {
@@ -351,6 +352,8 @@ function checkEscrow(offer) {
     return offer.determineEscrowDays().then(function(escrowDays) {
         if (escrowDays != 0) {
             offer.log("info", "would be held by escrow for " + escrowDays + " " + utils.plural("day", escrowDays) + ", not accepting.");
+            Automatic.alert("trade", "Offer would be held by escrow for " + escrowDays + " " + utils.plural("day", escrowDays) + ", not accepting.");
+            Friends.alert(offer.partnerID64(), { type: "trade", status: "skipped", reason: "The offer would be held" });
             return true;
         }
         
@@ -370,22 +373,15 @@ function getOffer(id, callback) {
     });
 }
 
-function receivedOfferChanged(offer, oldState) {
-    log.verbose("Offer #" + offer.id + " (received) state changed: " + TradeOfferManager.ETradeOfferState[oldState] + " -> " + TradeOfferManager.ETradeOfferState[offer.state]);
+function offerChanged(offer, oldState) {
+    log.verbose("Offer #" + offer.id + " state changed: " + TradeOfferManager.ETradeOfferState[oldState] + " -> " + TradeOfferManager.ETradeOfferState[offer.state]);
     if (offer.state != TradeOfferManager.ETradeOfferState.Active) {
         queue.removeID(offer.id);
+
+        // Remove assetids from inTrade array.
+        filterItemsInTrade(offer.itemsToGive);
     }
 
-    if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
-        offerAccepted(offer);
-    }
-}
-
-function sentOfferChanged(offer, oldState) {
-    log.verbose("Offer #" + offer.id + " (sent) state changed: " + TradeOfferManager.ETradeOfferState[oldState] + " -> " + TradeOfferManager.ETradeOfferState[offer.state]);
-    if (offer.state != TradeOfferManager.ETradeOfferState.Active) {
-        queue.removeID(offer.id);
-    }
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
         offerAccepted(offer);
     }
@@ -425,6 +421,26 @@ function offerAccepted(offer) {
             Backpack.updateOrders(item, true); // We gained this item = true
         });
     });
+}
+
+function addItemsInTrade(items) {
+    for (let i = 0; i < items.length; i++) {
+        const assetid = items[i].assetid;
+        if (!inTrade.includes(assetid)) {
+            inTrade.push(assetid);
+        }
+    }
+}
+
+function filterItemsInTrade(items) {
+    for (let i = 0; i < items.length; i++) {
+        const assetid = items[i].assetid;
+
+        const index = inTrade.indexOf(assetid);
+        if (index != -1) {
+            inTrade.splice(index, 1);
+        }
+    }
 }
 
 // Returns our inventory with the litems lost in a trade removed.
