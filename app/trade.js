@@ -262,8 +262,12 @@ function finalizeOffer(offer) {
             acceptOffer(offer);
         }
     }).catch(function(err) {
+        if (err.message === "This trade offer is no longer valid") {
+            offer.log("warn", "Cannot check escrow duration because offer is no longer available");
+            return;
+        }
+        
         if (err.message === "Not Logged In") {
-            // Session expired, we will refresh it.
             client.webLogOn();
             offer.log("warn", "Cannot check escrow duration because we are not logged into Steam, retrying in 10 seconds.")
         } else {
