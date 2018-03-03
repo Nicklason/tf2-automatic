@@ -99,11 +99,10 @@ function ready(err) {
     log.debug('Modules are ready!');
 
     log.info(`tf2-automatic is ready; ${Prices.list().length} ${utils.plural('item', Prices.list().length)} in the pricelist, ${Backpack.listings().length} ${utils.plural('listing', Backpack.listings().length)} on www.backpack.tf (limit: ${Backpack.cap()})`);
-    Trade.init();
     client.gamesPlayed([require('../package.json').name, 440]);
     client.setPersona(SteamUser.EPersonaState.Online);
+    Trade.init();
     Messages.init();
-
     Friends.init();
 }
 

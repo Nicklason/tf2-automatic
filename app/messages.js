@@ -5,12 +5,13 @@ const utils = require('./utils.js');
 let Automatic, client, log, config, Inventory, Prices;
 
 exports.register = function (automatic) {
+	Automatic = automatic;
 	client = automatic.client;
 	log = automatic.log;
 	config = automatic.config;
 	Inventory = automatic.inventory;
 	Prices = automatic.prices;
-	Automatic = automatic;
+	Backpack = automatic.backpack;
 };
 
 exports.init = function () {
@@ -202,6 +203,11 @@ function friendMessage(steamID, message) {
 				return;
 			}
 			item.quality = quality;
+		}
+
+		if (Prices.list().length + 100 >= Backpack.cap().length) {
+			client.chatMessage(steamID64, "You don't have many listing slots left. You have to either remove some items from the pricelist, or donate to backpack.tf.");
+			return;
 		}
 
 		Prices.addItems([item], function (err, added) {
