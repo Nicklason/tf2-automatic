@@ -296,7 +296,6 @@ function isCommand(message) {
 
 function isSpam(key) {
 	let count = cache[key] || 0;
-	console.log("Count: " + count);
 
 	if (maxMessagesPerSecond > count) {
 		cache[key] = count + 1;
