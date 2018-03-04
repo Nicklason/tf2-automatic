@@ -4,6 +4,9 @@ const utils = require('./utils.js');
 
 let Automatic, client, log, config, Inventory, Prices;
 
+let cache = {};
+const maxMessagesPerSecond = 1;
+
 exports.register = function (automatic) {
 	Automatic = automatic;
 	client = automatic.client;
@@ -22,6 +25,12 @@ function friendMessage(steamID, message) {
 	message = message.trim();
 	let steamID64 = steamID.getSteamID64();
 	log.info('Message from ' + steamID64 + ': ' + message);
+
+	if (isSpam(steamID64)) {
+		return;
+	}
+
+
 	const command = isCommand(message);
 	if (command == "help") {
 		let reply = "Here's a list of all my commands: !help, !stock, !price";
@@ -284,3 +293,18 @@ function isCommand(message) {
 		return false;
 	}
 }
+
+function isSpam(key) {
+	let count = cache[key] || 0;
+	console.log("Count: " + count);
+
+	if (maxMessagesPerSecond > count) {
+		cache[key] = count + 1;
+	}
+
+	return count >= maxMessagesPerSecond;
+}
+
+setInterval(function() {
+	cache = {};
+}, 1000);
