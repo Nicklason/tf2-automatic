@@ -60,6 +60,12 @@ function findMatch(search) {
         match[i] = name;
     }
 
+    match.sort(function(a, b){
+        if(a.item.name < b.item.name) return -1;
+        if(a.item.name > b.item.name) return 1;
+        return 0;
+    });
+
     return match;
 }
 
