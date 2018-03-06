@@ -34,6 +34,61 @@ exports.removeItems = function (items, callback) { Prices.removeItems(items, cal
 
 exports.update = function (callback) { Prices._fetchPrices(callback); }
 
+exports.calculatePrice = calculatePrice;
+exports.canAfford = canAfford;
+
+exports.valueToPure = valueToPure;
+
+// Multiply price object by an amount;
+function calculatePrice(price, amount, useKeys) {
+    const keyValue = utils.refinedToScrap(key());
+    // Total value
+    const value = utils.refinedToScrap(price.metal) * amount + keyValue * price.keys * amount;
+    // In keys and ref
+    const keys = useKeys ? Math.floor(value / keyValue) : 0;
+    const refined = utils.scrapToRefined(value - keys * keyValue);
+
+    return {
+        value: value,
+        metal: refined,
+        keys: keys
+    };
+};
+
+function canAfford(price, pure) {
+    const amount = Math.floor(pure / price);
+    return amount;
+}
+
+function valueToPure(value, useKeys) {
+    const keyValue = utils.refinedToScrap(key());
+
+    const keys = useKeys ? Math.floor(value / keyValue) : 0;
+    const refined = Math.floor((value - keys * keyValue) / 9);
+    const reclaimed = Math.floor((value - refined * 9 - keys * keyValue) / 3);
+    const scrap = value - refined * 9 - reclaimed * 3 - keys * keyValue;
+
+    return {
+        keys: keys,
+        refined: refined,
+        reclaimed: reclaimed,
+        scrap: scrap
+    };
+}
+
+/*
+function canAfford(pure, price) {
+    const keyValue = utils.refinedToScrap(key());
+    const value = pure.keys * keyValue + utils.refinedToScrap(pure.metal);
+
+    if (value < price) {
+        // Buyer can't afford the item, we will 
+    }
+
+    return value >= price;
+}
+*/
+
 function findMatch(search) {
     search = search.toLowerCase();
 
@@ -80,9 +135,13 @@ function handleBuyOrders(offer) {
             const limit = config.getLimit(name);
             const inInv = Inventory.getAmount(name);
             if (limit != -1 && amount + inInv > limit) {
-                offer.log("trade", "\"" + name + "\" will be, or is already overstocked (I have " + inInv + "/" + limit + "), skipping. Summary:\n" + offer.summary());
-                Automatic.alert("trade", "\"" + name + "\" will be, or is already overstocked (I have " + inInv + "/" + limit + "), skipping. Summary:\n" + offer.summary());
-                Friends.alert(offer.partnerID64(), { type: "trade", status: "skipped", reason: "\"" + name + "\" will be, or is already overstocked (I have " + inInv + "/" + limit + ")" });
+                offer.log("trade", "\"" + name + "\" will be, or is already overstocked (I have " + inInv + "/" + limit + "), declining. Summary:\n" + offer.summary());
+                Automatic.alert("trade", "\"" + name + "\" will be, or is already overstocked (I have " + inInv + "/" + limit + "), declining. Summary:\n" + offer.summary());
+                Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You offered an item that will be, or is already overstocked" });
+
+                offer.decline().then(function () {
+                    offer.log("debug", "declined");
+                });
                 return false;
             }
 
@@ -92,6 +151,15 @@ function handleBuyOrders(offer) {
             if (price.metal) {
                 offer.currencies.their.metal = utils.addRefined(offer.currencies.their.metal, price.metal, amount);
             }
+        } else {
+            offer.log("trade", "\"" + name + "\" is not in the pricelist, declining. Summary:\n" + offer.summary());
+            Automatic.alert("trade", "\"" + name + "\" is not in the pricelist, declining. Summary:\n" + offer.summary());
+            Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You offered an item that is not in my pricelist" });
+
+            offer.decline().then(function () {
+                offer.log("debug", "declined");
+            });
+            return false;
         }
     }
 }
@@ -115,7 +183,11 @@ function handleSellOrders(offer) {
         } else {
             offer.log("trade", "contains an item that is not in the pricelist (" + name + "), declining. Summary:\n" + offer.summary());
             Automatic.alert("trade", "Contains an item that is not in the pricelist (" + name + "), declining. Summary:\n" + offer.summary());
-            Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You are taking an item that is not in my pricelist (" + name + ")" });
+            Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You are taking an item that is not in my pricelist" });
+            
+            offer.decline().then(function () {
+                offer.log("debug", "declined");
+            });
             return false;
         }
     }

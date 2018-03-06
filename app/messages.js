@@ -2,7 +2,7 @@ const moment = require('moment');
 
 const utils = require('./utils.js');
 
-let Automatic, client, log, config, Inventory, Prices;
+let Automatic, client, log, config, Inventory, Prices, Trade, Items;
 
 let cache = {};
 const maxMessagesPerSecond = 1;
@@ -12,9 +12,12 @@ exports.register = function (automatic) {
 	client = automatic.client;
 	log = automatic.log;
 	config = automatic.config;
+
 	Inventory = automatic.inventory;
 	Prices = automatic.prices;
 	Backpack = automatic.backpack;
+	Trade = automatic.trade;
+	Items = automatic.items;
 };
 
 exports.init = function () {
@@ -27,13 +30,13 @@ function friendMessage(steamID, message) {
 	log.info('Message from ' + steamID64 + ': ' + message);
 
 	if (isSpam(steamID64)) {
+		log.debug("Spam...");
 		return;
 	}
 
-
 	const command = isCommand(message);
 	if (command == "help") {
-		let reply = "Here's a list of all my commands: !help, !stock, !price";
+		let reply = "Here's a list of all my commands: !help, !stock, !price, !buy, !sell";
 		if (Automatic.isOwner(steamID64)) {
 			reply += ", !add, !remove, !update";
 		}
@@ -214,11 +217,6 @@ function friendMessage(steamID, message) {
 			item.quality = quality;
 		}
 
-		if (Prices.list().length + 100 >= Backpack.cap().length) {
-			client.chatMessage(steamID64, "You don't have many listing slots left. You have to either remove some items from the pricelist, or donate to backpack.tf.");
-			return;
-		}
-
 		Prices.addItems([item], function (err, added) {
 			if (err) {
 				client.chatMessage(steamID64, "I failed to add the item to the pricelist: " + (err.reason || err.message));
@@ -280,6 +278,47 @@ function friendMessage(steamID, message) {
 
 			client.chatMessage(steamID64, "The pricelist has been refreshed.");
 		});
+	} else if (command == "buy" || command == "sell") {
+		let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
+		let amount = 1;
+		if (/^[+\-]?\d+$/.test(name.split(' ')[0])) {
+			amount = parseInt(name.split(' ')[0])
+			name = name.replace(amount, '').trim();
+		}
+
+		if (name == "") {
+			client.chatMessage(steamID64, "You forgot to add a name. Here's an example: \"!buy Team Captain\"");
+			return;
+		}
+
+		// Make sure that the amountF is always 1 or higher.
+		if (1 > amount) {
+			amount = 1;
+		} else if (10 < amount) {
+			// Limit trades to 10 items.
+			amount = 10;
+		}
+
+		let match = Prices.findMatch(name);
+		if (match == null) {
+			client.chatMessage(steamID64, "I could not find any items in my pricelist that contains \"" + name + "\", I might not be trading the item you are looking for.");
+			return;
+		} else if (Array.isArray(match)) {
+			const n = match.length;
+			if (match.length > 20) {
+				match = match.splice(0, 20);
+			}
+			let reply = "I found " + n + " " + utils.plural("item", n) + " that contains \"" + name + "\". Try with one of the items shown below:\n" + match.join(',\n');
+			if (n > match.lenght) {
+				const other = n - match.length;
+				reply += ",\nand " + other + " other " + utils.plural("item", other) + ".";
+			}
+
+			client.chatMessage(steamID64, reply);
+			return;
+		}
+		const selling = command == "buy";
+		Trade.requestOffer(steamID64, match, amount, selling);
 	} else {
 		client.chatMessage(steamID64, "I don't know what you mean, please type \"!help\" for all my commands!");
 	}

@@ -3,10 +3,9 @@ const async = require('async');
 
 const utils = require('./utils.js');
 const Login = require('./login.js');
-const Trade = require('./trade.js');
 const Messages = require('./messages.js');
 
-let Automatic, client, log, config, Items, Backpack, Prices, Inventory;
+let Automatic, client, log, config, Items, Backpack, Prices, Inventory, Trade;
 
 let started = false;
 
@@ -23,9 +22,9 @@ exports.register = function(automatic) {
     Prices = automatic.prices;
     Inventory = automatic.inventory;
     Friends = automatic.friends;
+    Trade = automatic.trade;
 
     Login.register(automatic);
-    Trade.register(automatic);
     Messages.register(automatic);
 };
 
@@ -101,9 +100,9 @@ function ready(err) {
     log.info(`tf2-automatic is ready; ${Prices.list().length} ${utils.plural('item', Prices.list().length)} in the pricelist, ${Backpack.listings().length} ${utils.plural('listing', Backpack.listings().length)} on www.backpack.tf (limit: ${Backpack.cap()})`);
     client.gamesPlayed([require('../package.json').name, 440]);
     client.setPersona(SteamUser.EPersonaState.Online);
-    Trade.init();
     Messages.init();
     Friends.init();
+    Trade.init();
 }
 
 function sessionExpired(err) {

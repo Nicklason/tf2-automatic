@@ -109,8 +109,3 @@ function round(value, step = 1) {
     var inv = 1.0 / step;
     return Math.round(value * inv) / inv;
 }
-
-exports.stringToObject = function (string) {
-    var object = exports.parseJSON('{"' + string.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"') + '"}');
-    return object;
-};

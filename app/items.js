@@ -21,6 +21,21 @@ exports.getProperItem = getProperItem;
 exports.summary = summary;
 exports.getItems = getItems;
 
+exports.createItemDict = createItemDict;
+
+function createItemDict(items) {
+    let dict = {};
+
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+
+        const name = getName(item);
+        (dict[name] = (dict[name] || [])).push(item.id);
+    }
+
+    return dict;
+}
+
 function findMatch(search) {
     search = search.toLowerCase();
 

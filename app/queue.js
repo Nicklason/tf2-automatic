@@ -2,7 +2,7 @@ const fs = require('graceful-fs');
 
 const utils = require('./utils.js');
 
-let Automatic, log, config, manager, client;
+let Automatic, log, config;
 
 const FOLDER_NAME = 'temp';
 const QUEUE_FILENAME = FOLDER_NAME + '/queue.json';
@@ -11,19 +11,24 @@ let queue = [], _wait;
 
 exports.register = function(automatic) {
     Automatic = automatic;
-    log = Automatic.log;
-    config = Automatic.config;
-    manager = Automatic.manager;
+    log = automatic.log;
+    config = automatic.config;
 
     if (fs.existsSync(QUEUE_FILENAME)) {
         queue = JSON.parse(fs.readFileSync(QUEUE_FILENAME));
     }
 };
 
+exports.requestedOffer = enqueueRequestedOffer;
 exports.receivedOffer = enqueueReceivedOffer;
 exports.getNext = getNext;
 exports.removeFirst = removeFirst;
 exports.removeID = removeID;
+exports.inQueue = isInQueue;
+
+exports.getLength = function() {
+    return queue.length;
+};
 
 function getNext() {
     if (queue.length == 0) {
@@ -60,7 +65,6 @@ function enqueueReceivedOffer(offer) {
 
     const trade = {
         partner: offer.partnerID64(),
-        received: true,
         id: offer.id(),
         status: "Received",
         details: {
@@ -72,22 +76,16 @@ function enqueueReceivedOffer(offer) {
     saveQueue();
 }
 
-function enqueueRequestedOffer(steamID64, details, callback) {
+function enqueueRequestedOffer(steamID64, details) {
     log.debug("Adding requested offer to queue");
-
-    if (steamIDInQueue(steamID64)) {
-        log.warn("User is already in the queue");
-        callback(false);
-        return;
-    }
 
     const trade = {
         partner: steamID64,
-        received: false,
         status: "Queued",
         details: {
             name: details.name,
             amount: details.amount,
+            price: details.price,
             intent: details.intent
         },
         time: utils.epoch()
@@ -97,11 +95,11 @@ function enqueueRequestedOffer(steamID64, details, callback) {
     saveQueue();
 }
 
-function steamIDInQueue(steamID64) {
+function isInQueue(steamID64) {
     for (let i = 0; i < queue.length; i++) {
         const offer = queue[i];
-        if (offer.partnerID64 == steamID64) {
-            return true;
+        if (offer.status == "Queued" && offer.partner == steamID64) {
+            return i + 1;
         }
     }
 

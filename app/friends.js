@@ -40,6 +40,7 @@ exports.init = function() {
 };
 
 function addFriend(steamID64) {
+    log.debug("Sending friend request to " + steamID64 + " or accepting their friend request...");
     client.addFriend(steamID64, function(err) {
 		if (err) {
             log.warn("Failed to send a friend request (" + err.message + ")")
@@ -77,6 +78,7 @@ function friendAddResponse(steamID64) {
     const userAlerts = alerts[steamID64];
     if (!userAlerts) {
         // Todo: get name of user
+        log.debug("Greeting user with message");
         client.chatMessage(steamID64, "Hi! If you're new here, type \"!help\" for all my commands :)");
         return;
     }
@@ -106,6 +108,7 @@ function alertUser(steamID64) {
         "reason": "you are missing 30.33 ref" || "\"Team Captain\" is or will be overstocked"
     }*/
 
+    log.debug("Sending alerts to user");
     userAlerts.forEach(function(alert) {
         if (alert.type == "trade") {
             client.chatMessage(steamID64, "Your trade was " + alert.status + ". Reason: " + alert.reason + ".");
@@ -133,6 +136,7 @@ function newAlert(steamID64, alert) {
 }
 
 function removeAlerts(steamID64) {
+    log.debug("Removing alerts for " + steamID64 + "...");
     delete alerts[steamID64];
 
     fs.writeFile(ALERTS_FILENAME, JSON.stringify(alerts), function(err) {
@@ -143,6 +147,7 @@ function removeAlerts(steamID64) {
 }
 
 function saveAlert(steamID64, alert) {
+    log.debug("Saving alerts...");
     let userAlerts = (alerts[steamID64] || []);
     userAlerts.push(alert);
     alerts[steamID64] = userAlerts;

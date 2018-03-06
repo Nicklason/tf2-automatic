@@ -3,13 +3,14 @@ const fs = require('graceful-fs');
 
 const utils = require('./utils.js');
 const Offer = require('./offer.js');
-const queue = require('./queue.js');
+const Queue = require('./queue.js');
+const confirmations = require('./confirmations.js');
 
-let Automatic, manager, Prices, items, log, config;
+let Automatic, manager, Prices, Items, log, config;
 
 const POLLDATA_FILENAME = 'temp/polldata.json';
 
-let ready = false, received = [], doingQueue = false, inTrade = [];
+let ready = false, received = [], doingQueue = false, inTrade = [], activeOffers = [];
 
 exports.register = function (automatic) {
     Automatic = automatic;
@@ -32,12 +33,12 @@ exports.register = function (automatic) {
         }
     }
 
-    queue.register(Automatic);
+    Queue.register(Automatic);
 
     manager.on('pollData', savePollData);
     manager.on('newOffer', handleOffer);
-    manager.on('receivedOfferChanged', offerChanged);
-    manager.on('sentOfferChanged', offerChanged);
+    manager.on('receivedOfferChanged', receivedOfferChanged);
+    manager.on('sentOfferChanged', sentOfferChanged);
 };
 
 exports.init = function() {
@@ -51,12 +52,46 @@ exports.init = function() {
 };
 
 exports.checkOfferCount = checkOfferCount;
+exports.requestOffer = requestOffer;
 
-function organizeQueue() {
-    if (received.length === 0) {
-        handleQueue();
+function requestOffer(steamID64, priceObj, amount, selling) {
+    // todo: get active offers and check if the steamid is in one of them
+
+    const hasOffer = activeOffers.indexOf(steamID64) != -1;
+    if (hasOffer) {
+        // Todo: send them link for the active offer
+        client.chatMessage(steamID64, "You already have an active offer! Please finish it before requesting a new one.");
         return;
     }
+
+    const position = Queue.inQueue(steamID64);
+    if (position != false) {
+        if (position == 1) {
+            client.chatMessage(steamID64, "You are already in the queue! Please wait while I process your offer.");
+        } else {
+            client.chatMessage(steamID64, "You are already in the queue! Please wait your turn, you are number " + position + ".");
+        }
+        return;
+    }
+
+    const details = {
+        name: priceObj.item.name,
+        amount: amount,
+        price: priceObj.price[selling == true ? 'sell' : 'buy'],
+        intent: selling == true ? 1 : 0
+    };
+    
+    const length = Queue.getLength();
+    Queue.requestedOffer(steamID64, details);
+    if (length > 0) {
+        // > 0 because we don't want to spam with messages if they are the first in the queue.
+        client.chatMessage(steamID64, "You have been added to the queue. You are number " + (length + 1) + ".");
+    }
+    handleQueue();
+}
+
+function organizeQueue() {
+    handleQueue();
 
     for (let i = 0; i < received.length; i++) {
         let tradeoffer = received[i];
@@ -124,21 +159,18 @@ function handleOffer(tradeoffer) {
         return;
     }
 
-    addItemsInTrade(offer.items.our);
-
-    queue.receivedOffer(offer);
-    if (!doingQueue) {
-        handleQueue();
-    }
+    Queue.receivedOffer(offer);
+    handleQueue();
 }
 
 function handleQueue() {
-    // We are now doing stuff.
+    if (doingQueue) {
+        return;
+    }
     doingQueue = true;
 
-    let offer = queue.getNext();
+    let offer = Queue.getNext();
     if (offer == null) {
-        // Did not find an offer in the queue. We do not need to retry later because when new offers are added, this function will be called.
         log.debug("Did not find any offers in the queue.");
         doingQueue = false;
         return;
@@ -147,10 +179,8 @@ function handleQueue() {
     log.debug("Found an offer in the queue, processing it now.");
     if (offer.status === 'Received') {
         log.info("Handling received offer (#" + offer.id + ")");
-        checkReceivedOffer(offer.id, function(err, removeFromQueue) {
-            if (removeFromQueue) {
-                queue.removeFirst();
-            }
+        checkReceivedOffer(offer.id, function(err) {
+            Queue.removeFirst();
             doingQueue = false;
 
             if (err) {
@@ -161,8 +191,525 @@ function handleQueue() {
 
             setTimeout(handleQueue, 1000);
         });
+    } else if (offer.status === 'Queued') {
+        log.info("Handling requested offer from " + offer.partner);
+        createOffer(offer, function (err, made, reason, offerid) {
+            Queue.removeFirst();
+            doingQueue = false;
+
+            if (err) {
+                log.warn("Failed to create offer (" + err.message + ")");
+                log.debug(err.stack);
+                client.chatMessage(offer.partner, "Ohh nooooes! It looks like an error occurred, that\'s all we know. Please try again later!");
+                setTimeout(handleQueue, 5000);
+                return;
+            }
+
+            if (!made) {
+                log.warn("Failed to make the offer (" + reason + ")");
+                client.chatMessage(offer.partner, "I failed to make the offer. Reason: " + reason + ".");
+            } else if (offerid) {
+                client.chatMessage(offer.partner, "The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/" + offerid + "/");
+            } else {
+                client.chatMessage(offer.partner, "Your offer has been made, please wait while I accept the mobile confirmation.");
+            }
+
+            setTimeout(handleQueue, 1000);
+        });
     }
 }
+
+function createOffer(request, callback) {
+    const selling = request.details.intent == 1;
+    const partner = request.partner;
+
+    const name = request.details.name;
+    // Get price of the item in scrap.
+    let price = Prices.calculatePrice(request.details.price, 1, name != "Mann Co. Supply Crate Key");
+    let amount = request.details.amount;
+
+    const seller = request.details.intent == 1 ? Automatic.getOwnSteamID() : partner;
+    const buyer = request.details.intent == 0 ? Automatic.getOwnSteamID() : partner;
+
+    // Check if the seller has the item(s) - Lower the amount if needed.
+    // Check if the buyer can afford the item - Lower the amount if needed.
+    // Check for escrow
+    // Check if the user is banned on sr / bptf
+    // Send offer
+
+    Inventory.getInventory(seller, function(err, sellerDict) {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        let alteredMessage;
+
+        var inInv = sellerDict.hasOwnProperty(name) ? sellerDict[name].length : 0;
+        if (amount > inInv) {
+            if (inInv == 0) {
+                callback(null, false, (selling ? 'I' : 'You') + ' don\'t have any ' + name + '(s) in ' + (selling ? 'my' : 'your') + ' inventory');
+                return;
+            } else {
+                alteredMessage = 'Your offer has been altered! Reason: ' + (selling ? 'I' : 'You') + ' only have ' + inInv + ' ' + name + (inInv > 1 ? '(s)' : '') + " in " + (selling ? 'my' : 'your') + ' inventory.'
+                amount = inInv;
+            }
+        }
+
+        Inventory.getInventory(buyer, function(err, buyerDict) {
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            if (selling == false) {
+                const limit = config.getLimit(name);
+                if (limit != -1) {
+                    const stock = Inventory.getAmount(name);
+                    const canBuy = limit - stock;
+
+                    if (canBuy <= 0) {
+                        callback(null, false, 'I am overstocked on ' + name + '(s), I won\'t keep more than ' + limit + ' in my inventory');
+                        return;
+                    } else if (canBuy - amount < 0) {
+                        alteredMessage = 'Your offer has been altered! Reason: I can only keep ' + canBuy + ' more.';
+                        amount = canBuy;
+                    }
+                }
+            }
+
+            const buyerPure = Inventory.getPure(buyerDict, name != "Mann Co. Supply Crate Key");
+            log.debug("The buyer has", buyerPure);
+            const canAfford = Prices.canAfford(price.value, buyerPure.value);
+            log.debug("The buyer can afford " + canAfford + " of the item");
+            if (canAfford == 0) {
+                callback(null, false, (selling ? 'You' : 'I') + ' don\'t have enough pure');
+                return;
+            } else if (canAfford < amount) {
+                alteredMessage = 'Your offer has been altered! Reason: ' + (selling ? 'You' : 'I') + ' can only afford afford ' + canAfford + '.';
+                amount = canAfford;
+            }
+
+            if (alteredMessage) {
+                client.chatMessage(partner, alteredMessage);
+            }
+
+            // Get the value of all the items -> { value, keys, metal }
+            price = Prices.calculatePrice(price, amount, name != "Mann Co. Supply Crate Key");
+            const priceText = utils.currencyAsText(price);
+            client.chatMessage(partner, 'Please wait while I process your offer! You will be offered ' + (selling ? amount + ' ' + name + (amount > 1 ? '(s)' : '') + " for your " + priceText : priceText + ' for your ' + amount + ' ' + name + (amount > 1 ? '(s)' : '')) + '.');
+
+            // make offer
+
+            // If this is false, then just fill out with metal. If it is true, then use the values given
+            let items = constructOffer(price.value, buyerDict, name != "Mann Co. Supply Crate Key");
+
+            const offer = manager.createOffer(partner);
+
+            // this can only work because the object is always ordered so that the keys are first, then refined, reclaimed, and lastly scrap.
+            for (let item in items) {
+                if (item == "change") {
+                    continue;
+                }
+
+                let actualName = item;
+                switch (item) {
+                    case "keys":
+                        actualName = "Mann Co. Supply Crate Key";
+                        break;
+                    case "refined":
+                        actualName = "Refined Metal";
+                        break;
+                    case "reclaimed":
+                        actualName = "Reclaimed Metal";
+                        break;
+                    case "scrap":
+                        actualName = "Scrap Metal";
+                        break;
+                }
+
+                const ids = buyerDict[actualName] || [];
+                for (let i = 0; i < ids.length; i++) {
+                    if (items[item] == 0) {
+                        break;
+                    }
+
+                    const id = ids[i];
+                    if (inTrade.includes(id)) {
+                        continue;
+                    }
+
+                    const added = offer[selling ? "addTheirItem" : "addMyItem" ]({
+                        appid: 440,
+                        contextid: 2,
+                        assetid: id,
+                        amount: 1
+                    });
+
+                    if (added) {
+                        items[item]--;
+                    }
+                }
+            }
+
+            let missing = false;
+            for (let item in items) {
+                if (item == "change") {
+                    continue;
+                }
+
+                if (items[item] != 0) {
+                    missing = true;
+                    break;
+                }
+            }
+
+            if (missing) {
+                log.debug("Items missing:", items);
+                callback(null, false, 'Something went wrong constructing the offer');
+                return;
+            }
+
+            let missingItems = amount;
+            for (let i = 0; i < sellerDict[name].length; i++) {
+                if (missingItems == 0) {
+                    break;
+                }
+
+                const id = sellerDict[name][i];
+                if (inTrade.includes(id)) {
+                    continue;
+                }
+
+                const added = offer[!selling ? "addTheirItem" : "addMyItem"]({
+                    appid: 440,
+                    contextid: 2,
+                    assetid: id,
+                    amount: 1
+                });
+
+                if (added) {
+                    missingItems--;
+                }
+            }
+
+            if (missingItems != 0) {
+                callback(null, false, 'Something went wrong constructing the offer' + (selling ? ', I might already be selling the ' + utils.plural('item', amount) : ''));
+                return;
+            }
+
+            if (items.change && items.change != 0) {
+                const keyValue = utils.refinedToScrap(Prices.key());
+                const refined = sellerDict["Refined Metal"] || [];
+                for (let i = 0; i < refined.length; i++) {
+                    if (items.change == 0 || items.change < 9) {
+                        break;
+                    }
+
+                    const id = refined[i];
+                    const added = offer[!selling ? "addTheirItem" : "addMyItem"]({
+                        appid: 440,
+                        contextid: 2,
+                        assetid: id,
+                        amount: 1
+                    });
+
+                    if (added) {
+                        items.change -= 9;
+                    }
+                }
+                const reclaimed = sellerDict["Reclaimed Metal"] || [];
+                for (let i = 0; i < reclaimed.length; i++) {
+                    if (items.change == 0 || items.change < 3) {
+                        break;
+                    }
+                    const id = reclaimed[i];
+                    const added = offer[!selling ? "addTheirItem" : "addMyItem"]({
+                        appid: 440,
+                        contextid: 2,
+                        assetid: id,
+                        amount: 1
+                    });
+
+                    if (added) {
+                        items.change-=3;
+                    }
+                }
+
+                const scrap = sellerDict["Scrap Metal"] || [];
+                for (let i = 0; i < scrap.length; i++) {
+                    if (items.change == 0) {
+                        break;
+                    }
+                    const id = scrap[i];
+                    const added = offer[!selling ? "addTheirItem" : "addMyItem"]({
+                        appid: 440,
+                        contextid: 2,
+                        assetid: id,
+                        amount: 1
+                    });
+
+                    if (added) {
+                        items.change--;
+                    }
+                }
+
+                if (items.change != 0) {
+                    log.debug("Missing change: " + utils.scrapToRefined(items.change));
+                    callback(null, false, (selling ? 'I am' : 'You are') + ' missing change' + (selling ? ', I might already be trading my metal' : ''));
+                    return;
+                }
+            }
+
+            offer.setMessage("Thank you my dude!");
+
+            // check escrow and banned.
+
+            log.debug("Offer ready, checking if the user is banned...");
+            Backpack.isBanned(partner, function (err, banned, reason) {
+                if (err) {
+                    callback(err);
+                    return;
+                } else if (banned) {
+                    log.info("user is " + reason + ", declining.");
+                    callback(null, false, "You are " + reason);
+                    return;
+                }
+
+                log.debug("Finishing the offer");
+                finishOffer(offer, callback);
+            });
+        });
+    });
+}
+
+function finishOffer(tradeoffer, callback) {
+    log.debug("Finishing offer...");
+    const offer = new Offer(tradeoffer);
+    checkEscrow(offer).then(function (escrow) {
+        log.debug("Got escrow check response");
+        if (!escrow) {
+            sendOffer(tradeoffer, callback);
+        }
+    }).catch(function (err) {
+        log.debug("Failed to check for escrow for requested offer.");
+        if (err.message === "This trade offer is no longer valid") {
+            callback(err);
+            return;
+        }
+
+        if (err.message === "Not Logged In") {
+            client.webLogOn();
+            offer.log("warn", "Cannot check escrow duration because we are not logged into Steam, retrying in 10 seconds.")
+        } else {
+            offer.log("warn", "Cannot check escrow duration (error: " + err.message + "), retrying in 10 seconds.");
+        }
+
+        setTimeout(function () {
+            finishOffer(offer, callback);
+        }, 10 * 1000);
+    });
+}
+
+function sendOffer(offer, callback) {
+    offer.send(function (err, status) {
+        if (err) {
+            if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') > -1) {
+                callback(null, false, 'The maximum number of items allowed in my Team Fortress 2 inventoy will be exceeded');
+            } else if (err.message == 'Not Logged In') {
+                client.webLogOn();
+                callback(null, false, 'The session expired, try again');
+            } else if (err.hasOwnProperty('eresult')) {
+                callback(null, false, 'An error occurred while sending the offer. See the error code returned by Steam for more information: ' + err.eresult);
+            } else {
+                log.warn("An error occurred while trying to send the offer, retrying in 10 seconds.");
+                setTimeout(function() {
+                    sendOffer(offer, callback);
+                }, 10000);
+            }
+            return;
+        }
+
+        addItemsInTrade(offer.itemsToGive);
+
+        if (status === 'pending') {
+            confirmations.accept(offer.id);
+        } else {
+            callback(null, true, null, offer.id);
+            return;
+        }
+
+        callback(null, true);
+    });
+}
+
+function constructOffer(price, inventory, useKeys) {
+    let pure = Inventory.getPure(inventory);
+
+    // Filter out items that are already in trade, ik this is werid.
+    for (let name in pure) {
+        let ids = pure[name];
+        for (var i = ids.length - 1; i >= 0; i--) {
+            const id = ids[i];
+            if (inTrade.includes(id)) {
+                ids.splice(i, 1);
+            }
+        }
+        pure[name] = ids.length || pure[name];
+    }
+
+    const needsChange = needChange(price, pure);
+    log.debug(needsChange ? "Offer needs change" : "Offer does not need change");
+    if (needsChange == true) {
+        return makeChange(price, pure, useKeys);
+    }
+
+    return needsChange;
+}
+
+function needChange(price, pure) {
+    const keyValue = utils.refinedToScrap(Prices.key());
+
+    var keys = 0,
+        refined = 0,
+        reclaimed = 0,
+        scrap = 0;
+
+    var metalReq = price;
+
+    if (metalReq > keyValue) {
+        keys = Math.floor(metalReq / keyValue);
+        if (keys > pure.keys) {
+            keys = pure.keys;
+        }
+
+        metalReq -= keyValue * keys;
+    }
+
+    if (metalReq > 8) {
+        refined = Math.floor(metalReq / 9);
+        if (refined > pure.refined) {
+            refined = pure.refined;
+        }
+
+        metalReq -= 9 * refined;
+    }
+
+    if (metalReq > 2) {
+        reclaimed = Math.floor(metalReq / 3);
+        if (reclaimed > pure.reclaimed) {
+            reclaimed = pure.reclaimed;
+        }
+
+        metalReq -= 3 * reclaimed;
+    }
+
+    if (metalReq > 0) {
+        scrap = metalReq;
+        if (scrap > pure.scrap) {
+            scrap = pure.scrap;
+        }
+
+        metalReq -= scrap;
+    }
+
+    if (metalReq != 0) {
+        return true;
+    }
+
+    return {
+        keys: keys,
+        refined: refined,
+        reclaimed: reclaimed,
+        scrap: scrap
+    };
+}
+
+function makeChange(price, pure, useKeys) {
+    const keyValue = utils.refinedToScrap(Prices.key());
+
+    let required = Prices.valueToPure(price, useKeys);
+    let change = 0;
+
+    for (let item in pure) {
+        pure[item] = Array.isArray(pure[item]) ? pure[item].length : pure[item];
+    }
+
+    log.debug("The buyer has:", pure);
+    log.debug("The required amount is:", required);
+
+    while (pure.refined < required.refined) {
+        if (pure.keys > required.keys) {
+            required.keys++;
+
+            let refined = Math.floor(keyValue / 9);
+            let reclaimed = Math.floor((keyValue - refined * 9) / 3);
+            let scrap = keyValue - refined * 9 - reclaimed * 3;
+
+            required.refined -= refined;
+            required.reclaimed -= reclaimed;
+            required.scrap -= scrap;
+
+            if (required.refined < 0) {
+                change += Math.abs(required.refined) * 9;
+                required.refined = 0;
+            }
+            if (required.reclaimed < 0) {
+                change += Math.abs(required.reclaimed) * 3;
+                required.reclaimed = 0;
+            }
+            if (required.scrap < 0) {
+                change += Math.abs(required.reclaimed);
+                required.scrap = 0;
+            }
+        }
+    }
+
+    while (pure.scrap < required.scrap) {
+        required.reclaimed++;
+        required.scrap -= 3;
+        if (required.scrap < 0) {
+            change += Math.abs(required.scrap);
+            required.scrap = 0;
+        }
+    }
+
+    while (pure.reclaimed < required.reclaimed) {
+        if (pure.refined > required.refined) {
+            required.refined++;
+            required.reclaimed -= 3;
+            if (required.reclaimed < 0) {
+                change += Math.abs(required.reclaimed) * 3;
+                required.reclaimed = 0;
+            }
+        } else {
+            required.scrap += 3;
+            required.reclaimed--;
+        }
+    }
+
+    log.debug("After calculating change for the offer, the required amount is:", required);
+
+    return {
+        keys: required.keys,
+        refined: required.refined,
+        reclaimed: required.reclaimed,
+        scrap: required.scrap,
+        change: change
+    };
+};
+
+function scrapToMetals(scrap) {
+    var totalRef = Math.floor(scrap / 9);
+    var totalRec = Math.floor((scrap - totalRef * 9) / 3);
+    var totalScrap = scrap - totalRef * 9 - totalRec * 3;
+
+    return {
+        refined: totalRef,
+        reclaimed: totalRec,
+        scrap: totalScrap
+    }
+};
 
 function checkReceivedOffer(id, callback) {
     var time = new Date().getTime();
@@ -179,21 +726,23 @@ function checkReceivedOffer(id, callback) {
 
         if (offer.state() != TradeOfferManager.ETradeOfferState.Active) {
             offer.log("warn", "is no longer active");
-            callback(null, true);
+            callback(null);
             return;
         }
+
+        addItemsInTrade(offer.items.our);
 
         let ok = Prices.handleBuyOrders(offer);
         if (ok === false) {
             // We will remove the offer from the queue as it will be rechecked.
-            callback(null, true);
+            callback(null);
             return;
         }
 
         ok = Prices.handleSellOrders(offer);
         if (ok === false) {
             // We are offering items that are not in the pricelist, remove the offer from the queue.
-            callback(null, true);
+            callback(null);
             return;
         }
 
@@ -203,7 +752,7 @@ function checkReceivedOffer(id, callback) {
             Automatic.alert("trade", "We are both only offering metal, declining.");
 
             offer.decline().then(function () { offer.log("debug", "declined") });
-            callback(null, true);
+            callback(null);
             return;
         }
 
@@ -221,7 +770,7 @@ function checkReceivedOffer(id, callback) {
                 Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "I am not banking keys" });
 
                 offer.decline().then(function () { offer.log("debug", "declined") });
-                callback(null, true);
+                callback(null);
                 return;
             }
             if (our.keys != 0) {
@@ -238,10 +787,10 @@ function checkReceivedOffer(id, callback) {
         if (enough != true) {
             offer.log("trade", "is not offering enough, declining. Summary:\n" + offer.summary());
             Automatic.alert("trade", "User is not offering enough, declining. Summary:\n" + offer.summary());
-            Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You are not offering enough (missing " + utils.currencyAsText(enough.missing) + ")" });
+            Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You are not offering enough" });
 
             offer.decline().then(function () { offer.log("debug", "declined") });
-            callback(null, true);
+            callback(null);
             return;
         }
 
@@ -255,13 +804,13 @@ function checkReceivedOffer(id, callback) {
                 Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You are " + reason });
                 
                 offer.decline().then(function () { offer.log("debug", "declined") });
-                callback(null, true);
+                callback(null);
                 return;
             }
 
             finalizeOffer(offer);
             // We are done reading the offer, we will check the next if there is any.
-            callback(null, true);
+            callback(null);
         });
     });
 }
@@ -351,9 +900,13 @@ function checkEscrow(offer) {
 
     return offer.determineEscrowDays().then(function(escrowDays) {
         if (escrowDays != 0) {
-            offer.log("info", "would be held by escrow for " + escrowDays + " " + utils.plural("day", escrowDays) + ", not accepting.");
-            Automatic.alert("trade", "Offer would be held by escrow for " + escrowDays + " " + utils.plural("day", escrowDays) + ", not accepting.");
-            Friends.alert(offer.partnerID64(), { type: "trade", status: "skipped", reason: "The offer would be held" });
+            offer.log("info", "would be held by escrow for " + escrowDays + " " + utils.plural("day", escrowDays) + ", declining.");
+            Automatic.alert("trade", "Offer would be held by escrow for " + escrowDays + " " + utils.plural("day", escrowDays) + ", declining.");
+            Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "The offer would be held" });
+
+            offer.decline().then(function () {
+                offer.log("debug", "declined");
+            });
             return true;
         }
         
@@ -373,17 +926,50 @@ function getOffer(id, callback) {
     });
 }
 
-function offerChanged(offer, oldState) {
+function receivedOfferChanged(offer, oldState) {
     log.verbose("Offer #" + offer.id + " state changed: " + TradeOfferManager.ETradeOfferState[oldState] + " -> " + TradeOfferManager.ETradeOfferState[offer.state]);
     if (offer.state != TradeOfferManager.ETradeOfferState.Active) {
-        queue.removeID(offer.id);
+        Queue.removeID(offer.id);
 
         // Remove assetids from inTrade array.
         filterItemsInTrade(offer.itemsToGive);
     }
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
+        client.chatMessage(offer.partner, "Success! The offer went through successfully.");
         offerAccepted(offer);
+    }
+}
+
+function sentOfferChanged(offer, oldState) {
+    log.verbose("Offer #" + offer.id + " state changed: " + TradeOfferManager.ETradeOfferState[oldState] + " -> " + TradeOfferManager.ETradeOfferState[offer.state]);
+    if (offer.state != TradeOfferManager.ETradeOfferState.Active) {
+        Queue.removeID(offer.id);
+
+        // Remove assetids from inTrade array.
+        filterItemsInTrade(offer.itemsToGive);
+        const index = activeOffers.indexOf(offer.partner.getSteamID64());
+        if (index != -1) {
+            activeOffers.splice(index, 1);
+        }
+    }
+
+    if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
+        client.chatMessage(offer.partner, "Success! The offer went through successfully.");
+        offerAccepted(offer);
+    } else if (offer.state == TradeOfferManager.ETradeOfferState.Active) {
+        client.chatMessage(offer.partner, "The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/" + offer.id + "/");
+        activeOffers.push(offer.partner.getSteamID64());
+    } else if (offer.state == TradeOfferManager.ETradeOfferState.Declined) {
+        client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: The offer has been declined.');
+    } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
+        client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: Items not available (traded away in another trade).');
+    } else if (offer.state == TradeOfferManager.ETradeOfferState.Canceled) {
+        if (oldState == TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+            client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: Failed to accept mobile confirmation.');
+        } else {
+            client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: The offer has been pending for a while.');
+        }
     }
 }
 
@@ -391,7 +977,7 @@ function offerChanged(offer, oldState) {
 function offerAccepted(offer) {
     offer.getReceivedItems(true, function(err, receivedItems) {
         if (err) {
-            log.warn("Failed to get received items from offer, retrying in 30 seconds...");
+            log.warn("Failed to get received items from offer, retrying in 30 seconds.");
             if (err.message == "Not Logged In") {
                 client.webLogOn();
             }

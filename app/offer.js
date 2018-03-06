@@ -293,7 +293,7 @@ class Offer {
             quality: Offer.getQuality(item),
             craftable: Offer.isCraftable(item),
             killstreak: Offer.isKillstreak(item),
-            australium: Offer.isAustralium(item)
+            australium: Offer.isAustralium(item),
         };
 
         var effect = Offer.getEffect(item);
@@ -304,6 +304,10 @@ class Offer {
 
         if (Offer.isSkin(item)) {
             parsed.quality = 'Decorated Weapon';
+        }
+
+        if (item.assetid) {
+            parsed.id = item.assetid;
         }
 
         return parsed;

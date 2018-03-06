@@ -37,8 +37,6 @@ exports.isListed = isListed;
 exports.getLimit = getLimit;
 
 exports.cap = function () { return Listings.cap; };
-exports.handleBuyOrders = handleBuyOrders;
-exports.handleSellOrders = handleSellOrders;
 
 exports.isBanned = isBanned;
 
@@ -263,7 +261,7 @@ function isBanned(steamid64, callback) {
     }
 
     // Use async libary.
-    isBPTFBanned(steamid64, function (err, banned) {
+    isBanned(steamid64, function (err, banned) {
         if (err) {
             callback(err);
             return;
@@ -272,7 +270,7 @@ function isBanned(steamid64, callback) {
             return;
         }
 
-        isSRMarked(steamid64, function (err, marked) {
+        isMarked(steamid64, function (err, marked) {
             if (err) {
                 callback(err);
                 return;
@@ -286,7 +284,7 @@ function isBanned(steamid64, callback) {
     });
 }
 
-function isBPTFBanned(steamid64, callback) {
+function isBanned(steamid64, callback) {
     const options = {
         url: "https://backpack.tf/api/users/info/v1",
         qs: {
@@ -310,7 +308,7 @@ function isBPTFBanned(steamid64, callback) {
     });
 }
 
-function isSRMarked(steamid64, callback) {
+function isMarked(steamid64, callback) {
     const options = {
         url: "http://steamrep.com/api/beta4/reputation/" + steamid64,
         qs: {
@@ -351,206 +349,6 @@ function isListed(id) {
     return listings.some(function (listing) {
         return listing.item.id == id;
     });
-}
-
-function handleBuyOrders(offer) {
-    const their = offer.items.their;
-    const items = createItemDict(their);
-    if (items === false) {
-        offer.abandon({ recheck: true });
-        return false;
-    }
-
-    let unusuals = new Map();
-
-    const buy = buyOrders();
-    for (let i = 0; i < buy.length; i++) {
-        const listing = buy[i];
-        // Using the name from the schema because items may have the same name, but not the same defindex.
-        const tag = Items.getItem(listing.item.defindex).item_name + "_" + listing.item.quality;
-
-        // Get a mucher cleaner item object:
-        // {
-        //   "defindex": 5021,
-        //   "quality": 'Unique',
-        //   "craftable": true,
-        //   "killstreak": 0,
-        //   "australium": false,
-        //   "effect": 'Cloud 9'
-        // }
-        // Effect is only set if there is an effect.
-        let item = Listings.getItem(listing.item);
-        const indices = items[tag];
-        if (!indices) { continue; }
-
-        for (let j = 0; j < indices.length; j++) {
-            const index = indices[j];
-            const original = their[index];
-
-            if (Offer.isMetal(original)) {
-                continue;
-            }
-
-            if (listing.item.quality == 5) {
-                original.__index = index;
-                let unusual = unusuals.get(original) || [];
-                unusual.push({ item: item, currencies: listing.currencies });
-                unusuals.set(original, unusual);
-                continue;
-            }
-
-            if (item.effect) {
-                // Find effect from the item that the user is offering
-                let particle = Offer.getEffect(original);
-                if (particle) {
-                    // Convert effect name to the id from the schema.
-                    particle = Items.getEffectId(particle);
-                }
-                // Check if the item that the user is offering has the same effect id as the item that we have listed on bptf
-                if (item.effect != particle) {
-                    continue;
-                }
-            }
-
-            if (item.craftable != Offer.isCraftable(original)) {
-                continue;
-            }
-
-            if (item.killstreak != Offer.isKillstreak(original)) {
-                continue;
-            }
-
-            if (listing.currencies.keys) {
-                offer.currencies.their.keys += listing.currencies.keys;
-            }
-            if (listing.currencies.metal) {
-                offer.currencies.their.metal = utils.scrapToRefined(utils.refinedToScrap(offer.currencies.their.metal) + utils.refinedToScrap(listing.currencies.metal));
-            }
-
-            // The user is offering a key / craft weapon which we have a buy listing for
-            if (Offer.isKey(original)) {
-                offer.currencies.their.keys -= 1;
-            } else if (Offer.isCraftWeapon(item)) {
-                offer.currencies.their.metal = utils.scrapToRefined(utils.refinedToScrap(offer.currencies.their.metal) - utils.refinedToScrap(1 / 18));
-            }
-        }
-    }
-
-    for (let [original, listings] of unusuals) {
-        let match = findEffectMatch(original, listings);
-        if (!match) {
-            for (let i = 0; i < listings.length; i++) {
-                const item = listings[i].item;
-                if (!item.effect) {
-                    match = listings[i].currencies;
-                    break;
-                }
-            }
-        }
-
-        if (match) {
-            if (match.keys) {
-                offer.currencies.their.keys += match.keys;
-            }
-            if (match.metal) {
-                offer.currencies.their.metal = utils.scrapToRefined(utils.refinedToScrap(offer.currencies.their.metal) + utils.refinedToScrap(match.metal));
-            }
-        }
-    }
-}
-
-function findEffectMatch(item, listings) {
-    for (let i = 0; i < listings.length; i++) {
-        const match = listings[i];
-        // First we get the effect from the offer, then we get the id of the effect from the schema.
-        const effect = Items.getEffectId(Offer.getEffect(item));
-        if (effect == match.item.effect) {
-            return match.currencies;
-        }
-    }
-    return null;
-}
-
-function handleSellOrders(offer) {
-    let ids = [];
-
-    // Find items in the offer that matches the listings.
-    const our = offer.items.our;
-    const sell = sellOrders();
-    for (let i = 0; i < sell.length; i++) {
-        const listing = sell[i];
-        const id = listing.item.id;
-
-        for (let j = 0; j < our.length; j++) {
-            const item = our[j];
-            // Not the same item, we will continue looking.
-            if (item.id != id) {
-                continue;
-            }
-
-            if (listing.currencies.keys) {
-                offer.currencies.our.keys += listing.currencies.keys;
-            }
-            if (listing.currencies.metal) {
-                offer.currencies.our.metal = utils.scrapToRefined(utils.refinedToScrap(offer.currencies.our.metal) + utils.refinedToScrap(listing.currencies.metal));
-            }
-
-            // User is selling keys for metal
-            if (Offer.isKey(item)) {
-                offer.currencies.our.keys -= 1;
-            }
-
-            // User is selling craft weapon for pure
-            if (Offer.isCraftWeapon(item)) {
-                offer.currencies.our.metal = utils.scrapToRefined(utils.refinedToScrap(offer.currencies.our.metal) - utils.refinedToScrap(1 / 18));
-            }
-
-            // Found a match for the listing.
-            ids.push(item.id);
-            break;
-        }
-    }
-
-    // Catch items that are not priced.
-    for (let i = 0; i < our.length; i++) {
-        // Skip keys and craft weapons.
-        if (Offer.isKey(our[i]) || Offer.isCraftWeapon(our[i]) || Offer.isMetal(our[i])) {
-            continue;
-        }
-
-        const id = our[i].assetid;
-
-        if (!ids.includes(id)) {
-            let item = Offer.getItem(our[i]);
-            let name = Items.getName(item);
-            offer.log("info", "contains an item that isn't in a listing (" + name + "), skipping");
-            offer.logDetails("info");
-            return false;
-        }
-    }
-}
-
-function createItemDict(their) {
-    // Have offer.abandon function for rechecking offer.
-    let items = {};
-
-    for (let i = 0; i < their.length; i++) {
-        const item = their[i];
-
-        if (Offer.isMetal(item)) { continue; }
-
-        const defindex = Offer.getDefindex(item);
-        if (!defindex) { return false; }
-        const quality = Offer.getQuality(item);
-        if (!quality) { return false; }
-
-        // Using the name from the schema because items may have the same name, but not the same defindex.
-        let tag = Items.getItem(defindex).item_name + "_" + Items.getQuality(quality);
-        // This creates an array for the tag containing the index of the items with the same tag.
-        (items[tag] = (items[tag] || [])).push(i);
-    }
-
-    return items;
 }
 
 function updateInventory() {

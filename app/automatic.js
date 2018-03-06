@@ -26,6 +26,7 @@ const prices = require('./prices.js');
 const inventory = require('./inventory.js');
 const friends = require('./friends.js');
 const offer = require('./offer.js');
+const trade = require('./trade.js');
 const confirmations = require('./confirmations.js');
 
 // Get message from initializing the config.
@@ -78,6 +79,7 @@ Automatic.backpack = backpack;
 Automatic.prices = prices;
 Automatic.inventory = inventory;
 Automatic.friends = friends;
+Automatic.trade = trade;
 
 function register(...args) {
     args.forEach(function(component) {
@@ -94,6 +96,7 @@ register(
     backpack,
     prices,
     inventory,
+    trade,
     client,
     friends,
     offer,
