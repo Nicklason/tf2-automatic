@@ -485,7 +485,7 @@ function createOffer(request, callback) {
 
 function finishOffer(tradeoffer, callback) {
     log.debug("Finishing offer...");
-    const offer = new Offer(tradeoffer);
+    const offer = new Offer(tradeoffer, { countCurrency: false});
     checkEscrow(offer).then(function (escrow) {
         log.debug("Got escrow check response");
         if (!escrow) {
