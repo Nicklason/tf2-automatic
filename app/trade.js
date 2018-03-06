@@ -840,9 +840,8 @@ function finalizeOffer(offer) {
 }
 
 function acceptOffer(offer) {
-    const summary = offer.summary();
-    offer.log("trade", "is offering enough, accepting. Summary:\n" + summary);
-    Automatic.alert("trade", "User is offering enough, accepting. Summary:\n" + summary);
+    offer.log("trade", "is offering enough, accepting. Summary:\n" + offer.summary());
+    Automatic.alert("trade", "User is offering enough, accepting. Summary:\n" + offer.summary());
 
     offer.accept().then(function (status) {
         offer.log("trade", 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
@@ -955,7 +954,10 @@ function sentOfferChanged(offer, oldState) {
     }
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
+        const tradeoffer = new Offer(offer);
         client.chatMessage(offer.partner, "Success! The offer went through successfully.");
+        offer.log("trade", "User accepted the offer, accepting. Summary:\n" + tradeoffer.summary());
+        Automatic.alert("trade", "User accepted a trade. Summary:\n" + tradeoffer.summary());
         offerAccepted(offer);
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Active) {
         client.chatMessage(offer.partner, "The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/" + offer.id + "/");
