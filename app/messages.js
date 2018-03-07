@@ -165,6 +165,10 @@ function friendMessage(steamID, message) {
 			return;
 		}
 
+		if (typeof input.name == 'string') {
+			input.name = input.name.trim();
+		}
+
 		if (!input.name) {
 			client.chatMessage(steamID64, "You are missing a name. Here's an example: \"!add name=Rocket Launcher\"");
 			return;
