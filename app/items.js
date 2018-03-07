@@ -42,7 +42,7 @@ function findMatch(search) {
     let match = [];
     const schema = Items.schema.items;
     for (let i = 0; i < schema.length; i++) {
-        const name = schema[i].item_name;
+        const name = schema[i].proper_name ? "The " + schema[i].item_name : schema[i].item_name;
         if (name.toLowerCase() == search) {
             return schema[i].defindex;
         } else if (name.toLowerCase().indexOf(search) != -1) {
@@ -57,7 +57,7 @@ function findMatch(search) {
     }
 
     for (let i = 0; i < match.length; i++) {
-        const name = schema[i].item_name;
+        const name = match[i].proper_name ? "The " + match[i].item_name : match[i].item_name;
         match[i] = name;
     }
 
