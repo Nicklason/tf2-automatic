@@ -120,8 +120,8 @@ function friendMessage(steamID, message) {
 		const inInv = Inventory.getAmount(match.item.name),
 			limit = config.getLimit(match.item.name);
 		
-		let reply = "I am buying one " + match.item.name + " for " + buy + " and selling for " + sell + ". I currently have " + inInv;
-		if (limit != 1) {
+		let reply = "I am buying one " + match.item.name + " for " + buy + " and selling for " + sell + ". I have " + inInv;
+		if (limit != -1) {
 			reply += " / " + limit;
 		}
 		if (Automatic.isOwner(steamID64)) {
