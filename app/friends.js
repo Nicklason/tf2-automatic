@@ -10,6 +10,8 @@ const ALERTS_FILENAME = FOLDER_NAME + '/alerts.json';
 
 let alerts = {};
 
+exports.isFriend = isFriend;
+
 exports.register = function(automatic) {
     Automatic = automatic;
     client = automatic.client;

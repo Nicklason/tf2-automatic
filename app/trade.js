@@ -55,6 +55,12 @@ exports.checkOfferCount = checkOfferCount;
 exports.requestOffer = requestOffer;
 
 function requestOffer(steamID64, priceObj, amount, selling) {
+    if (!Friends.isFriend(steamID64)) {
+        log.debug("Not friends with user, but user tried to request a trade (" + steamID64 + ")");
+        return;
+    }
+
+
     // todo: get active offers and check if the steamid is in one of them
 
     const hasOffer = activeOffers.indexOf(steamID64) != -1;
@@ -198,6 +204,7 @@ function handleQueue() {
             doingQueue = false;
 
             if (err) {
+                // Todo: tell user the error message?
                 log.warn("Failed to create offer (" + err.message + ")");
                 log.debug(err.stack);
                 client.chatMessage(offer.partner, "Ohh nooooes! It looks like an error occurred, that\'s all we know. Please try again later!");
@@ -493,16 +500,17 @@ function finishOffer(tradeoffer, callback) {
         }
     }).catch(function (err) {
         log.debug("Failed to check for escrow for requested offer.");
-        if (err.message === "This trade offer is no longer valid") {
+        log.debug(err.stack);
+        if (err.message.indexOf("can only be sent to friends") != -1) {
             callback(err);
             return;
         }
 
         if (err.message === "Not Logged In") {
             client.webLogOn();
-            offer.log("warn", "Cannot check escrow duration because we are not logged into Steam, retrying in 10 seconds.")
+            log.warn("Cannot check escrow duration because we are not logged into Steam, retrying in 10 seconds.");
         } else {
-            offer.log("warn", "Cannot check escrow duration (error: " + err.message + "), retrying in 10 seconds.");
+            log.warn("Cannot check escrow duration (" + err.message + "), retrying in 10 seconds.");
         }
 
         setTimeout(function () {
@@ -514,19 +522,29 @@ function finishOffer(tradeoffer, callback) {
 function sendOffer(offer, callback) {
     offer.send(function (err, status) {
         if (err) {
-            if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') > -1) {
+            log.debug("Failed to send the offer");
+            log.debug(err.stack);
+            
+            if (err.message.indexOf("can only be sent to friends") != -1) {
+                callback(err);
+                return;
+            } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') > -1) {
                 callback(null, false, 'The maximum number of items allowed in my Team Fortress 2 inventoy will be exceeded');
-            } else if (err.message == 'Not Logged In') {
-                client.webLogOn();
-                callback(null, false, 'The session expired, try again');
+                return;
             } else if (err.hasOwnProperty('eresult')) {
-                callback(null, false, 'An error occurred while sending the offer. See the error code returned by Steam for more information: ' + err.eresult);
+                callback(null, false, 'Error occurred sending the offer (' + err.eresult + ')');
+                return;
+            }
+            
+            if (err.message == 'Not Logged In') {
+                client.webLogOn();
             } else {
                 log.warn("An error occurred while trying to send the offer, retrying in 10 seconds.");
-                setTimeout(function() {
-                    sendOffer(offer, callback);
-                }, 10000);
             }
+
+            setTimeout(function () {
+                sendOffer(offer, callback);
+            }, 10000);
             return;
         }
 
