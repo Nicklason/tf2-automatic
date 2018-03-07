@@ -972,10 +972,9 @@ function sentOfferChanged(offer, oldState) {
     }
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
-        const tradeoffer = new Offer(offer);
         client.chatMessage(offer.partner, "Success! The offer went through successfully.");
-        offer.log("trade", "User accepted the offer, accepting. Summary:\n" + tradeoffer.summary());
-        Automatic.alert("trade", "User accepted a trade. Summary:\n" + tradeoffer.summary());
+        log.trade("Offer #" + offer.id + " User accepted the offer");
+        Automatic.alert("trade", "User accepted a trade sent by me");
         offerAccepted(offer);
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Active) {
         client.chatMessage(offer.partner, "The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/" + offer.id + "/");
