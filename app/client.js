@@ -26,6 +26,10 @@ exports.register = function(automatic) {
 
     Login.register(automatic);
     Messages.register(automatic);
+
+    client.on('webSession', saveCookies);
+    community.on('sessionExpired', sessionExpired);
+    community.on('confKeyNeeded', confKeyNeeded);
 };
 
 exports.connect = function () {
@@ -47,11 +51,12 @@ function handleLogin(err) {
 
     client.on('loggedOn', function() {
         log.info('Logged onto Steam!');
+        // This should fix the bot going offline, yet it is still running.
+        if (started) {
+            client.gamesPlayed([require('../package.json').name, 440]);
+            client.setPersona(SteamUser.EPersonaState.Online);
+        }
     });
-
-    client.on('webSession', saveCookies);
-    community.on('sessionExpired', sessionExpired);
-    community.on('confKeyNeeded', confKeyNeeded);
 }
 
 function saveCookies(sessionID, cookies) {
