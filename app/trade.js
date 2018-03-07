@@ -576,7 +576,7 @@ function sendOffer(offer, callback) {
 }
 
 function constructOffer(price, inventory, useKeys) {
-    let pure = Inventory.getPure(inventory);
+    let pure = Inventory.getPure(inventory, true);
 
     // Filter out items that are already in trade, ik this is werid.
     for (let name in pure) {
@@ -663,15 +663,18 @@ function makeChange(price, pure, useKeys) {
     let required = Prices.valueToPure(price, useKeys);
     let change = 0;
 
-    for (let item in pure) {
-        pure[item] = Array.isArray(pure[item]) ? pure[item].length : pure[item];
-    }
+    let availablePure = {
+        keys: Array.isArray(pure.keys) ? pure.keys.length : pure.keys,
+        refined: Array.isArray(pure.refined) ? pure.refined.length : pure.refined,
+        reclaimed: Array.isArray(pure.reclaimed) ? pure.reclaimed.length : pure.reclaimed,
+        scrap: Array.isArray(pure.scrap) ? pure.scrap.length : pure.scrap,
+    };
 
-    log.debug("The buyer has:", pure);
+    log.debug("The buyer has:", availablePure);
     log.debug("The required amount is:", required);
 
-    while (pure.refined < required.refined) {
-        if (pure.keys > required.keys) {
+    while (availablePure.refined < required.refined) {
+        if (availablePure.keys > required.keys) {
             required.keys++;
 
             let refined = Math.floor(keyValue / 9);
@@ -697,7 +700,7 @@ function makeChange(price, pure, useKeys) {
         }
     }
 
-    while (pure.scrap < required.scrap) {
+    while (availablePure.scrap < required.scrap) {
         required.reclaimed++;
         required.scrap -= 3;
         if (required.scrap < 0) {
@@ -706,8 +709,8 @@ function makeChange(price, pure, useKeys) {
         }
     }
 
-    while (pure.reclaimed < required.reclaimed) {
-        if (pure.refined > required.refined) {
+    while (availablePure.reclaimed < required.reclaimed) {
+        if (availablePure.refined > required.refined) {
             required.refined++;
             required.reclaimed -= 3;
             if (required.reclaimed < 0) {
