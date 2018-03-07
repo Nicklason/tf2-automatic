@@ -417,30 +417,6 @@ class Offer {
         });
     }
 
-    determineEscrowDays() {
-        return new Promise((resolve, reject) => {
-            this.offer.getUserDetails((err, my, them) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                const myDays = my.escrowDays;
-                const theirDays = them.escrowDays;
-                let escrowDays = 0;
-
-                if (this.offer.itemsToReceive.length !== 0 && theirDays > escrowDays) {
-                    escrowDays = theirDays;
-                }
-
-                if (this.offer.itemsToGive.length !== 0 > 0 && myDays > escrowDays) {
-                    escrowDays = myDays;
-                }
-
-                resolve(escrowDays);
-            });
-        });
-    }
-
     summarizeItems(items) {
         let names = {};
 

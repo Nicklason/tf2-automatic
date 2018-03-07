@@ -484,37 +484,51 @@ function createOffer(request, callback) {
                 }
 
                 log.debug("Finishing the offer");
-                finishOffer(offer, callback);
+                finalizeOffer(offer, callback);
             });
         });
     });
 }
 
-function finishOffer(tradeoffer, callback) {
-    log.debug("Finishing offer...");
-    const offer = new Offer(tradeoffer, { countCurrency: false});
-    checkEscrow(offer).then(function (escrow) {
-        log.debug("Got escrow check response");
+function finalizeOffer(offer, callback) {
+    log.debug("Finalizing offer");
+    log.debug(callback != undefined ? "Offer was requested" : "Offer was received");
+    const time = new Date().getTime();
+    checkEscrow(callback != undefined ? offer : offer.offer).then(function (escrow) {
+        log.debug("Got escrow response in " + (new Date().getTime() - time) + " ms");
         if (!escrow) {
-            sendOffer(tradeoffer, callback);
+            if (callback) {
+                sendOffer(offer, callback);
+            } else {
+                acceptOffer(offer);
+            }
         }
     }).catch(function (err) {
-        log.debug("Failed to check for escrow for requested offer.");
+        log.debug("Got escrow response in " + (new Date().getTime() - time) + " ms");
+
+        log.debug("Failed to check for escrow for offer");
         log.debug(err.stack);
+        if (err.message === "This trade offer is no longer valid") {
+            // Only error when receiving offers
+            log.warn("Cannot check escrow duration because offer is no longer available");
+            return;
+        }
+
+        // Only error when sending offers
         if (err.message.indexOf("can only be sent to friends") != -1) {
             callback(err);
             return;
         }
 
-        if (err.message === "Not Logged In") {
+        if (err.message == "Not Logged In") {
             client.webLogOn();
-            log.warn("Cannot check escrow duration because we are not logged into Steam, retrying in 10 seconds.");
+            log.warn("Cannot check escrow duration because we are not logged into Steam, retrying in 10 seconds.")
         } else {
-            log.warn("Cannot check escrow duration (" + err.message + "), retrying in 10 seconds.");
+            log.warn("Cannot check escrow duration (error: " + err.message + "), retrying in 10 seconds.");
         }
 
         setTimeout(function () {
-            finishOffer(offer, callback);
+            finalizeOffer(offer, callback);
         }, 10 * 1000);
     });
 }
@@ -730,7 +744,7 @@ function scrapToMetals(scrap) {
 };
 
 function checkReceivedOffer(id, callback) {
-    var time = new Date().getTime();
+    const time = new Date().getTime();
     getOffer(id, function (err, offer) {
         log.debug("Got offer in " + (new Date().getTime() - time) + " ms");
         if (err) {
@@ -827,33 +841,8 @@ function checkReceivedOffer(id, callback) {
             }
 
             finalizeOffer(offer);
-            // We are done reading the offer, we will check the next if there is any.
             callback(null);
         });
-    });
-}
-
-function finalizeOffer(offer) {
-    checkEscrow(offer).then(function (escrow) {
-        if (!escrow) {
-            acceptOffer(offer);
-        }
-    }).catch(function(err) {
-        if (err.message === "This trade offer is no longer valid") {
-            offer.log("warn", "Cannot check escrow duration because offer is no longer available");
-            return;
-        }
-        
-        if (err.message === "Not Logged In") {
-            client.webLogOn();
-            offer.log("warn", "Cannot check escrow duration because we are not logged into Steam, retrying in 10 seconds.")
-        } else {
-            offer.log("warn", "Cannot check escrow duration (error: " + err.message + "), retrying in 10 seconds.");
-        }
-
-        setTimeout(function() {
-            finalizeOffer(offer);
-        }, 10 * 1000);
     });
 }
 
@@ -910,20 +899,39 @@ function offeringEnough(our, their, tradingKeys = false) {
     };
 }
 
+function determineEscrowDays(offer) {
+    return new Promise((resolve, reject) => {
+        offer.getUserDetails((err, my, them) => {
+            if (err) {
+                return reject(err);
+            }
+
+            const myDays = my.escrowDays;
+            const theirDays = them.escrowDays;
+            let escrowDays = 0;
+
+            if (offer.itemsToReceive.length !== 0 && theirDays > escrowDays) {
+                escrowDays = theirDays;
+            }
+
+            if (offer.itemsToGive.length !== 0 > 0 && myDays > escrowDays) {
+                escrowDays = myDays;
+            }
+
+            resolve(escrowDays);
+        });
+    });
+}
+
 function checkEscrow(offer) {
     if (config.get().acceptEscrow == true) {
         return Promise.resolve(false);
     }
 
-    return offer.determineEscrowDays().then(function(escrowDays) {
+    log.debug("Checking escrow for offer");
+    return determineEscrowDays(offer).then(function(escrowDays) {
         if (escrowDays != 0) {
-            offer.log("info", "would be held by escrow for " + escrowDays + " " + utils.plural("day", escrowDays) + ", declining.");
-            Automatic.alert("trade", "Offer would be held by escrow for " + escrowDays + " " + utils.plural("day", escrowDays) + ", declining.");
-            Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "The offer would be held" });
-
-            offer.decline().then(function () {
-                offer.log("debug", "declined");
-            });
+            log.info("info", "Offer would be held by escrow for " + escrowDays + " " + utils.plural("day", escrowDays) + ", declining.");
             return true;
         }
         
