@@ -590,7 +590,7 @@ function constructOffer(price, inventory, useKeys) {
         pure[name] = ids.length || pure[name];
     }
 
-    const needsChange = needChange(price, pure);
+    const needsChange = needChange(price, pure, useKeys);
     log.debug(needsChange ? "Offer needs change" : "Offer does not need change");
     if (needsChange == true) {
         return makeChange(price, pure, useKeys);
@@ -599,7 +599,7 @@ function constructOffer(price, inventory, useKeys) {
     return needsChange;
 }
 
-function needChange(price, pure) {
+function needChange(price, pure, useKeys) {
     const keyValue = utils.refinedToScrap(Prices.key());
 
     var keys = 0,
@@ -609,7 +609,7 @@ function needChange(price, pure) {
 
     var metalReq = price;
 
-    if (metalReq > keyValue) {
+    if (useKeys && metalReq > keyValue) {
         keys = Math.floor(metalReq / keyValue);
         if (keys > pure.keys) {
             keys = pure.keys;
