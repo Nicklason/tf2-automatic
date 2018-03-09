@@ -543,10 +543,17 @@ function sendOffer(offer, callback) {
                 callback(err);
                 return;
             } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') > -1) {
-                callback(null, false, 'The maximum number of items allowed in my Team Fortress 2 inventoy will be exceeded');
+                callback(null, false, 'I don\'t have space for more items in my inventory');
                 return;
             } else if (err.hasOwnProperty('eresult')) {
-                callback(null, false, 'Error occurred sending the offer (' + err.eresult + ')');
+                if (err.eresult == 26) {
+                    // Updating our inventory as this could possibly be because of the inventory being out of date
+                    // This does have the possibility of giving other problems, like multiple items of the same kind in the inventory
+                    Inventory.getOwn(true, function() {});
+                    callback(null, false, 'One or more of the items in the offer has been traded away');
+                } else {
+                    callback(null, false, 'Error occurred sending the offer (' + err.eresult + ')');
+                }
                 return;
             }
             
@@ -565,13 +572,12 @@ function sendOffer(offer, callback) {
         addItemsInTrade(offer.itemsToGive);
 
         if (status === 'pending') {
+            // todo: notify the user when the confirmation has been accepted and give them the link to the offer
+            callback(null, true);
             confirmations.accept(offer.id);
         } else {
             callback(null, true, null, offer.id);
-            return;
         }
-
-        callback(null, true);
     });
 }
 
