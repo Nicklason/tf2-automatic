@@ -41,8 +41,10 @@ function friendMessage(steamID, message) {
 	}
 
 	const command = isCommand(message);
-	if (command == "help") {
-		let reply = "Here's a list of all my commands: !help, !stock, !price, !buy, !sell";
+	if (command == 'how2trade') {
+		client.chatMessage(steamID64, 'You can either send me an offer yourself, or use one of my two commands to request a trade from me. They are "!buy" and "!sell". Say you want to buy a Team Captain, just type "!buy The Team Captain".');
+	} else if (command == "help") {
+		let reply = "Here's a list of all my commands: !help, !how2trade, !stock, !price, !buy, !sell";
 		if (Automatic.isOwner(steamID64)) {
 			reply += ", !add, !remove, !update";
 		}
