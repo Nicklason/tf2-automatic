@@ -232,14 +232,6 @@ function friendMessage(steamID, message) {
 
 			if (added == 1) {
 				const name = Items.getName(item);
-
-				// Remove all listings for the item if there are any.
-				let listing = Backpack.findBuyOrder(name);
-				if (listing) {
-					Backpack.removeListing(listing.id);
-				}
-				Backpack.removeSellOrders(name);
-
 				config.addLimit(name, limit);
 
 				let reply = "\"" + name + "\" has been added to the pricelist";
