@@ -234,11 +234,11 @@ function friendMessage(steamID, message) {
 				const name = Items.getName(item);
 
 				// Remove all listings for the item if there are any.
-				let listing = Backpack.findBuyOrder(item.name);
+				let listing = Backpack.findBuyOrder(name);
 				if (listing) {
 					Backpack.removeListing(listing.id);
 				}
-				Backpack.removeSellOrders(item.name);
+				Backpack.removeSellOrders(name);
 
 				config.addLimit(name, limit);
 
