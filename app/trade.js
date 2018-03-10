@@ -277,6 +277,11 @@ function createOffer(request, callback) {
 
                     if (canBuy <= 0) {
                         callback(null, false, 'I am overstocked on ' + name + '(s), I won\'t keep more than ' + limit + ' in my inventory');
+                        // Remove buy order as we are overstocked on the item.
+                        let listing = Backpack.findBuyOrder(name);
+                        if (listing) {
+                            Backpack.removeListing(listing.id);
+                        }
                         return;
                     } else if (canBuy - amount < 0) {
                         alteredMessage = 'Your offer has been altered! Reason: I can only keep ' + canBuy + ' more.';

@@ -232,6 +232,7 @@ function friendMessage(steamID, message) {
 
 			if (added == 1) {
 				const name = Items.getName(item);
+
 				config.addLimit(name, limit);
 
 				let reply = "\"" + name + "\" has been added to the pricelist";
