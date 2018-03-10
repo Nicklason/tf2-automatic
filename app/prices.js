@@ -143,11 +143,34 @@ function handleBuyOrders(offer) {
         const price = getPrice(name, false); // false because it is their item, we are buying it.
         if (price != null) {
             const limit = config.getLimit(name);
-            const inInv = Inventory.getAmount(name);
-            if (limit != -1 && amount + inInv > limit) {
-                offer.log("trade", "\"" + name + "\" will be, or is already overstocked (I have " + inInv + "/" + limit + "), declining. Summary:\n" + offer.summary());
-                Automatic.alert("trade", "\"" + name + "\" will be, or is already overstocked (I have " + inInv + "/" + limit + "), declining. Summary:\n" + offer.summary());
-                Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You offered an item that will be, or is already overstocked" });
+            const stock = Inventory.getAmount(name);
+            const canBuy = limit - stock;
+
+            if (canBuy <= 0) {
+                offer.log("trade", "\"" + name + "\" is overstocked (I have " + stock + "/" + limit + "), declining. Summary:\n" + offer.summary());
+                Automatic.alert("trade", "User offered an item that is overstocked, declining. Summary:\n" + offer.summary());
+                Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You offered an item that is overstocked" });
+
+                // Remove buy order as we are overstocked on the item.
+                let listing = Backpack.findBuyOrder(name);
+                if (listing) {
+                    Backpack.removeListing(listing.id);
+                }
+
+                offer.decline().then(function () {
+                    offer.log("debug", "declined");
+                });
+                return false;
+            } else if (canBuy - amount < 0) {
+                offer.log("trade", "User offered too many \"" + name + "\"(s) (offered " + amount + "), declining. Summary:\n" + offer.summary());
+                Automatic.alert("trade", "User offered too many \"" + name + "\"(s) (offered " + amount + "), declining. Summary:\n" + offer.summary());
+                Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You offered more of an item than I will keep" });
+
+                // Remove buy order as we are overstocked on the item.
+                let listing = Backpack.findBuyOrder(name);
+                if (listing) {
+                    Backpack.removeListing(listing.id);
+                }
 
                 offer.decline().then(function () {
                     offer.log("debug", "declined");

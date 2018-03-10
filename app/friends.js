@@ -1,29 +1,14 @@
 const SteamUser = require('steam-user');
-const fs = require('graceful-fs');
 
 const utils = require('./utils.js');
 
 let Automatic, client, log, config;
-
-const FOLDER_NAME = 'temp';
-const ALERTS_FILENAME = FOLDER_NAME + '/alerts.json';
-
-let alerts = {};
-
-exports.isFriend = isFriend;
 
 exports.register = function(automatic) {
     Automatic = automatic;
     client = automatic.client;
     log = automatic.log;
     config = automatic.config;
-
-    if (fs.existsSync(ALERTS_FILENAME)) {
-        const data = utils.parseJSON(fs.readFileSync(ALERTS_FILENAME));
-        if (data != null) {
-            alerts = data;
-        }
-    }
 };
 
 exports.init = function() {
@@ -77,15 +62,8 @@ function checkFriendRequests() {
 };
 
 function friendAddResponse(steamID64) {
-    const userAlerts = alerts[steamID64];
-    if (!userAlerts) {
-        // Todo: get name of user
-        log.debug("Greeting user with message");
-        client.chatMessage(steamID64, "Hi! If you're new here, type \"!help\" for all my commands :)");
-        return;
-    }
-
-    alertUser(steamID64);
+    // Todo: get name of user, check if they have added the bot before and give a different message
+    client.chatMessage(steamID64, "Hi! If you're new here, type \"!help\" for all my commands :)");
 }
 
 function isFriend(steamID64) {
@@ -98,67 +76,9 @@ function isFriend(steamID64) {
 	return false;
 };
 
-function alertUser(steamID64) {
-    const userAlerts = alerts[steamID64];
-    if (!userAlerts) {
-        return;
-    }
-
-    /*{
-        "type": "trade",
-        "status": "declined",
-        "reason": "you are missing 30.33 ref" || "\"Team Captain\" is or will be overstocked"
-    }*/
-
-    log.debug("Sending alerts to user");
-    userAlerts.forEach(function(alert) {
-        if (alert.type == "trade") {
-            client.chatMessage(steamID64, "Your trade was " + alert.status + ". Reason: " + alert.reason + ".");
-        }
-    });
-
-    removeAlerts(steamID64);
+function alert(steamID64, alert) {
+    client.chatMessage(steamID64, "Your trade was " + alert.status + ". Reason: " + alert.reason + ".");
 }
 
-function newAlert(steamID64, alert) {
-    let add = true;
-    if (alerts[steamID64]) {
-        add = false;
-    }
-    saveAlert(steamID64, alert);
-
-    if (isFriend(steamID64)) {
-        alertUser(steamID64);
-        return;
-    }
-
-    if (add) {
-        addFriend(steamID64);
-    }
-}
-
-function removeAlerts(steamID64) {
-    log.debug("Removing alerts for " + steamID64 + "...");
-    delete alerts[steamID64];
-
-    fs.writeFile(ALERTS_FILENAME, JSON.stringify(alerts), function(err) {
-        if (err) {
-            log.warn("Error writing alert data: " + err);
-        }
-    });
-}
-
-function saveAlert(steamID64, alert) {
-    log.debug("Saving alerts...");
-    let userAlerts = (alerts[steamID64] || []);
-    userAlerts.push(alert);
-    alerts[steamID64] = userAlerts;
-
-    fs.writeFile(ALERTS_FILENAME, JSON.stringify(alerts), function(err) {
-        if (err) {
-            log.warn("Error writing alert data: " + err);
-        }
-    });
-}
-
-exports.alert = newAlert;
+exports.alert = alert;
+exports.isFriend = isFriend;
