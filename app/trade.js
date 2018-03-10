@@ -977,6 +977,10 @@ function receivedOfferChanged(offer, oldState) {
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
         client.chatMessage(offer.partner, "Success! The offer went through successfully.");
         offerAccepted(offer);
+    } else if (offer.state == TradeOfferManager.ETradeOfferState.Declined) {
+        client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: The offer has been declined.');
+    } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
+        client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: Items not available (traded away in another trade).');
     }
 }
 
