@@ -63,7 +63,7 @@ function checkFriendRequests() {
 
 function friendAddResponse(steamID64) {
     // Todo: get name of user, check if they have added the bot before and give a different message
-    client.chatMessage(steamID64, "Hi! If you are new here (or simply need a quick reminder on how to trade with me), type \"!how2trade\" and I will help you get started :)");
+    client.chatMessage(steamID64, "Hi! If you are new here (or simply need a quick reminder on how to trade with me), use the commands \"!how2trade\" and \"!help\", and I will help you get started :)");
 }
 
 function isFriend(steamID64) {
