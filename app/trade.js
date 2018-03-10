@@ -508,7 +508,7 @@ function finalizeOffer(offer, callback) {
 
         log.debug("Failed to check for escrow for offer");
         log.debug(err.stack);
-        if (err.message === "This trade offer is no longer valid") {
+        if (err.message.indexOf("offer is no longer valid") != -1) {
             // Only error when receiving offers
             log.warn("Cannot check escrow duration because offer is no longer available");
             return;
