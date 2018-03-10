@@ -980,7 +980,7 @@ function receivedOfferChanged(offer, oldState) {
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Declined) {
         client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: The offer has been declined.');
     } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
-        client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: Items not available (traded away in another trade).');
+        client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: Items not available (traded away in a different trade).');
     }
 }
 
@@ -1008,7 +1008,7 @@ function sentOfferChanged(offer, oldState) {
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Declined) {
         client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: The offer has been declined.');
     } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
-        client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: Items not available (traded away in another trade).');
+        client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: Items not available (traded away in a different trade).');
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Canceled) {
         if (oldState == TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
             client.chatMessage(offer.partner, 'Ohh nooooes! The offer is now unavailable. Reason: Failed to accept mobile confirmation.');
