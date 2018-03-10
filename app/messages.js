@@ -18,6 +18,7 @@ exports.register = function (automatic) {
 	Backpack = automatic.backpack;
 	Trade = automatic.trade;
 	Items = automatic.items;
+	Friends = automatic.friends;
 };
 
 exports.init = function () {
@@ -26,8 +27,13 @@ exports.init = function () {
 
 function friendMessage(steamID, message) {
 	message = message.trim();
-	let steamID64 = steamID.getSteamID64();
+	const steamID64 = steamID.getSteamID64();
 	log.info('Message from ' + steamID64 + ': ' + message);
+
+	if (!Friends.isFriend(steamID64)) {
+		log.debug("Message is not from a friend");
+		return;
+	}
 
 	if (isSpam(steamID64)) {
 		log.debug("Spam...");
