@@ -811,7 +811,7 @@ function checkReceivedOffer(id, callback) {
             // We are buying / selling keys
             const priceObj = Prices.getPrice("Mann Co. Supply Crate Key");
             if (priceObj == null) {
-                offer.log("info", "user is trying to buy / sell keys, but we are not banking them, declining. Summary:\n" + offer.summary());
+                offer.log("info", "User is trying to buy / sell keys, but we are not banking them, declining. Summary:\n" + offer.summary());
                 Automatic.alert("trade", "User is trying to buy / sell keys, but we are not banking them, declining. Summary: " + offer.summary());
                 Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "I am not banking keys" });
 
@@ -831,7 +831,7 @@ function checkReceivedOffer(id, callback) {
 
         const enough = offeringEnough(our, their, tradingKeys);
         if (enough != true) {
-            offer.log("trade", "is not offering enough, declining. Summary:\n" + offer.summary());
+            offer.log("info", "is not offering enough, declining. Summary:\n" + offer.summary());
             Automatic.alert("trade", "User is not offering enough, declining. Summary:\n" + offer.summary());
             Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You are not offering enough" });
 
