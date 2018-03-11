@@ -147,14 +147,14 @@ function handleBuyOrders(offer) {
             const canBuy = limit - stock;
 
             if (limit != -1 && amount + stock > limit) {
-                if (canBuy - amount < 0) {
-                    offer.log("trade", "User offered too many \"" + name + "\"(s) (offered " + amount + "), declining. Summary:\n" + offer.summary());
-                    Automatic.alert("trade", "User offered too many \"" + name + "\"(s) (offered " + amount + "), declining. Summary:\n" + offer.summary());
-                    Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You offered more of an item than I will keep" });
-                } else {
+                if (canBuy <= 0) {
                     offer.log("trade", "\"" + name + "\" is overstocked (I have " + stock + "/" + limit + "), declining. Summary:\n" + offer.summary());
                     Automatic.alert("trade", "User offered an item that is overstocked, declining. Summary:\n" + offer.summary());
                     Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You offered an item that is overstocked" });
+                } else {
+                    offer.log("trade", "User offered too many \"" + name + "\"(s) (offered " + amount + "), declining. Summary:\n" + offer.summary());
+                    Automatic.alert("trade", "User offered too many \"" + name + "\"(s) (offered " + amount + "), declining. Summary:\n" + offer.summary());
+                    Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You offered more of an item than I will keep" });
                 }
 
                 // Remove buy order as we are overstocked on the item.
