@@ -351,15 +351,8 @@ function isListed(id) {
     });
 }
 
-function updateInventory() {
-    const options = {
-        url: "https://backpack.tf/profiles/" + Automatic.getOwnSteamID() + "/"
-    }
-    utils.request.get(options, function () {});
-}
-
 exports.init = function (callback) {
-    Listings = new BPTFListings({ key: manager.apiKey, token: config.getAccount().bptfToken });
+    Listings = new BPTFListings({ steamid64: Automatic.getOwnSteamID(), key: manager.apiKey, token: config.getAccount().bptfToken });
 
     log.debug('Initializing bptf-listings package.');
     Listings.init(callback);
@@ -368,12 +361,11 @@ exports.init = function (callback) {
     Listings.on('created', listingCreated);
     Listings.on('removed', listingRemoved);
     Listings.on('error', listingError);
+    Listings.on('inventory', inventory);
 };
 
 function heartbeat(bumped) {
     log.info("Heartbeat sent to www.backpack.tf" + (bumped > 0 ? "; Bumped " + bumped + " " + utils.plural("listing", bumped) : '') + ".");
-    Listings.getListings();
-    updateInventory();
     makeSellOrders();
 }
 
@@ -390,4 +382,8 @@ function listingError(type, name, error) {
     if (error != 1 && type != "create") {
         log.warn("Failed to " + type + " a listing (" + name + "): " + error);
     }
+}
+
+function inventory(time) {
+    log.info("The inventory has been updated on www.backpack.tf.");
 }
