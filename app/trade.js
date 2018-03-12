@@ -523,6 +523,9 @@ function finalizeOffer(offer, callback) {
         if (err.message.indexOf("can only be sent to friends") != -1) {
             callback(err);
             return;
+        } else if (err.message.indexOf("because they have a trade ban") != -1) {
+            callback(err);
+            return;
         }
 
         if (err.message == "Not Logged In") {
