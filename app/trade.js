@@ -507,7 +507,7 @@ function finalizeOffer(offer, callback) {
             } else {
                 acceptOffer(offer);
             }
-        } else if (callback) {
+        } else if (!callback) {
             log.info("Offer would be held by escrow, declining.");
             offer.decline().then(function () { offer.log("debug", "declined") });
         }
