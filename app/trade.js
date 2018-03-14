@@ -499,7 +499,7 @@ function finalizeOffer(offer, callback) {
     log.debug("Finalizing offer");
     log.debug(callback != undefined ? "Offer was requested" : "Offer was received");
     const time = new Date().getTime();
-    checkEscrow(callback != undefined ? offer : offer.offer).then(function (escrow) {
+    checkEscrow(callback ? offer : offer.offer).then(function (escrow) {
         log.debug("Got escrow response in " + (new Date().getTime() - time) + " ms");
         if (!escrow) {
             if (callback) {
@@ -507,6 +507,9 @@ function finalizeOffer(offer, callback) {
             } else {
                 acceptOffer(offer);
             }
+        } else if (callback) {
+            log.info("Offer would be held by escrow, declining.");
+            offer.decline().then(function () { offer.log("debug", "declined") });
         }
     }).catch(function (err) {
         log.debug("Got escrow response in " + (new Date().getTime() - time) + " ms");
@@ -947,12 +950,7 @@ function checkEscrow(offer) {
 
     log.debug("Checking escrow for offer");
     return determineEscrowDays(offer).then(function(escrowDays) {
-        if (escrowDays != 0) {
-            log.info("info", "Offer would be held by escrow for " + escrowDays + " " + utils.plural("day", escrowDays) + ", declining.");
-            return true;
-        }
-        
-        return false;
+        return escrowDays != 0;
     });
 }
 
