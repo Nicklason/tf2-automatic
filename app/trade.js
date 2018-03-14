@@ -517,7 +517,6 @@ function finalizeOffer(offer, callback) {
         log.debug("Failed to check for escrow for offer");
         log.debug(err.stack);
         if (err.message.indexOf("offer is no longer valid") != -1) {
-            // Only error when receiving offers
             log.warn("Cannot check escrow duration because offer is no longer available");
             return;
         }
@@ -527,7 +526,10 @@ function finalizeOffer(offer, callback) {
             callback(err);
             return;
         } else if (err.message.indexOf("because they have a trade ban") != -1) {
-            callback(err);
+            callback(null, false, "You are trade banned");
+            return;
+        } else if (err.message.indexOf("is not available to trade") != -1) {
+            callback(null, false, "We can't trade (more information will be shown if you try and send an offer)");
             return;
         }
 
