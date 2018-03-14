@@ -5,7 +5,7 @@ const utils = require('./utils.js');
 let Automatic, client, log, config, Inventory, Prices, Trade, Items;
 
 let cache = {};
-const maxMessagesPerSecond = 1;
+const messageInterval = 2000;
 
 exports.register = function (automatic) {
 	Automatic = automatic;
@@ -350,15 +350,11 @@ function isCommand(message) {
 }
 
 function isSpam(key) {
-	let count = cache[key] || 0;
-
-	if (maxMessagesPerSecond > count) {
-		cache[key] = count + 1;
-	}
-
-	return count >= maxMessagesPerSecond;
+	let count = (cache[key] || 0) + 1;
+	cache[key] = count;
+	return count > 1;
 }
 
 setInterval(function() {
 	cache = {};
-}, 1000);
+}, messageInterval);
