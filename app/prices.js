@@ -148,11 +148,11 @@ function handleBuyOrders(offer) {
 
             if (limit != -1 && amount + stock > limit) {
                 if (canBuy <= 0) {
-                    offer.log("trade", "\"" + name + "\" is overstocked (I have " + stock + "/" + limit + "), declining. Summary:\n" + offer.summary());
+                    offer.log("info", "\"" + name + "\" is overstocked (I have " + stock + "/" + limit + "), declining. Summary:\n" + offer.summary());
                     Automatic.alert("trade", "User offered an item that is overstocked, declining. Summary:\n" + offer.summary());
                     Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You offered an item that is overstocked" });
                 } else {
-                    offer.log("trade", "User offered too many \"" + name + "\"(s) (offered " + amount + "), declining. Summary:\n" + offer.summary());
+                    offer.log("info", "User offered too many \"" + name + "\"(s) (offered " + amount + "), declining. Summary:\n" + offer.summary());
                     Automatic.alert("trade", "User offered too many \"" + name + "\"(s) (offered " + amount + "), declining. Summary:\n" + offer.summary());
                     Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You offered more of an item than I will keep" });
                 }
@@ -176,7 +176,7 @@ function handleBuyOrders(offer) {
                 offer.currencies.their.metal = utils.addRefined(offer.currencies.their.metal, price.metal, amount);
             }
         } else {
-            offer.log("trade", "\"" + name + "\" is not in the pricelist, declining. Summary:\n" + offer.summary());
+            offer.log("info", "\"" + name + "\" is not in the pricelist, declining. Summary:\n" + offer.summary());
             Automatic.alert("trade", "\"" + name + "\" is not in the pricelist, declining. Summary:\n" + offer.summary());
             Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You offered an item that is not in my pricelist" });
 
@@ -205,7 +205,7 @@ function handleSellOrders(offer) {
                 offer.currencies.our.metal = utils.addRefined(offer.currencies.our.metal, price.metal, amount);
             }
         } else {
-            offer.log("trade", "contains an item that is not in the pricelist (" + name + "), declining. Summary:\n" + offer.summary());
+            offer.log("info", "contains an item that is not in the pricelist (" + name + "), declining. Summary:\n" + offer.summary());
             Automatic.alert("trade", "Contains an item that is not in the pricelist (" + name + "), declining. Summary:\n" + offer.summary());
             Friends.alert(offer.partnerID64(), { type: "trade", status: "declined", reason: "You are taking an item that is not in my pricelist" });
             
