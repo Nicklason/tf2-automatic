@@ -1,0 +1,1 @@
+node automatic.js
