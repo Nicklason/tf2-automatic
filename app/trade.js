@@ -171,6 +171,7 @@ function handleOffer(tradeoffer) {
 
 function handleQueue() {
     if (doingQueue) {
+        log.debug("Already processing an offer in the queue");
         return;
     }
     doingQueue = true;
@@ -507,9 +508,13 @@ function finalizeOffer(offer, callback) {
             } else {
                 acceptOffer(offer);
             }
-        } else if (!callback) {
-            log.info("Offer would be held by escrow, declining.");
-            offer.decline().then(function () { offer.log("debug", "declined") });
+        } else {
+            if (callback) {
+                callback(null, false, "The offer would be held by escrow");
+            } else {
+                log.info("Offer would be held by escrow, declining.");
+                offer.decline().then(function () { offer.log("debug", "declined") });
+            }
         }
     }).catch(function (err) {
         log.debug("Got escrow response in " + (new Date().getTime() - time) + " ms");
