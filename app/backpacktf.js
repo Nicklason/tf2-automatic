@@ -1,21 +1,40 @@
-const BPTFListings = require('bptf-listings');
+const bptf = require('bptf-listings');
+const async = require('async');
 
 const utils = require('./utils.js');
-const Offer = require('./offer.js');
 
 let Automatic, manager, Items, log, config, Listings, Prices, Inventory;
 
-let _wait, _lostItems = [], _gainedItems = [];
+let WAIT, LOST_ITEMS = [], GAINED_ITEMS = [];
 
 exports.register = function (automatic) {
     Automatic = automatic;
+    log = automatic.log;
+    config = automatic.config;
     manager = automatic.manager;
+
     Items = automatic.items;
     Prices = automatic.prices;
     Inventory = automatic.inventory;
+};
 
-    log = automatic.log;
-    config = automatic.config;
+exports.init = function (callback) {
+    Listings = new bptf({ steamid64: Automatic.getOwnSteamID(), key: manager.apiKey, token: config.getAccount().bptfToken });
+
+    log.debug('Initializing bptf-listings package.');
+    Listings.init(function(err) {
+        if (err) {
+            callback(new Error('bptf-listings (' + err.message + ')'));
+            return;
+        }
+        callback(null);
+    });
+
+    Listings.on('heartbeat', heartbeat);
+    Listings.on('created', listingCreated);
+    Listings.on('removed', listingRemoved);
+    Listings.on('error', listingError);
+    Listings.on('inventory', inventory);
 };
 
 exports.findBuyOrder = findBuyOrder;
@@ -38,42 +57,40 @@ exports.getLimit = getLimit;
 
 exports.cap = function () { return Listings.cap; };
 
-exports.isBanned = isBanned;
+exports.isBanned = banned;
 
-// This will only make sell orders of items that are not already listed.
 function makeSellOrders() {
-    const inv = Inventory.get();
+    const dict = Inventory.dictionary();
 
-    let items = [];
-    for (let i = 0; i < inv.length; i++) {
-        if (Offer.isMetal(inv[i])) continue;
-
-        const id = inv[i].assetid;
-        const listed = isListed(id);
-        // Skip items that are already listed on bptf
-        if (listed) continue;
-
-        // Get parsed item object
-        const item = Offer.getItem(inv[i]);
-        // Get name of the item.
-        const name = Items.getName(item);
-
-        (items[name] = (items[name] || [])).push(id);
-    }
-
-    for (var name in items) {
-        const price = Prices.getPrice(name);
-        if (!price) continue;
-
-        const ids = items[name];
+    let list = [];
+    for (let name in dict) {
+        if (name == 'Refined Metal' || name == 'Reclaimed Metal' || name == 'Scrap Metal') continue;
+        const ids = dict[name];
 
         for (let i = 0; i < ids.length; i++) {
             const id = ids[i];
+            const listed = isListed(id);
+            if (listed) continue;
+
+            (list[name] = (list[name] || [])).push(id);
+        }
+    }
+
+    for (let name in list) {
+        let price = Prices.getPrice(name);
+        if (!price) continue;
+
+        price = price.price;
+        const ids = list[name];
+
+        for (let i = 0; i < ids.length; i++) {
+            const id = ids[i];
+
             Listings.createListing({
                 intent: 1,
                 id: id,
-                currencies: price.price.sell,
-                details: listingComment(1, name, price.price.sell)
+                currencies: price.sell,
+                details: listingComment(1, name, price.sell)
             });
         }
     }
@@ -92,106 +109,93 @@ function removeSellOrders(search) {
     }
 }
 
-// Update sell orders for a specific item.
 function updateSellOrders(search, price) {
-    const inv = Inventory.get();
+    const dict = Inventory.dictionary();
 
-    let items = [];
-    for (let i = 0; i < inv.length; i++) {
-        if (Offer.isMetal(inv[i])) { continue; }
+    for (let name in dict) {
+        if (name == 'Refined Metal' || name == 'Reclaimed Metal' || name == 'Scrap Metal') continue;
+        if (search != name) continue;
 
-        const item = Offer.getItem(inv[i]);
-        const name = Items.getName(item);
-
-        if (search != name) { continue; }
-
-        // Todo: Only update listing if the prices does not match up.
-        const id = inv[i].assetid;
-        Listings.createListing({
-            intent: 1,
-            id: id,
-            currencies: price.sell,
-            details: listingComment(1, name, price.sell)
-        }, true);
+        const ids = dict[name];
+        for (let i = 0; i < ids.length; i++) {
+            const id = ids[i];
+            Listings.createListing({
+                intent: 1,
+                id: id,
+                currencies: price.sell,
+                details: listingComment(1, name, price.sell)
+            }, true);
+        }
     }
 }
 
 function updateOrder(item, received) {
-    clearTimeout(_wait);
+    clearTimeout(WAIT);
     if (received) {
-        _gainedItems.push(item);
+        GAINED_ITEMS.push(item);
     } else {
-        _lostItems.push(item);
+        LOST_ITEMS.push(item);
     }
 
-    // Waiting 10 seconds to catch other items and other offers.
-    _wait = setTimeout(function () {
-        updateOrders(_lostItems, _gainedItems);
+    WAIT = setTimeout(function () {
+        updateOrders(LOST_ITEMS, GAINED_ITEMS);
     }, 10 * 1000);
 }
 
 function updateOrders(lost, gained) {
-    log.debug("Updating listings with lost / gained items");
-    log.debug("Lost: " + lost.length + " - Gained: " + gained.length);
-    let lostSummary = Items.summary(lost),
-        gainedSummary = Items.summary(gained);
-
+    log.debug('Updating listings with lost / gained items');
+    log.debug('Lost: ' + lost.length + ' - Gained: ' + gained.length);
+    const lostSummary = Items.createSummary(Items.createDictionary(lost)), gainedSummary = Items.createSummary(Items.createDictionary(gained));
     let names = [];
+
     for (const name in lostSummary) {
-        if (!names.includes(name)) {
-            names.push(name);
-        }
+        if (!names.includes(name)) names.push(name);
     }
     for (const name in gainedSummary) {
-        if (!names.includes(name)) {
-            names.push(name);
-        }
+        if (!names.includes(name)) names.push(name);
     }
 
-    let noBuyOrder = [];
+    let list = [];
     for (let i = 0; i < names.length; i++) {
         const name = names[i];
-        // Don't check for metal.
-        if (name == "Scrap Metal" || name == "Reclaimed Metal" || name == "Refined Metal") { continue; }
+        if (name == 'Scrap Metal' || name == 'Reclaimed Metal' || name == 'Refined Metal') continue;
 
-        // Find buy order that contains the item
         const listing = findBuyOrder(name);
         if (listing == null) {
-            // We will check if we need to make a listing for this item.
-            noBuyOrder.push(name);
+            list.push(name);
             continue;
         }
 
-        const stock = getLimit(listing);
-        // No limit, we don't need to check if limit has been exceeded.
-        if (!stock) { continue; }
-        const inInv = Inventory.getAmount(name);
-        if (inInv >= stock.limit) {
-            // Remove listing since the limit has been reached.
+        const limit = config.limit(name);
+        const stock = Inventory.amount(name);
+        if (stock >= limit) {
             Listings.removeListing(listing.id);
-        } else if (stock.stock != inInv){
+        } else {
             Listings.createListing({
                 intent: 0,
                 item: Listings.getItem(listing.item),
-                details: listing.details.replace(stock.raw, inInv + ' / ' + stock.limit),
-                currencies: listing.currencies
+                currencies: listing.currencies,
+                details: listingComment(0, name, listing.currencies)
             }, true);
         }
     }
 
-    for (let i = 0; i < noBuyOrder.length; i++) {
-        const name = noBuyOrder[i];
-        const priceObj = Prices.getPrice(name);
-        if (priceObj == null) { continue; }
+    for (let i = 0; i < list.length; i++) {
+        const name = list[i];
+        let price = Prices.getPrice(name);
+        if (price == null) { continue; }
 
-        const inInv = Inventory.getAmount(name);
-        const limit = config.getLimit(name);
+        const item = price.item;
+        price = price.price;
+
+        const inInv = Inventory.amount(name);
+        const limit = config.limit(name);
         if (limit > inInv) {
             Listings.createListing({
                 intent: 0,
-                item: priceObj.item,
-                currencies: priceObj.price.buy,
-                details: listingComment(0, name, priceObj.price.buy)
+                item: item,
+                currencies: price.buy,
+                details: listingComment(0, name, price.buy)
             });
         }
     }
@@ -206,18 +210,16 @@ function listingComment(intent, name, price) {
         .replace(/%name%/g, name);
 
     if (intent == 0) {
-        const limit = config.getLimit(name);
+        const limit = config.limit(name);
         if (limit > 0) {
-            const stock = Inventory.getAmount(name);
-            comment = comment.replace(/%stock%/g, stock + " / " + limit);
+            const stock = Inventory.amount(name);
+            comment = comment.replace(/%stock%/g, stock + ' / ' + limit);
         }
     }
 
     return comment;
-};
+}
 
-// Used to find a buy order for a given item.
-// This is used to create / update / remove buy orders when an offer has been accepted and the inventory changes.
 function findBuyOrder(search) {
     let buy = buyOrders();
     for (let i = 0; i < buy.length; i++) {
@@ -249,44 +251,69 @@ function getLimit(listing) {
     return null;
 }
 
-function getListings() {
-    return Listings.listings;
-}
 
-function isBanned(steamid64, callback) {
-    // Eh... ok, if you say so.
+function banned(steamid64, callback) {
     if (config.get().acceptBanned === true) {
         callback(null, false);
         return;
     }
 
-    // Use async libary.
-    isBanned(steamid64, function (err, banned) {
-        if (err) {
-            callback(err);
-            return;
-        } else if (banned) {
-            callback(null, true, "all-features banned on www.backpack.tf");
-            return;
+    async.series([
+        function (callback) {
+            isBanned(steamid64, function (err, banned) {
+                if (err) callback(err);
+                else if (banned) callback(null, 'all-features banned on www.backpack.tf');
+                else callback(null, false);
+            });
+        },
+        function (callback) {
+            isMarked(steamid64, function (err, marked) {
+                if (err) callback(err);
+                else if (marked) callback(null, 'marked on www.steamrep.com as a scammer');
+                else callback(null, false);
+            });
         }
+    ], function(err, banned) {
+        if (err) callback(err);
+        else if (banned[0][0] == true) callback(null, banned[0][1]);
+        else if (banned[1][0] == true) callback(null, banned[1][1]);
+        else callback(null, false);
+    });
+}
 
-        isMarked(steamid64, function (err, marked) {
-            if (err) {
-                callback(err);
-                return;
-            } else if (marked) {
-                callback(null, true, "marked on www.streamrep.com as a scammer");
-                return;
-            }
+function inventory() { log.info('The inventory has been updated on www.backpack.tf.'); }
+function listingCreated(name) { log.info('Created a listing for "' + name + '"'); }
+function listingRemoved(id) { log.info('Removed a listing with the id "' + id + '"'); }
+function listingError(type, name, error) {
+    if (error != 1 && type != 'create') {
+        log.warn('Failed to ' + type + ' a listing (' + name + '): ' + error);
+    }
+}
+function heartbeat(bumped) {
+    log.info('Heartbeat sent to www.backpack.tf' + (bumped > 0 ? '; Bumped ' + bumped + ' ' + utils.plural('listing', bumped) : '') + '.');
+    makeSellOrders();
+}
 
-            callback(null, false);
-        });
+function getListings() { return Listings.listings; }
+function buyOrders() {
+    return getListings().filter(function (listing) {
+        return listing.intent == 0;
+    });
+}
+function sellOrders() {
+    return getListings().filter(function (listing) {
+        return listing.intent == 1;
+    });
+}
+function isListed(id) {
+    return sellOrders().some(function (listing) {
+        return listing.item.id == id;
     });
 }
 
 function isBanned(steamid64, callback) {
     const options = {
-        url: "https://backpack.tf/api/users/info/v1",
+        url: 'https://backpack.tf/api/users/info/v1',
         qs: {
             key: config.get().bptfKey,
             steamids: steamid64
@@ -303,14 +330,14 @@ function isBanned(steamid64, callback) {
         }
 
         const user = body.users[steamid64];
-        const banned = user.bans && user.bans.all;
+        const banned = user.hasOwnProperty('bans');
         callback(null, banned);
     });
 }
 
 function isMarked(steamid64, callback) {
     const options = {
-        url: "http://steamrep.com/api/beta4/reputation/" + steamid64,
+        url: 'http://steamrep.com/api/beta4/reputation/' + steamid64,
         qs: {
             json: 1
         },
@@ -325,65 +352,7 @@ function isMarked(steamid64, callback) {
             return;
         }
 
-        const isMarked = body.steamrep.reputation.summary.toLowerCase().indexOf("scammer") !== -1;
+        const isMarked = body.steamrep.reputation.summary.toLowerCase().indexOf('scammer') !== -1;
         callback(null, isMarked);
     });
-}
-
-function buyOrders() {
-    let listings = getListings();
-    return listings.filter(function (listing) {
-        return listing.intent == 0;
-    });
-}
-
-function sellOrders() {
-    let listings = getListings();
-    return listings.filter(function (listing) {
-        return listing.intent == 1;
-    });
-}
-
-function isListed(id) {
-    const listings = sellOrders();
-    return listings.some(function (listing) {
-        return listing.item.id == id;
-    });
-}
-
-exports.init = function (callback) {
-    Listings = new BPTFListings({ steamid64: Automatic.getOwnSteamID(), key: manager.apiKey, token: config.getAccount().bptfToken });
-
-    log.debug('Initializing bptf-listings package.');
-    Listings.init(callback);
-
-    Listings.on('heartbeat', heartbeat);
-    Listings.on('created', listingCreated);
-    Listings.on('removed', listingRemoved);
-    Listings.on('error', listingError);
-    Listings.on('inventory', inventory);
-};
-
-function heartbeat(bumped) {
-    log.info("Heartbeat sent to www.backpack.tf" + (bumped > 0 ? "; Bumped " + bumped + " " + utils.plural("listing", bumped) : '') + ".");
-    makeSellOrders();
-}
-
-function listingCreated(name) {
-    log.info("Created a listing for \"" + name + "\"");
-}
-
-function listingRemoved(id) {
-    log.info("Removed a listing with the id \"" + id + "\"");
-}
-
-function listingError(type, name, error) {
-    // Don't want to spam the console with items not being listed for sale because inventory hasn't updated on backpack.tf
-    if (error != 1 && type != "create") {
-        log.warn("Failed to " + type + " a listing (" + name + "): " + error);
-    }
-}
-
-function inventory(time) {
-    log.info("The inventory has been updated on www.backpack.tf.");
 }

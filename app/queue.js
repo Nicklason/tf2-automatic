@@ -2,7 +2,7 @@ const fs = require('graceful-fs');
 
 const utils = require('./utils.js');
 
-let Automatic, log, config;
+let log;
 
 const FOLDER_NAME = 'temp';
 const QUEUE_FILENAME = FOLDER_NAME + '/queue.json';
@@ -10,9 +10,7 @@ const QUEUE_FILENAME = FOLDER_NAME + '/queue.json';
 let queue = [], _wait;
 
 exports.register = function(automatic) {
-    Automatic = automatic;
     log = automatic.log;
-    config = automatic.config;
 
     if (fs.existsSync(QUEUE_FILENAME)) {
         queue = JSON.parse(fs.readFileSync(QUEUE_FILENAME));
@@ -45,47 +43,48 @@ function removeFirst() {
 
 // ID is the offer id.
 function removeID(id) {
-    for (let i = 0; i < queue.length; i++) {
-        const element = queue[i];
+    let changed = false;
+    for (var i = queue.length; i--;) {
         if (queue[i].id == id) {
             queue.splice(i, 1);
-            saveQueue();
-            return;
+            changed = true;
         }
+    }
+
+    if (changed) {
+        saveQueue();
     }
 }
 
 function enqueueReceivedOffer(offer) {
     log.debug('Adding offer to queue');
 
-    if (offerInQueue(offer.id())) {
-        log.warn("Caught an offer that was getting queued, but was already added.");
+    if (offerInQueue(offer.id)) {
+        log.warn('Caught an offer that was getting queued, but was already added.');
         return;
     }
 
     const trade = {
-        partner: offer.partnerID64(),
+        partner: offer.partner(),
         id: offer.id(),
-        status: "Received",
-        details: {
-            // No details from received offers.
-        },
+        status: 'Received',
+        details: {},
         time: utils.epoch()
     };
+    
     queue.push(trade);
     saveQueue();
 }
 
 function enqueueRequestedOffer(steamID64, details) {
-    log.debug("Adding requested offer to queue");
+    log.debug('Adding requested offer to queue');
 
     const trade = {
         partner: steamID64,
-        status: "Queued",
+        status: 'Queued',
         details: {
             name: details.name,
             amount: details.amount,
-            price: details.price,
             intent: details.intent
         },
         time: utils.epoch()
@@ -98,7 +97,7 @@ function enqueueRequestedOffer(steamID64, details) {
 function isInQueue(steamID64) {
     for (let i = 0; i < queue.length; i++) {
         const offer = queue[i];
-        if (offer.status == "Queued" && offer.partner == steamID64) {
+        if (offer.status == 'Queued' && offer.partner == steamID64) {
             return i + 1;
         }
     }
@@ -124,7 +123,7 @@ function saveQueue() {
     _wait = setTimeout(function() {
         fs.writeFile(QUEUE_FILENAME, JSON.stringify(queue, null, '\t'), function(err) {
             if (err) {
-                log.warn("Error writing queue data: " + err);
+                log.warn('Error writing queue data: ' + err);
                 return;
             }
         });

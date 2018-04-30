@@ -1,24 +1,20 @@
 const SteamUser = require('steam-user');
 
-const utils = require('./utils.js');
-
-let Automatic, client, log, config;
+let client, log;
 
 exports.register = function(automatic) {
-    Automatic = automatic;
     client = automatic.client;
     log = automatic.log;
-    config = automatic.config;
 };
 
 exports.init = function() {
     client.on('friendRelationship', function(steamID, relationship) {
         const steamID64 = steamID.getSteamID64();
 		if (relationship == SteamUser.Steam.EFriendRelationship.Friend) {
-            log.info("I am now friends with " + steamID64);
+            log.info('I am now friends with ' + steamID64);
 			friendAddResponse(steamID64);
 		} else if (relationship == SteamUser.Steam.EFriendRelationship.RequestRecipient) {
-            log.info(steamID64 + " added me");
+            log.info(steamID64 + ' added me');
 			addFriend(steamID64); // Add them back
 		}
     });
@@ -27,10 +23,10 @@ exports.init = function() {
 };
 
 function addFriend(steamID64) {
-    log.debug("Sending friend request to " + steamID64 + " or accepting their friend request...");
+    log.debug('Sending friend request to ' + steamID64 + ' or accepting their friend request...');
     client.addFriend(steamID64, function(err) {
 		if (err) {
-            log.warn("Failed to send a friend request (" + err.message + ")")
+            log.warn('Failed to send a friend request (' + err.message + ')');
 			log.debug(err.stack);
 		}
 	});
@@ -46,7 +42,7 @@ function getFriends() {
 	}
 
 	return friends;
-};
+}
 
 function checkFriendRequests() {
     if (!client.myFriends) {
@@ -59,11 +55,11 @@ function checkFriendRequests() {
             addFriend(steamID64);
         }
     }
-};
+}
 
 function friendAddResponse(steamID64) {
     // Todo: get name of user, check if they have added the bot before and give a different message
-    client.chatMessage(steamID64, "Hi! If you are new here (or simply need a reminder on how to trade with me), use the commands \"!how2trade\" and \"!help\", and I will help you get started :)");
+    client.chatMessage(steamID64, 'Hi! If you are new here (or simply need a reminder on how to trade with me), use the commands "!how2trade" and "!help", and I will help you get started :)');
 }
 
 function isFriend(steamID64) {
@@ -74,10 +70,10 @@ function isFriend(steamID64) {
 		}
 	}
 	return false;
-};
+}
 
 function alert(steamID64, alert) {
-    client.chatMessage(steamID64, "Your trade was " + alert.status + ". Reason: " + alert.reason + ".");
+    client.chatMessage(steamID64, 'Your trade was ' + alert.status + '. Reason: ' + alert.reason + '.');
 }
 
 exports.alert = alert;

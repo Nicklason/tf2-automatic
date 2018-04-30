@@ -2,21 +2,21 @@ const Winston = require('winston');
 const moment = require('moment');
 
 const LOG_LEVELS = {
-    "debug": 5,
-    "verbose": 4,
-    "info": 3,
-    "warn": 2,
-    "error": 1,
-    "trade": 0
+    'debug': 5,
+    'verbose': 4,
+    'info': 3,
+    'warn': 2,
+    'error': 1,
+    'trade': 0
 };
 
 const LOG_COLORS = {
-    "debug": "blue",
-    "verbose": "cyan",
-    "info": "green",
-    "warn": "yellow",
-    "error": "red",
-    "trade": "magenta"
+    'debug': 'blue',
+    'verbose': 'cyan',
+    'info': 'green',
+    'warn': 'yellow',
+    'error': 'red',
+    'trade': 'magenta'
 };
 
 exports.LOG_LEVELS = LOG_LEVELS;
@@ -45,5 +45,5 @@ function createTransports() {
 }
 
 function getTimestamp() {
-    return moment().format(config.dateFormat || "HH:mm:ss");
+    return moment().format(config.dateFormat || 'HH:mm:ss');
 }

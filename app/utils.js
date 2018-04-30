@@ -27,9 +27,19 @@ exports.parseJSON = function (string) {
     }
 };
 
+exports.capitalizeFirst = function (string) {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+};
+
+exports.capitalizeEach = function (string) {
+    return string.replace(/\w\S*/g, function (word) {
+        return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
+    });
+};
+
 exports.request = {
     get: function (options, callback) {
-        options.method = "GET";
+        options.method = 'GET';
         request(options, function (err, response, body) {
             if (err) {
                 callback(err);
@@ -96,13 +106,6 @@ exports.trunc = function (number, decimals = 2) {
 exports.refinedToScrap = function (refined) {
     var scrap = round(refined * 9, 0.5);
     return scrap;
-};
-
-exports.addRefined = function(base, add, amount = 1) {
-    const baseValue = exports.refinedToScrap(base);
-    const addValue = exports.refinedToScrap(add) * amount;
-    const value = baseValue + addValue;
-    return exports.scrapToRefined(value);
 };
 
 function round(value, step = 1) {

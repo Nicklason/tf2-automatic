@@ -14,7 +14,7 @@ function performLogin(details, callback) {
         password: details.password
     };
 
-    SteamTotp.getTimeOffset(function (err, offset, latency) {
+    SteamTotp.getTimeOffset(function (err, offset) {
         if (err) {
             callback(err);
             return;

@@ -1,8 +1,9 @@
+let community, config, log;
+
 exports.register = function (automatic) {
-    Automatic = automatic;
-    log = Automatic.log;
-    config = Automatic.config;
-    community = Automatic.community;
+    log = automatic.log;
+    config = automatic.config;
+    community = automatic.community;
 };
 
 exports.accept = function(id, callback) {

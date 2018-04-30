@@ -1,16 +1,16 @@
 const SteamUser = require('steam-user');
+const SteamTotp = require('steam-totp');
 const async = require('async');
 
 const utils = require('./utils.js');
 const Login = require('./login.js');
 const Messages = require('./messages.js');
 
-let Automatic, client, log, config, Items, Backpack, Prices, Inventory, Trade;
+let client, community, manager, log, config, Items, Backpack, Prices, Inventory, Friends, Trade;
 
 let started = false;
 
 exports.register = function(automatic) {
-    Automatic = automatic;
     client = automatic.client;
     community = automatic.community;
     manager = automatic.manager;
@@ -28,30 +28,37 @@ exports.register = function(automatic) {
     Messages.register(automatic);
 
     client.on('webSession', saveCookies);
+    client.on('error', clientError);
     community.on('sessionExpired', sessionExpired);
     community.on('confKeyNeeded', confKeyNeeded);
 };
 
-exports.connect = function () {
+exports.connect = function (ratelimit) {
     const account = config.getAccount();
 
     if (account.name != '' && account.password != '' && account.shared_secret != '' && account.identity_secret != '') {
-        log.info("Connecting to Steam...");
+        if (ratelimit) {
+            log.warn('Your account has received a login cooldown. Wait 30 minutes before retrying, otherwise it resets to 30 minutes again. Retrying in 45 minutes...');
+            setTimeout(function() {
+                Login.performLogin(account, handleLogin);
+            }, 45 * 60 * 1000);
+            return;
+        }
+        log.info('Connecting to Steam...');
         Login.performLogin(account, handleLogin);
     } else {
-        utils.fatal(log, "No account found / missing details, please add an account and try again.");
+        utils.fatal(log, 'No account found / missing details, please add an account and try again.');
     }
 };
 
 function handleLogin(err) {
     if (err) {
-        utils.fatal(log, "Failed to sign in: " + err.message + ".");
+        utils.fatal(log, 'Failed to sign in: ' + err.message + '.');
         return;
     }
 
     client.on('loggedOn', function() {
         log.info('Logged onto Steam!');
-        // This should fix the bot going offline, yet it is still running.
         if (started) {
             client.gamesPlayed([require('../package.json').name, 440]);
             client.setPersona(SteamUser.EPersonaState.Online);
@@ -63,13 +70,11 @@ function saveCookies(sessionID, cookies) {
     log.debug('Setting cookies...');
     community.setCookies(cookies);
 
-    manager.setCookies(cookies, function(err) {
+    manager.setCookies(cookies, function (err) {
         if (err) {
-            utils.fatal(log, "This account is limited, you can't use it for trading.");
+            utils.fatal(log, 'This account is limited, you can\'t use it for trading.');
         }
 
-        // Don't want to initialize all the packages if we already have started before.
-        // I am not sure, but the webSession event should be emitted when refreshing the session (calling client.webLogOn), meaning that this will be called again.
         if (!started) {
             started = true;
             initializePackages();
@@ -77,8 +82,44 @@ function saveCookies(sessionID, cookies) {
     });
 }
 
+function ready(err) {
+    if (err) {
+        utils.fatal(log, 'An error occurred while initializing the packages: ' + err.message + '.');
+    }
 
-function initializePackages(callback) {
+    log.debug('Modules are ready!');
+
+    log.info(`tf2-automatic is ready; ${Prices.list().length} ${utils.plural('item', Prices.list().length)} in the pricelist, ${Backpack.listings().length} ${utils.plural('listing', Backpack.listings().length)} on www.backpack.tf (limit: ${Backpack.cap()})`);
+    client.gamesPlayed([require('../package.json').name, 440]);
+    client.setPersona(SteamUser.EPersonaState.Online);
+    
+    Messages.init();
+    Friends.init();
+    Trade.init();
+}
+
+function clientError(err) {
+    if (err.message == 'RateLimitExceeded') {
+        exports.connect(true);
+        return;
+    }
+
+    log.warn('An error occurred with the client: ' + err.message);
+    log.debug(err.stack);
+}
+
+function sessionExpired() {
+    log.debug('Session has expired, refreshing it.');
+    client.webLogOn();
+}
+
+function confKeyNeeded(tag, callback) {
+    log.debug('New confirmation key needed, generating one.');
+    var time = Math.floor(Date.now() / 1000);
+    callback(null, time, SteamTotp.getConfirmationKey(self.options.identity_secret, time, tag));
+}
+
+function initializePackages() {
     async.series([
         function (callback) {
             Items.init(callback);
@@ -93,30 +134,4 @@ function initializePackages(callback) {
             Prices.init(callback);
         }
     ], ready);
-}
-
-function ready(err) {
-    if (err) {
-        utils.fatal(log, "An error occurred while initializing the packages: " + err.message + ".");
-    }
-
-    log.debug('Modules are ready!');
-
-    log.info(`tf2-automatic is ready; ${Prices.list().length} ${utils.plural('item', Prices.list().length)} in the pricelist, ${Backpack.listings().length} ${utils.plural('listing', Backpack.listings().length)} on www.backpack.tf (limit: ${Backpack.cap()})`);
-    client.gamesPlayed([require('../package.json').name, 440]);
-    client.setPersona(SteamUser.EPersonaState.Online);
-    Messages.init();
-    Friends.init();
-    Trade.init();
-}
-
-function sessionExpired(err) {
-    log.debug('Session has expired, refreshing the session.');
-    client.webLogOn();
-}
-
-function confKeyNeeded(tag, callback) {
-    log.debug('New confirmation key needed, generating new one.');
-    var time = Math.floor(Date.now() / 1000);
-    callback(null, time, SteamTotp.getConfirmationKey(self.options.identity_secret, time, tag));
 }

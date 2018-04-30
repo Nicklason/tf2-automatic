@@ -1,0 +1,17 @@
+{
+    "restartable": "rs",
+    "ignore": [
+        ".git",
+        "node_modules/**/node_modules",
+        "temp/",
+        ".log"
+    ],
+    "verbose": true,
+    "execMap": {
+        "js": "node"
+    },
+    "env": {
+        "NODE_ENV": "development"
+    },
+    "delay": "5000"
+}
