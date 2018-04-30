@@ -148,7 +148,7 @@ function friendMessage(steamID, message) {
 				client.chatMessage(steamID64, 'I am not friends with the user.');
 				return;
 			}
-			
+
 			const reply = message.substr(message.toLowerCase().indexOf(recipient) + 18);
 			client.chatMessage(recipient, 'Message from ' + (details ? details.personaname + '(' + steamID64 + ')' : steamID64) + ': ' + reply);
 			client.chatMessage(steamID64, 'Message has been sent.');
@@ -241,7 +241,7 @@ function friendMessage(steamID, message) {
 					client.chatMessage(steamID64, 'Did not find a quality like "' + input.quality + '".');
 					return;
 				}
-				item.quality = quality;
+				item.quality = Number(quality);
 			}
 
 			Prices.addItems([item], function (err, added) {
