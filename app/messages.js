@@ -88,7 +88,7 @@ function friendMessage(steamID, message) {
 			if (left > 0) {
 				reply += ',\nand ' + left + ' other ' + utils.plural('item', left);
 			}
-			reply += '.\nYou can see my inventory and prices here aswell: https://backpack.tf/profiles/' + Automatic.getOwnSteamID();
+			reply += '.\nYou can see my inventory and prices here aswell: https://backpack.tf/profiles/' + Automatic.getOwnSteamID() + '.';
 			client.chatMessage(steamID64, reply);
 		} else if (command == 'price') {
 			const name = message.substr(message.toLowerCase().indexOf('price') + 6);
