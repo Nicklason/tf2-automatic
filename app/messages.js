@@ -150,7 +150,7 @@ function friendMessage(steamID, message) {
 			}
 
 			const reply = message.substr(message.toLowerCase().indexOf(recipient) + 18);
-			client.chatMessage(recipient, 'Message from ' + (details ? details.personaname + '(' + steamID64 + ')' : steamID64) + ': ' + reply);
+			client.chatMessage(recipient, 'Message from ' + (details ? details.personaname + ' (' + steamID64 + ')' : steamID64) + ': ' + reply);
 			client.chatMessage(steamID64, 'Message has been sent.');
 
 			const owners = config.get().owners || [];
