@@ -315,7 +315,7 @@ function getTag(category, item) {
 
 function hasDescription(desc, item) {
     const descriptions = item.descriptions;
-    if (!descriptions) return null;
+    if (!descriptions) return false;
 
     return !descriptions.some(function (d) {
         return d.value == desc;
