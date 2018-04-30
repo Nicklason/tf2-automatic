@@ -1,9 +1,15 @@
 const SteamUser = require('steam-user');
+const request = require('request');
 
-let client, log;
+const utils = require('./utils.js');
+
+let client, manager, log;
+
+let FRIEND_DETAILS = {};
 
 exports.register = function(automatic) {
-    client = automatic.client;
+	client = automatic.client;
+	manager = automatic.manager;
     log = automatic.log;
 };
 
@@ -17,7 +23,9 @@ exports.init = function() {
             log.info(steamID64 + ' added me');
 			addFriend(steamID64); // Add them back
 		}
-    });
+	});
+	
+
     
     checkFriendRequests();
 };
@@ -58,8 +66,13 @@ function checkFriendRequests() {
 }
 
 function friendAddResponse(steamID64) {
-    // Todo: get name of user, check if they have added the bot before and give a different message
-    client.chatMessage(steamID64, 'Hi! If you are new here (or simply need a reminder on how to trade with me), use the commands "!how2trade" and "!help", and I will help you get started :)');
+	getDetails(steamID64, function(err, details) {
+		if (err) {
+			client.chatMessage(steamID64, 'Hi! If you don\'t know how things work, please type "!help" :)');
+		} else {
+			client.chatMessage(steamID64, 'Hi ' + details.personaname + '! If you don\'t know how things work, please type "!help" :)');
+		}
+	});
 }
 
 function isFriend(steamID64) {
@@ -72,9 +85,75 @@ function isFriend(steamID64) {
 	return false;
 }
 
+function requestDetails(steamID64, callback) {
+	request({
+		uri: 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/',
+		method: 'GET',
+		json: true,
+		gzip: true,
+		qs: {
+			key: manager.apiKey,
+			steamids: steamID64
+		}
+	}, function (err, response, body) {
+		if (err) {
+			callback(err);
+			return;
+		}
+
+		if (response.statusCode > 299 || response.statusCode < 199) {
+			err = new Error('HTTP error ' + response.statusCode);
+			err.code = response.statusCode;
+			callback(err, response, body);
+			return err;
+		}
+
+		if (!body || typeof body != 'object') {
+			callback(new Error('Invalid response'));
+			return;
+		}
+
+		let details = body.response.players[0];
+		delete details.steamid;
+		details.time = utils.epoch();
+		
+		FRIEND_DETAILS[steamID64] = details;
+
+		callback(null, details);
+	});
+}
+
+function detailsCleanup() {
+	// Remove old details
+	for (let i in FRIEND_DETAILS) {
+		if (isOldDetails(FRIEND_DETAILS[i])) {
+			delete FRIEND_DETAILS[i];
+		}
+	}
+}
+
+function isOldDetails(details) {
+	const current = utils.epoch();
+	const max = 3600; // 1 hour
+
+	return current - details.time > max;
+}
+
+function getDetails(steamID64, callback) {
+	const details = FRIEND_DETAILS[steamID64];
+	if (!details || isOldDetails(details)) {
+		detailsCleanup();
+		requestDetails(steamID64, callback);
+		return;
+	}
+
+	callback(null, details);
+}
+
 function alert(steamID64, alert) {
     client.chatMessage(steamID64, 'Your trade was ' + alert.status + '. Reason: ' + alert.reason + '.');
 }
 
 exports.alert = alert;
 exports.isFriend = isFriend;
+exports.getDetails = getDetails;
