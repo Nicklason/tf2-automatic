@@ -195,7 +195,7 @@ function isUnique(item) {
 }
 
 function isCraftable(item) {
-    return hasDescription('( Not Usable in Crafting )', item);
+    return !hasDescription('( Not Usable in Crafting )', item);
 }
 
 function isKillstreak(item) {
@@ -317,7 +317,7 @@ function hasDescription(desc, item) {
     const descriptions = item.descriptions;
     if (!descriptions) return false;
 
-    return !descriptions.some(function (d) {
+    return descriptions.some(function (d) {
         return d.value == desc;
     });
 }
