@@ -18,6 +18,7 @@ const defaultConfig = {
     'stocklimit': 1,
     'notify': 'trade', // "all" / "none" / "price" / "trade"
     'offerMessage': '',
+    'metalSupply': 200,
     'logs': {
         'console': {
             'type': 'Console',
@@ -72,7 +73,16 @@ function get(val, def) {
     return config;
 }
 
+function getDefault(val) {
+    if (val) {
+        return defaultConfig[val];
+    }
+
+    return defaultConfig;
+}
+
 exports.get = get;
+exports.default = getDefault;
 
 exports.write = function (conf) {
     config = conf;

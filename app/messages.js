@@ -35,7 +35,7 @@ function friendMessage(steamID, message) {
 			return;
 		}
 
-		if (isSpam(steamID64)) {
+		if (!Automatic.isOwner(steamID64) && isSpam(steamID64)) {
 			log.debug('Spam...');
 			return;
 		}
@@ -88,7 +88,7 @@ function friendMessage(steamID, message) {
 			if (left > 0) {
 				reply += ',\nand ' + left + ' other ' + utils.plural('item', left);
 			}
-			reply += '.\nYou can see my inventory and prices here as well: https://backpack.tf/profiles/' + Automatic.getOwnSteamID() + '.';
+			reply += '.\nYou can see my inventory and prices here as well: https://backpack.tf/profiles/' + Automatic.getOwnSteamID();
 			client.chatMessage(steamID64, reply);
 		} else if (command == 'price') {
 			const name = message.substr(message.toLowerCase().indexOf('price') + 6);
@@ -151,7 +151,7 @@ function friendMessage(steamID, message) {
 
 			const reply = message.substr(message.toLowerCase().indexOf(recipient) + 18);
 			client.chatMessage(recipient, 'Message from ' + (details ? details.personaname + ' (' + steamID64 + ')' : steamID64) + ': ' + reply);
-			client.chatMessage(steamID64, 'Message has been sent.');
+			client.chatMessage(steamID64, 'Your message has been sent.');
 
 			const owners = config.get().owners || [];
 			for (let i = 0; i < owners.length; i++) {

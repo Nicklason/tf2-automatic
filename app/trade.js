@@ -249,19 +249,6 @@ function hasEnoughItems(name, dictionary, amount) {
     return stock;
 }
 
-function isOverstocked(name, amount) {
-    const limit = config.limit(name);
-    if (limit == -1) return false;
-    if (limit == 0) return true;
-
-    const stock = Inventory.amount(name);
-    const canBuy = limit - stock;
-
-    if (canBuy <= 0) return true;
-    if (canBuy - amount < 0) return canBuy;
-    return false;
-}
-
 function filterItems(dictionary) {    
     let filtered = {};
     for (let name in dictionary) {
@@ -345,7 +332,7 @@ function createOffer(request, callback) {
         }
 
         if (selling == false) {
-            const overstocked = isOverstocked(name);
+            const overstocked = Inventory.overstocked(name);
             if (overstocked == true) {
                 callback(null, false, 'I am overstocked on ' + name + '(s)');
 
@@ -830,7 +817,7 @@ function checkReceivedOffer(id, callback) {
             }
 
             price = price.price;
-            const overstocked = isOverstocked('Mann Co. Supply Crate Key', their.keys - our.keys);
+            const overstocked = Inventory.overstocked('Mann Co. Supply Crate Key', their.keys - our.keys);
 
             if (overstocked) {
                 offer.log('info', '"Mann Co. Supply Crate Key" is, or will be overstocked, declining. Summary:\n' + offer.summary());
@@ -1029,11 +1016,11 @@ function offerAccepted(offer) {
         inv = inv.concat(receivedItems);
         Inventory.save(inv);
 
-        offer.itemsToGive.forEach(function(item) {
+        offer.itemsToGive.forEach(function (item) {
             Backpack.updateOrders(item, false);
         });
 
-        receivedItems.forEach(function(item) {
+        receivedItems.forEach(function (item) {
             Backpack.updateOrders(item, true);
         });
     });

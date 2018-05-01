@@ -153,7 +153,7 @@ function updateOrders(lost, gained) {
     }
     for (const name in gainedSummary) {
         if (!names.includes(name)) names.push(name);
-    }
+    }    
 
     let list = [];
     for (let i = 0; i < names.length; i++) {

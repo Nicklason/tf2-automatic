@@ -1,6 +1,7 @@
 const fs = require('graceful-fs');
+const utils = require('./utils.js');
 
-let Automatic, log, config, manager, Items;
+let Automatic, log, config, manager, Items, Prices;
 
 const INVENTORY_FILENAME = 'temp/inventory.json';
 
@@ -13,6 +14,7 @@ exports.register = function (automatic) {
     manager = automatic.manager;
 
     Items = automatic.items;
+    Prices = automatic.prices;
 };
 
 exports.init = function (callback) {
@@ -33,6 +35,7 @@ exports.getDictionary = getDictionary;
 exports.dictionary = dictionary;
 exports.amount = amountInDictionary;
 exports.overstocked = isOverstocked;
+exports.status = metalStatus;
 exports.save = save;
 
 function getInventory(steamid64, callback) {
@@ -103,14 +106,37 @@ function amountInDictionary(dictionary, name) {
     return amount;
 }
 
-function isOverstocked(name, amount = 0) {
-    // If the amount is less than 0, that means we are selling, then we don't need to check for overstock.
-    if (amount < 0) {
-        return false;
+function isOverstocked(name, amount) {
+    const limit = config.limit(name);
+    if (limit == -1) return false;
+    if (limit == 0) return true;
+
+    const stock = amountInDictionary(name);
+    const canBuy = limit - stock;
+
+    if (canBuy <= 0) return true;
+    if (canBuy - amount < 0) return canBuy;
+    return false;
+}
+
+function metalStatus() {
+    const pure = amountInDictionary('Refined Metal') * 9 + amountInDictionary('Reclaimed Metal') * 3 + amountInDictionary('Scrap Metal');
+    const wanted = config.get('metalSupply', config.default('metalSupply'));
+    if (wanted < 0) {
+        return 1;
     }
 
-    const limit = config.limit(name);
-    const stock = amountInDictionary(name);
+    const key = utils.refinedToScrap(Prices.key());
+    const min = wanted - key;
+    const max = wanted + key;
 
-    return amount + stock > limit;
+    if (utils.between(pure, min, max)) {
+        return 0;
+    }
+
+    if (pure > max) {
+        return 1;
+    } else {
+        return -1;
+    }
 }

@@ -37,6 +37,10 @@ exports.capitalizeEach = function (string) {
     });
 };
 
+exports.between = function(x, min, max) {
+    return x >= min && x <= max;
+};
+
 exports.request = {
     get: function (options, callback) {
         options.method = 'GET';
