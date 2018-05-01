@@ -24,7 +24,7 @@ class Offer {
     }
 
     log(level, message) {
-        Automatic.log[level]('Offer #' + this.offer.id + ' from ' + this.partner() + ' ' + message);
+        Automatic.log[level]('Offer #' + this.offer.id + ' ' + message);
     }
     id() {
         return this.offer.id;
