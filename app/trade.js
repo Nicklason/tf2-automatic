@@ -833,9 +833,9 @@ function checkReceivedOffer(id, callback) {
             }
 
             price = price.price;
-            const isOverstocked = isOverstocked('Mann Co. Supply Crate Key', their.keys - our.keys);
+            const overstocked = isOverstocked('Mann Co. Supply Crate Key', their.keys - our.keys);
 
-            if (isOverstocked) {
+            if (overstocked) {
                 offer.log('info', '"Mann Co. Supply Crate Key" is, or will be overstocked, declining. Summary:\n' + offer.summary());
                 Automatic.alert('trade', 'User offered an item that is overstocked, declining. Summary:\n' + offer.summary());
                 Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You offered an item that is overstocked, or more than I will keep' });
