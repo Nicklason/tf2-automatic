@@ -561,9 +561,6 @@ function sendOffer(offer, callback) {
                 return;
             } else if (err.hasOwnProperty('eresult')) {
                 if (err.eresult == 26) {
-                    // Updating our inventory as this could possibly be because of the inventory being out of date
-                    // This does have the possibility of giving other problems, like multiple items of the same kind in the inventory
-                    Inventory.getOwn(true, function() {});
                     callback(null, false, 'One or more of the items in the offer has been traded away');
                 } else {
                     callback(null, false, 'Error occurred sending the offer (' + err.eresult + ')');
