@@ -833,7 +833,7 @@ function checkReceivedOffer(id, callback) {
             }
 
             price = price.price;
-            const isOverstocked = Inventory.isOverstocked('Mann Co. Supply Crate Key', their.keys - our.keys);
+            const isOverstocked = isOverstocked('Mann Co. Supply Crate Key', their.keys - our.keys);
 
             if (isOverstocked) {
                 offer.log('info', '"Mann Co. Supply Crate Key" is, or will be overstocked, declining. Summary:\n' + offer.summary());
