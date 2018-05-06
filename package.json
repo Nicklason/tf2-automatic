@@ -7,7 +7,7 @@
   "description": "Fully automated TF2 trading bot advertising on www.backpack.tf",
   "main": "automatic.js",
   "dependencies": {
-    "bptf-listings": "^2.3.2",
+    "bptf-listings": "^2.3.4",
     "graceful-fs": "^4.1.11",
     "moment": "^2.20.1",
     "steam-totp": "^2.0.1",
@@ -21,7 +21,7 @@
   "devDependencies": {
     "eslint": "^4.19.1",
     "eslint-plugin-node": "^6.0.1",
-    "nodemon": "^1.17.3"
+    "nodemon": "^1.17.4"
   },
   "scripts": {
     "start": "node automatic.js",
