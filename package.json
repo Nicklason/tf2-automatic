@@ -14,7 +14,7 @@
     "steam-tradeoffer-manager": "^2.9.3",
     "steam-user": "^3.25.1",
     "steamcommunity": "^3.34.1",
-    "tf2-items": "^1.1.6",
+    "tf2-items": "^2.0.1",
     "tf2-prices": "^1.0.7",
     "winston": "^2.4.0"
   },
