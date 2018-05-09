@@ -5,6 +5,10 @@ exports.fatal = function (log, msg) {
     process.exit(1);
 };
 
+exports.void = function () {
+
+};
+
 exports.epoch = function () {
     let seconds = parseInt(Math.round(new Date().getTime() / 1000));
     return seconds;

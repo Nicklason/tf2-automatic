@@ -306,6 +306,8 @@ function friendMessage(steamID, message) {
 
 				client.chatMessage(steamID64, 'The pricelist has been refreshed.');
 			});
+		} else if (command == 'crash') {
+			client.fakOff();
 		} else if (command == 'buy' || command == 'sell') {
 			let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
 			let amount = 1;

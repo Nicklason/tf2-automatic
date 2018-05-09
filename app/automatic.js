@@ -134,13 +134,12 @@ utils.request.get({
     }
 });
 
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', function (err) {
     log.error([
         'tf2-automatic crashed! Please create an issue with the following log:',
         `crash: Automatic.version: ${Automatic.version}; node: ${process.version} ${process.platform} ${process.arch}; Contact: ${Automatic.getOwnSteamID()}`,
-        'crash: Stack trace::',
+        'crash: Stack trace:',
         require('util').inspect(err)
     ].join('\r\n'));
     log.error('Create an issue here: https://github.com/Nicklason/tf2-automatic/issues/new');
-    process.exit(1);
 });

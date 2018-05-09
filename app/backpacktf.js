@@ -19,7 +19,12 @@ exports.register = function (automatic) {
 };
 
 exports.init = function (callback) {
-    Listings = new bptf({ steamid64: Automatic.getOwnSteamID(), key: manager.apiKey, token: config.getAccount().bptfToken });
+    Listings = new bptf({
+        steamid64: Automatic.getOwnSteamID(),
+        key: manager.apiKey,
+        token: config.getAccount().bptfToken,
+        items: Items.getModule()
+    });
 
     log.debug('Initializing bptf-listings package.');
     Listings.init(function(err) {

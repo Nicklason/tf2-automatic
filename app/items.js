@@ -32,6 +32,10 @@ exports.getQuality = getQuality;
 exports.getEffect = getEffect;
 exports.getName = getName;
 
+exports.getModule = function() {
+    return Items;
+};
+
 function createDictionary(items) {
     let dict = {};
     for (let i = 0; i < items.length; i++) {

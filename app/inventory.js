@@ -39,6 +39,10 @@ exports.status = metalStatus;
 exports.save = save;
 
 function getInventory(steamid64, callback) {
+    if (callback == undefined) {
+        callback = utils.void;
+    }
+
     const own = steamid64 == Automatic.getOwnSteamID();
     const method = own == true ? 'getInventoryContents' : 'getUserInventoryContents';
     let args = [];
