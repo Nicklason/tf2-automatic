@@ -549,7 +549,7 @@ function sendOffer(offer, callback) {
             } else if (err.hasOwnProperty('eresult')) {
                 if (err.eresult == 26) {
                     callback(null, false, 'One or more of the items in the offer has been traded away');
-                    Inventory.get(Automatic.getOwnSteamID());
+                    Inventory.getInventory(Automatic.getOwnSteamID());
                 } else {
                     callback(null, false, 'Error occurred sending the offer (' + err.eresult + ')');
                 }
