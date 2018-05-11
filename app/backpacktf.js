@@ -178,7 +178,7 @@ function updateOrders(lost, gained) {
         } else {
             Listings.createListing({
                 intent: 0,
-                item: Listings.getItem(listing.item),
+                item: listing.item,
                 currencies: listing.currencies,
                 details: listingComment(0, name, listing.currencies)
             }, true);
