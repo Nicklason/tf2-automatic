@@ -15,7 +15,7 @@ exports.epoch = function () {
 };
 
 exports.plural = function (word, count) {
-    return count == 1 ? word : word + 's';
+    return Math.abs(count) == 1 ? word : word + 's';
 };
 
 exports.stringToObject = function (string) {

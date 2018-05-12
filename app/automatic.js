@@ -29,10 +29,15 @@ const inventory = require('./inventory.js');
 const friends = require('./friends.js');
 const offer = require('./offer.js');
 const trade = require('./trade.js');
+const statistics = require('./statistics.js');
 const confirmations = require('./confirmations.js');
 
 // Get message from initializing the config.
 const configlog = config.init();
+
+if (configlog) {
+    utils.fatal(log, 'Config messages: ' + configlog);
+}
 
 let Automatic = {
     version: version,
@@ -82,6 +87,7 @@ Automatic.prices = prices;
 Automatic.inventory = inventory;
 Automatic.friends = friends;
 Automatic.trade = trade;
+Automatic.statistics = statistics;
 
 function register(...args) {
     args.forEach(function(component) {
@@ -101,13 +107,10 @@ register(
     trade,
     client,
     friends,
+    statistics,
     offer,
     confirmations
 );
-
-if (configlog) {
-    utils.fatal(log, 'Config messages: ' + configlog);
-}
 
 log.info('tf2-automatic v%s starting', version);
 

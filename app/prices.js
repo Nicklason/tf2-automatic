@@ -125,10 +125,19 @@ function canAfford(price, pure) {
     return amount;
 }
 
-function valueToPure(value, useKeys) {
+function valueToPure(value, useKeys = true, onlyRef = false) {
     const keyValue = utils.refinedToScrap(key());
 
     const keys = useKeys ? Math.floor(value / keyValue) : 0;
+
+    if (onlyRef) {
+        const refined = utils.scrapToRefined(value - keys * keyValue);
+        return {
+            keys: keys,
+            refined: refined
+        };
+    }
+
     const refined = Math.floor((value - keys * keyValue) / 9);
     const reclaimed = Math.floor((value - refined * 9 - keys * keyValue) / 3);
     const scrap = value - refined * 9 - reclaimed * 3 - keys * keyValue;
@@ -153,6 +162,13 @@ function handleBuyOrders(offer) {
 
         const value = getValue(price) * amount;
         offer.currencies.their.metal += value;
+
+        offer.prices.push({
+            intent: 0,
+            ids: dict[name],
+            name: name,
+            currencies: price
+        });
     }
 }
 
@@ -168,6 +184,13 @@ function handleSellOrders(offer) {
 
         const value = getValue(price) * amount;
         offer.currencies.our.metal += value;
+
+        offer.prices.push({
+            intent: 1,
+            ids: dict[name],
+            name: name,
+            currencies: price
+        });
     }
 }
 

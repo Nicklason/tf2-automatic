@@ -7,13 +7,16 @@ let log;
 const FOLDER_NAME = 'temp';
 const QUEUE_FILENAME = FOLDER_NAME + '/queue.json';
 
-let queue = [], _wait;
+let QUEUE = [], WAIT;
 
 exports.register = function(automatic) {
     log = automatic.log;
 
     if (fs.existsSync(QUEUE_FILENAME)) {
-        queue = JSON.parse(fs.readFileSync(QUEUE_FILENAME));
+        const data = utils.parseJSON(fs.readFileSync(QUEUE_FILENAME));
+        if (data != null) {
+            QUEUE = data;
+        }
     }
 };
 
@@ -25,28 +28,28 @@ exports.removeID = removeID;
 exports.inQueue = isInQueue;
 
 exports.getLength = function() {
-    return queue.length;
+    return QUEUE.length;
 };
 
 function getNext() {
-    if (queue.length == 0) {
+    if (QUEUE.length == 0) {
         return null;
     }
 
-    return queue[0];
+    return QUEUE[0];
 }
 
 function removeFirst() {
-    queue.splice(0, 1);
+    QUEUE.splice(0, 1);
     saveQueue();
 }
 
 // ID is the offer id.
 function removeID(id) {
     let changed = false;
-    for (var i = queue.length; i--;) {
-        if (queue[i].id == id) {
-            queue.splice(i, 1);
+    for (var i = QUEUE.length; i--;) {
+        if (QUEUE[i].id == id) {
+            QUEUE.splice(i, 1);
             changed = true;
         }
     }
@@ -72,7 +75,7 @@ function enqueueReceivedOffer(offer) {
         time: utils.epoch()
     };
     
-    queue.push(trade);
+    QUEUE.push(trade);
     saveQueue();
 }
 
@@ -90,13 +93,13 @@ function enqueueRequestedOffer(steamID64, details) {
         time: utils.epoch()
     };
 
-    queue.push(trade);
+    QUEUE.push(trade);
     saveQueue();
 }
 
 function isInQueue(steamID64) {
-    for (let i = 0; i < queue.length; i++) {
-        const offer = queue[i];
+    for (let i = 0; i < QUEUE.length; i++) {
+        const offer = QUEUE[i];
         if (offer.status == 'Queued' && offer.partner == steamID64) {
             return i + 1;
         }
@@ -106,8 +109,8 @@ function isInQueue(steamID64) {
 }
 
 function offerInQueue(id) {
-    for (let i = 0; i < queue.length; i++) {
-        const offer = queue[i];
+    for (let i = 0; i < QUEUE.length; i++) {
+        const offer = QUEUE[i];
         if (offer.id == id) {
             return true;
         }
@@ -117,11 +120,11 @@ function offerInQueue(id) {
 }
 
 function saveQueue() {
-    clearTimeout(_wait);
+    clearTimeout(WAIT);
 
     // We will wait one second to catch more offers, no need to save for every one.
-    _wait = setTimeout(function() {
-        fs.writeFile(QUEUE_FILENAME, JSON.stringify(queue, null, '\t'), function(err) {
+    WAIT = setTimeout(function() {
+        fs.writeFile(QUEUE_FILENAME, JSON.stringify(QUEUE, null, '\t'), function(err) {
             if (err) {
                 log.warn('Error writing queue data: ' + err);
                 return;

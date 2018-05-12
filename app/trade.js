@@ -6,7 +6,7 @@ const Offer = require('./offer.js');
 const Queue = require('./queue.js');
 const confirmations = require('./confirmations.js');
 
-let Automatic, client, manager, Inventory, Backpack, Prices, Items, Friends, log, config;
+let Automatic, client, manager, Inventory, Backpack, Prices, Items, Friends, Statistics, log, config;
 
 const POLLDATA_FILENAME = 'temp/polldata.json';
 
@@ -24,6 +24,7 @@ exports.register = function (automatic) {
     Prices = automatic.prices;
     Items = automatic.items;
     Friends = automatic.friends;
+    Statistics = automatic.statistics;
 
     if (fs.existsSync(POLLDATA_FILENAME)) {
         try {
@@ -292,7 +293,7 @@ function createOffer(request, callback) {
     }
     price = price.price[selling ? 'sell' : 'buy'];
 
-    let required = Prices.required(price, 1, name != 'Mann Co. Supply Crate Key');
+    const currencies = Prices.required(price, 1, name != 'Mann Co. Supply Crate Key');
 
     let amount = request.details.amount;
 
@@ -373,7 +374,7 @@ function createOffer(request, callback) {
             }
 
             items.buyer = selling == false ? filterItems(dict) : dict;
-            const afford = Prices.afford(required, Items.pure(items.buyer, name != 'Mann Co. Supply Crate Key'));
+            const afford = Prices.afford(currencies, Items.pure(items.buyer, name != 'Mann Co. Supply Crate Key'));
 
             if (afford == 0) {
                 callback(null, false, (selling ? 'You' : 'I') + ' don\'t have enough pure');
@@ -387,7 +388,7 @@ function createOffer(request, callback) {
                 client.chatMessage(partner, 'Your offer has been altered! Reason: ' + alteredMessage);
             }
 
-            required = Prices.required(required, amount, name != 'Mann Co. Supply Crate Key');
+            const required = Prices.required(currencies, amount, name != 'Mann Co. Supply Crate Key');
             const priceText = utils.currencyAsText(required);
             client.chatMessage(partner, 'Please wait while I process your offer! You will be offered ' + (selling ? amount + ' ' + name + (amount > 1 ? '(s)' : '') + ' for your ' + priceText : priceText + ' for your ' + amount + ' ' + name + (amount > 1 ? '(s)' : '')) + '.');
 
@@ -421,11 +422,17 @@ function createOffer(request, callback) {
                 return;
             }
 
+            let assetids = [];
+
             let missingItems = amount;
             for (let i = 0; i < items.seller[name].length; i++) {
                 if (missingItems == 0) break;
-                const added = offer[selling == false ? 'addTheirItem' : 'addMyItem']({ appid: 440, contextid: 2, assetid: items.seller[name][i], amount: 1 });
-                if (added) missingItems--;
+                const id = items.seller[name][i];
+                const added = offer[selling == false ? 'addTheirItem' : 'addMyItem']({ appid: 440, contextid: 2, assetid: id, amount: 1 });
+                if (added) {
+                    missingItems--;
+                    assetids.push(id);
+                }
             }
 
             if (missingItems != 0) {
@@ -460,8 +467,6 @@ function createOffer(request, callback) {
                 }
             }
 
-            offer.setMessage(config.get('offerMessage'));
-
             log.debug('Offer ready, checking if the user is banned...');
             Backpack.isBanned(partner, function (err, banned, reason) {
                 if (err) {
@@ -472,6 +477,16 @@ function createOffer(request, callback) {
                     callback(null, false, 'You are ' + reason);
                     return;
                 }
+
+                offer.setMessage(config.get('offerMessage'));
+
+                offer.data('partner', partner);
+                offer.data('items', [{
+                    intent: selling == true ? 1 : 0,
+                    ids: assetids,
+                    name: name,
+                    currencies: currencies
+                }]);
 
                 log.debug('Finishing the offer');
                 finalizeOffer(offer, callback);
@@ -547,7 +562,11 @@ function sendOffer(offer, callback) {
                 callback(null, false, 'I don\'t have space for more items in my inventory');
                 return;
             } else if (err.hasOwnProperty('eresult')) {
-                if (err.eresult == 26) {
+                if (err.eresult == 16) {
+                    // This happens when Steam is already handling an offer (usually big offers), the offer should be made
+                    confirmations.accept(offer.id);
+                    callback(null, true);
+                } else if (err.eresult == 26) {
                     callback(null, false, 'One or more of the items in the offer has been traded away');
                     Inventory.getInventory(Automatic.getOwnSteamID());
                 } else {
@@ -571,8 +590,8 @@ function sendOffer(offer, callback) {
         addItemsInTrade(offer.itemsToGive);
 
         if (status === 'pending') {
-            callback(null, true);
             confirmations.accept(offer.id);
+            callback(null, true);
         } else {
             callback(null, true, null, offer.id);
         }
@@ -876,6 +895,9 @@ function checkReceivedOffer(id, callback) {
                 return;
             }
 
+            // ye boi
+            offer.offer.data('items', offer.prices);
+
             finalizeOffer(offer);
             callback(null);
         });
@@ -984,8 +1006,6 @@ function sentOfferChanged(offer, oldState) {
         Automatic.alert('trade', 'User accepted a trade sent by me');
         offerAccepted(offer);
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Active) {
-        addItemsInTrade(offer.itemsToGive);
-        offer.data('partner', offer.partner.getSteamID64());
         client.chatMessage(offer.partner, 'The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/' + offer.id + '/');
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Declined) {
         client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.');
@@ -1024,6 +1044,45 @@ function offerAccepted(offer) {
         receivedItems.forEach(function (item) {
             Backpack.updateOrders(item, true);
         });
+
+
+        /*
+        How it should work:
+        When an offer is accepted, it will add received items to the history, and update existing with items lost
+        Info needed:
+        For received items, new assetid
+        For given items, current assetid (current assetid = new assetid when the item was received)
+
+        Find the assetids of the items in the offer.
+        */
+
+        // Get dictionary of receiveditems
+
+        const received = Items.createDictionary(receivedItems);
+
+        let items = offer.data('items') || [];
+        // Update ids for bought items
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].intent != 0) {
+                // Only check received items
+                continue;
+            }
+
+            for (let name in received) {
+                if (name == items[i].name) {
+                    items[i].ids = received[name];
+                    break;
+                }
+            }
+        }
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            for (let j = 0; j < item.ids.length; j++) {
+                const id = item.ids[j];
+                Statistics.addItem(id, item.currencies, item.intent);
+            }
+        }
     });
 }
 
@@ -1092,7 +1151,7 @@ function savePollData(pollData) {
     pollData = removeOldOffers(pollData);
     manager.pollData = pollData;
 
-    fs.writeFile(POLLDATA_FILENAME, JSON.stringify(pollData), function (err) {
+    fs.writeFile(POLLDATA_FILENAME, JSON.stringify(pollData, null, '\t'), function (err) {
         if (err) {
             log.warn('Error writing poll data: ' + err);
         }

@@ -2,7 +2,7 @@ const moment = require('moment');
 
 const utils = require('./utils.js');
 
-let Automatic, client, log, config, Friends, Inventory, Prices, Trade, Items;
+let Automatic, client, log, config, Friends, Inventory, Prices, Trade, Items, Statistics;
 
 let cache = {};
 const messageInterval = 2000;
@@ -18,6 +18,7 @@ exports.register = function (automatic) {
 	Trade = automatic.trade;
 	Items = automatic.items;
 	Friends = automatic.friends;
+	Statistics = automatic.statistics;
 };
 
 exports.init = function () {
@@ -28,17 +29,14 @@ function friendMessage(steamID, message) {
 	message = message.trim();
 	const steamID64 = steamID.getSteamID64();
 	Friends.getDetails(steamID64, function (err, details) {
-		log.info('Message from ' + (err ? steamID64 : details.personaname + ' (' + steamID64 + ')') + ': ' + message);
-
-		if (!Friends.isFriend(steamID64)) {
+		if (!Automatic.isOwner(steamID64) && isSpam(steamID64)) {
+			return;
+		} else if (!Friends.isFriend(steamID64)) {
 			log.debug('Message is not from a friend');
 			return;
 		}
 
-		if (!Automatic.isOwner(steamID64) && isSpam(steamID64)) {
-			log.debug('Spam...');
-			return;
-		}
+		log.info('Message from ' + (err ? steamID64 : details.personaname + ' (' + steamID64 + ')') + ': ' + message);
 
 		const command = isCommand(message);
 		if (command == 'how2trade') {
@@ -46,7 +44,7 @@ function friendMessage(steamID, message) {
 		} else if (command == 'help') {
 			let reply = 'Here\'s a list of all my commands: !help, !message, !how2trade, !stock, !price, !buy, !sell';
 			if (Automatic.isOwner(steamID64)) {
-				reply += ', !add, !remove, !update';
+				reply += ', !add, !remove, !update, !profit';
 			}
 			client.chatMessage(steamID64, reply);
 		} else if (command == 'stock') {
@@ -306,6 +304,14 @@ function friendMessage(steamID, message) {
 
 				client.chatMessage(steamID64, 'The pricelist has been refreshed.');
 			});
+		} else if (command == 'profit' && Automatic.isOwner(steamID64)) {
+			const total = Statistics.profit();
+			const today = Statistics.profit(24);
+
+			const totalCurrencies = Prices.valueToPure(total, true, true);
+			const todayCurrencies = Prices.valueToPure(today, true, true);
+
+			client.chatMessage(steamID64, 'You\'ve made ' + utils.currencyAsText(todayCurrencies) + ' in the last 24 hours, ' + utils.currencyAsText(totalCurrencies) + ' in total.');
 		} else if (command == 'buy' || command == 'sell') {
 			let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
 			let amount = 1;

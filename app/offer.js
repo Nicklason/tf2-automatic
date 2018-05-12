@@ -11,6 +11,8 @@ class Offer {
         this.items = { our: offer.itemsToGive, their: offer.itemsToReceive };
         this.currencies = { our: { keys: 0, metal: 0 }, their: { keys: 0, metal: 0 } };
 
+        this.prices = [];
+
         this.offering = {
             metal: { us: false, them: false },
             keys: { us: false, them: false },

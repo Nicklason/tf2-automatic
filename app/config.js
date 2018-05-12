@@ -18,7 +18,7 @@ const defaultConfig = {
     'stocklimit': 1,
     'notify': 'trade', // "all" / "none" / "price" / "trade"
     'offerMessage': '',
-    'metalSupply': 200,
+    //'metalSupply': 200, This is not being used, but will be in the future
     'logs': {
         'console': {
             'type': 'Console',
@@ -42,11 +42,11 @@ const defaultConfig = {
 };
 
 const defaultAccount = {
-        'name': '',
-        'password': '',
-        'shared_secret': '',
-        'identity_secret': '',
-        'bptfToken': ''
+    'name': '',
+    'password': '',
+    'shared_secret': '',
+    'identity_secret': '',
+    'bptfToken': ''
 };
 
 let config = {};
