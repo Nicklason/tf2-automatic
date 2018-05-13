@@ -24,8 +24,8 @@ exports.register = function (automatic) {
 exports.addItem = addItem;
 exports.profit = getProfit;
 
-function addItem(assetid, currencies, intent) {
-    let history = HISTORY[assetid] || {};
+function addItem(name, assetid, currencies, intent) {
+    let history = HISTORY[assetid] || { name: name };
 
     intent = intent == 0 ? 'bought' : 'sold';
     history[intent] = Prices.value(currencies); // Considering that the price of keys can change, we need to use the current value of the item

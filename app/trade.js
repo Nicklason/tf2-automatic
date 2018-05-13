@@ -1082,7 +1082,7 @@ function offerAccepted(offer) {
             const item = items[i];
             for (let j = 0; j < item.ids.length; j++) {
                 const id = item.ids[j];
-                Statistics.addItem(id, item.currencies, item.intent);
+                Statistics.addItem(item.name, id, item.currencies, item.intent);
             }
         }
     });
