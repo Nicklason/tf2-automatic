@@ -134,7 +134,7 @@ function valueToPure(value, useKeys = true, onlyRef = false) {
         const refined = utils.scrapToRefined(value - keys * keyValue);
         return {
             keys: keys,
-            refined: refined
+            metal: refined
         };
     }
 
