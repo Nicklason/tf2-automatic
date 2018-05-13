@@ -45,13 +45,12 @@ function getProfit(hours = Infinity) {
 
     for (let assetid in HISTORY) {
         const history = HISTORY[assetid];
-        if (!history.bought) {
-            // Skip if no data for bought price
+        if (!history.bought || !history.sold) {
             continue;
         }
         const old = current - history.time_sold > max;
         if (!old) {
-            total += (history.sold || 0) - (history.bought || 0);
+            total += history.sold - history.bought;
         }
     }
 
