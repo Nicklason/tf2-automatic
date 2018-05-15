@@ -4,7 +4,7 @@ const FOLDER_NAME = 'temp';
 const CONFIG_FILENAME = FOLDER_NAME + '/config.json';
 const ACCOUNT_FILENAME = FOLDER_NAME + '/account.json';
 const STOCKLIMIT_FILENAME = FOLDER_NAME + '/limits.json';
-const defaultConfig = {
+const DEFAULT_CONFIG = {
     'pricesKey': '<your key to the pricing api>',
     'bptfKey': '<your api key for the bptf api>',
     'dateFormat': 'DD-MM-YYYY HH:mm:ss',
@@ -49,9 +49,11 @@ const defaultAccount = {
     'bptfToken': ''
 };
 
-let config = {};
-let account = {};
-let limits = {};
+let CONFIG = {};
+let ACCOUNT = {};
+let LIMITS = {};
+
+let WAIT;
 
 function parseJSON(file) {
     try {
@@ -61,32 +63,41 @@ function parseJSON(file) {
     }
 }
 
-function saveJSON(file, data) {
-    fs.writeFileSync(file, JSON.stringify(data, null, '\t'));
+function saveJSON(file, data, wait = false) {
+    if (wait == false) {
+        fs.writeFileSync(file, JSON.stringify(data, null, '\t'));
+        return;
+    }
+
+    clearTimeout(WAIT);
+
+    WAIT = setTimeout(function () {
+        saveJSON(file, data);
+    }, 1000);
 }
 
 function get(val, def) {
     if (val) {
-        return config[val] || def || defaultConfig[val];
+        return CONFIG[val] || def || DEFAULT_CONFIG[val];
     }
 
-    return config;
+    return CONFIG;
 }
 
 function getDefault(val) {
     if (val) {
-        return defaultConfig[val];
+        return DEFAULT_CONFIG[val];
     }
 
-    return defaultConfig;
+    return DEFAULT_CONFIG;
 }
 
 exports.get = get;
 exports.default = getDefault;
 
 exports.write = function (conf) {
-    config = conf;
-    saveJSON(CONFIG_FILENAME, config);
+    CONFIG = conf;
+    saveJSON(CONFIG_FILENAME, CONFIG);
 };
 
 exports.init = function () {
@@ -97,21 +108,21 @@ exports.init = function () {
     }
 
     if (fs.existsSync(CONFIG_FILENAME)) {
-        config = parseJSON(CONFIG_FILENAME);
-        if (typeof config === 'string') {
-            msg += 'Cannot load ' + CONFIG_FILENAME + '. ' + config.toString() + '. Using default config. ';
-            config = defaultConfig;
+        CONFIG = parseJSON(CONFIG_FILENAME);
+        if (typeof CONFIG === 'string') {
+            msg += 'Cannot load ' + CONFIG_FILENAME + '. ' + CONFIG.toString() + '. Using default config. ';
+            CONFIG = DEFAULT_CONFIG;
         }
     } else {
-        exports.write(defaultConfig);
+        exports.write(DEFAULT_CONFIG);
         msg += 'Config has been generated. ';
     }
 
     if (fs.existsSync(ACCOUNT_FILENAME)) {
-        account = parseJSON(ACCOUNT_FILENAME);
-        if (typeof account === 'string') {
-            msg += 'Cannot load ' + ACCOUNT_FILENAME + '. ' + account.toString() + '. No saved account details are available. ';
-            account = {};
+        ACCOUNT = parseJSON(ACCOUNT_FILENAME);
+        if (typeof ACCOUNT === 'string') {
+            msg += 'Cannot load ' + ACCOUNT_FILENAME + '. ' + ACCOUNT.toString() + '. No saved account details are available. ';
+            ACCOUNT = {};
         }
     } else {
         saveJSON(ACCOUNT_FILENAME, defaultAccount);
@@ -119,9 +130,9 @@ exports.init = function () {
     }
 
     if (fs.existsSync(STOCKLIMIT_FILENAME)) {
-        limits = parseJSON(STOCKLIMIT_FILENAME);
-        if (typeof limits === 'string') {
-            msg += 'Cannot load ' + STOCKLIMIT_FILENAME + '. ' + limits.toString() + '. ';
+        LIMITS = parseJSON(STOCKLIMIT_FILENAME);
+        if (typeof LIMITS === 'string') {
+            msg += 'Cannot load ' + STOCKLIMIT_FILENAME + '. ' + LIMITS.toString() + '. ';
         }
     }
 
@@ -129,21 +140,23 @@ exports.init = function () {
 };
 
 function addLimit(name, limit) {
-    limits[name] = limit;
-    saveJSON(STOCKLIMIT_FILENAME, limits);
+    LIMITS[name] = limit;
+    saveJSON(STOCKLIMIT_FILENAME, LIMITS);
 }
 
 function removeLimit(name) {
-    delete limits[name];
-    saveJSON(STOCKLIMIT_FILENAME, limits);
+    if (LIMITS.hasOwnProperty(name)) {
+        delete LIMITS[name];
+        saveJSON(STOCKLIMIT_FILENAME, LIMITS);
+    }
 }
 
 function getLimit(name) {
-    return limits[name] || config.stocklimit;
+    return LIMITS[name] || CONFIG.stocklimit;
 }
 
 function getAccount() {
-    return account;
+    return ACCOUNT;
 }
 
 exports.getAccount = getAccount;

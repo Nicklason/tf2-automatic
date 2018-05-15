@@ -285,6 +285,11 @@ function friendMessage(steamID, message) {
 					return;
 				}
 
+				for (let i = 0; i < items.length; i++) {
+					const name = items[i];
+					config.removeLimit(name);
+				}
+
 				if (removed > 0) {
 					client.chatMessage(steamID64, removed + ' ' + utils.plural('item', removed) + ' has been removed from the pricelist (might take some time to update).');
 				} else {
