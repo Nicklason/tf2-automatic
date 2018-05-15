@@ -112,7 +112,6 @@ function amountInDictionary(dictionary, name) {
 
 function isOverstocked(name, amount) {
     const limit = config.limit(name);
-    if (limit == -1) return false;
     if (limit == 0) return true;
 
     const stock = amountInDictionary(name);

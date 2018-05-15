@@ -157,7 +157,13 @@ function removeLimit(name) {
 }
 
 function getLimit(name) {
-    return LIMITS[name] || CONFIG.stocklimit;
+    let limit = LIMITS[name] || CONFIG.stocklimit;
+    if (limit == -1) {
+        limit = Infinity;
+    } else if (limit > -1) {
+        limit = CONFIG.stocklimit;
+    }
+    return limit;
 }
 
 function getAccount() {
