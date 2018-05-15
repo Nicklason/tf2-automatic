@@ -160,7 +160,7 @@ function getLimit(name) {
     let limit = LIMITS[name] || CONFIG.stocklimit;
     if (limit == -1) {
         limit = Infinity;
-    } else if (limit > -1) {
+    } else if (limit < -1) {
         limit = CONFIG.stocklimit;
     }
     return limit;
