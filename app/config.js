@@ -29,13 +29,17 @@ const DEFAULT_CONFIG = {
             'type': 'File',
             'filename': 'automatic.log',
             'level': 'debug',
-            'json': false
+            'json': false,
+            'maxsize': 5242880,
+            'maxFiles': 10
         },
         'trade': {
             'type': 'File',
             'filename': 'automatic.trade.log',
             'level': 'trade',
-            'json': false
+            'json': false,
+            'maxsize': 5242880,
+            'maxFiles': 3
         }
     },
     'owners': ['<steamid64s>']
