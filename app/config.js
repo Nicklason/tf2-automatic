@@ -19,6 +19,7 @@ const DEFAULT_CONFIG = {
     'notify': 'trade', // "all" / "none" / "price" / "trade"
     'offerMessage': '',
     //'metalSupply': 200, This is not being used, but will be in the future
+    'overstockOverpay': 0.05,
     'logs': {
         'console': {
             'type': 'Console',

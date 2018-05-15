@@ -870,8 +870,8 @@ function checkReceivedOffer(id, callback) {
             }
         }
 
-        const enough = offeringEnough(our, their, tradingKeys);
-        if (enough != true) {
+        const value = offeringEnough(our, their, tradingKeys);
+        if (value.their < value.our) {
             offer.log('info', 'is not offering enough, declining. Summary:\n' + offer.summary());
             Automatic.alert('trade', 'User is not offering enough, declining. Summary:\n' + offer.summary());
             Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are not offering enough' });
@@ -882,7 +882,7 @@ function checkReceivedOffer(id, callback) {
         }
 
         const containsOverstocked = overstockedItems(offer);
-        if (containsOverstocked) {
+        if (containsOverstocked && value.overpay < config.get('overstockedOverpay')) {
             offer.log('info', 'contains overstocked items, declining. Summary:\n' + offer.summary());
             Automatic.alert('trade', 'User is offering overstocked items, declining. Summary:\n' + offer.summary());
             Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are offering overstocked / too many items' });
@@ -927,17 +927,28 @@ function acceptOffer(offer) {
 }
 
 function offeringEnough(our, their) {
-    let keyValue = utils.refinedToScrap(Prices.key());
+    const keyValue = utils.refinedToScrap(Prices.key());
 
-    let ourValue = our.metal + our.keys * keyValue,
+    const ourValue = our.metal + our.keys * keyValue,
         theirValue = their.metal + their.keys * keyValue;
+    
+    const overpay = (theirValue - ourValue) / ourValue;
+
+    return {
+        our: ourValue,
+        their: theirValue,
+        overpay: overpay
+    };
+
+    /*
 
     if (theirValue >= ourValue) {
-        return true;
+        return theirValue - ourValue;
     }
 
-    const missing = utils.scrapToRefined(ourValue - theirValue);
+    const missing = -utils.scrapToRefined(ourValue - theirValue);
     return missing;
+    */
 }
 
 function determineEscrowDays(offer) {
