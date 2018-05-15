@@ -751,15 +751,24 @@ function overstockedItems(offer) {
     const ourSummary = Items.createSummary(Items.createDictionary(offer.items.our));
     const theirSummary = Items.createSummary(Items.createDictionary(offer.items.their));
 
-    let change = theirSummary;
+    let items = [];
     for (let name in ourSummary) {
-        change[name] = (theirSummary[name] || 0) - ourSummary[name];
+        if (!items.includes(name)) items.push(name);
+    }
+    for (let name in theirSummary) {
+        if (!items.includes(name)) items.push(name);
     }
 
-    for (let name in change) {
-        const amount = Inventory.amount(name) + change[name];
+    for (let i = 0; i < items.length; i++) {
+        const name = items[i];
+
+        const change = (theirSummary[name] || 0) - (ourSummary[name] || 0);
+        const amount = Inventory.amount(name) + change;
         const limit = config.limit(name);
-        if (amount > limit) return true;
+
+        if (amount > limit) {
+            return true;
+        }
     }
 
     return false;
