@@ -204,6 +204,9 @@ function updateOrders(lost, gained) {
             });
         }
     }
+
+    LOST_ITEMS = [];
+    GAINED_ITEMS = [];
 }
 
 function listingComment(intent, name, price) {
