@@ -32,7 +32,17 @@ exports.init = function (callback) {
             callback(new Error('bptf-listings (' + err.message + ')'));
             return;
         }
-        callback(null);
+
+        Listings.removeAll(function(err) {
+            if (err) {
+                callback(new Error('bptf-listings (' + err.message + ')'));
+                return;
+            }
+
+            log.debug('Removed all listings from backpack.tf');
+
+            callback(null);
+        });
     });
 
     Listings.on('heartbeat', heartbeat);

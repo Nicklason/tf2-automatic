@@ -63,4 +63,6 @@ temp/
 tests/
 locals/
 
+package-lock.json
+
 TODO.md

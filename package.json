@@ -7,7 +7,7 @@
   "description": "Fully automated TF2 trading bot advertising on www.backpack.tf",
   "main": "automatic.js",
   "dependencies": {
-    "bptf-listings": "^2.4.0",
+    "bptf-listings": "^2.4.2",
     "graceful-fs": "^4.1.11",
     "moment": "^2.20.1",
     "steam-totp": "^2.0.1",

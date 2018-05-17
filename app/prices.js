@@ -20,12 +20,15 @@ exports.register = function (automatic) {
 exports.init = function (callback) {
     Prices = new TF2Prices({ apiKey: config.get().pricesKey, pollTime: 5 * 60 * 1000 });
 
+    /*
+    When the bot starts, create new listing for all items in the pricelist
     if (fs.existsSync(PRICES_FILENAME)) {
         const pricelist = utils.parseJSON(fs.readFileSync(PRICES_FILENAME));
         if (pricelist != null) {
             Prices.setPrices(pricelist);
         }
     }
+    */
 
     log.debug('Initializing tf2-prices package.');
     Prices.init(function(err) {
