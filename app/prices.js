@@ -15,11 +15,11 @@ exports.register = function (automatic) {
     Backpack = automatic.backpack;
     Items = automatic.items;
     Inventory = automatic.inventory;
+
+    Prices = new TF2Prices({ apiKey: config.get().pricesKey, pollTime: 5 * 60 * 1000 });
 };
 
 exports.init = function (callback) {
-    Prices = new TF2Prices({ apiKey: config.get().pricesKey, pollTime: 5 * 60 * 1000 });
-
     /*
     When the bot starts, create new listing for all items in the pricelist
     if (fs.existsSync(PRICES_FILENAME)) {

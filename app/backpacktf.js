@@ -75,6 +75,10 @@ exports.cap = function () { return Listings.cap; };
 exports.isBanned = banned;
 
 function makeSellOrders() {
+    if (Prices.ready == false) {
+        return;
+    }
+
     const dict = Inventory.dictionary();
 
     let list = [];
