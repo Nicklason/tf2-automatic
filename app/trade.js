@@ -1043,6 +1043,11 @@ function sentOfferChanged(offer, oldState) {
 }
 
 function offerAccepted(offer) {
+    const group = config.get('group');
+    if (group) {
+        client.inviteToGroup(offer.partner, group);
+    }
+
     offer.getReceivedItems(true, function(err, receivedItems) {
         if (err) {
             log.warn('Failed to get received items from offer, retrying in 30 seconds.');
@@ -1067,26 +1072,11 @@ function offerAccepted(offer) {
             Backpack.updateOrders(item, true);
         });
 
-
-        /*
-        How it should work:
-        When an offer is accepted, it will add received items to the history, and update existing with items lost
-        Info needed:
-        For received items, new assetid
-        For given items, current assetid (current assetid = new assetid when the item was received)
-
-        Find the assetids of the items in the offer.
-        */
-
-        // Get dictionary of receiveditems
-
         const received = Items.createDictionary(receivedItems);
 
         let items = offer.data('items') || [];
-        // Update ids for bought items
         for (let i = 0; i < items.length; i++) {
             if (items[i].intent != 0) {
-                // Only check received items
                 continue;
             }
 

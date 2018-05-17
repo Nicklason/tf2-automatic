@@ -15,6 +15,7 @@ const DEFAULT_CONFIG = {
         'buy': 'I am buying your %name% for %price%. I have %stock%',
         'sell': 'I am selling my %name% for %price%'
     },
+    'group': '',
     'stocklimit': 1,
     'notify': 'trade', // "all" / "none" / "price" / "trade"
     'offerMessage': '',
