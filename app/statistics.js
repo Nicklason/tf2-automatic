@@ -36,12 +36,12 @@ function addItem(name, assetid, currencies, intent) {
     saveHistory();
 }
 
-function getProfit(hours = Infinity) {
+function getProfit(today = false) {
     // if hours is = Infinity, then get all profit
     let total = 0;
 
     const current = utils.epoch();
-    const max = hours * 60 * 60; // Convert hours to seconds
+    const max = today ? utils.secondsToday() : Infinity; // Convert hours to seconds
 
     for (let assetid in HISTORY) {
         const history = HISTORY[assetid];

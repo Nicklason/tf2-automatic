@@ -316,7 +316,7 @@ function friendMessage(steamID, message) {
 			const totalCurrencies = Prices.valueToPure(total, true, true);
 			const todayCurrencies = Prices.valueToPure(today, true, true);
 
-			client.chatMessage(steamID64, 'You\'ve made ' + utils.currencyAsText(todayCurrencies) + ' in the last 24 hours, ' + utils.currencyAsText(totalCurrencies) + ' in total.');
+			client.chatMessage(steamID64, 'You\'ve made ' + utils.currencyAsText(todayCurrencies) + ' today, ' + utils.currencyAsText(totalCurrencies) + ' in total.');
 		} else if (command == 'buy' || command == 'sell') {
 			let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
 			let amount = 1;

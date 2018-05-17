@@ -9,8 +9,17 @@ exports.void = function () {
 
 };
 
+exports.secondsToday = function() {
+    const today = new Date();
+    today.setHours(0);
+    today.setMinutes(0);
+    today.setSeconds(0);
+    const seconds = Math.round((new Date().getTime() - today.getTime()) / 1000);
+    return seconds;
+};
+
 exports.epoch = function () {
-    let seconds = parseInt(Math.round(new Date().getTime() / 1000));
+    const seconds = Math.round(new Date().getTime() / 1000);
     return seconds;
 };
 
