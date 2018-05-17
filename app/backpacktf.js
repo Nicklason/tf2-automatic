@@ -119,12 +119,19 @@ function makeSellOrders() {
 function makeBuyOrders() {
     const prices = Prices.list();
     for (let i = 0; i < prices.length; i++) {
-        Listings.createListing({
-            intent: 0,
-            item: prices[i].item,
-            currencies: prices[i].price.buy,
-            details: listingComment(0, prices[i].item.name, prices[i].price.buy)
-        }, true);
+        const item = prices[i].item;
+
+        const limit = config.limit(item.name);
+        const stock = Inventory.amount(item.name);
+        if (stock < limit) {
+            const price = prices[i].price;
+            Listings.createListing({
+                intent: 0,
+                item: item,
+                currencies: price.buy,
+                details: listingComment(0, item.name, price.buy)
+            }, true);
+        }
     }
 }
 
