@@ -33,7 +33,7 @@ exports.init = function (callback) {
             return;
         }
 
-        Listings.removeAll(function(err) {
+        Listings.removeAll(function() {
             if (err) {
                 callback(new Error('bptf-listings (' + err.message + ')'));
                 return;
@@ -61,6 +61,7 @@ exports.listingComment = listingComment;
 exports.updateOrders = updateOrder;
 exports.updateSellOrders = updateSellOrders;
 exports.removeSellOrders = removeSellOrders;
+exports.startUpdater = startListingUpdater;
 
 exports.itemFromBuyOrder = function (listing) { return Listings.getItem(listing.item); };
 exports.listings = getListings;
@@ -112,6 +113,18 @@ function makeSellOrders() {
                 details: listingComment(1, name, price.sell)
             });
         }
+    }
+}
+
+function makeBuyOrders() {
+    const prices = Prices.list();
+    for (let i = 0; i < prices.length; i++) {
+        Listings.createListing({
+            intent: 0,
+            item: prices[i].item,
+            currencies: prices[i].price.buy,
+            details: listingComment(0, prices[i].item.name, prices[i].price.buy)
+        }, true);
     }
 }
 
@@ -273,6 +286,21 @@ function getLimit(listing) {
     return null;
 }
 
+function startListingUpdater() {
+    updateListings();
+    setTimeout(function () {
+        updateListings();
+    }, 30 * 60 * 1000);
+}
+
+function updateListings() {
+    Listings.removeAll(function (err) {
+        if (!err) {
+            makeBuyOrders();
+            makeSellOrders();
+        }
+    });
+}
 
 function banned(steamid64, callback) {
     if (config.get().acceptBanned === true) {

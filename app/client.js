@@ -96,6 +96,7 @@ function ready(err) {
     Messages.init();
     Friends.init();
     Trade.init();
+    Backpack.startUpdater();
 }
 
 function clientError(err) {

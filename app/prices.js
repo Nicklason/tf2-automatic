@@ -20,15 +20,12 @@ exports.register = function (automatic) {
 };
 
 exports.init = function (callback) {
-    /*
-    When the bot starts, create new listing for all items in the pricelist
     if (fs.existsSync(PRICES_FILENAME)) {
         const pricelist = utils.parseJSON(fs.readFileSync(PRICES_FILENAME));
         if (pricelist != null) {
             Prices.setPrices(pricelist);
         }
     }
-    */
 
     log.debug('Initializing tf2-prices package.');
     Prices.init(function(err) {
@@ -36,6 +33,7 @@ exports.init = function (callback) {
             callback(new Error('tf2-prices (' + err.message + ')'));
             return;
         }
+        
         callback(null);
     });
 
@@ -62,8 +60,6 @@ exports.value = getValue;
 exports.afford = canAfford;
 
 exports.valueToPure = valueToPure;
-
-// Todo: Have the getPrice function take an amount
 
 function getPrice(name, our) {
     if (name == 'Scrap Metal') {
