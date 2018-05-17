@@ -707,7 +707,7 @@ function makeChange(price, pure, useKeys) {
                 required.reclaimed = 0;
             }
             if (required.scrap < 0) {
-                change += Math.abs(required.reclaimed);
+                change += Math.abs(required.scrap);
                 required.scrap = 0;
             }
         }
