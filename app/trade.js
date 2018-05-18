@@ -1044,7 +1044,7 @@ function sentOfferChanged(offer, oldState) {
 
 function offerAccepted(offer) {
     const group = config.get('group');
-    if (group) {
+    if (group && Friends.isFriend(offer.partner)) {
         client.inviteToGroup(offer.partner, group);
     }
 

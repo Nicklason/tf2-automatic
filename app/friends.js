@@ -25,8 +25,6 @@ exports.init = function() {
 			addFriend(steamID64); // Add them back
 		}
 	});
-	
-
     
     checkFriendRequests();
 };
