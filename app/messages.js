@@ -331,7 +331,6 @@ function friendMessage(steamID, message) {
 			}
 
 			if (1 > amount) amount = 1;
-			else if (10 < amount) amount = 10;
 
 			let match = Prices.findMatch(name);
 			if (match == null) {
