@@ -213,7 +213,6 @@ function priceChanged(state, item, price) {
         const limit = config.limit(item.name);
         const inInv = Inventory.amount(item.name);
         if (!(limit != -1 && inInv >= limit)) {
-            log.debug('"' + item.name + '" is not overstocked, will update buy order.');
             Backpack.createListing({
                 intent: 0,
                 item: item,
