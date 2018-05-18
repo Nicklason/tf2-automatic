@@ -295,7 +295,7 @@ function getLimit(listing) {
 
 function startListingUpdater() {
     updateListings();
-    setTimeout(function () {
+    setInterval(function () {
         updateListings();
     }, 30 * 60 * 1000);
 }
