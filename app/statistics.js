@@ -48,8 +48,8 @@ function getProfit(today = false) {
         if (!history.bought || !history.sold) {
             continue;
         }
-        const old = current - history.time_sold > max;
-        if (!old) {
+        const good = max >= current - history.time_sold ;
+        if (good) {
             total += history.sold - history.bought;
         }
     }
