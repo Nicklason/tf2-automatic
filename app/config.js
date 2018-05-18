@@ -153,7 +153,7 @@ function addLimit(name, limit) {
 function removeLimit(name) {
     if (LIMITS.hasOwnProperty(name)) {
         delete LIMITS[name];
-        saveJSON(STOCKLIMIT_FILENAME, LIMITS);
+        saveJSON(STOCKLIMIT_FILENAME, LIMITS, true);
     }
 }
 

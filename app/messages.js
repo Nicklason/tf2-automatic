@@ -40,13 +40,13 @@ function friendMessage(steamID, message) {
 
 		const command = isCommand(message);
 		if (command == 'how2trade') {
-			client.chatMessage(steamID64, 'You can either send me an offer yourself, or use one of my two commands to request a trade. They are "!buy" and "!sell". Say you want to buy a Team Captain, just type "!buy The Team Captain".');
+			Automatic.message(steamID64, 'You can either send me an offer yourself, or use one of my two commands to request a trade. They are "!buy" and "!sell". Say you want to buy a Team Captain, just type "!buy The Team Captain".');
 		} else if (command == 'help') {
 			let reply = 'Here\'s a list of all my commands: !help, !message, !how2trade, !stock, !price, !buy, !sell';
 			if (Automatic.isOwner(steamID64)) {
 				reply += ', !add, !remove, !update, !profit';
 			}
-			client.chatMessage(steamID64, reply);
+			Automatic.message(steamID64, reply);
 		} else if (command == 'stock') {
 			const summary = Items.createSummary(Inventory.dictionary());
 
@@ -87,17 +87,17 @@ function friendMessage(steamID, message) {
 				reply += ',\nand ' + left + ' other ' + utils.plural('item', left);
 			}
 			reply += '.\nYou can see my inventory and prices here as well: https://backpack.tf/profiles/' + Automatic.getOwnSteamID();
-			client.chatMessage(steamID64, reply);
+			Automatic.message(steamID64, reply);
 		} else if (command == 'price') {
 			const name = message.substr(message.toLowerCase().indexOf('price') + 6);
 			if (name == '') {
-				client.chatMessage(steamID64, 'You forgot to add a name. Here\'s an example: "!price Team Captain"');
+				Automatic.message(steamID64, 'You forgot to add a name. Here\'s an example: "!price Team Captain"');
 				return;
 			}
 
 			let match = Prices.findMatch(name);
 			if (match == null) {
-				client.chatMessage(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
+				Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
@@ -110,7 +110,7 @@ function friendMessage(steamID, message) {
 					reply += ',\nand ' + other + ' other ' + utils.plural('item', other) + '.';
 				}
 
-				client.chatMessage(steamID64, reply);
+				Automatic.message(steamID64, reply);
 				return;
 			}
 
@@ -130,64 +130,64 @@ function friendMessage(steamID, message) {
 			}
 			reply += '.';
 
-			client.chatMessage(steamID64, reply);
+			Automatic.message(steamID64, reply);
 		} else if (command == 'message' && Automatic.isOwner(steamID64)) {
 			const parts = message.split(' ');
 			if (parts.length < 3) {
-				client.chatMessage(steamID64, 'Your syntax is wrong. Here\'s an example: "!reply 76561198120070906 Hi"');
+				Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!reply 76561198120070906 Hi"');
 				return;
 			}
 
 			const recipient = parts[1];
 			if (recipient.length != 17 || !recipient.startsWith('7656')) {
-				client.chatMessage(steamID64, 'Please write use a valid SteamID64.');
+				Automatic.message(steamID64, 'Please write use a valid SteamID64.');
 				return;
 			} else if (!Friends.isFriend(recipient)) {
-				client.chatMessage(steamID64, 'I am not friends with the user.');
+				Automatic.message(steamID64, 'I am not friends with the user.');
 				return;
 			}
 
 			const reply = message.substr(message.toLowerCase().indexOf(recipient) + 18);
-			client.chatMessage(recipient, 'Message from ' + (details ? details.personaname + ' (' + steamID64 + ')' : steamID64) + ': ' + reply);
-			client.chatMessage(steamID64, 'Your message has been sent.');
+			Automatic.message(recipient, 'Message from ' + (details ? details.personaname + ' (' + steamID64 + ')' : steamID64) + ': ' + reply);
+			Automatic.message(steamID64, 'Your message has been sent.');
 
 			const owners = config.get().owners || [];
 			for (let i = 0; i < owners.length; i++) {
 				if (owners[i] == steamID64) {
 					continue;
 				}
-				client.chatMessage(owners[i], (details ? details.personaname + ' (' + steamID64 + ')' : steamID64) + ' replied with "' + reply + '".');
+				Automatic.message(owners[i], (details ? details.personaname + ' (' + steamID64 + ')' : steamID64) + ' replied with "' + reply + '".');
 			}
 		} else if (command == 'message' && !Automatic.isOwner(steamID64)) {
 			const owners = config.get().owners;
 			if (!owners || owners.length == 0) {
-				client.chatMessage(steamID64, 'Sorry, but there are noone that you can message :(');
+				Automatic.message(steamID64, 'Sorry, but there are noone that you can message :(');
 				return;
 			}
 
 			const msg = message.substr(message.toLowerCase().indexOf('message') + 8);
 			if (msg == '') {
-				client.chatMessage(steamID64, 'Please include a message. Here\'s an example: "!message Hi"');
+				Automatic.message(steamID64, 'Please include a message. Here\'s an example: "!message Hi"');
 				return;
 			}
 
 			// Todo: check if owners are online. Get name of user and send that in the message aswell.
 			for (let i = 0; i < owners.length; i++) {
 				const id64 = owners[i];
-				client.chatMessage(id64, 'Message from ' + (details ? details.personaname + ' (' + steamID64 + ')' : steamID64) + ': ' + msg);
+				Automatic.message(id64, 'Message from ' + (details ? details.personaname + ' (' + steamID64 + ')' : steamID64) + ': ' + msg);
 			}
 
-			client.chatMessage(steamID64, 'Your message has been sent.');
+			Automatic.message(steamID64, 'Your message has been sent.');
 		} else if (command == 'add' && Automatic.isOwner(steamID64)) {
 			const string = message.substr(message.toLowerCase().indexOf('add') + 4);
 			let input = utils.stringToObject(string);
 			if (input == null) {
-				client.chatMessage(steamID64, 'Your syntax is wrong. Here\'s an example: "!add name=Rocket Launcher&quality=Strange"');
+				Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!add name=Rocket Launcher&quality=Strange"');
 				return;
 			}
 
 			if (!input.name) {
-				client.chatMessage(steamID64, 'You are missing a name. Here\'s an example: "!add name=Rocket Launcher"');
+				Automatic.message(steamID64, 'You are missing a name. Here\'s an example: "!add name=Rocket Launcher"');
 				return;
 			}
 
@@ -195,7 +195,7 @@ function friendMessage(steamID, message) {
 
 			let match = Items.findMatch(input.name);
 			if (match == null) {
-				client.chatMessage(steamID64, 'I could not find any items in the schema that contains "' + input.name + '".');
+				Automatic.message(steamID64, 'I could not find any items in the schema that contains "' + input.name + '".');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
@@ -208,7 +208,7 @@ function friendMessage(steamID, message) {
 					reply += ',\nand ' + other + ' other ' + utils.plural('item', other) + '.';
 				}
 
-				client.chatMessage(steamID64, reply);
+				Automatic.message(steamID64, reply);
 				return;
 			}
 
@@ -216,10 +216,10 @@ function friendMessage(steamID, message) {
 			if (input.limit && input.limit != '') {
 				limit = parseInt(input.limit);
 				if (isNaN(limit)) {
-					client.chatMessage(steamID64, '"' + input.limit + '" is not a valid limit. Here\'s an example: "!add name=Team Captain&limit=2"');
+					Automatic.message(steamID64, '"' + input.limit + '" is not a valid limit. Here\'s an example: "!add name=Team Captain&limit=2"');
 					return;
 				} else if (limit < -1) {
-					client.chatMessage(steamID64, '"' + input.limit + '" is not a valid limit. You can use -1 for unlimited, 0 for no buying, 1 for a limit of 1 and so on.');
+					Automatic.message(steamID64, '"' + input.limit + '" is not a valid limit. You can use -1 for unlimited, 0 for no buying, 1 for a limit of 1 and so on.');
 					return;
 				}
 			}
@@ -236,7 +236,7 @@ function friendMessage(steamID, message) {
 				input.quality = utils.capitalizeEach(input.quality);
 				const quality = Items.getQuality(input.quality);
 				if (quality == null) {
-					client.chatMessage(steamID64, 'Did not find a quality like "' + input.quality + '".');
+					Automatic.message(steamID64, 'Did not find a quality like "' + input.quality + '".');
 					return;
 				}
 				item.quality = Number(quality);
@@ -244,7 +244,7 @@ function friendMessage(steamID, message) {
 
 			Prices.addItems([item], function (err, added) {
 				if (err) {
-					client.chatMessage(steamID64, 'I failed to add the item to the pricelist: ' + (err.reason || err.message));
+					Automatic.message(steamID64, 'I failed to add the item to the pricelist: ' + (err.reason || err.message));
 					return;
 				}
 
@@ -258,22 +258,22 @@ function friendMessage(steamID, message) {
 						reply += ' with a limit of ' + limit;
 					}
 					reply += ' (might take some time to update).';
-					client.chatMessage(steamID64, reply);
+					Automatic.message(steamID64, reply);
 				} else {
-					client.chatMessage(steamID64, 'No items were added, something might have went wrong.');
+					Automatic.message(steamID64, 'No items were added, something might have went wrong.');
 				}
 			});
 		} else if (command == 'remove' && Automatic.isOwner(steamID64)) {
 			const string = message.substr(message.toLowerCase().indexOf('remove') + 7);
 			let input = utils.stringToObject(string);
 			if (input == null) {
-				client.chatMessage(steamID64, 'Your syntax is wrong. Here\'s an example: "!remove items=Strange Rocket Launcher, Strange Australium Rocket Launcher"');
+				Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!remove items=Strange Rocket Launcher, Strange Australium Rocket Launcher"');
 				return;
 			}
 
 			let items = input.items;
 			if (!items || items == '') {
-				client.chatMessage(steamID64, 'You are missing items. Here\'s an example: "!remove items=Strange Rocket Launcher, Strange Australium Rocket Launcher"');
+				Automatic.message(steamID64, 'You are missing items. Here\'s an example: "!remove items=Strange Rocket Launcher, Strange Australium Rocket Launcher"');
 				return;
 			}
 
@@ -281,7 +281,7 @@ function friendMessage(steamID, message) {
 
 			Prices.removeItems(items, function (err, removed) {
 				if (err) {
-					client.chatMessage(steamID64, 'I failed to remove the item(s) from the pricelist: ' + (err.reason || err.message));
+					Automatic.message(steamID64, 'I failed to remove the item(s) from the pricelist: ' + (err.reason || err.message));
 					return;
 				}
 
@@ -291,23 +291,23 @@ function friendMessage(steamID, message) {
 				}
 
 				if (removed > 0) {
-					client.chatMessage(steamID64, removed + ' ' + utils.plural('item', removed) + ' has been removed from the pricelist (might take some time to update).');
+					Automatic.message(steamID64, removed + ' ' + utils.plural('item', removed) + ' has been removed from the pricelist (might take some time to update).');
 				} else {
-					client.chatMessage(steamID64, 'No items were removed. Try and write out the name exactly as it is in the pricelist.');
+					Automatic.message(steamID64, 'No items were removed. Try and write out the name exactly as it is in the pricelist.');
 				}
 			});
 		} else if (command == 'update' && Automatic.isOwner(steamID64)) {
 			Prices.update(function (err) {
 				if (err) {
 					if (err.message == 'Too Many Requests') {
-						client.chatMessage(steamID64, 'I failed to update the pricelist, try again in ' + (err.retryAfter / 1000) + ' ' + utils.plural('second', err.retryAfter / 1000) + '.');
+						Automatic.message(steamID64, 'I failed to update the pricelist, try again in ' + (err.retryAfter / 1000) + ' ' + utils.plural('second', err.retryAfter / 1000) + '.');
 					} else {
-						client.chatMessage(steamID64, 'I failed to update the pricelist: ' + (err.reason || err.message));
+						Automatic.message(steamID64, 'I failed to update the pricelist: ' + (err.reason || err.message));
 					}
 					return;
 				}
 
-				client.chatMessage(steamID64, 'The pricelist has been refreshed.');
+				Automatic.message(steamID64, 'The pricelist has been refreshed.');
 			});
 		} else if (command == 'profit' && Automatic.isOwner(steamID64)) {
 			const total = Statistics.profit();
@@ -316,7 +316,7 @@ function friendMessage(steamID, message) {
 			const totalCurrencies = Prices.valueToPure(total, true, true);
 			const todayCurrencies = Prices.valueToPure(today, true, true);
 
-			client.chatMessage(steamID64, 'You\'ve made ' + utils.currencyAsText(todayCurrencies) + ' today, ' + utils.currencyAsText(totalCurrencies) + ' in total.');
+			Automatic.message(steamID64, 'You\'ve made ' + utils.currencyAsText(todayCurrencies) + ' today, ' + utils.currencyAsText(totalCurrencies) + ' in total.');
 		} else if (command == 'buy' || command == 'sell') {
 			let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
 			let amount = 1;
@@ -326,7 +326,7 @@ function friendMessage(steamID, message) {
 			}
 
 			if (name == '') {
-				client.chatMessage(steamID64, 'You forgot to add a name. Here\'s an example: "!buy Team Captain"');
+				Automatic.message(steamID64, 'You forgot to add a name. Here\'s an example: "!buy Team Captain"');
 				return;
 			}
 
@@ -335,7 +335,7 @@ function friendMessage(steamID, message) {
 
 			let match = Prices.findMatch(name);
 			if (match == null) {
-				client.chatMessage(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
+				Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
@@ -348,13 +348,13 @@ function friendMessage(steamID, message) {
 					reply += ',\nand ' + other + ' other ' + utils.plural('item', other) + '.';
 				}
 
-				client.chatMessage(steamID64, reply);
+				Automatic.message(steamID64, reply);
 				return;
 			}
 			const selling = command == 'buy';
 			Trade.requestOffer(steamID64, match.item.name, amount, selling);
 		} else {
-			client.chatMessage(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
+			Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
 		}
 	});
 }

@@ -3,11 +3,12 @@ const request = require('request');
 
 const utils = require('./utils.js');
 
-let client, manager, log;
+let Automatic, client, manager, log;
 
 let FRIEND_DETAILS = {};
 
 exports.register = function(automatic) {
+	Automatic = automatic;
 	client = automatic.client;
 	manager = automatic.manager;
     log = automatic.log;
@@ -151,7 +152,7 @@ function getDetails(steamID64, callback) {
 }
 
 function alert(steamID64, alert) {
-    client.chatMessage(steamID64, 'Your trade was ' + alert.status + '. Reason: ' + alert.reason + '.');
+	Automatic.message(steamID64, 'Your trade was ' + alert.status + '. Reason: ' + alert.reason + '.');
 }
 
 exports.alert = alert;

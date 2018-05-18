@@ -46,21 +46,27 @@ let Automatic = {
         return Automatic.client.steamID ? Automatic.client.steamID.getSteamID64() : null;
     },
     isOwner(steamID64) {
-        return Automatic.config.get().owners.includes(steamID64);
+        return config.get('owners').includes(steamID64);
     },
     alert(type, message) {
-        const notify = Automatic.config.get().notify || 'none';
+        const notify = config.get('notify', 'none');
         if (notify == 'all' || notify == type) {
-            const owners = config.get().owners;
+            const owners = config.get('owners');
             if (owners.length == 1 && owners[0] == '<steamid64s>') {
                 return;
             }
 
             message = '[Alert!] ' + message;
             owners.forEach(function (owner) {
-                Automatic.client.chatMessage(owner, message);
+                Automatic.message(owner, message);
             });
         }
+    },
+    message(steamID64, message) {
+        Automatic.friends.getDetails(steamID64, function (err, details) {
+            log.info('Message sent to ' + (err ? steamID64 : details.personaname + ' (' + steamID64 + ')') + ': ' + message);
+            Automatic.client.chatMessage(steamID64, message);
+        });
     }
 };
 

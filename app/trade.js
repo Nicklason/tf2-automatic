@@ -80,16 +80,16 @@ function requestOffer(steamID64, name, amount, selling) {
 
     const active = getActiveOffer(steamID64);
     if (active != null) {
-        client.chatMessage(steamID64, 'You already have an active offer! Please finish it before requesting a new one: https://steamcommunity.com/tradeoffer/' + active + '/');
+        Automatic.message(steamID64, 'You already have an active offer! Please finish it before requesting a new one: https://steamcommunity.com/tradeoffer/' + active + '/');
         return;
     }
 
     const position = Queue.inQueue(steamID64);
     if (position != false) {
         if (position == 1) {
-            client.chatMessage(steamID64, 'You are already in the queue! Please wait while I process your offer.');
+            Automatic.message(steamID64, 'You are already in the queue! Please wait while I process your offer.');
         } else {
-            client.chatMessage(steamID64, 'You are already in the queue! Please wait your turn, you are number ' + position + '.');
+            Automatic.message(steamID64, 'You are already in the queue! Please wait your turn, you are number ' + position + '.');
         }
         return;
     }
@@ -104,7 +104,7 @@ function requestOffer(steamID64, name, amount, selling) {
     Queue.requestedOffer(steamID64, details);
     if (length > 0) {
         // > 0 because we don't want to spam with messages if they are the first in the queue.
-        client.chatMessage(steamID64, 'You have been added to the queue. You are number ' + (length + 1) + '.');
+        Automatic.message(steamID64, 'You have been added to the queue. You are number ' + (length + 1) + '.');
     }
     handleQueue();
 }
@@ -222,18 +222,18 @@ function handleQueue() {
             if (err) {
                 log.warn('Failed to create offer (' + err.message + ')');
                 log.debug(err.stack);
-                client.chatMessage(offer.partner, 'Ohh nooooes! It looks like an error occurred, that\'s all we know. Please try again later!');
+                Automatic.message(offer.partner, 'Ohh nooooes! It looks like an error occurred, that\'s all we know. Please try again later!');
                 setTimeout(handleQueue, 5000);
                 return;
             }
 
             if (!made) {
                 log.warn('Failed to make the offer (' + reason + ')');
-                client.chatMessage(offer.partner, 'I failed to make the offer. Reason: ' + reason + '.');
+                Automatic.message(offer.partner, 'I failed to make the offer. Reason: ' + reason + '.');
             } else if (offerid) {
-                client.chatMessage(offer.partner, 'The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/' + offerid + '/');
+                Automatic.message(offer.partner, 'The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/' + offerid + '/');
             } else {
-                client.chatMessage(offer.partner, 'Your offer has been made, please wait while I accept the mobile confirmation.');
+                Automatic.message(offer.partner, 'Your offer has been made, please wait while I accept the mobile confirmation.');
             }
 
             setTimeout(handleQueue, 1000);
@@ -385,12 +385,12 @@ function createOffer(request, callback) {
             }
 
             if (alteredMessage) {
-                client.chatMessage(partner, 'Your offer has been altered! Reason: ' + alteredMessage);
+                Automatic.message(partner, 'Your offer has been altered! Reason: ' + alteredMessage);
             }
 
             const required = Prices.required(currencies, amount, name != 'Mann Co. Supply Crate Key');
             const priceText = utils.currencyAsText(required);
-            client.chatMessage(partner, 'Please wait while I process your offer! You will be offered ' + (selling ? amount + ' ' + name + (amount > 1 ? '(s)' : '') + ' for your ' + priceText : priceText + ' for your ' + amount + ' ' + name + (amount > 1 ? '(s)' : '')) + '.');
+            Automatic.message(partner, 'Please wait while I process your offer! You will be offered ' + (selling ? amount + ' ' + name + (amount > 1 ? '(s)' : '') + ' for your ' + priceText : priceText + ' for your ' + amount + ' ' + name + (amount > 1 ? '(s)' : '')) + '.');
 
             let pure = constructOffer(required, items.buyer, name != 'Mann Co. Supply Crate Key');
             const offer = manager.createOffer(partner);
@@ -1007,10 +1007,10 @@ function receivedOfferChanged(offer, oldState) {
     }
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
-        client.chatMessage(offer.partner, 'Success! Your offer went through successfully.');
+        Automatic.message(offer.partner, 'Success! Your offer went through successfully.');
         offerAccepted(offer);
     } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
-        client.chatMessage(offer.partner, 'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).');
+        Automatic.message(offer.partner, 'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).');
     }
 }
 
@@ -1023,21 +1023,21 @@ function sentOfferChanged(offer, oldState) {
     }
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
-        client.chatMessage(offer.partner, 'Success! The offer went through successfully.');
+        Automatic.message(offer.partner, 'Success! The offer went through successfully.');
         log.trade('Offer #' + offer.id + ' User accepted the offer');
         Automatic.alert('trade', 'User accepted a trade sent by me');
         offerAccepted(offer);
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Active) {
-        client.chatMessage(offer.partner, 'The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/' + offer.id + '/');
+        Automatic.message(offer.partner, 'The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/' + offer.id + '/');
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Declined) {
-        client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.');
+        Automatic.message(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.');
     } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
-        client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: Items not available (traded away in a different trade).');
+        Automatic.message(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: Items not available (traded away in a different trade).');
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Canceled) {
         if (oldState == TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
-            client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: Failed to accept mobile confirmation.');
+            Automatic.message(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: Failed to accept mobile confirmation.');
         } else {
-            client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been active for a while.');
+            Automatic.message(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been active for a while.');
         }
     }
 }
