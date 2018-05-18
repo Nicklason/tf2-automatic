@@ -48,6 +48,7 @@ exports.init = function (callback) {
     Listings.on('heartbeat', heartbeat);
     Listings.on('created', listingCreated);
     Listings.on('removed', listingRemoved);
+    Listings.on('error', listingError);
     Listings.on('inventory', inventory);
 };
 
@@ -340,7 +341,7 @@ function banned(steamid64, callback) {
 function inventory() { log.info('The inventory has been updated on www.backpack.tf.'); }
 function listingCreated(name) { log.debug('Created a listing for "' + name + '"'); }
 function listingRemoved(id) { log.debug('Removed a listing with the id "' + id + '"'); }
-
+function listingError() {}
 function heartbeat(bumped) {
     log.info('Heartbeat sent to www.backpack.tf' + (bumped > 0 ? '; Bumped ' + bumped + ' ' + utils.plural('listing', bumped) : '') + '.');
     makeSellOrders();
