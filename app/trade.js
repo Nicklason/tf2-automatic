@@ -564,15 +564,19 @@ function sendOffer(offer, callback) {
             } else if (err.hasOwnProperty('eresult')) {
                 if (err.eresult == 16) {
                     // This happens when Steam is already handling an offer (usually big offers), the offer should be made
-                    confirmations.accept(offer.id);
-                    callback(null, true);
+                    if (offer.id) {
+                        confirmations.accept(offer.id);
+                        callback(null, true);
+                    } else {
+                        callback(null, false, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
+                    }
                 } else if (err.eresult == 20) {
                     callback(null, false, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
                 } else if (err.eresult == 26) {
                     callback(null, false, 'One or more of the items in the offer has been traded away');
                     Inventory.getInventory(Automatic.getOwnSteamID());
                 } else {
-                    callback(null, false, 'An error occurred sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')');
+                    callback(null, false, 'An error occurred while sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')');
                 }
                 return;
             }
