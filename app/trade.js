@@ -215,21 +215,21 @@ function handleQueue() {
         });
     } else if (offer.status === 'Queued') {
         log.info('Handling requested offer from ' + offer.partner);
-        createOffer(offer, function (err, made, reason, offerid) {
+        createOffer(offer, function (err, failed, offerid) {
             Queue.removeFirst();
             DOING_QUEUE = false;
 
             if (err) {
                 log.warn('Failed to create offer (' + err.message + ')');
                 log.debug(err.stack);
-                Automatic.message(offer.partner, 'Ohh nooooes! It looks like an error occurred, that\'s all we know. Please try again later!');
+                Automatic.message(offer.partner, 'Ohh nooooes! It looks like an error occurred. That\'s all we know, please try again later!');
                 setTimeout(handleQueue, 5000);
                 return;
             }
 
-            if (!made) {
-                log.warn('Failed to make the offer (' + reason + ')');
-                Automatic.message(offer.partner, 'I failed to make the offer. Reason: ' + reason + '.');
+            if (failed != false) {
+                log.warn('Failed to make the offer (' + failed + ')');
+                Automatic.message(offer.partner, 'I failed to make the offer. Reason: ' + failed + '.');
             } else if (offerid) {
                 Automatic.message(offer.partner, 'The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/' + offerid + '/');
             } else {
@@ -288,7 +288,7 @@ function createOffer(request, callback) {
 
     let price = Prices.getPrice(name);
     if (price == null) {
-        callback(null, false, 'Item is no longer in the pricelist');
+        callback(null, 'Item is no longer in the pricelist');
         return;
     }
     price = price.price[selling ? 'sell' : 'buy'];
@@ -316,12 +316,12 @@ function createOffer(request, callback) {
             if (selling == true) {
                 const inInv = Inventory.amount(name);
                 if (inInv != 0) {
-                    callback(null, false, 'I am already trading my ' + name + '(s)');
+                    callback(null, 'I am already trading my ' + name + '(s)');
                     return;
                 }
             }
 
-            callback(null, false, (selling ? 'I' : 'You') + ' don\'t have any ' + name + '(s) in ' + (selling ? 'my' : 'your') + ' inventory');
+            callback(null, (selling ? 'I' : 'You') + ' don\'t have any ' + name + '(s) in ' + (selling ? 'my' : 'your') + ' inventory');
             return;
         } else if (typeof enoughItems != 'boolean') {
             if (selling == true) {
@@ -335,7 +335,7 @@ function createOffer(request, callback) {
         if (selling == false) {
             const overstocked = Inventory.overstocked(name);
             if (overstocked == true) {
-                callback(null, false, 'I am overstocked on ' + name + '(s)');
+                callback(null, 'I am overstocked on ' + name + '(s)');
 
                 const listing = Backpack.findBuyOrder(name);
                 if (listing) Backpack.removeListing(listing.id);
@@ -359,7 +359,7 @@ function createOffer(request, callback) {
                     const canBuy = limit - stock;
 
                     if (canBuy <= 0) {
-                        callback(null, false, 'I am overstocked on ' + name + '(s), I won\'t keep more than ' + limit + ' in my inventory');
+                        callback(null, 'I am overstocked on ' + name + '(s), I won\'t keep more than ' + limit + ' in my inventory');
                         // Remove buy order as we are overstocked on the item.
                         let listing = Backpack.findBuyOrder(name);
                         if (listing) {
@@ -377,7 +377,7 @@ function createOffer(request, callback) {
             const afford = Prices.afford(currencies, Items.pure(items.buyer, name != 'Mann Co. Supply Crate Key'));
 
             if (afford == 0) {
-                callback(null, false, (selling ? 'You' : 'I') + ' don\'t have enough pure');
+                callback(null, (selling ? 'You' : 'I') + ' don\'t have enough pure');
                 return;
             } else if (afford < amount) {
                 alteredMessage = (selling ? 'You' : 'I') + ' can only afford ' + afford + ' ' + name + (afford != 1 ? '(s)' : '');
@@ -418,7 +418,7 @@ function createOffer(request, callback) {
 
             if (missing == true) {
                 log.debug('Items missing:', items);
-                callback(null, false, 'Something went wrong constructing the offer');
+                callback(null, 'Something went wrong constructing the offer');
                 return;
             }
 
@@ -436,7 +436,7 @@ function createOffer(request, callback) {
             }
 
             if (missingItems != 0) {
-                callback(null, false, 'Something went wrong constructing the offer' + (selling ? ', I might already be selling the ' + utils.plural('item', amount) : ''));
+                callback(null, 'Something went wrong constructing the offer' + (selling ? ', I might already be selling the ' + utils.plural('item', amount) : ''));
                 return;
             }
 
@@ -462,7 +462,7 @@ function createOffer(request, callback) {
 
                 if (change != 0) {
                     log.debug('Missing change: ' + utils.scrapToRefined(change));
-                    callback(null, false, 'I am missing ' + utils.scrapToRefined(change) + ' ref as change');
+                    callback(null, 'I am missing ' + utils.scrapToRefined(change) + ' ref as change');
                     return;
                 }
             }
@@ -474,7 +474,7 @@ function createOffer(request, callback) {
                     return;
                 } else if (banned) {
                     log.info('user is ' + reason + ', declining.');
-                    callback(null, false, 'You are ' + reason);
+                    callback(null, 'You are ' + reason);
                     return;
                 }
 
@@ -485,7 +485,7 @@ function createOffer(request, callback) {
                     intent: selling == true ? 1 : 0,
                     ids: assetids,
                     name: name,
-                    currencies: currencies
+                    value: Prices.value(currencies)
                 }]);
 
                 log.debug('Finishing the offer');
@@ -509,7 +509,7 @@ function finalizeOffer(offer, callback) {
             }
         } else {
             if (callback) {
-                callback(null, false, 'The offer would be held by escrow');
+                callback(null, 'The offer would be held by escrow');
             } else {
                 log.info('Offer would be held by escrow, declining.');
                 offer.decline().then(function () { offer.log('debug', 'declined'); });
@@ -529,10 +529,10 @@ function finalizeOffer(offer, callback) {
             callback(err);
             return;
         } else if (err.message.indexOf('because they have a trade ban') != -1) {
-            callback(null, false, 'You are trade banned');
+            callback(null, 'You are trade banned');
             return;
         } else if (err.message.indexOf('is not available to trade') != -1) {
-            callback(null, false, 'We can\'t trade (more information will be shown if you try and send an offer)');
+            callback(null, 'We can\'t trade (more information will be shown if you try and send an offer)');
             return;
         }
 
@@ -559,24 +559,26 @@ function sendOffer(offer, callback) {
                 callback(err);
                 return;
             } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') > -1) {
-                callback(null, false, 'I don\'t have space for more items in my inventory');
+                callback(null, 'I don\'t have space for more items in my inventory');
                 return;
             } else if (err.hasOwnProperty('eresult')) {
-                if (err.eresult == 16) {
+                if (err.eresult == 10) {
+                    callback(null, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
+                } else if (err.eresult == 16) {
                     // This happens when Steam is already handling an offer (usually big offers), the offer should be made
                     if (offer.id) {
                         confirmations.accept(offer.id);
-                        callback(null, true);
+                        callback(null);
                     } else {
-                        callback(null, false, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
+                        callback(null, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
                     }
                 } else if (err.eresult == 20) {
-                    callback(null, false, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
+                    callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
                 } else if (err.eresult == 26) {
-                    callback(null, false, 'One or more of the items in the offer has been traded away');
+                    callback(null, 'One or more of the items in the offer has been traded away');
                     Inventory.getInventory(Automatic.getOwnSteamID());
                 } else {
-                    callback(null, false, 'An error occurred while sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')');
+                    callback(null, 'An error occurred while sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')');
                 }
                 return;
             }
@@ -597,9 +599,9 @@ function sendOffer(offer, callback) {
 
         if (status === 'pending') {
             confirmations.accept(offer.id);
-            callback(null, true);
+            callback(null, false);
         } else {
-            callback(null, true, null, offer.id);
+            callback(null, false, offer.id);
         }
     });
 }
@@ -1029,7 +1031,7 @@ function sentOfferChanged(offer, oldState) {
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
         Automatic.message(offer.partner, 'Success! The offer went through successfully.');
         log.trade('Offer #' + offer.id + ' User accepted the offer');
-        Automatic.alert('trade', 'User accepted a trade sent by me');
+        Automatic.alert('trade', 'User accepted an offer sent by me');
         offerAccepted(offer);
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Active) {
         Automatic.message(offer.partner, 'The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/' + offer.id + '/');
@@ -1096,7 +1098,7 @@ function offerAccepted(offer) {
             const item = items[i];
             for (let j = 0; j < item.ids.length; j++) {
                 const id = item.ids[j];
-                Statistics.addItem(item.name, id, item.currencies, item.intent);
+                Statistics.addItem(item.name, id, item.value, item.intent);
             }
         }
     });

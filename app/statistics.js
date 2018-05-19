@@ -2,7 +2,7 @@ const fs = require('graceful-fs');
 
 const utils = require('./utils.js');
 
-let log, Prices;
+let log;
 
 const FOLDER_NAME = 'temp';
 const HISTORY_FILENAME = FOLDER_NAME + '/history.json';
@@ -11,7 +11,6 @@ let HISTORY = {}, WAIT;
 
 exports.register = function (automatic) {
     log = automatic.log;
-    Prices = automatic.prices;
 
     if (fs.existsSync(HISTORY_FILENAME)) {
         const data = utils.parseJSON(fs.readFileSync(HISTORY_FILENAME));
@@ -24,11 +23,11 @@ exports.register = function (automatic) {
 exports.addItem = addItem;
 exports.profit = getProfit;
 
-function addItem(name, assetid, currencies, intent) {
+function addItem(name, assetid, value, intent) {
     let history = HISTORY[assetid] || { name: name };
 
     intent = intent == 0 ? 'bought' : 'sold';
-    history[intent] = Prices.value(currencies); // Considering that the price of keys can change, we need to use the current value of the item
+    history[intent] = value; // Considering that the price of keys can change, we need to use the current value of the item
     history['time_' + intent] = utils.epoch();
 
     HISTORY[assetid] = history;

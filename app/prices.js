@@ -166,7 +166,7 @@ function handleBuyOrders(offer) {
             intent: 0,
             ids: dict[name],
             name: name,
-            currencies: price
+            value: value
         });
     }
 }
@@ -188,7 +188,7 @@ function handleSellOrders(offer) {
             intent: 1,
             ids: dict[name],
             name: name,
-            currencies: price
+            value: value
         });
     }
 }
