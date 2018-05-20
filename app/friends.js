@@ -3,15 +3,17 @@ const request = require('request');
 
 const utils = require('./utils.js');
 
-let Automatic, client, manager, log;
+let Automatic, client, community, manager, log, config;
 
 let FRIEND_DETAILS = {};
 
 exports.register = function(automatic) {
 	Automatic = automatic;
 	client = automatic.client;
+	community = automatic.community;
 	manager = automatic.manager;
-    log = automatic.log;
+	log = automatic.log;
+	config = automatic.config;
 };
 
 exports.init = function() {
@@ -82,6 +84,18 @@ function isFriend(steamID64) {
 		}
 	}
 	return false;
+}
+
+function inviteToGroups(steamID64) {
+	if (!isFriend(steamID64)) {
+		return;
+	}
+
+	const groups = config.get('groups');
+
+	for (let i = 0; i < groups.length; i++) {
+		community.inviteUserToGroup(steamID64, groups[i]);
+	}
 }
 
 function requestDetails(steamID64, callback) {
@@ -156,3 +170,4 @@ function alert(steamID64, alert) {
 exports.alert = alert;
 exports.isFriend = isFriend;
 exports.getDetails = getDetails;
+exports.sendGroupInvites = inviteToGroups;

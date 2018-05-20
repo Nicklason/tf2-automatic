@@ -25,7 +25,7 @@ exports.receivedOffer = enqueueReceivedOffer;
 exports.getNext = getNext;
 exports.removeFirst = removeFirst;
 exports.removeID = removeID;
-exports.inQueue = isInQueue;
+exports.inQueue = inQueue;
 
 exports.getLength = function() {
     return QUEUE.length;
@@ -68,8 +68,8 @@ function enqueueReceivedOffer(offer) {
     }
 
     const trade = {
-        partner: offer.partner(),
         id: offer.id(),
+        partner: offer.partner(),
         status: 'Received',
         details: {},
         time: utils.epoch()
@@ -86,9 +86,9 @@ function enqueueRequestedOffer(steamID64, details) {
         partner: steamID64,
         status: 'Queued',
         details: {
+            intent: details.intent,
             name: details.name,
-            amount: details.amount,
-            intent: details.intent
+            amount: details.amount
         },
         time: utils.epoch()
     };
@@ -97,11 +97,11 @@ function enqueueRequestedOffer(steamID64, details) {
     saveQueue();
 }
 
-function isInQueue(steamID64) {
+function inQueue(steamID64) {
     for (let i = 0; i < QUEUE.length; i++) {
         const offer = QUEUE[i];
         if (offer.status == 'Queued' && offer.partner == steamID64) {
-            return i + 1;
+            return i;
         }
     }
 

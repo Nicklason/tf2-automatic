@@ -110,16 +110,23 @@ function amountInDictionary(dictionary, name) {
     return amount;
 }
 
-function isOverstocked(name, amount) {
+function isOverstocked(name, difference) {
+    if (difference < 0) {
+        return false;
+    }
     const limit = config.limit(name);
-    if (limit == 0) return true;
+    if (limit == 0) {
+        return true;
+    }
 
     const stock = amountInDictionary(name);
-    const canBuy = limit - stock;
+    const canBuy = limit - stock - difference;
 
-    if (canBuy <= 0) return true;
-    if (canBuy - amount < 0) return canBuy;
-    return false;
+    if (canBuy > 0) {
+        return canBuy;
+    } else {
+        return true;
+    }
 }
 
 function metalStatus() {

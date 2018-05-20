@@ -29,8 +29,8 @@ exports.register = function (automatic) {
     if (fs.existsSync(POLLDATA_FILENAME)) {
         try {
             manager.pollData = JSON.parse(fs.readFileSync(POLLDATA_FILENAME));
-        } catch (e) {
-            log.verbose('polldata is corrupt: ' + e);
+        } catch (err) {
+            log.verbose('polldata is corrupt: ' + err);
         }
     }
 
@@ -86,7 +86,7 @@ function requestOffer(steamID64, name, amount, selling) {
 
     const position = Queue.inQueue(steamID64);
     if (position != false) {
-        if (position == 1) {
+        if (position == 0) {
             Automatic.message(steamID64, 'You are already in the queue! Please wait while I process your offer.');
         } else {
             Automatic.message(steamID64, 'You are already in the queue! Please wait your turn, you are number ' + position + '.');
@@ -95,16 +95,16 @@ function requestOffer(steamID64, name, amount, selling) {
     }
 
     const details = {
+        intent: selling == true ? 1 : 0,
         name: name,
-        amount: amount,
-        intent: selling == true ? 1 : 0
+        amount: amount
     };
     
     const length = Queue.getLength();
     Queue.requestedOffer(steamID64, details);
     if (length > 0) {
         // > 0 because we don't want to spam with messages if they are the first in the queue.
-        Automatic.message(steamID64, 'You have been added to the queue. You are number ' + (length + 1) + '.');
+        Automatic.message(steamID64, 'You have been added to the queue. You are number ' + length + '.');
     }
     handleQueue();
 }
@@ -253,7 +253,6 @@ function hasEnoughItems(name, dictionary, amount) {
 function filterItems(dictionary) {    
     let filtered = {};
     for (let name in dictionary) {
-        // If I don't do this, the item will be removed from the dictionary - https://gyazo.com/c31c89396f651244824d06c5cd85d709
         let ids = [].concat(dictionary[name]);
         for (var i = ids.length - 1; i >= 0; i--) {
             for (let j = 0; j < ITEMS_IN_TRADE.length; j++) {
@@ -327,7 +326,7 @@ function createOffer(request, callback) {
             if (selling == true) {
                 alteredMessage = 'I only have ' + enoughItems + ' ' + name + (enoughItems > 1 ? '(s)' : '') + ' for trade';
             } else{
-                alteredMessage = (selling ? 'I' : 'You') + ' only have ' + enoughItems + ' ' + name + (enoughItems > 1 ? '(s)' : '') + ' in ' + (selling ? 'my' : 'your') + ' inventory.';
+                alteredMessage = (selling ? 'I' : 'You') + ' only have ' + enoughItems + ' ' + name + (enoughItems > 1 ? '(s)' : '') + ' in ' + (selling ? 'my' : 'your') + ' inventory';
             }
             amount = enoughItems;
         }
@@ -367,7 +366,7 @@ function createOffer(request, callback) {
                         }
                         return;
                     } else if (canBuy - amount < 0) {
-                        alteredMessage = 'Your offer has been altered! Reason: I can only keep ' + canBuy + ' more.';
+                        alteredMessage = 'I can only keep ' + canBuy + ' more';
                         amount = canBuy;
                     }
                 }
@@ -385,7 +384,7 @@ function createOffer(request, callback) {
             }
 
             if (alteredMessage) {
-                Automatic.message(partner, 'Your offer has been altered! Reason: ' + alteredMessage);
+                Automatic.message(partner, 'Your offer has been altered! Reason: ' + alteredMessage + '.');
             }
 
             const required = Prices.required(currencies, amount, name != 'Mann Co. Supply Crate Key');
@@ -799,38 +798,14 @@ function checkReceivedOffer(id, callback) {
             return;
         }
 
-        let ok = Prices.handleBuyOrders(offer);
-        if (ok === false) {
-            offer.log('info', 'contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
-            Automatic.alert('trade', 'Contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
-            Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are offering an item that is not in my pricelist' });
-
-            offer.decline().then(function () {
-                offer.log('debug', 'declined');
-            });
+        if (Prices.handleBuyOrders(offer) == false || Prices.handleSellOrders(offer) == false) {
+            ERRORS.INVALD_ITEMS(offer);
             callback(null);
             return;
         }
 
-        ok = Prices.handleSellOrders(offer);
-        if (ok === false) {
-            offer.log('info', 'contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
-            Automatic.alert('trade', 'Contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
-            Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are taking an item that is not in my pricelist' });
-
-            offer.decline().then(function () {
-                offer.log('debug', 'declined');
-            });
-            callback(null);
-            return;
-        }
-
-        // Make sure that the offer does not only contain metal.
-        if (offer.offering.items.us == false && offer.offering.items.them == false && offer.offering.keys.us == false && offer.offering.keys.them == false && offer.currencies.our.metal >= offer.currencies.their.metal) {
-            offer.log('info', 'we are both offering only metal, declining. Summary:\n' + offer.summary());
-            Automatic.alert('trade', 'We are both only offering metal, declining.');
-
-            offer.decline().then(function () { offer.log('debug', 'declined'); });
+        if (offer.offering.items.us == false && offer.offering.items.them == false && offer.offering.keys.us == false && offer.offering.keys.them == false && (config.get('acceptGifts') == false && offer.currencies.our.metal >= offer.currencies.their.metal)) {
+            ERRORS.ONLY_METAL(offer);
             callback(null);
             return;
         }
@@ -841,14 +816,9 @@ function checkReceivedOffer(id, callback) {
         const tradingKeys = (offer.offering.keys.us == true || offer.offering.keys.them == true) && offer.offering.items.us == false && offer.offering.items.them == false;
         // Allows the bot to trade keys for metal and vice versa.
         if (tradingKeys) {
-            // We are buying / selling keys
             let price = Prices.getPrice('Mann Co. Supply Crate Key');
             if (price == null) {
-                offer.log('info', 'User is trying to buy / sell keys, but we are not banking them, declining. Summary:\n' + offer.summary());
-                Automatic.alert('trade', 'User is trying to buy / sell keys, but we are not banking them, declining. Summary: ' + offer.summary());
-                Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'I am not banking keys' });
-
-                offer.decline().then(function () { offer.log('debug', 'declined'); });
+                ERRORS.INVALD_ITEMS(offer);
                 callback(null);
                 return;
             }
@@ -857,11 +827,7 @@ function checkReceivedOffer(id, callback) {
             const overstocked = Inventory.overstocked('Mann Co. Supply Crate Key', their.keys - our.keys);
 
             if (overstocked) {
-                offer.log('info', '"Mann Co. Supply Crate Key" is, or will be overstocked, declining. Summary:\n' + offer.summary());
-                Automatic.alert('trade', 'User offered an item that is overstocked, declining. Summary:\n' + offer.summary());
-                Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You offered an item that is overstocked, or more than I will keep' });
-
-                offer.decline().then(function () { offer.log('debug', 'declined'); });
+                ERRORS.OVERSTOCKED(offer);
                 callback(null);
                 return;
             }
@@ -878,22 +844,14 @@ function checkReceivedOffer(id, callback) {
 
         const value = offeringEnough(our, their, tradingKeys);
         if (value.their < value.our) {
-            offer.log('info', 'is not offering enough, declining. Summary:\n' + offer.summary());
-            Automatic.alert('trade', 'User is not offering enough, declining. Summary:\n' + offer.summary());
-            Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are not offering enough' });
-
-            offer.decline().then(function () { offer.log('debug', 'declined'); });
+            ERRORS.INVALID_VALUE(offer);
             callback(null);
             return;
         }
 
         const containsOverstocked = overstockedItems(offer);
         if (containsOverstocked && value.overpay < config.get('overstockedOverpay')) {
-            offer.log('info', 'contains overstocked items, declining. Summary:\n' + offer.summary());
-            Automatic.alert('trade', 'User is offering overstocked items, declining. Summary:\n' + offer.summary());
-            Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are offering overstocked / too many items' });
-
-            offer.decline().then(function () { offer.log('debug', 'declined'); });
+            ERRORS.OVERSTOCKED(offer);
             callback(null);
             return;
         }
@@ -903,11 +861,11 @@ function checkReceivedOffer(id, callback) {
                 callback(err);
                 return;
             } else if (reason) {
-                offer.log('info', 'user is ' + reason + ', declining.');
-                Automatic.alert('trade', 'User is ' + reason + ', declining.');
-                Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are ' + reason });
-
-                offer.decline().then(function () { offer.log('debug', 'declined'); });
+                if (reason.indexOf('backpack.tf') != -1) {
+                    ERRORS.BPTF_BANNED(offer);
+                } else {
+                    ERRORS.SR_MARKED(offer);
+                }
                 callback(null);
                 return;
             }
@@ -945,16 +903,6 @@ function offeringEnough(our, their) {
         their: theirValue,
         overpay: overpay
     };
-
-    /*
-
-    if (theirValue >= ourValue) {
-        return theirValue - ourValue;
-    }
-
-    const missing = -utils.scrapToRefined(ourValue - theirValue);
-    return missing;
-    */
 }
 
 function determineEscrowDays(offer) {
@@ -1049,19 +997,19 @@ function sentOfferChanged(offer, oldState) {
 }
 
 function offerAccepted(offer) {
-    const group = config.get('group');
-    if (group && Friends.isFriend(offer.partner)) {
-        client.inviteToGroup(offer.partner, group);
-    }
+    Friends.sendGroupInvites(offer.partner);
+    handleAcceptedOffer(offer);
+}
 
-    offer.getReceivedItems(true, function(err, receivedItems) {
+function handleAcceptedOffer(offer) {
+    offer.getReceivedItems(true, function (err, receivedItems) {
         if (err) {
             log.warn('Failed to get received items from offer, retrying in 30 seconds.');
             if (err.message == 'Not Logged In') {
                 client.webLogOn();
             }
-            setTimeout(function() {
-                offerAccepted(offer);
+            setTimeout(function () {
+                handleAcceptedOffer(offer);
             }, 30 * 1000);
             return;
         }
@@ -1200,3 +1148,51 @@ function removeOldOffers(pollData) {
 
     return pollData;
 }
+
+const ERRORS = {
+    INVALD_ITEMS: function(offer) {
+        offer.log('info', 'contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
+        Automatic.alert('trade', 'Contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
+        Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are taking / offering an item that is not in my pricelist' });
+
+        offer.decline().then(function () {
+            offer.log('debug', 'declined');
+        });
+    },
+    ONLY_METAL: function(offer) {
+        offer.log('info', 'we are both offering only metal, declining. Summary:\n' + offer.summary());
+        Automatic.alert('trade', 'We are both only offering metal, declining.');
+
+        offer.decline().then(function () { offer.log('debug', 'declined'); });
+    },
+    OVERSTOCKED: function(offer) {
+        offer.log('info', 'contains overstocked items, declining. Summary:\n' + offer.summary());
+        Automatic.alert('trade', 'User is offering overstocked items, declining. Summary:\n' + offer.summary());
+        Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are offering overstocked / too many items' });
+
+        offer.decline().then(function () {
+            offer.log('debug', 'declined');
+        });
+    },
+    INVALID_VALUE: function(offer) {
+        offer.log('info', 'is not offering enough, declining. Summary:\n' + offer.summary());
+        Automatic.alert('trade', 'User is not offering enough, declining. Summary:\n' + offer.summary());
+        Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are not offering enough' });
+
+        offer.decline().then(function () { offer.log('debug', 'declined'); });
+    },
+    BPTF_BANNED: function(offer) {
+        offer.log('info', 'is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
+        Automatic.alert('trade', 'User is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
+        Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are all-features banned on www.backpack.tf' });
+
+        offer.decline().then(function () { offer.log('debug', 'declined'); });
+    },
+    SR_BANNED: function(offer) {
+        offer.log('info', 'user is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
+        Automatic.alert('trade', 'User is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
+        Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are marked on www.steamrep.com as a scammer' });
+
+        offer.decline().then(function () { offer.log('debug', 'declined'); });
+    }
+};

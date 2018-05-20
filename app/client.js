@@ -38,10 +38,10 @@ exports.connect = function (ratelimit) {
 
     if (account.name != '' && account.password != '' && account.shared_secret != '' && account.identity_secret != '') {
         if (ratelimit) {
-            log.warn('Your account has received a login cooldown. Wait 30 minutes before retrying, otherwise it resets to 30 minutes again. Retrying in 45 minutes...');
+            log.warn('Your account has received a login cooldown. Wait half an hour before retrying, otherwise it resets to 30 minutes again. Retrying in an hour...');
             setTimeout(function() {
                 Login.performLogin(account, handleLogin);
-            }, 45 * 60 * 1000);
+            }, 60 * 60 * 1000);
             return;
         }
         log.info('Connecting to Steam...');
@@ -97,6 +97,42 @@ function ready(err) {
     Friends.init();
     Trade.init();
     Backpack.startUpdater();
+
+    joinGroups();
+}
+
+function joinGroups() {
+    const groups = config.get('groups');
+
+    const relations = client.myGroups;
+    for (let i = 0; i < groups.length; i++) {
+        const id = groups[i];
+
+        let relation = SteamUser.EClanRelationship.None;
+        for (let group in relations) {
+            if (id != group) {
+                continue;
+            }
+
+            relation = relations[group];
+        }
+
+        if (relation != SteamUser.EClanRelationship.Member) {
+            joinGroup(id);
+        }
+    }
+
+    // todo: leave groups that are not in the list 
+}
+
+function joinGroup(id) {
+    community.joinGroup(id, function(err) {
+        if (err) {
+            log.warn('An error occurred while joining a group: ' + err.message);
+            log.debug(err.stack);
+            return;
+        }
+    });
 }
 
 function clientError(err) {

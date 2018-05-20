@@ -42,7 +42,7 @@ function friendMessage(steamID, message) {
 		if (command == 'how2trade') {
 			Automatic.message(steamID64, 'You can either send me an offer yourself, or use one of my two commands to request a trade. They are "!buy" and "!sell". Say you want to buy a Team Captain, just type "!buy The Team Captain".');
 		} else if (command == 'help') {
-			let reply = 'Here\'s a list of all my commands: !help, !message, !how2trade, !stock, !price, !buy, !sell';
+			let reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
 			if (Automatic.isOwner(steamID64)) {
 				reply += ', !add, !remove, !update, !profit';
 			}
@@ -326,7 +326,7 @@ function friendMessage(steamID, message) {
 			}
 
 			if (name == '') {
-				Automatic.message(steamID64, 'You forgot to add a name. Here\'s an example: "!buy Team Captain"');
+				Automatic.message(steamID64, 'You forgot to add a name. Here\'s an example: "!buy The Team Captain"');
 				return;
 			}
 

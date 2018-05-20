@@ -15,7 +15,7 @@ const DEFAULT_CONFIG = {
         'buy': 'I am buying your %name% for %price%. I have %stock%',
         'sell': 'I am selling my %name% for %price%'
     },
-    'group': '',
+    'groups': ['103582791462300957'], // groupid64, this is the tf2automatic steam group
     'stocklimit': 1,
     'notify': 'trade', // "all" / "none" / "price" / "trade"
     'offerMessage': '',
