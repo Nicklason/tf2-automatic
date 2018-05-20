@@ -537,7 +537,7 @@ function finalizeOffer(offer, callback) {
 
         if (err.message == 'Not Logged In') {
             client.webLogOn();
-            log.warn('Cannot check escrow duration because we are not logged into Steam, retrying in 10 seconds.');
+            log.warn('Cannot check escrow duration because we are not logged into Steam, retrying in 30 seconds.');
         } else {
             log.warn('Cannot check escrow duration (error: ' + err.message + '), retrying in 10 seconds.');
         }
@@ -590,7 +590,7 @@ function sendOffer(offer, callback) {
 
             setTimeout(function () {
                 sendOffer(offer, callback);
-            }, 10000);
+            }, 30000);
             return;
         }
         
