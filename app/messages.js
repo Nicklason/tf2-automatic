@@ -312,11 +312,19 @@ function friendMessage(steamID, message) {
 		} else if (command == 'profit' && Automatic.isOwner(steamID64)) {
 			const total = Statistics.profit();
 			const today = Statistics.profit(24);
+			const potential = Statistics.potentialProfit();
 
-			const totalCurrencies = Prices.valueToPure(total, true, true);
-			const todayCurrencies = Prices.valueToPure(today, true, true);
+			const totalCurrencies = Prices.valueToCurrencies(total);
+			const todayCurrencies = Prices.valueToCurrencies(today);
+			const potentialCurrencies = Prices.valueToCurrencies(potential);
 
-			Automatic.message(steamID64, 'You\'ve made ' + utils.currencyAsText(todayCurrencies) + ' today, ' + utils.currencyAsText(totalCurrencies) + ' in total.');
+			let response = 'You\'ve made ' + utils.currencyAsText(todayCurrencies) + ' today, ' + utils.currencyAsText(totalCurrencies) + ' in total';
+			if (potential > 0) {
+				response += ' (' + utils.currencyAsText(potentialCurrencies) + ' more if all items were sold)'; 
+			}
+			response += '.';
+
+			Automatic.message(steamID64, response);
 		} else if (command == 'buy' || command == 'sell') {
 			let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
 			let amount = 1;

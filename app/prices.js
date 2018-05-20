@@ -60,6 +60,7 @@ exports.value = getValue;
 exports.afford = canAfford;
 
 exports.valueToPure = valueToPure;
+exports.valueToCurrencies = valueToCurrencies;
 
 function getPrice(name, our) {
     if (name == 'Scrap Metal') {
@@ -124,19 +125,10 @@ function canAfford(price, pure) {
     return amount;
 }
 
-function valueToPure(value, useKeys = true, onlyRef = false) {
+function valueToPure(value, useKeys = true) {
     const keyValue = utils.refinedToScrap(key());
 
     const keys = useKeys ? Math.floor(value / keyValue) : 0;
-
-    if (onlyRef) {
-        const refined = utils.scrapToRefined(value - keys * keyValue);
-        return {
-            keys: keys,
-            metal: refined
-        };
-    }
-
     const refined = Math.floor((value - keys * keyValue) / 9);
     const reclaimed = Math.floor((value - refined * 9 - keys * keyValue) / 3);
     const scrap = value - refined * 9 - reclaimed * 3 - keys * keyValue;
@@ -146,6 +138,17 @@ function valueToPure(value, useKeys = true, onlyRef = false) {
         refined: refined,
         reclaimed: reclaimed,
         scrap: scrap
+    };
+}
+
+function valueToCurrencies(value, useKeys = true) {
+    const pure = valueToPure(value, useKeys);
+
+    const metal = utils.scrapToRefined(pure.refined * 9 + pure.reclaimed * 3 + pure.scrap);
+
+    return {
+        keys: pure.keys,
+        metal: metal
     };
 }
 

@@ -2,7 +2,7 @@ const fs = require('graceful-fs');
 
 const utils = require('./utils.js');
 
-let log;
+let log, Prices;
 
 const FOLDER_NAME = 'temp';
 const HISTORY_FILENAME = FOLDER_NAME + '/history.json';
@@ -10,6 +10,7 @@ const HISTORY_FILENAME = FOLDER_NAME + '/history.json';
 let HISTORY = {}, WAIT;
 
 exports.register = function (automatic) {
+    Prices = automatic.prices;
     log = automatic.log;
 
     if (fs.existsSync(HISTORY_FILENAME)) {
@@ -22,6 +23,7 @@ exports.register = function (automatic) {
 
 exports.addItem = addItem;
 exports.profit = getProfit;
+exports.potentialProfit = getPotentialProfit;
 
 function addItem(name, assetid, value, intent) {
     let history = HISTORY[assetid] || { name: name };
@@ -50,6 +52,26 @@ function getProfit(today = false) {
         const good = max >= current - history.time_sold ;
         if (good) {
             total += history.sold - history.bought;
+        }
+    }
+
+    return total;
+}
+
+function getPotentialProfit() {
+    let total = 0;
+
+    for (let assetid in HISTORY) {
+        const history = HISTORY[assetid];
+        // Checking if it has the name property because it previously didn't have that.
+        if (!history.bought || history.sold || !history.name) {
+            continue;
+        }
+
+        let price = Prices.getPrice(history.name);
+        if (price != null) {
+            price = Prices.value(price.price.sell);
+            total += price - history.bought;
         }
     }
 
