@@ -887,6 +887,7 @@ function acceptOffer(offer) {
         offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
     }).catch(function (err) {
         offer.log('warn', 'could not be accepted: ' + err);
+        log.debug(err.stack);
     });
 }
 
@@ -1005,6 +1006,7 @@ function handleAcceptedOffer(offer) {
     offer.getReceivedItems(true, function (err, receivedItems) {
         if (err) {
             log.warn('Failed to get received items from offer, retrying in 30 seconds.');
+            log.debug(err.stack);
             if (err.message == 'Not Logged In') {
                 client.webLogOn();
             }
