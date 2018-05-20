@@ -584,13 +584,15 @@ function sendOffer(offer, callback) {
             
             if (err.message == 'Not Logged In') {
                 client.webLogOn();
+                setTimeout(function () {
+                    sendOffer(offer, callback);
+                }, 30000);
             } else {
                 log.warn('An error occurred while trying to send the offer, retrying in 10 seconds.');
+                setTimeout(function () {
+                    sendOffer(offer, callback);
+                }, 10000);
             }
-
-            setTimeout(function () {
-                sendOffer(offer, callback);
-            }, 30000);
             return;
         }
         
