@@ -6,7 +6,7 @@ const Offer = require('./offer.js');
 const Queue = require('./queue.js');
 const confirmations = require('./confirmations.js');
 
-let Automatic, client, manager, Inventory, Backpack, Prices, Items, Friends, Statistics, log, config;
+let Automatic, manager, Inventory, Backpack, Prices, Items, Friends, Statistics, log, config;
 
 const POLLDATA_FILENAME = 'temp/polldata.json';
 
@@ -15,7 +15,6 @@ let READY = false, RECEIVED = [], DOING_QUEUE = false, ITEMS_IN_TRADE = [];
 exports.register = function (automatic) {
     Automatic = automatic;
     manager = automatic.manager;
-    client = automatic.client;
     log = automatic.log;
     config = automatic.config;
 
@@ -515,8 +514,8 @@ function finalizeOffer(offer, callback) {
         }
 
         if (err.message == 'Not Logged In') {
-            client.webLogOn();
-            log.warn('Cannot check escrow duration because we are not logged into Steam, retrying in 30 seconds.');
+            Automatic.refreshSession();
+            log.warn('Cannot check escrow duration because we are not logged into Steam, retrying in 10 seconds.');
         } else {
             log.warn('Cannot check escrow duration (error: ' + err.message + '), retrying in 10 seconds.');
         }
@@ -562,16 +561,13 @@ function sendOffer(offer, callback) {
             }
             
             if (err.message == 'Not Logged In') {
-                client.webLogOn();
-                setTimeout(function () {
-                    sendOffer(offer, callback);
-                }, 30000);
+                Automatic.refreshSession();
             } else {
                 log.warn('An error occurred while trying to send the offer, retrying in 10 seconds.');
-                setTimeout(function () {
-                    sendOffer(offer, callback);
-                }, 10000);
             }
+            setTimeout(function () {
+                sendOffer(offer, callback);
+            }, 10000);
             return;
         }
         
@@ -989,7 +985,7 @@ function handleAcceptedOffer(offer) {
             log.warn('Failed to get received items from offer, retrying in 30 seconds.');
             log.debug(err.stack);
             if (err.message == 'Not Logged In') {
-                client.webLogOn();
+                Automatic.refreshSession();
             }
             setTimeout(function () {
                 handleAcceptedOffer(offer);

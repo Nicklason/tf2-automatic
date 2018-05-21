@@ -39,6 +39,8 @@ if (configlog) {
     utils.fatal(log, 'Config messages: ' + configlog);
 }
 
+let recentlyRefreshedSession = false;
+
 let Automatic = {
     version: version,
     inventory: [],
@@ -67,6 +69,16 @@ let Automatic = {
             log.info('Message sent to ' + (err ? steamID64 : details.personaname + ' (' + steamID64 + ')') + ': ' + message);
             Automatic.client.chatMessage(steamID64, message);
         });
+    },
+    refreshSession() {
+        if (!recentlyRefreshedSession) {
+            recentlyRefreshedSession = true;
+
+            Automatic.client.webLogOn();
+            setTimeout(function () {
+                recentlyRefreshedSession = false;
+            }, 30000);
+        }
     }
 };
 

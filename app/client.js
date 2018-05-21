@@ -6,11 +6,12 @@ const utils = require('./utils.js');
 const Login = require('./login.js');
 const Messages = require('./messages.js');
 
-let client, community, manager, log, config, Items, Backpack, Prices, Inventory, Friends, Trade;
+let Automatic, client, community, manager, log, config, Items, Backpack, Prices, Inventory, Friends, Trade;
 
 let started = false;
 
 exports.register = function(automatic) {
+    Automatic = automatic;
     client = automatic.client;
     community = automatic.community;
     manager = automatic.manager;
@@ -147,7 +148,7 @@ function clientError(err) {
 
 function sessionExpired() {
     log.debug('Session has expired, refreshing it.');
-    client.webLogOn();
+    Automatic.refreshSession();
 }
 
 function confKeyNeeded(tag, callback) {
