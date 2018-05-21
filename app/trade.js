@@ -339,7 +339,7 @@ function createOffer(request, callback) {
                 const listing = Backpack.findBuyOrder(name);
                 if (listing) Backpack.removeListing(listing.id);
                 return;
-            } else if (typeof overstocked != 'boolean') {
+            } else if (typeof overstocked != 'boolean' && overstocked - amount < 0) {
                 alteredMessage = 'I can only keep ' + overstocked + ' more ' + name + (overstocked != 1 ? '(s)' : '');
                 amount = overstocked;
             }
