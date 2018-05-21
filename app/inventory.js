@@ -110,7 +110,7 @@ function amountInDictionary(dictionary, name) {
     return amount;
 }
 
-function isOverstocked(name, difference) {
+function isOverstocked(name, difference = 0) {
     if (difference < 0) {
         return false;
     }

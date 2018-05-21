@@ -351,27 +351,6 @@ function createOffer(request, callback) {
                 return;
             }
 
-            if (selling == false) {
-                const limit = config.limit(name);
-                if (limit != -1) {
-                    const stock = Inventory.amount(name);
-                    const canBuy = limit - stock;
-
-                    if (canBuy <= 0) {
-                        callback(null, 'I am overstocked on ' + name + '(s), I won\'t keep more than ' + limit + ' in my inventory');
-                        // Remove buy order as we are overstocked on the item.
-                        let listing = Backpack.findBuyOrder(name);
-                        if (listing) {
-                            Backpack.removeListing(listing.id);
-                        }
-                        return;
-                    } else if (canBuy - amount < 0) {
-                        alteredMessage = 'I can only keep ' + canBuy + ' more';
-                        amount = canBuy;
-                    }
-                }
-            }
-
             items.buyer = selling == false ? filterItems(dict) : dict;
             const afford = Prices.afford(currencies, Items.pure(items.buyer, name != 'Mann Co. Supply Crate Key'));
 
