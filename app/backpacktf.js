@@ -339,8 +339,8 @@ function banned(steamid64, callback) {
 }
 
 function inventory() { log.info('The inventory has been updated on www.backpack.tf.'); }
-function listingCreated(name) { log.debug('Created a listing for "' + name + '"'); }
-function listingRemoved(id) { log.debug('Removed a listing with the id "' + id + '"'); }
+function listingCreated() {}
+function listingRemoved() {}
 function listingError() {}
 function heartbeat(bumped) {
     log.info('Heartbeat sent to www.backpack.tf' + (bumped > 0 ? '; Bumped ' + bumped + ' ' + utils.plural('listing', bumped) : '') + '.');
