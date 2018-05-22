@@ -84,7 +84,7 @@ function requestOffer(steamID64, name, amount, selling) {
     }
 
     const position = Queue.inQueue(steamID64);
-    if (position != false) {
+    if (position !== false) {
         if (position == 0) {
             Automatic.message(steamID64, 'You are already in the queue! Please wait while I process your offer.');
         } else {

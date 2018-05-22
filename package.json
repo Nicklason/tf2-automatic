@@ -13,7 +13,7 @@
     "steam-totp": "^2.0.1",
     "steam-tradeoffer-manager": "^2.9.3",
     "steam-user": "^3.25.1",
-    "steamcommunity": "^3.34.1",
+    "steamcommunity": "^3.36.2",
     "tf2-items": "^2.0.2",
     "tf2-prices": "^1.0.7",
     "winston": "^2.4.0"
