@@ -71,11 +71,14 @@ let Automatic = {
         });
     },
     refreshSession() {
+        log.debug('Refreshing session...');
         if (!recentlyRefreshedSession) {
+            log.debug('We havn\'t refreshed the session recently, continuing');
             recentlyRefreshedSession = true;
 
             Automatic.client.webLogOn();
             setTimeout(function () {
+                log.debug('Session refresh timeout stopped');
                 recentlyRefreshedSession = false;
             }, 30000);
         }

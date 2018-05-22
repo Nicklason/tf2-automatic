@@ -803,7 +803,7 @@ function checkReceivedOffer(id, callback) {
             price = price.price;
             const overstocked = Inventory.overstocked('Mann Co. Supply Crate Key', their.keys - our.keys);
 
-            if (overstocked) {
+            if (overstocked == true) {
                 ERRORS.OVERSTOCKED(offer);
                 callback(null);
                 return;
