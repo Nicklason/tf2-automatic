@@ -334,9 +334,6 @@ function createOffer(request, callback) {
             const overstocked = Inventory.overstocked(name);
             if (overstocked === true) {
                 callback(null, 'I am overstocked on ' + name + '(s)');
-
-                const listing = Backpack.findBuyOrder(name);
-                if (listing) Backpack.removeListing(listing.id);
                 return;
             } else if (typeof overstocked != 'boolean' && overstocked - amount < 0) {
                 alteredMessage = 'I can only keep ' + overstocked + ' more ' + name + (overstocked != 1 ? '(s)' : '');
