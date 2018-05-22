@@ -80,7 +80,7 @@ let Automatic = {
             setTimeout(function () {
                 log.debug('Session refresh timeout stopped');
                 recentlyRefreshedSession = false;
-            }, 30000);
+            }, 5 * 60 * 1000);
         }
     }
 };
