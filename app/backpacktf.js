@@ -303,8 +303,8 @@ function startListingUpdater() {
 function updateListings() {
     Listings.removeAll(function (err) {
         if (!err) {
-            makeBuyOrders();
             makeSellOrders();
+            makeBuyOrders();       
         }
     });
 }
