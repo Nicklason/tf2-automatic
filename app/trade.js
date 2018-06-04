@@ -442,11 +442,11 @@ function createOffer(request, callback) {
             }
 
             log.debug('Offer ready, checking if the user is banned...');
-            Backpack.isBanned(partner, function (err, banned, reason) {
+            Backpack.isBanned(partner, function (err, reason) {
                 if (err) {
                     callback(err);
                     return;
-                } else if (banned) {
+                } else if (reason) {
                     log.info('user is ' + reason + ', declining.');
                     callback(null, 'You are ' + reason);
                     return;
