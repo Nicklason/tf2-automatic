@@ -1,4 +1,5 @@
 const SteamUser = require('steam-user');
+const SteamCommunity = require('steamcommunity');
 const SteamTotp = require('steam-totp');
 const async = require('async');
 
@@ -79,6 +80,10 @@ function saveCookies(sessionID, cookies) {
         if (!started) {
             started = true;
             initializePackages();
+            community.profileSettings({
+                inventory: SteamCommunity.PrivacyState.Public,
+                gameDetails: SteamCommunity.PrivacyState.Public
+            });
         }
     });
 }
