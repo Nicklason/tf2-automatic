@@ -3,12 +3,14 @@
 let SteamUser;
 let SteamCommunity;
 let TradeOfferManager;
+let TeamFortress2;
 let Winston;
 
 try {
     SteamUser = require('steam-user');
     SteamCommunity = require('steamcommunity');
     TradeOfferManager = require('steam-tradeoffer-manager');
+    TeamFortress2 = require('tf2');
     Winston = require('winston');
 } catch (ex) {
     console.error('Missing dependencies. Install a version with dependencies or use npm install.');
@@ -109,6 +111,7 @@ Automatic.inventory = inventory;
 Automatic.friends = friends;
 Automatic.trade = trade;
 Automatic.statistics = statistics;
+Automatic.tf2 = new TeamFortress2(Automatic.client);
 
 function register(...args) {
     args.forEach(function(component) {

@@ -6,7 +6,7 @@ const Offer = require('./offer.js');
 const Queue = require('./queue.js');
 const confirmations = require('./confirmations.js');
 
-let Automatic, manager, Inventory, Backpack, Prices, Items, Friends, Statistics, log, config;
+let Automatic, client, manager, Inventory, Backpack, Prices, Items, tf2, Friends, Statistics, log, config;
 
 const POLLDATA_FILENAME = 'temp/polldata.json';
 
@@ -14,6 +14,7 @@ let READY = false, RECEIVED = [], DOING_QUEUE = false, ITEMS_IN_TRADE = [];
 
 exports.register = function (automatic) {
     Automatic = automatic;
+    client = automatic.client;
     manager = automatic.manager;
     log = automatic.log;
     config = automatic.config;
@@ -22,6 +23,7 @@ exports.register = function (automatic) {
     Backpack = automatic.backpack;
     Prices = automatic.prices;
     Items = automatic.items;
+    tf2 = automatic.tf2;
     Friends = automatic.friends;
     Statistics = automatic.statistics;
 
@@ -41,7 +43,7 @@ exports.register = function (automatic) {
     manager.on('sentOfferChanged', sentOfferChanged);
 };
 
-exports.init = function() {
+exports.init = function () {
     READY = true;
 
     // Start offer checker.
@@ -98,7 +100,7 @@ function requestOffer(steamID64, name, amount, selling) {
         name: name,
         amount: amount
     };
-    
+
     const length = Queue.getLength();
     Queue.requestedOffer(steamID64, details);
     if (length > 0) {
@@ -138,7 +140,7 @@ function handleOffer(offer) {
     if (offer.fromOwner()) {
         offer.log('info', 'is from an owner, accepting');
         Automatic.alert('trade', 'Offer from owner, accepting');
-        
+
         offer.accept().then(function (status) {
             offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
         }).catch(function (err) {
@@ -151,7 +153,7 @@ function handleOffer(offer) {
         if (offer.isGift() && config.get('acceptGifts') == true) {
             offer.log('trade', 'is a gift offer asking for nothing in return, accepting');
             Automatic.alert('trade', 'Gift offer asking for nothing in return, accepting');
-            
+
             offer.accept().then(function (status) {
                 offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
             }).catch(function (err) {
@@ -172,7 +174,7 @@ function handleOffer(offer) {
         offer.log('info', 'contains non-TF2 items, declining');
         Automatic.alert('trade', 'Contains non-TF2 items, declining');
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'The offer contains non-TF2 items' });
-        
+
         offer.decline().then(function () {
             offer.log('debug', 'declined');
         });
@@ -200,7 +202,7 @@ function handleQueue() {
     log.debug('Found an offer in the queue, processing it now.');
     if (offer.status === 'Received') {
         log.info('Handling received offer (#' + offer.id + ')');
-        checkReceivedOffer(offer.id, function(err) {
+        checkReceivedOffer(offer.id, function (err) {
             Queue.removeFirst();
             DOING_QUEUE = false;
 
@@ -249,7 +251,7 @@ function hasEnoughItems(name, dictionary, amount) {
     return stock;
 }
 
-function filterItems(dictionary) {    
+function filterItems(dictionary) {
     let filtered = {};
     for (let name in dictionary) {
         let ids = [].concat(dictionary[name]);
@@ -298,7 +300,7 @@ function createOffer(request, callback) {
     const seller = request.details.intent == 1 ? Automatic.getOwnSteamID() : partner;
     const buyer = request.details.intent == 0 ? Automatic.getOwnSteamID() : partner;
 
-    Inventory.getDictionary(seller, function(err, dict) {
+    Inventory.getDictionary(seller, function (err, dict) {
         if (err) {
             callback(err);
             return;
@@ -324,7 +326,7 @@ function createOffer(request, callback) {
         } else if (typeof enoughItems != 'boolean') {
             if (selling == true) {
                 alteredMessage = 'I only have ' + enoughItems + ' ' + name + (enoughItems > 1 ? '(s)' : '') + ' for trade';
-            } else{
+            } else {
                 alteredMessage = (selling ? 'I' : 'You') + ' only have ' + enoughItems + ' ' + name + (enoughItems > 1 ? '(s)' : '') + ' in ' + (selling ? 'my' : 'your') + ' inventory';
             }
             amount = enoughItems;
@@ -341,7 +343,7 @@ function createOffer(request, callback) {
             }
         }
 
-        Inventory.getDictionary(buyer, function(err, dict) {
+        Inventory.getDictionary(buyer, function (err, dict) {
             if (err) {
                 callback(err);
                 return;
@@ -371,7 +373,7 @@ function createOffer(request, callback) {
 
             let change = pure.change || 0;
             pure = convertPure(pure);
-            
+
             for (let name in pure) {
                 const ids = items.buyer[name] || [];
                 for (let i = 0; i < ids.length; i++) {
@@ -510,7 +512,7 @@ function finalizeOffer(offer, callback) {
             return;
         }
 
-        if (err.message == 'Not Logged In') {
+        if (err.message == 'Not Logged In' || err.message == 'ESOCKETTIMEDOUT') {
             Automatic.refreshSession();
             log.warn('Cannot check escrow duration because we are not logged into Steam, retrying in 10 seconds.');
         } else {
@@ -528,7 +530,7 @@ function sendOffer(offer, callback) {
         if (err) {
             log.debug('Failed to send the offer');
             log.debug(err.stack);
-            
+
             if (err.message.indexOf('can only be sent to friends') != -1) {
                 callback(err);
                 return;
@@ -538,6 +540,8 @@ function sendOffer(offer, callback) {
             } else if (err.hasOwnProperty('eresult')) {
                 if (err.eresult == 10) {
                     callback(null, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
+                } else if (err.eresult == 15) {
+                    callback(null, 'I don\'t, or you don\'t, have space for more items');
                 } else if (err.eresult == 16) {
                     // This happens when Steam is already handling an offer (usually big offers), the offer should be made
                     if (offer.id) {
@@ -556,8 +560,8 @@ function sendOffer(offer, callback) {
                 }
                 return;
             }
-            
-            if (err.message == 'Not Logged In') {
+
+            if (err.message == 'Not Logged In' || err.message == 'ESOCKETTIMEDOUT') {
                 Automatic.refreshSession();
             } else {
                 log.warn('An error occurred while trying to send the offer, retrying in 10 seconds.');
@@ -567,7 +571,7 @@ function sendOffer(offer, callback) {
             }, 10000);
             return;
         }
-        
+
         addItemsInTrade(offer.itemsToGive);
 
         if (status === 'pending') {
@@ -870,7 +874,7 @@ function offeringEnough(our, their) {
 
     const ourValue = our.metal + our.keys * keyValue,
         theirValue = their.metal + their.keys * keyValue;
-    
+
     const overpay = (theirValue - ourValue) / ourValue;
 
     return {
@@ -910,13 +914,13 @@ function checkEscrow(offer) {
     }
 
     log.debug('Checking escrow for offer');
-    return determineEscrowDays(offer).then(function(escrowDays) {
+    return determineEscrowDays(offer).then(function (escrowDays) {
         return escrowDays != 0;
     });
 }
 
 function getOffer(id, callback) {
-    manager.getOffer(id, function(err, offer) {
+    manager.getOffer(id, function (err, offer) {
         if (err) {
             callback(err);
             return;
@@ -973,7 +977,14 @@ function sentOfferChanged(offer, oldState) {
 
 function offerAccepted(offer) {
     Friends.sendGroupInvites(offer.partner);
-    handleAcceptedOffer(offer);
+    Inventory.getInventory(Automatic.getOwnSteamID(), function () {
+        const doneSomething = smeltCraftMetal();
+        if (!doneSomething && config.get('sortInventory') == true) {
+            log.debug('Sorting inventory');
+            tf2.sortBackpack(3);
+        }
+        handleAcceptedOffer(offer);
+    });
 }
 
 function handleAcceptedOffer(offer) {
@@ -981,7 +992,7 @@ function handleAcceptedOffer(offer) {
         if (err) {
             log.warn('Failed to get received items from offer, retrying in 30 seconds.');
             log.debug(err.stack);
-            if (err.message == 'Not Logged In') {
+            if (err.message == 'Not Logged In' || err.message == 'ESOCKETTIMEDOUT') {
                 Automatic.refreshSession();
             }
             setTimeout(function () {
@@ -989,10 +1000,6 @@ function handleAcceptedOffer(offer) {
             }, 30 * 1000);
             return;
         }
-
-        let inv = filterLostItems(offer.itemsToGive);
-        inv = inv.concat(receivedItems);
-        Inventory.save(inv);
 
         offer.itemsToGive.forEach(function (item) {
             Backpack.updateOrders(item, false);
@@ -1028,6 +1035,91 @@ function handleAcceptedOffer(offer) {
     });
 }
 
+function smeltCraftMetal() {
+    if (tf2.haveGCSession) {
+        const dict = Inventory.dictionary();
+        const inv = filterItems(dict);
+
+        const scrap = inv['Scrap Metal'] || [];
+        let scrapSum = scrap.length;
+        const reclaimed = inv['Reclaimed Metal'] || [];
+        let reclaimedSum = reclaimed.length;
+        const refined = inv['Refined Metal'] || [];
+
+        let doneSomething = false;
+
+        const combineScrap = Math.floor((scrapSum - 9) / 3);
+        if (combineScrap > 0) {
+            for (let i = 0; i < combineScrap; i++) {
+                const ids = scrap.splice(i, i * 3 + 3);
+
+                tf2.craft(ids);
+                scrapSum -= 3;
+                reclaimedSum += 1;
+
+                doneSomething = true;
+            }
+        }
+
+        const combineReclaimed = Math.floor((reclaimedSum - 12) / 3);
+        if (combineReclaimed > 0) {
+            for (let i = 0; i < combineReclaimed; i++) {
+                const ids = reclaimed.splice(i * 3, i * 3 + 3);
+
+                tf2.craft(ids);
+                reclaimedSum -= 3;
+
+                doneSomething = true;
+            }
+        }
+
+        const smeltRefined = Math.abs(Math.floor((reclaimedSum - 12) / 3));
+        if (smeltRefined > 0) {
+            for (let i = 0; i < smeltRefined; i++) {
+                const id = refined[i];
+                if (!id) {
+                    break;
+                }
+
+                tf2.craft([id]);
+                reclaimedSum += 3;
+
+                doneSomething = true;
+            }
+        }
+
+        const smeltReclaimed = Math.abs(Math.floor((scrapSum - 9) / 3));
+        if (smeltReclaimed > 0) {
+            for (let i = 0; i < smeltReclaimed; i++) {
+                const id = reclaimed[i];
+                if (!id) {
+                    break;
+                }
+
+                tf2.craft([id]);
+                scrapSum += 3;
+                reclaimedSum -= 1;
+
+                doneSomething = true;
+            }
+        }
+
+        if (doneSomething) {
+            log.debug('Done crafting');
+            client.gamesPlayed([440]);
+            if (config.get('sortInventory') == true) {
+                log.debug('Sorting inventory');
+                tf2.sortBackpack(3);
+            }
+            Inventory.getInventory(Automatic.getOwnSteamID(), function () {
+                client.gamesPlayed([require('../package.json').name, 440]);
+            });
+        }
+
+        return doneSomething;
+    }
+}
+
 function addItemsInTrade(items) {
     for (let i = 0; i < items.length; i++) {
         const assetid = items[i].assetid;
@@ -1046,22 +1138,6 @@ function removeItemsInTrade(items) {
             ITEMS_IN_TRADE.splice(index, 1);
         }
     }
-}
-
-// Returns our inventory with the litems lost in a trade removed.
-function filterLostItems(lost) {
-    let inv = Inventory.get();
-    
-    for (let i = 0; i < lost.length; i++) {
-        for (var j = inv.length - 1; j >= 0; j--) {
-            if (lost[i].assetid == inv[j].assetid) {
-                inv.splice(j, 1);
-                break;
-            }
-        }
-    }
-
-    return inv;
 }
 
 function checkOfferCount() {
@@ -1126,7 +1202,7 @@ function removeOldOffers(pollData) {
 }
 
 const ERRORS = {
-    INVALD_ITEMS: function(offer) {
+    INVALD_ITEMS: function (offer) {
         offer.log('info', 'contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
         Automatic.alert('trade', 'Contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are taking / offering an item that is not in my pricelist' });
@@ -1135,13 +1211,13 @@ const ERRORS = {
             offer.log('debug', 'declined');
         });
     },
-    ONLY_METAL: function(offer) {
+    ONLY_METAL: function (offer) {
         offer.log('info', 'we are both offering only metal, declining. Summary:\n' + offer.summary());
         Automatic.alert('trade', 'We are both only offering metal, declining.');
 
         offer.decline().then(function () { offer.log('debug', 'declined'); });
     },
-    OVERSTOCKED: function(offer) {
+    OVERSTOCKED: function (offer) {
         offer.log('info', 'contains overstocked items, declining. Summary:\n' + offer.summary());
         Automatic.alert('trade', 'User is offering overstocked items, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are offering overstocked / too many items' });
@@ -1150,21 +1226,21 @@ const ERRORS = {
             offer.log('debug', 'declined');
         });
     },
-    INVALID_VALUE: function(offer) {
+    INVALID_VALUE: function (offer) {
         offer.log('info', 'is not offering enough, declining. Summary:\n' + offer.summary());
         Automatic.alert('trade', 'User is not offering enough, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are not offering enough' });
 
         offer.decline().then(function () { offer.log('debug', 'declined'); });
     },
-    BPTF_BANNED: function(offer) {
+    BPTF_BANNED: function (offer) {
         offer.log('info', 'is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
         Automatic.alert('trade', 'User is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are all-features banned on www.backpack.tf' });
 
         offer.decline().then(function () { offer.log('debug', 'declined'); });
     },
-    SR_BANNED: function(offer) {
+    SR_BANNED: function (offer) {
         offer.log('info', 'user is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
         Automatic.alert('trade', 'User is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are marked on www.steamrep.com as a scammer' });

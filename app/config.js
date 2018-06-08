@@ -19,6 +19,7 @@ const DEFAULT_CONFIG = {
     'stocklimit': 1,
     'notify': 'trade', // "all" / "none" / "price" / "trade"
     'offerMessage': '',
+    'sortInventory': true,
     //'metalSupply': 200, This is not being used, but will be in the future
     'overstockOverpay': 0.05,
     'logs': {

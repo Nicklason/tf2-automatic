@@ -7,7 +7,7 @@ const utils = require('./utils.js');
 const Login = require('./login.js');
 const Messages = require('./messages.js');
 
-let Automatic, client, community, manager, log, config, Items, Backpack, Prices, Inventory, Friends, Trade;
+let Automatic, client, community, manager, log, config, Items, tf2, Backpack, Prices, Inventory, Friends, Trade;
 
 let started = false;
 
@@ -20,6 +20,7 @@ exports.register = function(automatic) {
     config = automatic.config;
 
     Items = automatic.items;
+    tf2 = automatic.tf2;
     Backpack = automatic.backpack;
     Prices = automatic.prices;
     Inventory = automatic.inventory;
@@ -33,6 +34,9 @@ exports.register = function(automatic) {
     client.on('error', clientError);
     community.on('sessionExpired', sessionExpired);
     community.on('confKeyNeeded', confKeyNeeded);
+
+    tf2.on('craftingComplete', craftingComplete);
+
 };
 
 exports.connect = function (ratelimit) {
@@ -64,6 +68,11 @@ function handleLogin(err) {
         if (started) {
             client.gamesPlayed([require('../package.json').name, 440]);
             client.setPersona(SteamUser.EPersonaState.Online);
+        }
+        
+        if (config.get('sortInventory') == true) {
+            log.debug('Sorting inventory');
+            tf2.sortBackpack(3);
         }
     });
 }
@@ -160,6 +169,10 @@ function confKeyNeeded(tag, callback) {
     log.debug('New confirmation key needed, generating one.');
     var time = Math.floor(Date.now() / 1000);
     callback(null, time, SteamTotp.getConfirmationKey(self.options.identity_secret, time, tag));
+}
+
+function craftingComplete(recipe, itemsGained) {
+    log.debug('Crafting complete, gained ' + itemsGained.length + ' ' + utils.plural('item', itemsGained.lenght) + ' (recipe ' + recipe + ')');
 }
 
 function initializePackages() {

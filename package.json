@@ -1,6 +1,6 @@
 {
   "name": "tf2-automatic",
-  "version": "1.4.10",
+  "version": "1.5.0",
   "engines": {
     "node": ">=6.0.0"
   },
@@ -9,19 +9,20 @@
   "dependencies": {
     "bptf-listings": "^2.4.2",
     "graceful-fs": "^4.1.11",
-    "moment": "^2.20.1",
+    "moment": "^2.22.2",
     "steam-totp": "^2.0.1",
     "steam-tradeoffer-manager": "^2.9.3",
     "steam-user": "^3.25.1",
     "steamcommunity": "^3.36.2",
-    "tf2-items": "^2.0.2",
+    "tf2": "^2.1.2",
+    "tf2-items": "^2.0.3",
     "tf2-prices": "^1.0.7",
     "winston": "^2.4.0"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
     "eslint-plugin-node": "^6.0.1",
-    "nodemon": "^1.17.4"
+    "nodemon": "^1.17.5"
   },
   "scripts": {
     "start": "node automatic.js",

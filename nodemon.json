@@ -6,7 +6,6 @@
         "temp/",
         ".log"
     ],
-    "verbose": true,
     "execMap": {
         "js": "node"
     },
