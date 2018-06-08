@@ -1051,7 +1051,10 @@ function smeltCraftMetal() {
         const combineScrap = Math.floor((scrapSum - 9) / 3);
         if (combineScrap > 0) {
             for (let i = 0; i < combineScrap; i++) {
-                const ids = scrap.splice(i, i * 3 + 3);
+                const ids = utils.paginateArray(scrap, 3, i);
+                if (ids.length != 3) {
+                    break;
+                }
 
                 tf2.craft(ids);
                 scrapSum -= 3;
@@ -1064,7 +1067,10 @@ function smeltCraftMetal() {
         const combineReclaimed = Math.floor((reclaimedSum - 12) / 3);
         if (combineReclaimed > 0) {
             for (let i = 0; i < combineReclaimed; i++) {
-                const ids = reclaimed.splice(i * 3, i * 3 + 3);
+                const ids = utils.paginateArray(reclaimed, 3, i);
+                if (ids.length != 3) {
+                    break;
+                }
 
                 tf2.craft(ids);
                 reclaimedSum -= 3;
@@ -1106,11 +1112,11 @@ function smeltCraftMetal() {
 
         if (doneSomething) {
             log.debug('Done crafting');
-            client.gamesPlayed([440]);
             if (config.get('sortInventory') == true) {
                 log.debug('Sorting inventory');
                 tf2.sortBackpack(3);
             }
+            client.gamesPlayed([440]);
             Inventory.getInventory(Automatic.getOwnSteamID(), function () {
                 client.gamesPlayed([require('../package.json').name, 440]);
             });

@@ -9,6 +9,10 @@ exports.void = function () {
 
 };
 
+exports.paginateArray = function (array, size, page) {
+    return array.slice(page * size, (page + 1) * size);
+};
+
 exports.secondsToday = function() {
     const today = new Date();
     today.setHours(0);
