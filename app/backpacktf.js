@@ -331,9 +331,18 @@ function banned(steamid64, callback) {
             });
         }
     ], function(err, banned) {
-        if (err) callback(err);
-        else if (banned.length != 0) callback(null, banned.join(' and '));
-        else callback(null, false);
+        if (err) {
+            return callback(err);
+        }
+
+        let reason = '';
+        for (let i = 0; i < banned.length; i++) {
+            if (typeof banned[i] == 'string') {
+                reason += reason == '' ? banned[i] : ' and ' + banned[i];
+            }
+        }
+
+        callback(null, reason == '' ? false : reason);
     });
 }
 

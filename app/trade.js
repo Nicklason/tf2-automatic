@@ -448,7 +448,7 @@ function createOffer(request, callback) {
                 if (err) {
                     callback(err);
                     return;
-                } else if (reason) {
+                } else if (reason != false) {
                     log.info('user is ' + reason + ', declining.');
                     callback(null, 'You are ' + reason);
                     return;
@@ -838,7 +838,7 @@ function checkReceivedOffer(id, callback) {
             if (err) {
                 callback(err);
                 return;
-            } else if (reason) {
+            } else if (reason != false) {
                 if (reason.indexOf('backpack.tf') != -1) {
                     ERRORS.BPTF_BANNED(offer);
                 } else {
