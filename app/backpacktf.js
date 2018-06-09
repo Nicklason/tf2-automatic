@@ -319,7 +319,7 @@ function banned(steamid64, callback) {
         function (callback) {
             isBanned(steamid64, function (err, banned) {
                 if (err) callback(err);
-                else if (banned) callback(null, 'all-features banned on www.backpack.tf');
+                else if (banned) callback(null, 'banned on www.backpack.tf');
                 else callback(null, false);
             });
         },
@@ -332,8 +332,7 @@ function banned(steamid64, callback) {
         }
     ], function(err, banned) {
         if (err) callback(err);
-        else if (banned[0][0] == true) callback(null, banned[0][1]);
-        else if (banned[1][0] == true) callback(null, banned[1][1]);
+        else if (banned.length != 0) callback(null, banned.join(' and '));
         else callback(null, false);
     });
 }
