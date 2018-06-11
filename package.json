@@ -1,6 +1,6 @@
 {
   "name": "tf2-automatic",
-  "version": "1.5.3",
+  "version": "1.6.0",
   "engines": {
     "node": ">=6.0.0"
   },
@@ -8,6 +8,7 @@
   "main": "automatic.js",
   "dependencies": {
     "bptf-listings": "^2.4.2",
+    "fast-levenshtein": "^2.0.6",
     "graceful-fs": "^4.1.11",
     "moment": "^2.22.2",
     "steam-totp": "^2.0.1",

@@ -245,28 +245,69 @@ function pricesRefreshed(pricelist) {
 function key() { return Prices.currencies.keys.price.value; }
 function list() { return Prices.prices; }
 
+// Bunch of random checks, but it works better than just checking for items that contains the search strng
 function findMatch(search) {
     search = search.toLowerCase();
-    let match = [];
+
+    let match = [],
+        max = 0,
+        item = null,
+        total = 0;
 
     const pricelist = list();
     for (let i = 0; i < pricelist.length; i++) {
-        const price = pricelist[i];
-        const name = price.item.name;
-        if (name.toLowerCase() == search) return price;
-        if (name.toLowerCase().indexOf(search) != -1) match.push(price);
+        const name = pricelist[i].item.name.toLowerCase();
+        if (name == search) {
+            return pricelist[i];
+        }
+
+        const similarity = utils.compareStrings(name, search);
+        if (name.indexOf(search) == -1 && similarity <= 0.4) {
+            continue;
+        }
+
+        if (similarity > max) {
+            max = similarity;
+            item = pricelist[i];
+        }
+
+        total += similarity;
+        let push = pricelist[i];
+        push.similarity = similarity;
+        match.push(push);
     }
 
     if (match.length == 0) return null;
-    if (match.length == 1) return match[0];
 
-    for (let i = 0; i < match.length; i++) match[i] = match[i].item.name;
+    const average = total / match.length;
+
+    for (var i = match.length; i--;) {
+        const name = match[i].item.name.toLowerCase();
+        if (name.indexOf(search) == -1) {
+            const similarity = utils.compareStrings(name, search);
+            if (average * 0.8 > similarity) {
+                match.splice(i, 1);
+            }
+        }
+    }
+
+    if (match.length == 1) {
+        return match[0];
+    }
+
+    if (!(max * 0.8 < average || average * 1.2 > max)) {
+        if (max > 0.8) {
+            return item;
+        } else if (0.2 > max) {
+            return null;
+        }
+    }
 
     match.sort(function (a, b) {
-        if (a < b) return -1;
-        if (a > b) return 1;
-        return 0;
+        return b.similarity - a.similarity;
     });
+
+    for (let i = 0; i < match.length; i++) match[i] = match[i].item.name;
 
     return match;
 }
