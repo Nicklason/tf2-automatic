@@ -97,7 +97,7 @@ function friendMessage(steamID, message) {
 
 			let match = Prices.findMatch(name);
 			if (match == null) {
-				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + name + '", try and write out the whole word. Keep in mind that I might not be trading the item.');
+				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + name + '", try and write the whole name. Keep in mind that I might not be trading the item.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
@@ -195,7 +195,7 @@ function friendMessage(steamID, message) {
 
 			let match = Items.findMatch(input.name);
 			if (match == null) {
-				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + name + '", try and write out the whole word. Keep in mind that I might not be trading the item.');
+				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + name + '", try and write the whole name. Keep in mind that I might not be trading the item.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
@@ -293,7 +293,7 @@ function friendMessage(steamID, message) {
 				if (removed > 0) {
 					Automatic.message(steamID64, removed + ' ' + utils.plural('item', removed) + ' has been removed from the pricelist (might take some time to update).');
 				} else {
-					Automatic.message(steamID64, 'No items were removed. Try and write out the name exactly as it is in the pricelist.');
+					Automatic.message(steamID64, 'No items were removed. Try and write the name exactly as it is in the pricelist.');
 				}
 			});
 		} else if (command == 'update' && Automatic.isOwner(steamID64)) {
