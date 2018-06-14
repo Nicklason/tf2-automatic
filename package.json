@@ -41,5 +41,6 @@
   "bugs": {
     "url": "https://github.com/Nicklason/tf2-automatic/issues"
   },
-  "homepage": "https://github.com/Nicklason/tf2-automatic#readme"
+  "homepage": "https://github.com/Nicklason/tf2-automatic#readme",
+  "private": true
 }
