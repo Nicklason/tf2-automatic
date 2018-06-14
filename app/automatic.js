@@ -37,10 +37,6 @@ const confirmations = require('./confirmations.js');
 // Get message from initializing the config.
 const configlog = config.init();
 
-if (configlog) {
-    utils.fatal(log, 'Config messages: ' + configlog);
-}
-
 let recentlyRefreshedSession = false;
 
 let Automatic = {
@@ -135,6 +131,10 @@ register(
     offer,
     confirmations
 );
+
+if (configlog) {
+    utils.fatal(log, 'Config messages: ' + configlog);
+}
 
 log.info('tf2-automatic v%s starting', version);
 

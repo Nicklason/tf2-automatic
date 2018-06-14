@@ -108,42 +108,42 @@ exports.write = function (conf) {
 };
 
 exports.init = function () {
-    let msg = '';
+    let msgs = [];
     if (!fs.existsSync(FOLDER_NAME)) {
-        fs.mkdir(FOLDER_NAME);
-        msg += 'Created temp folder. ';
+        fs.mkdirSync(FOLDER_NAME);
+        msgs.push('created temp folder');
     }
 
     if (fs.existsSync(CONFIG_FILENAME)) {
         CONFIG = parseJSON(CONFIG_FILENAME);
         if (typeof CONFIG === 'string') {
-            msg += 'Cannot load ' + CONFIG_FILENAME + '. ' + CONFIG.toString() + '. Using default config. ';
+            msgs.push('can\'t load ' + CONFIG_FILENAME + ' ' + CONFIG.toString() + ' (using default)');
             CONFIG = DEFAULT_CONFIG;
         }
     } else {
         exports.write(DEFAULT_CONFIG);
-        msg += 'Config has been generated. ';
+        msgs.push('created config file');
     }
 
     if (fs.existsSync(ACCOUNT_FILENAME)) {
         ACCOUNT = parseJSON(ACCOUNT_FILENAME);
         if (typeof ACCOUNT === 'string') {
-            msg += 'Cannot load ' + ACCOUNT_FILENAME + '. ' + ACCOUNT.toString() + '. No saved account details are available. ';
+            msgs.push('can\'t load ' + ACCOUNT_FILENAME + ' ' + ACCOUNT.toString());
             ACCOUNT = {};
         }
     } else {
         saveJSON(ACCOUNT_FILENAME, defaultAccount);
-        msg += 'Initialized new account storage. ';
+        msgs.push('created account file');
     }
 
     if (fs.existsSync(STOCKLIMIT_FILENAME)) {
         LIMITS = parseJSON(STOCKLIMIT_FILENAME);
         if (typeof LIMITS === 'string') {
-            msg += 'Cannot load ' + STOCKLIMIT_FILENAME + '. ' + LIMITS.toString() + '. ';
+            msgs.push('can\'t load ' + STOCKLIMIT_FILENAME + ' ' + LIMITS.toString());
         }
     }
 
-    return msg.trim();
+    return msgs.join(', ');
 };
 
 function addLimit(name, limit) {
