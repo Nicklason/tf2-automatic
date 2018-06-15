@@ -386,11 +386,6 @@ function friendMessage(steamID, message) {
 				update.autoprice = autoprice;
 			}
 
-			if (!input.autoprice) {
-				Automatic.message(steamID64, 'You need to specify if you want to autoprice or not');
-				return;
-			}
-
 			if (update.autoprice == false) {
 				let buy = {};
 				let sell = {};
@@ -427,6 +422,11 @@ function friendMessage(steamID, message) {
 				if (Object.keys(prices) != 0) {
 					update.prices = prices;
 				}
+			}
+
+			if (input.autoprice == true) {
+				Automatic.message(steamID64, 'You can\'t enable autopricing when the item has been added, this will be changed soon.');
+				return;
 			}
 
 			let limit = null;
