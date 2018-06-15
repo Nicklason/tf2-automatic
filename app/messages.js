@@ -134,7 +134,7 @@ function friendMessage(steamID, message) {
 			}
 
 			let reply = segments.join(' and ') + '. I have ' + inInv;
-			if (limit != -1) {
+			if (limit != -1 && buy != null) {
 				reply += ' / ' + limit;
 			}
 			if (Automatic.isOwner(steamID64)) {
