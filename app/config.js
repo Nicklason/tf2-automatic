@@ -84,7 +84,13 @@ function saveJSON(file, data, wait = false) {
 
 function get(val, def) {
     if (val) {
-        return CONFIG[val] || def || DEFAULT_CONFIG[val];
+        if (CONFIG[val] != undefined) {
+            return CONFIG[val];
+        } else if (def != undefined) {
+            return def;
+        } else {
+            return DEFAULT_CONFIG[val];
+        }
     }
 
     return CONFIG;
