@@ -1,7 +1,7 @@
 const fs = require('graceful-fs');
 const utils = require('./utils.js');
 
-let Automatic, log, config, manager, Items, Prices;
+let Automatic, log, manager, Items, Prices;
 
 const INVENTORY_FILENAME = 'temp/inventory.json';
 
@@ -10,7 +10,6 @@ let INVENTORY = [], DICTIONARY = {};
 exports.register = function (automatic) {
     Automatic = automatic;
     log = automatic.log;
-    config = automatic.config;
     manager = automatic.manager;
 
     Items = automatic.items;
@@ -35,7 +34,6 @@ exports.getDictionary = getDictionary;
 exports.dictionary = dictionary;
 exports.amount = amountInDictionary;
 exports.overstocked = isOverstocked;
-exports.status = metalStatus;
 exports.save = save;
 
 function getInventory(steamid64, callback) {
@@ -114,7 +112,9 @@ function isOverstocked(name, difference = 0) {
     if (difference < 0) {
         return false;
     }
-    const limit = config.limit(name);
+    const listing = Prices.findListing(name);
+    const limit = Prices.getLimit(listing.name);
+    
     if (limit == 0) {
         return true;
     }
@@ -126,27 +126,5 @@ function isOverstocked(name, difference = 0) {
         return canBuy;
     } else {
         return true;
-    }
-}
-
-function metalStatus() {
-    const pure = amountInDictionary('Refined Metal') * 9 + amountInDictionary('Reclaimed Metal') * 3 + amountInDictionary('Scrap Metal');
-    const wanted = config.get('metalSupply', config.default('metalSupply'));
-    if (wanted < 0) {
-        return 1;
-    }
-
-    const key = utils.refinedToScrap(Prices.key());
-    const min = wanted - key;
-    const max = wanted + key;
-
-    if (utils.between(pure, min, max)) {
-        return 0;
-    }
-
-    if (pure > max) {
-        return 1;
-    } else {
-        return -1;
     }
 }

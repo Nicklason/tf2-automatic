@@ -169,8 +169,7 @@ process.on('uncaughtException', function (err) {
         require('util').inspect(err)
     ].join('\r\n'));
     log.error('Create an issue here: https://github.com/Nicklason/tf2-automatic/issues/new');
-    
     setTimeout(function() {
         process.exit(1);
-    }, 200);
+    }, 10);
 });

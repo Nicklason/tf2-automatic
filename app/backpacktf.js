@@ -1,5 +1,6 @@
 const bptf = require('bptf-listings');
 const async = require('async');
+const isObject = require('isobject');
 
 const utils = require('./utils.js');
 
@@ -76,10 +77,6 @@ exports.cap = function () { return Listings.cap; };
 exports.isBanned = banned;
 
 function makeSellOrders() {
-    if (Prices.ready == false) {
-        return;
-    }
-
     const dict = Inventory.dictionary();
 
     let list = [];
@@ -98,9 +95,10 @@ function makeSellOrders() {
 
     for (let name in list) {
         let price = Prices.getPrice(name);
-        if (!price) continue;
+        if (price == null) continue;
 
         price = price.price;
+        if (!price.sell) continue;
         const ids = list[name];
 
         for (let i = 0; i < ids.length; i++) {
@@ -119,17 +117,19 @@ function makeSellOrders() {
 function makeBuyOrders() {
     const prices = Prices.list();
     for (let i = 0; i < prices.length; i++) {
-        const item = prices[i].item;
-
-        const limit = config.limit(item.name);
+        const listing = prices[i];
+        if (listing.prices == null || !listing.prices.buy) {
+            continue;
+        }
+        const item = Prices.getItem(listing);
+        const limit = Prices.getLimit(item.name);
         const stock = Inventory.amount(item.name);
         if (stock < limit) {
-            const price = prices[i].price;
             Listings.createListing({
                 intent: 0,
                 item: item,
-                currencies: price.buy,
-                details: listingComment(0, item.name, price.buy)
+                currencies: listing.prices.buy,
+                details: listingComment(0, item.name, listing.prices.buy)
             }, true);
         }
     }
@@ -161,8 +161,8 @@ function updateSellOrders(search, price) {
             Listings.createListing({
                 intent: 1,
                 id: id,
-                currencies: price.sell,
-                details: listingComment(1, name, price.sell)
+                currencies: price,
+                details: listingComment(1, name, price)
             }, true);
         }
     }
@@ -205,7 +205,7 @@ function updateOrders(lost, gained) {
             continue;
         }
 
-        const limit = config.limit(name);
+        const limit = Prices.getLimit(name);
         const stock = Inventory.amount(name);
         if (stock >= limit) {
             Listings.removeListing(listing.id);
@@ -228,7 +228,7 @@ function updateOrders(lost, gained) {
         price = price.price;
 
         const inInv = Inventory.amount(name);
-        const limit = config.limit(name);
+        const limit = Prices.getLimit(name);
         if (limit > inInv) {
             Listings.createListing({
                 intent: 0,
@@ -252,7 +252,7 @@ function listingComment(intent, name, price) {
         .replace(/%name%/g, name);
 
     if (intent == 0) {
-        const limit = config.limit(name);
+        const limit = Prices.getLimit(name);
         if (limit > 0) {
             const stock = Inventory.amount(name);
             comment = comment.replace(/%stock%/g, stock + ' / ' + limit);

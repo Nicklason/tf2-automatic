@@ -1,12 +1,13 @@
-const TF2Prices = require('tf2-prices');
+const TF2Automatic = require('tf2automatic');
+const isObject = require('isobject');
 const fs = require('graceful-fs');
 
 const utils = require('./utils.js');
 
-let Automatic, log, config, Prices, Backpack, Items, Inventory;
+let Automatic, log, config, API, Backpack, Items, Inventory;
 
 const FOLDER_NAME = 'temp';
-const PRICES_FILENAME = FOLDER_NAME + '/prices.json';
+const LISTINGS_FILENAME = FOLDER_NAME + '/listings.json';
 
 exports.register = function (automatic) {
     Automatic = automatic;
@@ -16,44 +17,68 @@ exports.register = function (automatic) {
     Items = automatic.items;
     Inventory = automatic.inventory;
 
-    Prices = new TF2Prices({ apiKey: config.get().pricesKey, pollTime: 5 * 60 * 1000 });
+    API = new TF2Automatic({ client_id: config.get('client_id'), client_secret: config.get('client_secret'), pollTime: 5 * 60 * 1000 });
 };
 
 exports.init = function (callback) {
-    if (fs.existsSync(PRICES_FILENAME)) {
-        const pricelist = utils.parseJSON(fs.readFileSync(PRICES_FILENAME));
+    if (fs.existsSync(LISTINGS_FILENAME)) {
+        const pricelist = utils.parseJSON(fs.readFileSync(LISTINGS_FILENAME));
         if (pricelist != null) {
-            Prices.setPrices(pricelist);
+            API.listings = pricelist;
         }
     }
 
-    log.debug('Initializing tf2-prices package.');
-    Prices.init(function(err) {
+    log.debug('Initializing tf2automatic package.');
+    API.init(function(err) {
         if (err) {
-            callback(new Error('tf2-prices (' + err.message + ')'));
+            callback(new Error('tf2automatic (' + err.message + ')'));
             return;
         }
         
         callback(null);
     });
 
-    Prices.on('prices', pricesRefreshed);
-    Prices.on('price', priceChanged);
+    API.on('listings', pricesRefreshed);
+    API.on('change', priceChanged);
+    API.on('rate', rateEmitted);
 };
 
 exports.list = list;
 exports.key = key;
-exports.getPrice = function (name) { return Prices.getPrice(name); };
+exports.getPrice = function (name) {
+    const listing = API.findListing(name);
+    if (listing == null) {
+        return null;
+    }
+    const item = API.getItem(listing);
+    return {
+        item: item,
+        price: listing.prices
+    };
+};
+exports.findListing = function (name) {
+    return API.findListing(name);
+};
+exports.getItem = function (listing) {
+    return API.getItem(listing);
+};
+exports.getLimit = function (name) {
+    const listing = exports.findListing(name);
+    if (listing == null || !isObject(listing.meta) || !listing.meta.hasOwnProperty('max_stock')) {
+        return config.get('stocklimit');
+    }
+
+    return listing.meta.max_stock;
+};
 
 exports.findMatch = findMatch;
 
 exports.handleBuyOrders = handleBuyOrders;
 exports.handleSellOrders = handleSellOrders;
 
-exports.addItems = function (items, callback) { Prices.addItems(items, callback); };
-exports.removeItems = function (items, callback) { Prices.removeItems(items, callback); };
-
-exports.update = function (callback) { Prices._fetchPrices(callback); };
+exports.addItem = function (items, callback) { API.addListing(items, callback); };
+exports.removeItems = function (items, callback) { API.removeListings(items, callback); };
+exports.updateItem = function (name, update, callback) { API.updateListing(name, update, callback); };
 
 exports.required = getRequired;
 exports.value = getValue;
@@ -71,7 +96,7 @@ function getPrice(name, our) {
         return { metal: 1 };
     }
 
-    let price = Prices.getPrice(name);
+    let price = exports.getPrice(name);
     if (price == null) return null;
     price = price.price;
 
@@ -196,15 +221,15 @@ function handleSellOrders(offer) {
     }
 }
 
-function priceChanged(state, item, price) {
+function priceChanged(state, item, prices) {
     switch (state) {
         case 1:
             log.info('"' + item.name + '" has been added to the pricelist');
-            Automatic.alert('price', '"' + item.name + '" has been added to the pricelist. I am buying it for ' + utils.currencyAsText(price.buy) + ' and selling for ' + utils.currencyAsText(price.sell) + '.');
+            Automatic.alert('price', '"' + item.name + '" has been added to the pricelist.');
             break;
         case 2:
-            log.info('Price changed for "' + item.name + '"');
-            Automatic.alert('price', 'Price changed for "' + item.name + '". I am now buying for ' + utils.currencyAsText(price.buy) + ' and selling for ' + utils.currencyAsText(price.sell) + '.');
+            log.info('"' + item.name + '" has changed');
+            Automatic.alert('price', '"' + item.name + '" has changed.');
             break;
         case 3:
             log.info('"' + item.name + '" is no longer in the pricelist');
@@ -212,22 +237,24 @@ function priceChanged(state, item, price) {
             break;
     }
 
-    if (state == 1 || state == 2) {
-        const limit = config.limit(item.name);
+    if ((state == 1 || state == 2) && prices != null) {
+        const limit = exports.getLimit(item.name);
         const inInv = Inventory.amount(item.name);
-        if (!(limit != -1 && inInv >= limit)) {
+        if (prices.buy && !(limit != -1 && inInv >= limit)) {
             Backpack.createListing({
                 intent: 0,
                 item: item,
-                currencies: price.buy,
-                details: Backpack.listingComment(0, item.name, price.buy)
+                currencies: prices.buy,
+                details: Backpack.listingComment(0, item.name, prices.buy)
             }, true);
         }
-        Backpack.updateSellOrders(item.name, price);
-    } else {
-        let listing = Backpack.findBuyOrder(item.name);
-        if (listing) {
-            Backpack.removeListing(listing.id);
+        if (prices.sell) {
+            Backpack.updateSellOrders(item.name, prices.sell);
+        }
+    } else if (state == 3) {
+        let order = Backpack.findBuyOrder(item.name);
+        if (order) {
+            Backpack.removeListing(order.id);
         }
         Backpack.removeSellOrders(item.name);
     }
@@ -235,15 +262,19 @@ function priceChanged(state, item, price) {
 
 function pricesRefreshed(pricelist) {
     log.debug('Pricelist has been refreshed.');
-    fs.writeFile(PRICES_FILENAME, JSON.stringify(pricelist), function (err) {
+    fs.writeFile(LISTINGS_FILENAME, JSON.stringify(pricelist), function (err) {
         if (err) {
             log.warn('Error writing price data: ' + err);
         }
     });
 }
 
-function key() { return Prices.currencies.keys.price.value; }
-function list() { return Prices.prices; }
+function rateEmitted(rate) {
+    log.debug(rate);
+}
+
+function key() { return API.currencies.keys.price.value; }
+function list() { return API.listings; }
 
 // Bunch of random checks, but it works better than just checking for items that contains the search strng
 function findMatch(search) {
@@ -256,7 +287,10 @@ function findMatch(search) {
 
     const pricelist = list();
     for (let i = 0; i < pricelist.length; i++) {
-        const name = pricelist[i].item.name.toLowerCase();
+        if (pricelist[i].prices == null) {
+            continue;
+        }
+        const name = pricelist[i].name.toLowerCase();
         if (name == search) {
             return pricelist[i];
         }
@@ -282,7 +316,7 @@ function findMatch(search) {
     const average = total / match.length;
 
     for (var i = match.length; i--;) {
-        const name = match[i].item.name.toLowerCase();
+        const name = match[i].name.toLowerCase();
         if (name.indexOf(search) == -1) {
             const similarity = utils.compareStrings(name, search);
             if (average * 0.8 > similarity) {
@@ -307,7 +341,7 @@ function findMatch(search) {
         return b.similarity - a.similarity;
     });
 
-    for (let i = 0; i < match.length; i++) match[i] = match[i].item.name;
+    for (let i = 0; i < match.length; i++) match[i] = match[i].name;
 
     return match;
 }

@@ -291,6 +291,13 @@ function createOffer(request, callback) {
         callback(null, 'Item is no longer in the pricelist');
         return;
     }
+
+    if (!price.price.hasOwnProperty(selling ? 'sell' : 'buy')) {
+        callback(null, 'I am only ' + (selling ? 'buying' : 'selling') + ' ' + name + '(s)');
+        return;
+    }
+
+
     price = price.price[selling ? 'sell' : 'buy'];
 
     const currencies = Prices.required(price, 1, name != 'Mann Co. Supply Crate Key');
@@ -747,7 +754,7 @@ function overstockedItems(offer) {
 
         const change = (theirSummary[name] || 0) - (ourSummary[name] || 0);
         const amount = Inventory.amount(name) + change;
-        const limit = config.limit(name);
+        const limit = Prices.getLimit(name);
 
         if (amount > limit) {
             return true;
