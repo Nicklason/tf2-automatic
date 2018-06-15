@@ -240,13 +240,20 @@ function priceChanged(state, item, prices) {
     if ((state == 1 || state == 2) && prices != null) {
         const limit = exports.getLimit(item.name);
         const inInv = Inventory.amount(item.name);
-        if (prices.buy && !(limit != -1 && inInv >= limit)) {
-            Backpack.createListing({
-                intent: 0,
-                item: item,
-                currencies: prices.buy,
-                details: Backpack.listingComment(0, item.name, prices.buy)
-            }, true);
+        if (prices.buy) {
+            if (!(limit != -1 && inInv >= limit)) {
+                Backpack.createListing({
+                    intent: 0,
+                    item: item,
+                    currencies: prices.buy,
+                    details: Backpack.listingComment(0, item.name, prices.buy)
+                }, true);
+            } else {
+                let order = Backpack.findBuyOrder(item.name);
+                if (order) {
+                    Backpack.removeListing(order.id);
+                }
+            }
         }
         if (prices.sell) {
             Backpack.updateSellOrders(item.name, prices.sell);
