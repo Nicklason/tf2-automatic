@@ -1,6 +1,5 @@
 const bptf = require('bptf-listings');
 const async = require('async');
-const isObject = require('isobject');
 
 const utils = require('./utils.js');
 
@@ -95,10 +94,9 @@ function makeSellOrders() {
 
     for (let name in list) {
         let price = Prices.getPrice(name);
-        if (price == null) continue;
-
+        if (price == null || price.price == null) continue;
         price = price.price;
-        if (!price.sell) continue;
+        if (!price.hasOwnProperty('sell')) continue;
         const ids = list[name];
 
         for (let i = 0; i < ids.length; i++) {
@@ -118,7 +116,7 @@ function makeBuyOrders() {
     const prices = Prices.list();
     for (let i = 0; i < prices.length; i++) {
         const listing = prices[i];
-        if (listing.prices == null || !listing.prices.buy) {
+        if (listing.prices == null || !listing.prices.hasOwnProperty('buy')) {
             continue;
         }
         const item = Prices.getItem(listing);
@@ -222,10 +220,10 @@ function updateOrders(lost, gained) {
     for (let i = 0; i < list.length; i++) {
         const name = list[i];
         let price = Prices.getPrice(name);
-        if (price == null) { continue; }
-
+        if (price == null || price.prices == null) { continue; }
         const item = price.item;
         price = price.price;
+        if (!price.hasOwnProperty('buy')) continue;
 
         const inInv = Inventory.amount(name);
         const limit = Prices.getLimit(name);
