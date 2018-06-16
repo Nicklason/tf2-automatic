@@ -266,13 +266,13 @@ function friendMessage(steamID, message) {
 					buy.keys = parseInt(input.buy_keys);
 				}
 				if (input.buy_metal) {
-					buy.metal = parseInt(input.buy_metal);
+					buy.metal = parseFloat(input.buy_metal);
 				}
 				if (input.sell_keys) {
 					sell.keys = parseInt(input.sell_keys);
 				}
 				if (input.sell_metal) {
-					sell.metal = parseInt(input.sell_metal);
+					sell.metal = parseFloat(input.sell_metal);
 				}
 
 				let prices = {};
@@ -393,13 +393,13 @@ function friendMessage(steamID, message) {
 					buy.keys = parseInt(input.buy_keys);
 				}
 				if (input.buy_metal) {
-					buy.metal = parseInt(input.buy_metal);
+					buy.metal = parseFloat(input.buy_metal);
 				}
 				if (input.sell_keys) {
 					sell.keys = parseInt(input.sell_keys);
 				}
 				if (input.sell_metal) {
-					sell.metal = parseInt(input.sell_metal);
+					sell.metal = parseFloat(input.sell_metal);
 				}
 
 				let prices = {};
