@@ -49,6 +49,7 @@ exports.init = function (callback) {
     Listings.on('created', listingCreated);
     Listings.on('removed', listingRemoved);
     Listings.on('error', listingError);
+    Listings.on('retry', listingRetry);
     Listings.on('inventory', inventory);
 };
 
@@ -152,19 +153,19 @@ function updateSellOrder(search) {
     if (!price.hasOwnProperty('sell')) return;
 
     const dict = Inventory.dictionary();
-
-    for (let name in dict) {
-        if (name == 'Refined Metal' || name == 'Reclaimed Metal' || name == 'Scrap Metal') continue;
-        if (search != name) continue;
-
-        const id = dict[name][0];
-        Listings.createListing({
-            intent: 1,
-            id: id,
-            currencies: price,
-            details: listingComment(1, name, price)
-        }, true);
+    const ids = dict[search] || [];
+    if (ids.length == 0) {
+        return;
     }
+
+    const order = findSellOrder(search);
+    const id = order != null ? order.item.id : ids[0];
+    Listings.createListing({
+        intent: 1,
+        id: id,
+        currencies: price.sell,
+        details: listingComment(1, search, price.sell)
+    }, true);
 }
 
 function updateOrder(item, received) {
@@ -177,7 +178,7 @@ function updateOrder(item, received) {
 
     WAIT = setTimeout(function () {
         updateOrders(LOST_ITEMS, GAINED_ITEMS);
-    }, 10 * 1000);
+    }, 5 * 1000);
 }
 
 function updateOrders(lost, gained) {
@@ -236,7 +237,7 @@ function updateOrders(lost, gained) {
                 item: item,
                 currencies: price.buy,
                 details: listingComment(0, name, price.buy)
-            });
+            }, true);
         }
     }
 
@@ -271,6 +272,27 @@ function findBuyOrder(search) {
         if (name == search) {
             listing.item = item;
             return listing;
+        }
+    }
+
+    return null;
+}
+
+function findSellOrder(search) {
+    const dict = Inventory.dictionary();
+    const ids = dict[search] || [];
+    if (ids.length == 0) {
+        return null;
+    }
+
+    let sell = sellOrders();
+    for (let i = 0; i < sell.length; i++) {
+        let listing = sell[i];
+        for (let j = 0; j < ids.length; j++) {
+            const id = ids[j];
+            if (listing.item.id == id) {
+                return listing;
+            }
         }
     }
 
@@ -346,10 +368,21 @@ function banned(steamid64, callback) {
     });
 }
 
-function inventory() { log.info('The inventory has been updated on www.backpack.tf.'); }
-function listingCreated() {}
-function listingRemoved() {}
-function listingError() {}
+function inventory() {
+    log.info('The inventory has been updated on www.backpack.tf.');
+}
+function listingCreated(name) {
+    log.debug('Created a listing for ' + name);
+}
+function listingRemoved(id) {
+    log.debug('Removed a listing with the id ' + id);
+}
+function listingError(type, name, error) {
+    log.debug('An error occurred while trying to ' + type + ' a listing (' + name + '): ' + error);
+}
+function listingRetry(name, time) {
+    log.debug('Could not create a listing for ' + name + '. You should try again at ' + time);
+}
 function heartbeat(bumped) {
     log.info('Heartbeat sent to www.backpack.tf' + (bumped > 0 ? '; Bumped ' + bumped + ' ' + utils.plural('listing', bumped) : '') + '.');
     makeSellOrders();
