@@ -53,6 +53,15 @@ function getFriends() {
 	return friends;
 }
 
+function removeFriend(steamID64) {
+	client.removeFriend(steamID64, function (err) {
+		if (err) {
+			log.warn('Failed to remove friend (' + err.message + ')');
+			log.debug(err.stack);
+		}
+	});
+}
+
 function checkFriendRequests() {
     if (!client.myFriends) {
         return;
@@ -169,5 +178,7 @@ function alert(steamID64, alert) {
 
 exports.alert = alert;
 exports.isFriend = isFriend;
+exports.all = getFriends;
+exports.remove = removeFriend;
 exports.getDetails = getDetails;
 exports.sendGroupInvites = inviteToGroups;

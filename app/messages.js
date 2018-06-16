@@ -472,6 +472,19 @@ function friendMessage(steamID, message) {
 			response += '.';
 
 			Automatic.message(steamID64, response);
+		} else if (command == 'removefriends' && Automatic.isOwner(steamID64)) {
+			const friends = Friends.all();
+
+			let removed = 0;
+			for (let i = 0; i < friends.length; i++) {
+				const steamid = friends[i];
+				if (!Automatic.isOwner(steamid) && steamid != '76561198120070906') {
+					Friends.remove(steamid);
+					removed++;
+				}
+			}
+
+			Automatic.message(steamID64, 'I\'ve removed ' + removed + ' ' + utils.plural('friend', removed) + '.');
 		} else if (command == 'buy' || command == 'sell') {
 			let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
 			let amount = 1;
