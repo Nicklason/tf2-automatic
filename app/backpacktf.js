@@ -198,6 +198,8 @@ function updateOrders(lost, gained) {
         const name = names[i];
         if (name == 'Scrap Metal' || name == 'Reclaimed Metal' || name == 'Refined Metal') continue;
 
+        updateSellOrder(name);
+
         const listing = findBuyOrder(name);
         if (listing == null) {
             list.push(name);
@@ -215,10 +217,6 @@ function updateOrders(lost, gained) {
                 currencies: listing.currencies,
                 details: listingComment(0, name, listing.currencies)
             }, true);
-        }
-
-        if (stock > 0) {
-            updateSellOrder(name);
         }
     }
 
