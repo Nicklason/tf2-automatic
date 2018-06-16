@@ -59,7 +59,7 @@ exports.removeListing = function (id) { Listings.removeListing(id); };
 exports.listingComment = listingComment;
 
 exports.updateOrders = updateOrder;
-exports.updateSellOrders = updateSellOrders;
+exports.updateSellOrders = updateSellOrder;
 exports.removeSellOrders = removeSellOrders;
 exports.startUpdater = startListingUpdater;
 
@@ -83,12 +83,16 @@ function makeSellOrders() {
         if (name == 'Refined Metal' || name == 'Reclaimed Metal' || name == 'Scrap Metal') continue;
         const ids = dict[name];
 
+        let listed = false;
         for (let i = 0; i < ids.length; i++) {
             const id = ids[i];
-            const listed = isListed(id);
-            if (listed) continue;
+            if (isListed(id)) {
+                listed = true;
+            }
+        }
 
-            (list[name] = (list[name] || [])).push(id);
+        if (!listed) {
+            list[name] = ids[0];
         }
     }
 
@@ -97,18 +101,13 @@ function makeSellOrders() {
         if (price == null || price.price == null) continue;
         price = price.price;
         if (!price.hasOwnProperty('sell')) continue;
-        const ids = list[name];
-
-        for (let i = 0; i < ids.length; i++) {
-            const id = ids[i];
-
-            Listings.createListing({
-                intent: 1,
-                id: id,
-                currencies: price.sell,
-                details: listingComment(1, name, price.sell)
-            });
-        }
+        const id = list[name];
+        Listings.createListing({
+            intent: 1,
+            id: id,
+            currencies: price.sell,
+            details: listingComment(1, name, price.sell)
+        });
     }
 }
 
@@ -146,23 +145,25 @@ function removeSellOrders(search) {
     }
 }
 
-function updateSellOrders(search, price) {
+function updateSellOrder(search) {
+    let price = Prices.getPrice(search);
+    if (price == null || price.price == null) return;
+    price = price.price;
+    if (!price.hasOwnProperty('sell')) return;
+
     const dict = Inventory.dictionary();
 
     for (let name in dict) {
         if (name == 'Refined Metal' || name == 'Reclaimed Metal' || name == 'Scrap Metal') continue;
         if (search != name) continue;
 
-        const ids = dict[name];
-        for (let i = 0; i < ids.length; i++) {
-            const id = ids[i];
-            Listings.createListing({
-                intent: 1,
-                id: id,
-                currencies: price,
-                details: listingComment(1, name, price)
-            }, true);
-        }
+        const id = dict[name][0];
+        Listings.createListing({
+            intent: 1,
+            id: id,
+            currencies: price,
+            details: listingComment(1, name, price)
+        }, true);
     }
 }
 
@@ -215,6 +216,10 @@ function updateOrders(lost, gained) {
                 details: listingComment(0, name, listing.currencies)
             }, true);
         }
+
+        if (stock > 0) {
+            updateSellOrder(name);
+        }
     }
 
     for (let i = 0; i < list.length; i++) {
@@ -249,13 +254,12 @@ function listingComment(intent, name, price) {
         .replace(/%price%/g, utils.currencyAsText(price))
         .replace(/%name%/g, name);
 
-    if (intent == 0) {
-        const limit = Prices.getLimit(name);
-        if (limit > 0) {
-            const stock = Inventory.amount(name);
-            comment = comment.replace(/%stock%/g, stock + ' / ' + limit);
-        }
+    const stock = Inventory.amount(name);
+    const limit = Prices.getLimit(name);
+    if (limit > 0) {
+        comment = comment.replace(/%max_stock%/g, limit);
     }
+    comment = comment.replace(/%current_stock%/g, stock);
 
     return comment;
 }

@@ -256,7 +256,7 @@ function priceChanged(state, item, prices) {
             }
         }
         if (prices.sell) {
-            Backpack.updateSellOrders(item.name, prices.sell);
+            Backpack.updateSellOrders(item.name);
         }
     } else if (state == 3) {
         let order = Backpack.findBuyOrder(item.name);
