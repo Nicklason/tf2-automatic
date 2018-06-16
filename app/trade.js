@@ -964,8 +964,16 @@ function sentOfferChanged(offer, oldState) {
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
         Automatic.message(offer.partner, 'Success! The offer went through successfully.');
-        log.trade('Offer #' + offer.id + ' User accepted the offer');
-        Automatic.alert('trade', 'User accepted an offer sent by me');
+        const items = offer.data('items');
+        if (!items || items.length == 0) {
+            log.trade('Offer #' + offer.id + ' User accepted the offer');
+            Automatic.alert('trade', 'User accepted an offer sent by me');
+        } else {
+            const price = Prices.valueToCurrencies(items[0].value * items[0].ids.length, items[0].name != 'Mann Co. Supply Crate Key');
+            const item = items[0].name + (items[0].ids.length > 1 ? ' x' + items[0].ids.length : '');
+            log.trade('Offer #' + offer.id + ' User accepted an offer sent by me. ' + (items[0].intent == 0 ? 'Bought' : 'Sold') + ' ' + item + ' worth ' + utils.currencyAsText(price));
+            Automatic.alert('trade', 'User accepted an offer sent by me. ' + (items[0].intent == 0 ? 'Bought' : 'Sold') + ' ' + item + ' worth ' + utils.currencyAsText(price));
+        }
         offerAccepted(offer);
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Active) {
         Automatic.message(offer.partner, 'The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/' + offer.id + '/');
