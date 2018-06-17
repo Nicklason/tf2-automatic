@@ -12,8 +12,8 @@ const DEFAULT_CONFIG = {
     'acceptBanned': false,
     'acceptEscrow': false,
     'comment': {
-        'buy': 'I am buying your %name% for %price%. I have %stock%',
-        'sell': 'I am selling my %name% for %price%'
+        'buy': 'I am buying your %name% for %price%, I have %current_stock% / %max_stock%.',
+        'sell': 'I am selling my %name% for %price%, I have %current_stock%.'
     },
     'groups': ['103582791462300957'], // groupid64, this is the tf2automatic steam group
     'stocklimit': 1,
