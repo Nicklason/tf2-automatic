@@ -208,7 +208,7 @@ function friendMessage(steamID, message) {
 
 			let match = Items.findMatch(input.name);
 			if (match == null) {
-				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + input.name + '", try and write the whole name. Keep in mind that I might not be trading the item.');
+				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + input.name + '", try and write the whole name.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
