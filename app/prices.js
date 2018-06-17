@@ -97,10 +97,13 @@ function getPrice(name, our) {
     }
 
     let price = exports.getPrice(name);
-    if (price == null) return null;
+    if (price == null || price.price == null) return null;
     price = price.price;
 
     const intent = our == true ? 'sell' : 'buy';
+    if (!price.hasOwnProperty(intent)) {
+        return null;
+    }
     return price[intent];
 }
 
