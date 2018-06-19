@@ -367,7 +367,6 @@ function friendMessage(steamID, message) {
 
 				items = items.trim().replace(/  +/g, '').replace(/, /g, ',').split(',');
 
-
 				Prices.removeItems(items, function (err, result) {
 					if (err) {
 						const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
