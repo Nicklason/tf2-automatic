@@ -96,7 +96,7 @@ function removeAll(callback) {
         names.push(name);
     }
 
-    API.removeItems(names, callback);
+    API.removeListings(names, callback);
 }
 
 function getPrice(name, our) {
