@@ -90,9 +90,9 @@ exports.valueToCurrencies = valueToCurrencies;
 
 function removeAll(callback) {
     let names = [];
-    const list = list();
-    for (let i = 0; i < list.length; i++) {
-        const name = list[i].name;
+    const listings = list();
+    for (let i = 0; i < listings.length; i++) {
+        const name = listings[i].name;
         names.push(name);
     }
 
