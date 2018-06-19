@@ -342,28 +342,47 @@ function friendMessage(steamID, message) {
 				return;
 			}
 
-			let items = input.items;
-			if (!items || items == '') {
-				Automatic.message(steamID64, 'You are missing items. Here\'s an example: "!remove items=Strange Rocket Launcher, Strange Australium Rocket Launcher"');
-				return;
-			}
+			if (input.all == 'true' && input.i_am_sure == 'yes_i_am') {
+				// remove all
+				Prices.removeAll(function(err, result) {
+					if (err) {
+						const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
+						Automatic.message(steamID64, 'I failed to clear the pricelist: ' + error);
+						return;
+					}
 
-			items = items.trim().replace(/  +/g, '').replace(/, /g, ',').split(',');
-
-			Prices.removeItems(items, function (err, result) {
-				if (err) {
-					const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
-					Automatic.message(steamID64, 'I failed to remove the ' + utils.plural('item', items.length) + ' from the pricelist: ' + error);
+					const removed = result.removed;
+					if (removed > 0) {
+						Automatic.message(steamID64, 'The pricelist has been cleared');
+					} else {
+						Automatic.message(steamID64, 'No items were removed');
+					}
+				});
+			} else {
+				let items = input.items;
+				if (!items || items == '') {
+					Automatic.message(steamID64, 'You are missing items. Here\'s an example: "!remove items=Strange Rocket Launcher, Strange Australium Rocket Launcher"');
 					return;
 				}
 
-				const removed = result.removed;
-				if (removed > 0) {
-					Automatic.message(steamID64, 'The ' + utils.plural('item', items.length) + ' has been removed from the pricelist');
-				} else {
-					Automatic.message(steamID64, 'No items were removed. Try and write the name exactly as it is in the pricelist.');
-				}
-			});
+				items = items.trim().replace(/  +/g, '').replace(/, /g, ',').split(',');
+
+
+				Prices.removeItems(items, function (err, result) {
+					if (err) {
+						const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
+						Automatic.message(steamID64, 'I failed to remove the ' + utils.plural('item', items.length) + ' from the pricelist: ' + error);
+						return;
+					}
+
+					const removed = result.removed;
+					if (removed > 0) {
+						Automatic.message(steamID64, 'The ' + utils.plural('item', removed) + ' has been removed from the pricelist');
+					} else {
+						Automatic.message(steamID64, 'No items were removed. Try and write the name exactly as it is in the pricelist.');
+					}
+				});
+			}
 		} else if (command == 'update' && Automatic.isOwner(steamID64)) {
 			const string = message.substr(message.toLowerCase().indexOf('update') + 7);
 			let input = utils.stringToObject(string);

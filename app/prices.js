@@ -78,6 +78,7 @@ exports.handleSellOrders = handleSellOrders;
 
 exports.addItem = function (items, callback) { API.addListing(items, callback); };
 exports.removeItems = function (items, callback) { API.removeListings(items, callback); };
+exports.removeAll = removeAll;
 exports.updateItem = function (name, update, callback) { API.updateListing(name, update, callback); };
 
 exports.required = getRequired;
@@ -86,6 +87,17 @@ exports.afford = canAfford;
 
 exports.valueToPure = valueToPure;
 exports.valueToCurrencies = valueToCurrencies;
+
+function removeAll(callback) {
+    let names = [];
+    const list = list();
+    for (let i = 0; i < list.length; i++) {
+        const name = list[i].name;
+        names.push(name);
+    }
+
+    API.removeItems(names, callback);
+}
 
 function getPrice(name, our) {
     if (name == 'Scrap Metal') {
