@@ -425,10 +425,8 @@ function isBanned(steamid64, callback) {
 
         const user = body.users[steamid64];
         let banned = false;
-        if (user.hasOwnProperty('bans')) {
-            if (!(Object.keys(user.bans).length == 1 && user.bans.hasOwnProperty('valve'))) {
-                banned = true;
-            }
+        if (user.hasOwnProperty('bans') && user.bans.hasOwnProperty('all')) {
+            banned = true;
         }
         callback(null, banned);
     });
