@@ -17,7 +17,8 @@
     "steam-user": "^3.25.1",
     "steamcommunity": "^3.36.2",
     "tf2": "^2.1.2",
-    "tf2automatic": "^1.0.5",
+    "tf2-items": "^2.0.5",
+    "tf2automatic": "^1.0.7",
     "winston": "^2.4.3"
   },
   "devDependencies": {
