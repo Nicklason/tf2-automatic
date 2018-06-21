@@ -3,17 +3,17 @@ const fs = require('graceful-fs');
 const FOLDER_NAME = 'temp';
 const CONFIG_FILENAME = FOLDER_NAME + '/config.json';
 const ACCOUNT_FILENAME = FOLDER_NAME + '/account.json';
-const STOCKLIMIT_FILENAME = FOLDER_NAME + '/limits.json';
 const DEFAULT_CONFIG = {
-    'pricesKey': '<your key to the pricing api>',
+    'client_id': '<your client id>',
+    'client_secret': '<your client secret>',
     'bptfKey': '<your api key for the bptf api>',
     'dateFormat': 'DD-MM-YYYY HH:mm:ss',
     'acceptGifts': true,
     'acceptBanned': false,
     'acceptEscrow': false,
     'comment': {
-        'buy': 'I am buying your %name% for %price%. I have %stock%',
-        'sell': 'I am selling my %name% for %price%'
+        'buy': 'I am buying your %name% for %price%, I have %current_stock% / %max_stock%.',
+        'sell': 'I am selling my %name% for %price%, I have %current_stock%.'
     },
     'groups': ['103582791462300957'], // groupid64, this is the tf2automatic steam group
     'stocklimit': 1,
@@ -58,7 +58,6 @@ const defaultAccount = {
 
 let CONFIG = {};
 let ACCOUNT = {};
-let LIMITS = {};
 
 let WAIT;
 
@@ -85,7 +84,13 @@ function saveJSON(file, data, wait = false) {
 
 function get(val, def) {
     if (val) {
-        return CONFIG[val] || def || DEFAULT_CONFIG[val];
+        if (CONFIG[val] != undefined) {
+            return CONFIG[val];
+        } else if (def != undefined) {
+            return def;
+        } else {
+            return DEFAULT_CONFIG[val];
+        }
     }
 
     return CONFIG;
@@ -136,43 +141,11 @@ exports.init = function () {
         msgs.push('created account file');
     }
 
-    if (fs.existsSync(STOCKLIMIT_FILENAME)) {
-        LIMITS = parseJSON(STOCKLIMIT_FILENAME);
-        if (typeof LIMITS === 'string') {
-            msgs.push('can\'t load ' + STOCKLIMIT_FILENAME + ' ' + LIMITS.toString());
-        }
-    }
-
     return msgs.join(', ');
 };
-
-function addLimit(name, limit) {
-    LIMITS[name] = limit;
-    saveJSON(STOCKLIMIT_FILENAME, LIMITS);
-}
-
-function removeLimit(name) {
-    if (LIMITS.hasOwnProperty(name)) {
-        delete LIMITS[name];
-        saveJSON(STOCKLIMIT_FILENAME, LIMITS, true);
-    }
-}
-
-function getLimit(name) {
-    let limit = LIMITS[name] || CONFIG.stocklimit;
-    if (limit == -1) {
-        limit = Infinity;
-    } else if (limit < -1) {
-        limit = CONFIG.stocklimit;
-    }
-    return limit;
-}
 
 function getAccount() {
     return ACCOUNT;
 }
 
 exports.getAccount = getAccount;
-exports.limit = getLimit;
-exports.addLimit = addLimit;
-exports.removeLimit = removeLimit;

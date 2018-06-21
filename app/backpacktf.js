@@ -49,6 +49,7 @@ exports.init = function (callback) {
     Listings.on('created', listingCreated);
     Listings.on('removed', listingRemoved);
     Listings.on('error', listingError);
+    Listings.on('retry', listingRetry);
     Listings.on('inventory', inventory);
 };
 
@@ -59,7 +60,7 @@ exports.removeListing = function (id) { Listings.removeListing(id); };
 exports.listingComment = listingComment;
 
 exports.updateOrders = updateOrder;
-exports.updateSellOrders = updateSellOrders;
+exports.updateSellOrders = updateSellOrder;
 exports.removeSellOrders = removeSellOrders;
 exports.startUpdater = startListingUpdater;
 
@@ -76,10 +77,6 @@ exports.cap = function () { return Listings.cap; };
 exports.isBanned = banned;
 
 function makeSellOrders() {
-    if (Prices.ready == false) {
-        return;
-    }
-
     const dict = Inventory.dictionary();
 
     let list = [];
@@ -87,49 +84,50 @@ function makeSellOrders() {
         if (name == 'Refined Metal' || name == 'Reclaimed Metal' || name == 'Scrap Metal') continue;
         const ids = dict[name];
 
+        let listed = false;
         for (let i = 0; i < ids.length; i++) {
             const id = ids[i];
-            const listed = isListed(id);
-            if (listed) continue;
+            if (isListed(id)) {
+                listed = true;
+            }
+        }
 
-            (list[name] = (list[name] || [])).push(id);
+        if (!listed) {
+            list[name] = ids[0];
         }
     }
 
     for (let name in list) {
         let price = Prices.getPrice(name);
-        if (!price) continue;
-
+        if (price == null || price.price == null) continue;
         price = price.price;
-        const ids = list[name];
-
-        for (let i = 0; i < ids.length; i++) {
-            const id = ids[i];
-
-            Listings.createListing({
-                intent: 1,
-                id: id,
-                currencies: price.sell,
-                details: listingComment(1, name, price.sell)
-            });
-        }
+        if (!price.hasOwnProperty('sell')) continue;
+        const id = list[name];
+        Listings.createListing({
+            intent: 1,
+            id: id,
+            currencies: price.sell,
+            details: listingComment(1, name, price.sell)
+        });
     }
 }
 
 function makeBuyOrders() {
     const prices = Prices.list();
     for (let i = 0; i < prices.length; i++) {
-        const item = prices[i].item;
-
-        const limit = config.limit(item.name);
+        const listing = prices[i];
+        if (listing.prices == null || !listing.prices.hasOwnProperty('buy')) {
+            continue;
+        }
+        const item = Prices.getItem(listing);
+        const limit = Prices.getLimit(item.name);
         const stock = Inventory.amount(item.name);
         if (stock < limit) {
-            const price = prices[i].price;
             Listings.createListing({
                 intent: 0,
                 item: item,
-                currencies: price.buy,
-                details: listingComment(0, item.name, price.buy)
+                currencies: listing.prices.buy,
+                details: listingComment(0, item.name, listing.prices.buy)
             }, true);
         }
     }
@@ -148,24 +146,26 @@ function removeSellOrders(search) {
     }
 }
 
-function updateSellOrders(search, price) {
+function updateSellOrder(search) {
+    let price = Prices.getPrice(search);
+    if (price == null || price.price == null) return;
+    price = price.price;
+    if (!price.hasOwnProperty('sell')) return;
+
     const dict = Inventory.dictionary();
-
-    for (let name in dict) {
-        if (name == 'Refined Metal' || name == 'Reclaimed Metal' || name == 'Scrap Metal') continue;
-        if (search != name) continue;
-
-        const ids = dict[name];
-        for (let i = 0; i < ids.length; i++) {
-            const id = ids[i];
-            Listings.createListing({
-                intent: 1,
-                id: id,
-                currencies: price.sell,
-                details: listingComment(1, name, price.sell)
-            }, true);
-        }
+    const ids = dict[search] || [];
+    if (ids.length == 0) {
+        return;
     }
+
+    const order = findSellOrder(search);
+    const id = order != null ? order.item.id : ids[0];
+    Listings.createListing({
+        intent: 1,
+        id: id,
+        currencies: price.sell,
+        details: listingComment(1, search, price.sell)
+    }, true);
 }
 
 function updateOrder(item, received) {
@@ -178,7 +178,7 @@ function updateOrder(item, received) {
 
     WAIT = setTimeout(function () {
         updateOrders(LOST_ITEMS, GAINED_ITEMS);
-    }, 10 * 1000);
+    }, 5 * 1000);
 }
 
 function updateOrders(lost, gained) {
@@ -199,13 +199,15 @@ function updateOrders(lost, gained) {
         const name = names[i];
         if (name == 'Scrap Metal' || name == 'Reclaimed Metal' || name == 'Refined Metal') continue;
 
+        updateSellOrder(name);
+
         const listing = findBuyOrder(name);
         if (listing == null) {
             list.push(name);
             continue;
         }
 
-        const limit = config.limit(name);
+        const limit = Prices.getLimit(name);
         const stock = Inventory.amount(name);
         if (stock >= limit) {
             Listings.removeListing(listing.id);
@@ -222,20 +224,20 @@ function updateOrders(lost, gained) {
     for (let i = 0; i < list.length; i++) {
         const name = list[i];
         let price = Prices.getPrice(name);
-        if (price == null) { continue; }
-
+        if (price == null || price.prices == null) { continue; }
         const item = price.item;
         price = price.price;
+        if (!price.hasOwnProperty('buy')) continue;
 
         const inInv = Inventory.amount(name);
-        const limit = config.limit(name);
+        const limit = Prices.getLimit(name);
         if (limit > inInv) {
             Listings.createListing({
                 intent: 0,
                 item: item,
                 currencies: price.buy,
                 details: listingComment(0, name, price.buy)
-            });
+            }, true);
         }
     }
 
@@ -251,13 +253,12 @@ function listingComment(intent, name, price) {
         .replace(/%price%/g, utils.currencyAsText(price))
         .replace(/%name%/g, name);
 
-    if (intent == 0) {
-        const limit = config.limit(name);
-        if (limit > 0) {
-            const stock = Inventory.amount(name);
-            comment = comment.replace(/%stock%/g, stock + ' / ' + limit);
-        }
+    const stock = Inventory.amount(name);
+    const limit = Prices.getLimit(name);
+    if (limit > 0) {
+        comment = comment.replace(/%max_stock%/g, limit);
     }
+    comment = comment.replace(/%current_stock%/g, stock);
 
     return comment;
 }
@@ -271,6 +272,27 @@ function findBuyOrder(search) {
         if (name == search) {
             listing.item = item;
             return listing;
+        }
+    }
+
+    return null;
+}
+
+function findSellOrder(search) {
+    const dict = Inventory.dictionary();
+    const ids = dict[search] || [];
+    if (ids.length == 0) {
+        return null;
+    }
+
+    let sell = sellOrders();
+    for (let i = 0; i < sell.length; i++) {
+        let listing = sell[i];
+        for (let j = 0; j < ids.length; j++) {
+            const id = ids[j];
+            if (listing.item.id == id) {
+                return listing;
+            }
         }
     }
 
@@ -346,10 +368,21 @@ function banned(steamid64, callback) {
     });
 }
 
-function inventory() { log.info('The inventory has been updated on www.backpack.tf.'); }
-function listingCreated() {}
-function listingRemoved() {}
-function listingError() {}
+function inventory() {
+    log.info('The inventory has been updated on www.backpack.tf.');
+}
+function listingCreated(name) {
+    log.debug('Created a listing for ' + name);
+}
+function listingRemoved(id) {
+    log.debug('Removed a listing with the id ' + id);
+}
+function listingError(type, name, error) {
+    log.debug('An error occurred while trying to ' + type + ' a listing (' + name + '): ' + error);
+}
+function listingRetry(name, time) {
+    log.debug('Could not create a listing for ' + name + '. You should try again at ' + time);
+}
 function heartbeat(bumped) {
     log.info('Heartbeat sent to www.backpack.tf' + (bumped > 0 ? '; Bumped ' + bumped + ' ' + utils.plural('listing', bumped) : '') + '.');
     makeSellOrders();
@@ -392,10 +425,8 @@ function isBanned(steamid64, callback) {
 
         const user = body.users[steamid64];
         let banned = false;
-        if (user.hasOwnProperty('bans')) {
-            if (!(Object.keys(user.bans).length == 1 && user.bans.hasOwnProperty('valve'))) {
-                banned = true;
-            }
+        if (user.hasOwnProperty('bans') && user.bans.hasOwnProperty('all')) {
+            banned = true;
         }
         callback(null, banned);
     });

@@ -41,7 +41,10 @@ function createDictionary(items) {
     for (let i = 0; i < items.length; i++) {
         const item = Offer.getItem(items[i]);
 
-        const name = getName(item);
+        let name = getName(item);
+        if (item.quality == 15) {
+            name = 'Decorated Weapon ' + name;
+        }
         (dict[name] = (dict[name] || [])).push(item.id);
     }
     return dict;

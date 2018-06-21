@@ -69,7 +69,7 @@ function getPotentialProfit() {
         }
 
         let price = Prices.getPrice(history.name);
-        if (price != null) {
+        if (price != null && price.price != null && price.price.hasOwnProperty('sell')) {
             price = Prices.value(price.price.sell);
             total += price - history.bought;
         }

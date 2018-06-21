@@ -44,7 +44,7 @@ function friendMessage(steamID, message) {
 		} else if (command == 'help') {
 			let reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
 			if (Automatic.isOwner(steamID64)) {
-				reply += ', !add, !remove, !update, !profit';
+				reply += ', !add, !remove, !update, !profit, removefriends';
 			}
 			Automatic.message(steamID64, reply);
 		} else if (command == 'stock') {
@@ -114,19 +114,32 @@ function friendMessage(steamID, message) {
 				return;
 			}
 
-			const buy = utils.currencyAsText(match.price.buy),
-				sell = utils.currencyAsText(match.price.sell);
+			const buy = match.prices.hasOwnProperty('buy') ? utils.currencyAsText(match.prices.buy) : null,
+				sell = match.prices.hasOwnProperty('sell') ? utils.currencyAsText(match.prices.sell) : null;
 
-			const inInv = Inventory.amount(match.item.name),
-				limit = config.limit(match.item.name);
+			const inInv = Inventory.amount(match.name),
+				limit = Prices.getLimit(match.name);
 
-			let reply = 'I am buying a ' + match.item.name + ' for ' + buy + ' and selling for ' + sell + '. I have ' + inInv;
-			if (limit != -1) {
+			let segments = [];
+			if (buy != null) {
+				segments.push('I am buying a ' + match.name + ' for ' + buy);
+			}
+
+			if (sell != null) {
+				if (segments.length == 0) {
+					segments.push('I am selling a ' + match.name + ' for ' + sell);
+				} else {
+					segments.push('selling for ' + sell);
+				}
+			}
+
+			let reply = segments.join(' and ') + '. I have ' + inInv;
+			if (limit != -1 && buy != null) {
 				reply += ' / ' + limit;
 			}
 			if (Automatic.isOwner(steamID64)) {
-				const date = moment(match.time_updated * 1000).format('DD-MM-YYYY HH:mm:ss');
-				reply += ' (last updated ' + date + ')';
+				const date = moment.unix(match.updated_on).format('DD-MM-YYYY HH:mm:ss');
+				reply += ' (last updated ' + date + ' +0000)';
 			}
 			reply += '.';
 
@@ -195,7 +208,7 @@ function friendMessage(steamID, message) {
 
 			let match = Items.findMatch(input.name);
 			if (match == null) {
-				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + name + '", try and write the whole name. Keep in mind that I might not be trading the item.');
+				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + input.name + '", try and write the whole name.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
@@ -224,13 +237,65 @@ function friendMessage(steamID, message) {
 				}
 			}
 
-			let item = {
+			let add = {
 				defindex: Number(match),
 				quality: 6,
 				craftable: input.craftable ? input.craftable == 'true' : true,
 				killstreak: parseInt(input.killstreak) || 0,
-				australium: input.australium ? input.australium == 'true' : false
+				australium: input.australium ? input.australium == 'true' : false,
+				effect: input.effect || null,
+				autoprice: true,
+				enabled: true
 			};
+
+			if (limit) {
+				add.meta = {
+					max_stock: limit
+				};
+			}
+
+			if (input.autoprice != undefined) {
+				const autoprice = input.autoprice != 'false';
+				add.autoprice = autoprice;
+			}
+
+			if (add.autoprice == false) {
+				let buy = {};
+				let sell = {};
+				if (input.buy_keys) {
+					buy.keys = parseInt(input.buy_keys);
+				}
+				if (input.buy_metal) {
+					buy.metal = parseFloat(input.buy_metal);
+				}
+				if (input.sell_keys) {
+					sell.keys = parseInt(input.sell_keys);
+				}
+				if (input.sell_metal) {
+					sell.metal = parseFloat(input.sell_metal);
+				}
+
+				let prices = {};
+				if (Object.keys(buy) != 0) {
+					if (!buy.hasOwnProperty('keys')) {
+						buy.keys = 0;
+					} else if (!buy.hasOwnProperty('metal')) {
+						buy.metal = 0;
+					}
+					prices.buy = buy;
+				}
+				if (Object.keys(sell) != 0) {
+					if (!sell.hasOwnProperty('keys')) {
+						sell.keys = 0;
+					} else if (!sell.hasOwnProperty('metal')) {
+						sell.metal = 0;
+					}
+					prices.sell = sell;
+				}
+				if (Object.keys(prices) != 0) {
+					add.prices = prices;
+				}
+			}
 
 			if (input.quality) {
 				input.quality = utils.capitalizeEach(input.quality);
@@ -239,29 +304,35 @@ function friendMessage(steamID, message) {
 					Automatic.message(steamID64, 'Did not find a quality like "' + input.quality + '".');
 					return;
 				}
-				item.quality = Number(quality);
+				add.quality = Number(quality);
 			}
 
-			Prices.addItems([item], function (err, added) {
+			if (input.effect) {
+				const effect = Items.getEffect(input.effect);
+				if (effect == null) {
+					Automatic.message(steamID64, 'Did not find an effect like "' + input.effect + '".');
+					return;
+				}
+				add.effect = effect;
+			}
+
+			Prices.addItem(add, function (err, listing) {
 				if (err) {
-					Automatic.message(steamID64, 'I failed to add the item to the pricelist: ' + (err.reason || err.message));
+					const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
+					Automatic.message(steamID64, 'I failed to add the item to the pricelist: ' + error);
 					return;
 				}
 
-				if (added == 1) {
-					const name = Items.getName(item);
-
-					let reply = '"' + name + '" has been added to the pricelist';
-					if (limit != null) {
-						config.addLimit(name, limit);
-
-						reply += ' with a limit of ' + limit;
-					}
-					reply += ' (might take some time to update).';
-					Automatic.message(steamID64, reply);
-				} else {
-					Automatic.message(steamID64, 'No items were added, something might have went wrong.');
+				let reply = '"' + listing.name + '" has been added to the pricelist';
+				if (listing.prices == null) {
+					reply += ' (not yet priced)';
 				}
+
+				if (limit != null) {
+					reply += ' with a limit of ' + limit;
+				}
+				reply += '.';
+				Automatic.message(steamID64, reply);
 			});
 		} else if (command == 'remove' && Automatic.isOwner(steamID64)) {
 			const string = message.substr(message.toLowerCase().indexOf('remove') + 7);
@@ -271,43 +342,137 @@ function friendMessage(steamID, message) {
 				return;
 			}
 
-			let items = input.items;
-			if (!items || items == '') {
-				Automatic.message(steamID64, 'You are missing items. Here\'s an example: "!remove items=Strange Rocket Launcher, Strange Australium Rocket Launcher"');
+			if (input.all == 'true' && input.i_am_sure == 'yes_i_am') {
+				// remove all
+				Prices.removeAll(function(err, result) {
+					if (err) {
+						const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
+						Automatic.message(steamID64, 'I failed to clear the pricelist: ' + error);
+						return;
+					}
+
+					const removed = result.removed;
+					if (removed > 0) {
+						Automatic.message(steamID64, 'The pricelist has been cleared');
+					} else {
+						Automatic.message(steamID64, 'No items were removed');
+					}
+				});
+			} else {
+				let items = input.items;
+				if (!items || items == '') {
+					Automatic.message(steamID64, 'You are missing items. Here\'s an example: "!remove items=Strange Rocket Launcher, Strange Australium Rocket Launcher"');
+					return;
+				}
+
+				items = items.trim().replace(/  +/g, '').replace(/, /g, ',').split(',');
+
+				Prices.removeItems(items, function (err, result) {
+					if (err) {
+						const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
+						Automatic.message(steamID64, 'I failed to remove the ' + utils.plural('item', items.length) + ' from the pricelist: ' + error);
+						return;
+					}
+
+					const removed = result.removed;
+					if (removed > 0) {
+						Automatic.message(steamID64, 'The ' + utils.plural('item', removed) + ' has been removed from the pricelist');
+					} else {
+						Automatic.message(steamID64, 'No items were removed. Try and write the name exactly as it is in the pricelist.');
+					}
+				});
+			}
+		} else if (command == 'update' && Automatic.isOwner(steamID64)) {
+			const string = message.substr(message.toLowerCase().indexOf('update') + 7);
+			let input = utils.stringToObject(string);
+			if (input == null) {
+				Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!update name=Rocket Launcher&limit=2"');
 				return;
 			}
 
-			items = items.trim().replace(/  +/g, '').replace(/, /g, ',').split(',');
+			if (!input.name) {
+				Automatic.message(steamID64, 'You are missing a name. Here\'s an example: "!update name=Rocket Launcher"');
+				return;
+			}
 
-			Prices.removeItems(items, function (err, removed) {
-				if (err) {
-					Automatic.message(steamID64, 'I failed to remove the item(s) from the pricelist: ' + (err.reason || err.message));
-					return;
+			const name = input.name;
+
+			let update = {};
+
+			if (input.autoprice != undefined) {
+				const autoprice = input.autoprice != 'false';
+				update.autoprice = autoprice;
+			}
+
+			if (update.autoprice == false) {
+				let buy = {};
+				let sell = {};
+				if (input.buy_keys) {
+					buy.keys = parseInt(input.buy_keys);
+				}
+				if (input.buy_metal) {
+					buy.metal = parseFloat(input.buy_metal);
+				}
+				if (input.sell_keys) {
+					sell.keys = parseInt(input.sell_keys);
+				}
+				if (input.sell_metal) {
+					sell.metal = parseFloat(input.sell_metal);
 				}
 
-				for (let i = 0; i < items.length; i++) {
-					const name = items[i];
-					config.removeLimit(name);
-				}
-
-				if (removed > 0) {
-					Automatic.message(steamID64, removed + ' ' + utils.plural('item', removed) + ' has been removed from the pricelist (might take some time to update).');
-				} else {
-					Automatic.message(steamID64, 'No items were removed. Try and write the name exactly as it is in the pricelist.');
-				}
-			});
-		} else if (command == 'update' && Automatic.isOwner(steamID64)) {
-			Prices.update(function (err) {
-				if (err) {
-					if (err.message == 'Too Many Requests') {
-						Automatic.message(steamID64, 'I failed to update the pricelist, try again in ' + (err.retryAfter / 1000) + ' ' + utils.plural('second', err.retryAfter / 1000) + '.');
-					} else {
-						Automatic.message(steamID64, 'I failed to update the pricelist: ' + (err.reason || err.message));
+				let prices = {};
+				if (Object.keys(buy) != 0) {
+					if (!buy.hasOwnProperty('keys')) {
+						buy.keys = 0;
+					} else if (!buy.hasOwnProperty('metal')) {
+						buy.metal = 0;
 					}
+					prices.buy = buy;
+				}
+				if (Object.keys(sell) != 0) {
+					if (!sell.hasOwnProperty('keys')) {
+						sell.keys = 0;
+					} else if (!sell.hasOwnProperty('metal')) {
+						sell.metal = 0;
+					}
+					prices.sell = sell;
+				}
+				if (Object.keys(prices) != 0) {
+					update.prices = prices;
+				}
+			}
+
+			if (input.autoprice == true) {
+				Automatic.message(steamID64, 'You can\'t enable autopricing when the item has been added, this will be changed soon.');
+				return;
+			}
+
+			let limit = null;
+			if (input.limit && input.limit != '') {
+				limit = parseInt(input.limit);
+				if (isNaN(limit)) {
+					Automatic.message(steamID64, '"' + input.limit + '" is not a valid limit. Here\'s an example: "!update name=Team Captain&limit=2"');
+					return;
+				} else if (limit < -1) {
+					Automatic.message(steamID64, '"' + input.limit + '" is not a valid limit. You can use -1 for unlimited, 0 for no buying, 1 for a limit of 1 and so on.');
+					return;
+				}
+			}
+
+			if (limit) {
+				update.meta = {
+					max_stock: limit
+				};
+			}
+
+			Prices.updateItem(name, update, function (err, result) {
+				if (err) {
+					const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
+					Automatic.message(steamID64, 'I failed to update the item: ' + error);
 					return;
 				}
 
-				Automatic.message(steamID64, 'The pricelist has been refreshed.');
+				Automatic.message(steamID64,  'Updated ' + result.name + '.');
 			});
 		} else if (command == 'profit' && Automatic.isOwner(steamID64)) {
 			const total = Statistics.profit();
@@ -325,6 +490,19 @@ function friendMessage(steamID, message) {
 			response += '.';
 
 			Automatic.message(steamID64, response);
+		} else if (command == 'removefriends' && Automatic.isOwner(steamID64)) {
+			const friends = Friends.all();
+
+			let removed = 0;
+			for (let i = 0; i < friends.length; i++) {
+				const steamid = friends[i];
+				if (!Automatic.isOwner(steamid) && steamid != '76561198120070906') {
+					Friends.remove(steamid);
+					removed++;
+				}
+			}
+
+			Automatic.message(steamID64, 'I\'ve removed ' + removed + ' ' + utils.plural('friend', removed) + '.');
 		} else if (command == 'buy' || command == 'sell') {
 			let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
 			let amount = 1;
@@ -358,8 +536,10 @@ function friendMessage(steamID, message) {
 				Automatic.message(steamID64, reply);
 				return;
 			}
+
 			const selling = command == 'buy';
-			Trade.requestOffer(steamID64, match.item.name, amount, selling);
+
+			Trade.requestOffer(steamID64, match.name, amount, selling);
 		} else {
 			Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
 		}
