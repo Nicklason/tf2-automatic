@@ -17,7 +17,7 @@ exports.register = function (automatic) {
     Items = automatic.items;
     Inventory = automatic.inventory;
 
-    API = new TF2Automatic({ client_id: config.get('client_id'), client_secret: config.get('client_secret'), pollTime: 5 * 60 * 1000 });
+    API = new TF2Automatic({ client_id: config.get('client_id'), client_secret: config.get('client_secret'), pollTime: 2 * 60 * 1000 });
 };
 
 exports.init = function (callback) {
