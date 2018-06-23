@@ -18,8 +18,12 @@ let OPTIONS = {
 
         var text = banner.innerHTML;
         var digit = text.match(/\d/);
+        var index = text.indexOf(digit);
+        if (index == -1) {
+            return;
+        }
 
-        text = text.substring(0, text.indexOf(digit));
+        text = text.substring(0, index);
         banner.innerHTML = text;
     }
 };
