@@ -255,9 +255,8 @@ function listingComment(intent, name, price) {
 
     const stock = Inventory.amount(name);
     const limit = Prices.getLimit(name);
-    if (limit > 0) {
-        comment = comment.replace(/%max_stock%/g, limit);
-    }
+    
+    comment = comment.replace(/%max_stock%/g, limit);
     comment = comment.replace(/%current_stock%/g, stock);
 
     return comment;

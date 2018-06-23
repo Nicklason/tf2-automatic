@@ -64,11 +64,16 @@ exports.getItem = function (listing) {
 };
 exports.getLimit = function (name) {
     const listing = exports.findListing(name);
-    if (listing == null || !isObject(listing.meta) || !listing.meta.hasOwnProperty('max_stock')) {
-        return config.get('stocklimit');
+    let limit = config.get('stocklimit');
+    if (listing != null && isObject(listing.meta) && listing.meta.hasOwnProperty('max_stock')) {
+        limit = listing.meta.max_stock;
     }
 
-    return listing.meta.max_stock;
+    if (limit == -1) {
+        limit = Infinity;
+    }
+
+    return limit;
 };
 
 exports.findMatch = findMatch;
