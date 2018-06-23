@@ -11,6 +11,9 @@ let OPTIONS = {
     cookies: [],
     onLoadFinished: function () {
         var elements = document.getElementsByClassName('tradeoffer_items_banner');
+        if (elements.length == 0) {
+            return;
+        }
         var banner = elements[0];
 
         var text = banner.innerHTML;
