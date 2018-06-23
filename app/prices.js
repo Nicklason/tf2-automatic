@@ -62,6 +62,9 @@ exports.findListing = function (name) {
 exports.getItem = function (listing) {
     return API.getItem(listing);
 };
+exports.upload = function (data, type, callback) {
+    API.upload(data, type, callback);
+};
 exports.getLimit = function (name) {
     const listing = exports.findListing(name);
     let limit = config.get('stocklimit');

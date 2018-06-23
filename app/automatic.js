@@ -29,6 +29,7 @@ const items = require('./items.js');
 const prices = require('./prices.js');
 const inventory = require('./inventory.js');
 const friends = require('./friends.js');
+const screenshot = require('./screenshot.js');
 const offer = require('./offer.js');
 const trade = require('./trade.js');
 const statistics = require('./statistics.js');
@@ -55,8 +56,7 @@ let Automatic = {
             if (owners.length == 1 && owners[0] == '<steamid64s>') {
                 return;
             }
-
-            message = '[Alert!] ' + message;
+            
             owners.forEach(function (owner) {
                 Automatic.message(owner, message);
             });
@@ -107,6 +107,7 @@ Automatic.inventory = inventory;
 Automatic.friends = friends;
 Automatic.trade = trade;
 Automatic.statistics = statistics;
+Automatic.screenshot = screenshot;
 Automatic.tf2 = new TeamFortress2(Automatic.client);
 
 function register(...args) {
@@ -128,6 +129,7 @@ register(
     client,
     friends,
     statistics,
+    screenshot,
     offer,
     confirmations
 );

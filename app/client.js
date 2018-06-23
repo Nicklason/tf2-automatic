@@ -7,7 +7,7 @@ const utils = require('./utils.js');
 const Login = require('./login.js');
 const Messages = require('./messages.js');
 
-let Automatic, client, community, manager, log, config, Items, tf2, Backpack, Prices, Inventory, Friends, Trade;
+let Automatic, client, community, manager, log, config, Items, tf2, Backpack, Prices, Inventory, Friends, Trade, Screenshot;
 
 let started = false;
 
@@ -26,6 +26,7 @@ exports.register = function(automatic) {
     Inventory = automatic.inventory;
     Friends = automatic.friends;
     Trade = automatic.trade;
+    Screenshot = automatic.screenshot;
 
     Login.register(automatic);
     Messages.register(automatic);
@@ -75,6 +76,7 @@ function handleLogin(err) {
 function saveCookies(sessionID, cookies) {
     log.debug('Setting cookies...');
     community.setCookies(cookies);
+    Screenshot.setCookies(cookies);
 
     manager.setCookies(cookies, function (err) {
         if (err) {

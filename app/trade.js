@@ -6,7 +6,7 @@ const Offer = require('./offer.js');
 const Queue = require('./queue.js');
 const confirmations = require('./confirmations.js');
 
-let Automatic, client, manager, Inventory, Backpack, Prices, Items, tf2, Friends, Statistics, log, config;
+let Automatic, client, manager, Inventory, Backpack, Prices, Items, tf2, Friends, Statistics, Screenshot, log, config;
 
 const POLLDATA_FILENAME = 'temp/polldata.json';
 
@@ -26,6 +26,7 @@ exports.register = function (automatic) {
     tf2 = automatic.tf2;
     Friends = automatic.friends;
     Statistics = automatic.statistics;
+    Screenshot = automatic.screenshot;
 
     if (fs.existsSync(POLLDATA_FILENAME)) {
         try {
@@ -866,7 +867,6 @@ function checkReceivedOffer(id, callback) {
 
 function acceptOffer(offer) {
     offer.log('trade', 'is offering enough, accepting. Summary:\n' + offer.summary());
-    Automatic.alert('trade', 'User is offering enough, accepting. Summary:\n' + offer.summary());
 
     offer.accept().then(function (status) {
         offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
@@ -944,6 +944,16 @@ function receivedOfferChanged(offer, oldState) {
         Queue.removeID(offer.id);
 
         removeItemsInTrade(offer.itemsToGive);
+        Screenshot.receivedOfferChanged(offer.id, function (err, id) {
+            if (err) {
+                log.warn('Error when capturing and sending screenshot: ' + err.message);
+                log.debug(err.stack);
+                return;
+            }
+
+            log.debug('Image uploaded, returned id: ' + id);
+            Automatic.alert('trade', 'Offer #' + offer.id + ' sent by ' + offer.partner.getSteamID64() + ' was ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + ', view it here https://tf2automatic.com/trades?id=' + id);
+        });
     }
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
@@ -960,6 +970,16 @@ function sentOfferChanged(offer, oldState) {
         Queue.removeID(offer.id);
 
         removeItemsInTrade(offer.itemsToGive);
+        Screenshot.sentOfferChanged(offer.id, function (err, id) {
+            if (err) {
+                log.warn('Error when capturing and sending screenshot: ' + err.message);
+                log.debug(err.stack);
+                return;
+            }
+
+            log.debug('Image uploaded, returned id: ' + id);
+            Automatic.alert('trade', 'Offer #' + offer.id + ' sent by us was ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + ', view it here https://tf2automatic.com/trades?id=' + id);
+        });
     }
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
@@ -967,12 +987,10 @@ function sentOfferChanged(offer, oldState) {
         const items = offer.data('items');
         if (!items || items.length == 0) {
             log.trade('Offer #' + offer.id + ' User accepted the offer');
-            Automatic.alert('trade', 'User accepted an offer sent by me');
         } else {
             const price = Prices.valueToCurrencies(items[0].value * items[0].ids.length, items[0].name != 'Mann Co. Supply Crate Key');
             const item = items[0].name + (items[0].ids.length > 1 ? ' x' + items[0].ids.length : '');
-            log.trade('Offer #' + offer.id + ' User accepted an offer sent by me. ' + (items[0].intent == 0 ? 'Bought' : 'Sold') + ' ' + item + ' worth ' + utils.currencyAsText(price));
-            Automatic.alert('trade', 'User accepted an offer sent by me. ' + (items[0].intent == 0 ? 'Bought' : 'Sold') + ' ' + item + ' worth ' + utils.currencyAsText(price));
+            log.trade('Offer #' + offer.id + ' User accepted an offer sent by me.\n' + (items[0].intent == 0 ? 'Bought' : 'Sold') + ' ' + item + ' worth ' + utils.currencyAsText(price));
         }
         offerAccepted(offer);
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Active) {
