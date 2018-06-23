@@ -10,7 +10,6 @@
     "bptf-listings": "^2.4.2",
     "fast-levenshtein": "^2.0.6",
     "graceful-fs": "^4.1.11",
-    "image-size": "^0.6.3",
     "isobject": "^3.0.1",
     "moment": "^2.22.2",
     "steam-totp": "^2.0.1",
