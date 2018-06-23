@@ -978,7 +978,7 @@ function sentOfferChanged(offer, oldState) {
             }
 
             log.debug('Image uploaded, returned id: ' + id);
-            Automatic.alert('trade', 'Offer #' + offer.id + ' sent by us is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state] + ', view it here https://tf2automatic.com/trades?id=' + id);
+            Automatic.alert('trade', 'Offer #' + offer.id + ' sent to ' + offer.partner.getSteamID64() + ' is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state] + ', view it here https://tf2automatic.com/trades?id=' + id);
         });
     }
 
