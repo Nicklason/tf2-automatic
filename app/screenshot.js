@@ -1,4 +1,5 @@
 const fs = require('graceful-fs');
+const sizeOf = require('image-size');
 const webshot = require('webshot');
 
 let client, log, Prices;
@@ -56,14 +57,26 @@ function screenshot(url, id, callback) {
             return callback(err);
         }
 
-        fs.readFile(`./${FOLDER_NAME}/${id}.png`, function (err, data) {
+        sizeOf(`./${FOLDER_NAME}/${id}.png`, function (err, dimensions) {
             if (err) {
                 return callback(err);
             }
 
-            Prices.upload(data, 'image/png', callback);
-            log.debug('Removing image');
-            fs.unlinkSync(`./${FOLDER_NAME}/${id}.png`);
+            if (dimensions.width != 588) {
+                err = new Error('Not correct width, image is possibly not valid');
+                err.width = dimensions.width;
+                return callback(err);
+            }
+
+            fs.readFile(`./${FOLDER_NAME}/${id}.png`, function (err, data) {
+                if (err) {
+                    return callback(err);
+                }
+
+                Prices.upload(data, 'image/png', callback);
+                log.debug('Removing image');
+                fs.unlinkSync(`./${FOLDER_NAME}/${id}.png`);
+            });
         });
     });
 }
