@@ -1243,7 +1243,6 @@ function removeOldOffers(pollData) {
 const ERRORS = {
     INVALD_ITEMS: function (offer) {
         offer.log('info', 'contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
-        Automatic.alert('trade', 'Contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are taking / offering an item that is not in my pricelist' });
 
         offer.decline().then(function () {
@@ -1258,7 +1257,6 @@ const ERRORS = {
     },
     OVERSTOCKED: function (offer) {
         offer.log('info', 'contains overstocked items, declining. Summary:\n' + offer.summary());
-        Automatic.alert('trade', 'User is offering overstocked items, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are offering overstocked / too many items' });
 
         offer.decline().then(function () {
@@ -1267,21 +1265,18 @@ const ERRORS = {
     },
     INVALID_VALUE: function (offer) {
         offer.log('info', 'is not offering enough, declining. Summary:\n' + offer.summary());
-        Automatic.alert('trade', 'User is not offering enough, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are not offering enough' });
 
         offer.decline().then(function () { offer.log('debug', 'declined'); });
     },
     BPTF_BANNED: function (offer) {
         offer.log('info', 'is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
-        Automatic.alert('trade', 'User is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are all-features banned on www.backpack.tf' });
 
         offer.decline().then(function () { offer.log('debug', 'declined'); });
     },
     SR_BANNED: function (offer) {
         offer.log('info', 'user is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
-        Automatic.alert('trade', 'User is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are marked on www.steamrep.com as a scammer' });
 
         offer.decline().then(function () { offer.log('debug', 'declined'); });
