@@ -10,7 +10,7 @@ let Automatic, client, manager, Inventory, Backpack, Prices, Items, tf2, Friends
 
 const POLLDATA_FILENAME = 'temp/polldata.json';
 
-let READY = false, RECEIVED = [], DOING_QUEUE = false, ITEMS_IN_TRADE = [];
+let READY = false, RECEIVED = [], RECEIVED_OFFER_CHANGED = [], SENT_OFFER_CHANGED = [], DOING_QUEUE = false, ITEMS_IN_TRADE = [];
 
 exports.register = function (automatic) {
     Automatic = automatic;
@@ -52,6 +52,7 @@ exports.init = function () {
     setInterval(checkOfferCount, 3 * 60 * 1000);
 
     organizeQueue();
+    handleChangedOffers();
 };
 
 exports.checkOfferCount = checkOfferCount;
@@ -118,6 +119,19 @@ function organizeQueue() {
         let tradeoffer = RECEIVED[i];
         handleOffer(tradeoffer);
     }
+
+    RECEIVED = [];
+}
+
+function handleChangedOffers() {
+    for (let i = 0; i < RECEIVED_OFFER_CHANGED.length; i++) {
+        receivedOfferChanged(RECEIVED_OFFER_CHANGED[i].offer, RECEIVED_OFFER_CHANGED[i].oldState);
+    }
+    RECEIVED_OFFER_CHANGED = [];
+    for (let i = 0; i < SENT_OFFER_CHANGED.length; i++) {
+        sentOfferChanged(SENT_OFFER_CHANGED[i].offer, SENT_OFFER_CHANGED[i].oldState);
+    }
+    SENT_OFFER_CHANGED = [];
 }
 
 function handleOffer(offer) {
@@ -939,6 +953,11 @@ function getOffer(id, callback) {
 }
 
 function receivedOfferChanged(offer, oldState) {
+    if (!READY) {
+        RECEIVED_OFFER_CHANGED.push({ offer: offer, oldState: oldState });
+        return;
+    }
+
     log.verbose('Offer #' + offer.id + ' state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
     if (offer.state != TradeOfferManager.ETradeOfferState.Active) {
         Queue.removeID(offer.id);
@@ -965,6 +984,11 @@ function receivedOfferChanged(offer, oldState) {
 }
 
 function sentOfferChanged(offer, oldState) {
+    if (!READY) {
+        SENT_OFFER_CHANGED.push({ offer: offer, oldState: oldState });
+        return;
+    }
+
     log.verbose('Offer #' + offer.id + ' state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
     if (offer.state != TradeOfferManager.ETradeOfferState.Active) {
         Queue.removeID(offer.id);
