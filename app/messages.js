@@ -527,6 +527,11 @@ function friendMessage(steamID, message) {
 				}
 			}
 			if (input.name.toLowerCase() == 'backpack expander') {
+				if (tf2.haveGCSession != true) {
+					Automatic.message(steamID64, 'I am not connected to the TF2 game coordinator, try again later.');
+					return;
+				}
+
 				const dict = Inventory.dictionary();
 				let expanders = [];
 				if (dict['Backpack Expander'] != undefined) {
