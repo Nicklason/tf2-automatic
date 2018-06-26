@@ -2,7 +2,7 @@ const moment = require('moment');
 
 const utils = require('./utils.js');
 
-let Automatic, client, log, config, Friends, Inventory, Prices, Trade, Items, Statistics;
+let Automatic, client, log, config, Friends, Inventory, Prices, Trade, Items, Statistics, tf2;
 
 let cache = {};
 const messageInterval = 2000;
@@ -19,6 +19,7 @@ exports.register = function (automatic) {
 	Items = automatic.items;
 	Friends = automatic.friends;
 	Statistics = automatic.statistics;
+	tf2 = automatic.tf2;
 };
 
 exports.init = function () {
@@ -44,7 +45,7 @@ function friendMessage(steamID, message) {
 		} else if (command == 'help') {
 			let reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
 			if (Automatic.isOwner(steamID64)) {
-				reply += ', !add, !remove, !update, !profit, removefriends';
+				reply += ', !add, !remove, !update, !profit, !removefriends, !use';
 			}
 			Automatic.message(steamID64, reply);
 		} else if (command == 'stock') {
@@ -503,6 +504,81 @@ function friendMessage(steamID, message) {
 			}
 
 			Automatic.message(steamID64, 'I\'ve removed ' + removed + ' ' + utils.plural('friend', removed) + '.');
+		} else if (command == 'use' && Automatic.isOwner(steamID64)) {
+			const string = message.substr(message.toLowerCase().indexOf('use') + 4);
+			let input = utils.stringToObject(string);
+			if (input == null) {
+				Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!use name=Backpack Expander&amount=10"');
+				return;
+			}
+
+			if (!input.name) {
+				Automatic.message(steamID64, 'You are missing a name. Here\'s an example: "!use name=Backpack Expander"');
+				return;
+			}
+			let amount = 1;
+			if (input.amount) {
+				amount = parseInt(input.amount);
+				if (isNaN(amount)) {
+					Automatic.message(steamID64, '"' + input.amount + '" is not a valid amount. Here\'s an example: "!use name=Backpack Expander&amount=10"');
+					return;
+				} else if (amount > 3) {
+					amount = 3;
+				}
+			}
+			if (input.name.toLowerCase() == 'backpack expander') {
+				const dict = Inventory.dictionary();
+				let expanders = [];
+				if (dict['Backpack Expander'] != undefined) {
+					expanders = expanders.concat(dict['Backpack Expander']);
+				}
+				if (dict['Non-Craftable Backpack Expander'] != undefined) {
+					expanders = expanders.concat(dict['Non-Craftable Backpack Expander']);
+				}
+
+				if (expanders.length == 0) {
+					Automatic.message(steamID64, 'I don\'t have any Backpack Expanders.');
+					return;
+				} else if (expanders.length < amount) {
+					amount = expanders.length;
+				}
+
+				const maxSlots = 3000;
+				const slots = tf2.backpackSlots;
+				const canUse = (maxSlots - slots) / 100;
+				if (canUse == 0) {
+					Automatic.message(steamID64, 'I can\'t expand my inventory any further, I already have ' + maxSlots + ' slots.');
+					return;
+				} else if (canUse < amount) {
+					amount = canUse;
+				}
+
+				const ids = expanders.slice(0, amount);
+
+				let left = ids.length;
+				tf2.on('itemRemoved', function (item) {
+					if (item.defIndex == 5050) {
+						left--;
+					}
+					if (left == 0) {
+						tf2.removeAllListeners('itemRemoved');
+						Inventory.getInventory(Automatic.getOwnSteamID(), function () {
+							if (config.get('sortInventory') == true) {
+								log.debug('Sorting inventory');
+								tf2.sortBackpack(3);
+							}
+							Automatic.message(steamID64, 'I can now fit ' + tf2.backpackSlots + ' items in my TF2 inventory.');
+						});
+					}
+				});
+
+				for (let i = 0; i < ids.length; i++) {
+					const id = ids[i];
+					tf2.useItem(id);
+				}
+			} else {
+				Automatic.message(steamID64, 'Unknown item, usable items: Backpack Expander');
+			}
 		} else if (command == 'buy' || command == 'sell') {
 			let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
 			let amount = 1;

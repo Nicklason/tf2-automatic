@@ -37,7 +37,6 @@ exports.register = function(automatic) {
     community.on('confKeyNeeded', confKeyNeeded);
 
     tf2.on('craftingComplete', craftingComplete);
-
 };
 
 exports.connect = function (ratelimit) {
