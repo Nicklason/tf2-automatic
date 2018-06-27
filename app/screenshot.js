@@ -1,7 +1,7 @@
 const fs = require('graceful-fs');
 const webshot = require('webshot');
 
-let client, log, Prices;
+let Automatic, log, Prices;
 
 const FOLDER_NAME = 'images';
 
@@ -29,8 +29,8 @@ let OPTIONS = {
 };
 
 exports.register = function (automatic) {
+    Automatic = automatic;
     log = automatic.log;
-    client = automatic.client;
 
     Prices = automatic.prices;
 
@@ -57,12 +57,12 @@ exports.setCookies = function (cookies) {
 };
 
 exports.receivedOfferChanged = function (id, callback) {
-    const url = 'https://steamcommunity.com/profiles/' + client.steamID.getSteamID64() + '/tradeoffers';
+    const url = 'https://steamcommunity.com/profiles/' + Automatic.getOwnSteamID() + '/tradeoffers';
     screenshot(url + '/?history=1', id, callback);
 };
 
 exports.sentOfferChanged = function (id, callback) {
-    const url = 'https://steamcommunity.com/profiles/' + client.steamID.getSteamID64() +  '/tradeoffers';
+    const url = 'https://steamcommunity.com/profiles/' + Automatic.getOwnSteamID() +  '/tradeoffers';
     screenshot(url + '/sent/?history=1', id, callback);
 };
 
