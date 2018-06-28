@@ -1,4 +1,4 @@
-/*eslint no-console: ["off"]*/
+/*eslint no-console: off*/
 
 global._mckay_statistics_opt_out = true;
 
