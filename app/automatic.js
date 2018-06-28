@@ -1,5 +1,7 @@
 /*eslint no-console: ["off"]*/
 
+global._mckay_statistics_opt_out = true;
+
 let SteamUser;
 let SteamCommunity;
 let TradeOfferManager;
