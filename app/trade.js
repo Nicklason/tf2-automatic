@@ -1299,8 +1299,8 @@ const ERRORS = {
 
         offer.decline().then(function () { offer.log('debug', 'declined'); });
     },
-    SR_BANNED: function (offer) {
-        offer.log('info', 'user is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
+    SR_MARKED: function (offer) {
+        offer.log('info', 'user is marked on www.steamrep.com, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are marked on www.steamrep.com as a scammer' });
 
         offer.decline().then(function () { offer.log('debug', 'declined'); });

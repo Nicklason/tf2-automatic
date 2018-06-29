@@ -1,6 +1,6 @@
 {
   "name": "tf2-automatic",
-  "version": "1.7.17",
+  "version": "1.7.18",
   "engines": {
     "node": ">=6.0.0"
   },
@@ -18,7 +18,7 @@
     "steamcommunity": "^3.36.2",
     "tf2": "^2.1.2",
     "tf2-items": "^2.0.5",
-    "tf2automatic": "^1.0.9",
+    "tf2automatic": "^1.0.11",
     "webshot": "^0.18.0",
     "winston": "^2.4.3"
   },
