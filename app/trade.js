@@ -140,6 +140,10 @@ function handleOffer(offer) {
         return;
     }
 
+    if (Automatic.running != true) {
+        return;
+    }
+
     log.debug('Handling received offer...');
     offer = new Offer(offer);
 
@@ -956,6 +960,8 @@ function receivedOfferChanged(offer, oldState) {
     if (!READY) {
         RECEIVED_OFFER_CHANGED.push({ offer: offer, oldState: oldState });
         return;
+    } else if (Automatic.running != true) {
+        return;
     }
 
     log.verbose('Offer #' + offer.id + ' state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
@@ -986,6 +992,8 @@ function receivedOfferChanged(offer, oldState) {
 function sentOfferChanged(offer, oldState) {
     if (!READY) {
         SENT_OFFER_CHANGED.push({ offer: offer, oldState: oldState });
+        return;
+    } else if (Automatic.running != true) {
         return;
     }
 
@@ -1036,7 +1044,7 @@ function offerAccepted(offer) {
     Friends.sendGroupInvites(offer.partner);
     Inventory.getInventory(Automatic.getOwnSteamID(), function () {
         const doneSomething = smeltCraftMetal();
-        if (!doneSomething && config.get('sortInventory') == true) {
+        if (!doneSomething) {
             log.debug('Sorting inventory');
             tf2.sortBackpack(3);
         }
@@ -1169,10 +1177,8 @@ function smeltCraftMetal() {
 
         if (doneSomething) {
             log.debug('Done crafting');
-            if (config.get('sortInventory') == true) {
-                log.debug('Sorting inventory');
-                tf2.sortBackpack(3);
-            }
+            log.debug('Sorting inventory');
+            tf2.sortBackpack(3);
             client.gamesPlayed([440]);
             Inventory.getInventory(Automatic.getOwnSteamID(), function () {
                 client.gamesPlayed([require('../package.json').name, 440]);

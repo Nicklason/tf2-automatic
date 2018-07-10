@@ -1,5 +1,4 @@
 const request = require('request');
-const levenshtein = require('fast-levenshtein');
 
 exports.fatal = function (log, msg) {
     log.error(msg);
@@ -53,14 +52,6 @@ exports.capitalizeEach = function (string) {
     return string.replace(/\w\S*/g, function (word) {
         return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
     });
-};
-
-exports.compareStrings = function (a, b) {
-    const maxLength = Math.max(a.length, b.length);
-
-    const distance = levenshtein.get(a, b);
-    const similarity = 1 - (distance / maxLength);
-    return similarity;
 };
 
 exports.between = function(x, min, max) {

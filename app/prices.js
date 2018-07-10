@@ -41,6 +41,7 @@ exports.init = function (callback) {
     API.on('listings', pricesRefreshed);
     API.on('change', priceChanged);
     API.on('rate', rateEmitted);
+    API.on('expired', Automatic.expired);
 };
 
 exports.list = list;
@@ -310,66 +311,29 @@ function list() { return API.listings; }
 function findMatch(search) {
     search = search.toLowerCase();
 
-    let match = [],
-        max = 0,
-        item = null,
-        total = 0;
+    let match = [];
 
     const pricelist = list();
     for (let i = 0; i < pricelist.length; i++) {
-        if (pricelist[i].prices == null) {
+        const listing = pricelist[i];
+        if (listing.prices == null) {
             continue;
         }
-        const name = pricelist[i].name.toLowerCase();
+        const name = listing.name.toLowerCase();
         if (name == search) {
-            return pricelist[i];
+            return listing;
         }
 
-        const similarity = utils.compareStrings(name, search);
-        if (name.indexOf(search) == -1 && similarity <= 0.4) {
-            continue;
-        }
-
-        if (similarity > max) {
-            max = similarity;
-            item = pricelist[i];
-        }
-
-        total += similarity;
-        let push = pricelist[i];
-        push.similarity = similarity;
-        match.push(push);
-    }
-
-    if (match.length == 0) return null;
-
-    const average = total / match.length;
-
-    for (var i = match.length; i--;) {
-        const name = match[i].name.toLowerCase();
-        if (name.indexOf(search) == -1) {
-            const similarity = utils.compareStrings(name, search);
-            if (average * 0.8 > similarity) {
-                match.splice(i, 1);
-            }
+        if (name.toLowerCase().indexOf(search) != -1) { 
+            match.push(listing);
         }
     }
 
-    if (match.length == 1) {
+    if (match.length == 0) {
+        return null;
+    } else if (match.length == 1) {
         return match[0];
     }
-
-    if (!(max * 0.8 < average || average * 1.2 > max)) {
-        if (max > 0.8) {
-            return item;
-        } else if (0.2 > max) {
-            return null;
-        }
-    }
-
-    match.sort(function (a, b) {
-        return b.similarity - a.similarity;
-    });
 
     for (let i = 0; i < match.length; i++) match[i] = match[i].name;
 

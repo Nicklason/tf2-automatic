@@ -27,6 +27,10 @@ exports.init = function () {
 };
 
 function friendMessage(steamID, message) {
+	if (Automatic.running != true) {
+		return;
+	}
+
 	message = message.trim();
 	const steamID64 = steamID.getSteamID64();
 	Friends.getDetails(steamID64, function (err, details) {
@@ -98,7 +102,7 @@ function friendMessage(steamID, message) {
 
 			let match = Prices.findMatch(name);
 			if (match == null) {
-				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + name + '", try and write the whole name. Keep in mind that I might not be trading the item.');
+				Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
@@ -106,7 +110,7 @@ function friendMessage(steamID, message) {
 					match = match.splice(0, 20);
 				}
 				let reply = 'I\'ve found ' + n + ' items. Try with one of the items shown below:\n' + match.join(',\n');
-				if (n > match.lenght) {
+				if (n > match.length) {
 					const other = n - match.length;
 					reply += ',\nand ' + other + ' other ' + utils.plural('item', other) + '.';
 				}
@@ -209,14 +213,14 @@ function friendMessage(steamID, message) {
 
 			let match = Items.findMatch(input.name);
 			if (match == null) {
-				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + input.name + '", try and write the whole name.');
+				Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
 				if (match.length > 20) {
 					match = match.splice(0, 20);
 				}
-				let reply = 'I found ' + n + ' ' + utils.plural('item', n) + ' that contains "' + input.name + '". Try with one of the items shown below:\n' + match.join(',\n');
+				let reply = 'I\'ve found ' + n + ' items. Try with one of the items shown below:\n' + match.join(',\n');
 				if (n > match.length) {
 					const other = n - match.length;
 					reply += ',\nand ' + other + ' other ' + utils.plural('item', other) + '.';
@@ -609,7 +613,7 @@ function friendMessage(steamID, message) {
 					match = match.splice(0, 20);
 				}
 				let reply = 'I\'ve found ' + n + ' items. Try with one of the items shown below:\n' + match.join(',\n');
-				if (n > match.lenght) {
+				if (n > match.length) {
 					const other = n - match.length;
 					reply += ',\nand ' + other + ' other ' + utils.plural('item', other) + '.';
 				}

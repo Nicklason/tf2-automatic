@@ -7,6 +7,8 @@ let Automatic, manager, Items, log, config, Listings, Prices, Inventory;
 
 let WAIT, LOST_ITEMS = [], GAINED_ITEMS = [];
 
+let UPDATE_INTERVAL;
+
 exports.register = function (automatic) {
     Automatic = automatic;
     log = automatic.log;
@@ -51,6 +53,21 @@ exports.init = function (callback) {
     Listings.on('error', listingError);
     Listings.on('retry', listingRetry);
     Listings.on('inventory', inventory);
+};
+
+exports.stop = function (callback) {
+    log.debug('Stopping backpacktf.js...');
+    clearInterval(UPDATE_INTERVAL);
+    Listings.removeAll(function (err) {
+        if (err) {
+            log.warn('An error occurred while trying to remove all listings from www.backpack.tf: ' + err.message);
+            log.debug(err.stack);
+        }
+
+        log.debug('Removed all listings');
+        Listings.stop();
+        callback();
+    });
 };
 
 exports.findBuyOrder = findBuyOrder;
@@ -316,7 +333,7 @@ function getLimit(listing) {
 
 function startListingUpdater() {
     updateListings();
-    setInterval(function () {
+    UPDATE_INTERVAL = setInterval(function () {
         updateListings();
     }, 30 * 60 * 1000);
 }

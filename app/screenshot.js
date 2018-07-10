@@ -7,7 +7,7 @@ const FOLDER_NAME = 'images';
 
 let OPTIONS = {
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36',
-    renderDelay: 2000,
+    renderDelay: 5000,
     cookies: [],
     onLoadFinished: function () {
         var elements = document.getElementsByClassName('tradeoffer_items_banner');

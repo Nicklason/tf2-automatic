@@ -100,14 +100,14 @@ function ready(err) {
 
     log.debug('Modules are ready!');
 
+    Automatic.running = true;
+
     log.info(`tf2-automatic is ready; ${Prices.list().length} ${utils.plural('item', Prices.list().length)} in the pricelist, ${Backpack.listings().length} ${utils.plural('listing', Backpack.listings().length)} on www.backpack.tf (limit: ${Backpack.cap()})`);
     client.gamesPlayed([require('../package.json').name, 440]);
     client.setPersona(SteamUser.EPersonaState.Online);
 
-    if (config.get('sortInventory') == true) {
-        log.debug('Sorting inventory');
-        tf2.sortBackpack(3);
-    }
+    log.debug('Sorting inventory');
+    tf2.sortBackpack(3);
     
     Messages.init();
     Friends.init();

@@ -43,6 +43,7 @@ const configlog = config.init();
 let recentlyRefreshedSession = false;
 
 let Automatic = {
+    running: false,
     version: version,
     inventory: [],
     getOwnSteamID() {
@@ -82,6 +83,14 @@ let Automatic = {
                 recentlyRefreshedSession = false;
             }, 5 * 60 * 1000);
         }
+    },
+    expired() {
+        log.warn('API Access has expired, shutting down...');
+        Automatic.backpack.stop(function () {
+            Automatic.client.gamesPlayed([]);
+            Automatic.client.setPersona(SteamUser.EPersonaState.Snooze);
+            Automatic.running = false;
+        });
     }
 };
 
