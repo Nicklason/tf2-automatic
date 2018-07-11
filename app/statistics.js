@@ -88,5 +88,5 @@ function saveHistory() {
                 return;
             }
         });
-    }, 10000);
+    }, 2000);
 }
