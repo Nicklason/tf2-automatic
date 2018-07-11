@@ -211,8 +211,8 @@ function handleBuyOrders(offer) {
         const price = getPrice(name, false);
         if (price == null) return false;
 
-        const value = getValue(price) * amount;
-        offer.currencies.their.metal += value;
+        const value = getValue(price);
+        offer.currencies.their.metal += value * amount;
 
         offer.prices.push({
             intent: 0,
