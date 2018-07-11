@@ -579,7 +579,7 @@ function sendOffer(offer, callback) {
                 } else if (err.eresult == 20) {
                     callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
                 } else if (err.eresult == 26) {
-                    callback(null, 'One or more of the items in the offer has been traded away');
+                    callback(null, 'Something went wrong while trying to send the offer, try again later');
                     Inventory.getInventory(Automatic.getOwnSteamID());
                 } else {
                     callback(null, 'An error occurred while sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')');
