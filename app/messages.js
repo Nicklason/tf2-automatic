@@ -347,9 +347,16 @@ function friendMessage(steamID, message) {
 				return;
 			}
 
-			if (input.all == 'true' && input.i_am_sure == 'yes_i_am') {
-				// remove all
-				Prices.removeAll(function(err, result) {
+			if (input.all == 'true') {
+				if (!input.hasOwnProperty('i_am_sure')) {
+					Automatic.message(steamID64, 'Are you sure? Write "!remove all=true&i_am_sure=yes_i_am"');
+					return;
+				} else if (input.i_am_sure != 'yes_i_am') {
+					Automatic.message(steamID64, 'No items were removed');
+					return;
+				}
+
+				Prices.removeAll(function (err, result) {
 					if (err) {
 						const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
 						Automatic.message(steamID64, 'I failed to clear the pricelist: ' + error);
@@ -360,7 +367,7 @@ function friendMessage(steamID, message) {
 					if (removed > 0) {
 						Automatic.message(steamID64, 'The pricelist has been cleared');
 					} else {
-						Automatic.message(steamID64, 'No items were removed');
+						Automatic.message(steamID64, 'No items were removed, your pricelist was already empty');
 					}
 				});
 			} else {
@@ -383,7 +390,7 @@ function friendMessage(steamID, message) {
 					if (removed > 0) {
 						Automatic.message(steamID64, 'The ' + utils.plural('item', removed) + ' has been removed from the pricelist');
 					} else {
-						Automatic.message(steamID64, 'No items were removed. Try and write the name exactly as it is in the pricelist.');
+						Automatic.message(steamID64, 'No items were removed, you need to write out the name exactly as it is in the pricelist.');
 					}
 				});
 			}

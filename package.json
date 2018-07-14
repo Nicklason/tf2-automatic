@@ -1,6 +1,6 @@
 {
     "name": "tf2-automatic",
-    "version": "1.7.19",
+    "version": "1.7.20",
     "engines": {
         "node": ">=6.0.0"
     },
@@ -13,18 +13,18 @@
         "moment": "^2.22.2",
         "steam-totp": "^2.0.1",
         "steam-tradeoffer-manager": "^2.9.3",
-        "steam-user": "^3.25.1",
-        "steamcommunity": "^3.36.2",
+        "steam-user": "^3.28.0",
+        "steamcommunity": "^3.37.1",
         "tf2": "^2.1.2",
         "tf2-items": "^2.0.5",
-        "tf2automatic": "^1.0.11",
+        "tf2automatic": "^1.0.12",
         "webshot": "^0.18.0",
         "winston": "^2.4.3"
     },
     "devDependencies": {
         "eslint": "^4.19.1",
         "eslint-plugin-node": "^6.0.1",
-        "nodemon": "^1.18.0"
+        "nodemon": "^1.18.2"
     },
     "scripts": {
         "start": "node automatic.js",
