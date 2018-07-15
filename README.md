@@ -7,4 +7,4 @@
 [![GitHub forks](https://img.shields.io/github/forks/Nicklason/tf2-automatic.svg)](https://github.com/Nicklason/tf2-automatic/network)
 [![GitHub stars](https://img.shields.io/github/stars/Nicklason/tf2-automatic.svg)](https://github.com/Nicklason/tf2-automatic/stargazers)
 [![Coverage Status](https://coveralls.io/repos/github/Nicklason/tf2-automatic/badge.svg?branch=master)](https://coveralls.io/github/Nicklason/tf2-automatic?branch=master)
-[![Discord](https://tf2automatic.com/discord)](https://img.shields.io/discord/445215464386330644.svg)
+[![Discord](https://img.shields.io/discord/445215464386330644.svg)](https://tf2automatic.com/discord)
