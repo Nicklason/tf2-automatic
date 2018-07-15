@@ -78,9 +78,9 @@ function checkFriendRequests() {
 function friendAddResponse(steamID64) {
 	getDetails(steamID64, function(err, details) {
 		if (err) {
-			client.chatMessage(steamID64, 'Hi! If you don\'t know how things work, please type "!help" :)');
+			Automatic.message(steamID64, 'Hi! If you don\'t know how things work, please type "!help" :)');
 		} else {
-			client.chatMessage(steamID64, 'Hi ' + details.personaname + '! If you don\'t know how things work, please type "!help" :)');
+			Automatic.message(steamID64, 'Hi ' + details.personaname + '! If you don\'t know how things work, please type "!help" :)');
 		}
 	});
 }
