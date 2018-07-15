@@ -52,6 +52,8 @@ function getInventory(steamid64, callback) {
             return;
         }
 
+        inventory.reverse();
+
         if (own) save(inventory);
         callback(null, inventory);
     }]);
