@@ -5,3 +5,7 @@ node_js:
   - "8"
   - "9"
   - "10"
+env:
+  - COVERALLS_REPO_TOKEN=v47BCefS1J7uZ1SuHyMMSk4TAJMOXX0Jv
+script:
+  - npm run lint
