@@ -28,6 +28,7 @@
     },
     "scripts": {
         "start": "node automatic.js",
+        "lint": "eslint ./",
         "dev": "nodemon automatic.js --config nodemon.json"
     },
     "repository": {
