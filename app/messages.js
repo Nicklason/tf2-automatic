@@ -253,7 +253,7 @@ function friendMessage(steamID, message) {
 				enabled: true
 			};
 
-			if (limit) {
+			if (limit != null) {
 				add.meta = {
 					max_stock: limit
 				};
