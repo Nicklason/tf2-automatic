@@ -152,7 +152,7 @@ function friendMessage(steamID, message) {
 		} else if (command == 'message' && Automatic.isOwner(steamID64)) {
 			const parts = message.split(' ');
 			if (parts.length < 3) {
-				Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!reply 76561198120070906 Hi"');
+				Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!message 76561198120070906 Hi"');
 				return;
 			}
 
