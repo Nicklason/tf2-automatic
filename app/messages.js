@@ -299,6 +299,7 @@ function friendMessage(steamID, message) {
 				}
 				if (Object.keys(prices) != 0) {
 					add.prices = prices;
+					add.autoprice = false;
 				}
 			}
 
@@ -451,6 +452,7 @@ function friendMessage(steamID, message) {
 				}
 				if (Object.keys(prices) != 0) {
 					update.prices = prices;
+					update.autoprice = false;
 				}
 			}
 
