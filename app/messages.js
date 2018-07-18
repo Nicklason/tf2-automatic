@@ -264,7 +264,6 @@ function friendMessage(steamID, message) {
 				add.autoprice = autoprice;
 			}
 
-			if (add.autoprice != true) {
 				let buy = {};
 				let sell = {};
 				if (input.buy_keys) {
@@ -301,7 +300,6 @@ function friendMessage(steamID, message) {
 					add.prices = prices;
 					add.autoprice = false;
 				}
-			}
 
 			if (input.quality) {
 				input.quality = utils.capitalizeEach(input.quality);
@@ -417,7 +415,6 @@ function friendMessage(steamID, message) {
 				update.autoprice = autoprice;
 			}
 
-			if (input.autoprice != true) {
 				let buy = {};
 				let sell = {};
 				if (input.buy_keys) {
@@ -454,7 +451,6 @@ function friendMessage(steamID, message) {
 					update.prices = prices;
 					update.autoprice = false;
 				}
-			}
 
 			let limit = null;
 			if (input.limit && input.limit != '') {
