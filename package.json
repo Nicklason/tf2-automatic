@@ -1,6 +1,6 @@
 {
     "name": "tf2-automatic",
-    "version": "1.7.21",
+    "version": "1.7.22",
     "engines": {
         "node": ">=6.0.0"
     },
@@ -17,14 +17,14 @@
         "steamcommunity": "^3.37.1",
         "tf2": "^2.1.2",
         "tf2-items": "^2.0.5",
-        "tf2automatic": "^1.0.12",
+        "tf2automatic": "^1.1.0",
         "webshot": "^0.18.0",
         "winston": "^2.4.3"
     },
     "devDependencies": {
         "eslint": "^4.19.1",
         "eslint-plugin-node": "^6.0.1",
-        "nodemon": "^1.18.2"
+        "nodemon": "^1.18.3"
     },
     "scripts": {
         "start": "node automatic.js",

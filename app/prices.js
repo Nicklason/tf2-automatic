@@ -29,6 +29,7 @@ exports.init = function (callback) {
     }
 
     log.debug('Initializing tf2automatic package.');
+    API.steamid = Automatic.getOwnSteamID();
     API.init(function(err) {
         if (err) {
             callback(new Error('tf2automatic (' + err.message + ')'));
