@@ -17,7 +17,7 @@
         "steamcommunity": "^3.37.1",
         "tf2": "^2.1.2",
         "tf2-items": "^2.0.5",
-        "tf2automatic": "^1.1.0",
+        "tf2automatic": "^1.1.2",
         "webshot": "^0.18.0",
         "winston": "^2.4.3"
     },
