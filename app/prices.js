@@ -43,7 +43,6 @@ exports.init = function (callback) {
     API.on('change', priceChanged);
     API.on('rate', rateEmitted);
     API.on('expired', Automatic.expired);
-    API.on('error', apiError);
 };
 
 exports.list = list;
@@ -293,14 +292,6 @@ function pricesRefreshed(pricelist) {
 
 function rateEmitted(rate) {
     log.debug(rate);
-}
-
-function apiError(fatal, method, error) {
-    log.warn((fatal == true ? 'Fatal ' : '') + 'API error (function ' + method + ')');
-    log.debug(error);
-    if (fatal) {
-        process.exit(1);
-    }
 }
 
 function key() { return API.currencies.keys.price.value; }
