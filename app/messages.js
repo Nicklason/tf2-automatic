@@ -406,6 +406,7 @@ function friendMessage(steamID, message) {
 				return;
 			}
 
+			input.name = input.name.trim();
 			const name = input.name;
 
 			let update = {};
