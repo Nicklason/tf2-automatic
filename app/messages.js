@@ -213,7 +213,7 @@ function friendMessage(steamID, message) {
 
 			let match = Items.findMatch(input.name);
 			if (match == null) {
-				Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
+				Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + input.name + '", I might not be trading the item you are looking for.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
