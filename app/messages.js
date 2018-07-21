@@ -573,10 +573,8 @@ function friendMessage(steamID, message) {
 					if (left == 0) {
 						tf2.removeAllListeners('itemRemoved');
 						Inventory.getInventory(Automatic.getOwnSteamID(), function () {
-							if (config.get('sortInventory') == true) {
-								log.debug('Sorting inventory');
-								tf2.sortBackpack(3);
-							}
+							log.debug('Sorting inventory');
+							tf2.sortBackpack(3);
 							Automatic.message(steamID64, 'I can now fit ' + tf2.backpackSlots + ' items in my TF2 inventory.');
 						});
 					}
