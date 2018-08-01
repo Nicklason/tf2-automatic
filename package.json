@@ -1,23 +1,23 @@
 {
     "name": "tf2-automatic",
-    "version": "1.7.22",
+    "version": "1.7.23",
     "engines": {
         "node": ">=6.0.0"
     },
     "description": "Fully automated TF2 trading bot advertising on www.backpack.tf",
     "main": "automatic.js",
     "dependencies": {
-        "bptf-listings": "^2.5.0",
+        "bptf-listings": "2.5.0",
         "graceful-fs": "^4.1.11",
         "isobject": "^3.0.1",
         "moment": "^2.22.2",
         "steam-totp": "^2.0.1",
         "steam-tradeoffer-manager": "^2.9.3",
-        "steam-user": "^3.28.0",
+        "steam-user": "^3.28.1",
         "steamcommunity": "^3.37.1",
         "tf2": "^2.1.2",
-        "tf2-items": "^2.0.5",
-        "tf2automatic": "^1.1.4",
+        "tf2-items": "2.0.5",
+        "tf2automatic": "1.1.4",
         "webshot": "^0.18.0",
         "winston": "^2.4.3"
     },

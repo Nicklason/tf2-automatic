@@ -570,6 +570,7 @@ function friendMessage(steamID, message) {
 					if (item.defIndex == 5050) {
 						left--;
 					}
+					
 					if (left == 0) {
 						tf2.removeAllListeners('itemRemoved');
 						client.gamesPlayed([440]);
