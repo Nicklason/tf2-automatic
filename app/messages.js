@@ -634,7 +634,7 @@ function friendMessage(steamID, message) {
 }
 
 function isCommand(message) {
-	if (message.startsWith('!') || message.startsWith('/') || message.startsWith('.')) {
+	if (message.startsWith('!') || message.startsWith('/') || message.startsWith('.') || message.startsWith('?')) {
 		const command = message.toLowerCase().split(' ')[0].substr(1);
 		return command;
 	} else {
