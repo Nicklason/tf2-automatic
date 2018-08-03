@@ -627,7 +627,21 @@ function friendMessage(steamID, message) {
 			const selling = command == 'buy';
 
 			Trade.requestOffer(steamID64, match.name, amount, selling);
-		} else {
+		} else if (command == 'name' && Automatic.isOwner(steamID64)) {
+        
+			    Automatic.message(steamID64, 'Setting new name.');
+			    let name = message.substr(message.toLowerCase().indexOf('name') + 5);
+
+			    if (name == '') {
+				Automatic.message(steamID64, 'You forgot to add a name. Here\'s an example: "!name Mr Bot"');
+				return;
+			    } else {
+			    command = command.replace("name ", "");
+			    var name = message;
+			    client.setPersonaName(name);
+			    Automatic.message(steamID64, "New name = " + name);
+			    }
+			} else {
 			Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
 		}
 	});
