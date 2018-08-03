@@ -1,4 +1,5 @@
 const fs = require('graceful-fs');
+const moment = require('moment');
 
 const utils = require('./utils.js');
 
@@ -72,7 +73,7 @@ function enqueueReceivedOffer(offer) {
         partner: offer.partner(),
         status: 'Received',
         details: {},
-        time: utils.epoch()
+        time: moment().unix()
     };
     
     QUEUE.push(trade);
@@ -90,7 +91,7 @@ function enqueueRequestedOffer(steamID64, details) {
             name: details.name,
             amount: details.amount
         },
-        time: utils.epoch()
+        time: moment().unix()
     };
 
     QUEUE.push(trade);

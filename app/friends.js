@@ -1,7 +1,6 @@
 const SteamUser = require('steam-user');
 const request = require('request');
-
-const utils = require('./utils.js');
+const moment = require('moment');
 
 let Automatic, client, community, manager, log, config;
 
@@ -137,7 +136,7 @@ function requestDetails(steamID64, callback) {
 
 		let details = body.response.players[0];
 		delete details.steamid;
-		details.time = utils.epoch();
+		details.time = moment().unix();
 		
 		FRIEND_DETAILS[steamID64] = details;
 
@@ -155,7 +154,7 @@ function detailsCleanup() {
 }
 
 function isOldDetails(details) {
-	const current = utils.epoch();
+	const current = moment().unix();
 	const max = 3600; // 1 hour
 
 	return current - details.time > max;

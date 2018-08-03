@@ -1246,7 +1246,7 @@ function savePollData(pollData) {
 }
 
 function removeOldOffers(pollData) {
-    const current = utils.epoch();
+    const current = utils.seconds();
     const max = 3600; // 1 hour
 
     if (!pollData.hasOwnProperty('offerData')) pollData.offerData = {};

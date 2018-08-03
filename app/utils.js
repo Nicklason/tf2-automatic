@@ -1,4 +1,5 @@
 const request = require('request');
+const moment = require('moment');
 
 exports.fatal = function (log, msg) {
     log.error(msg);
@@ -13,17 +14,20 @@ exports.paginateArray = function (array, size, page) {
     return array.slice(page * size, (page + 1) * size);
 };
 
+exports.seconds = function () {
+    const seconds = Math.round(new Date().getTime() / 1000);
+    return seconds;
+};
+
 exports.secondsToday = function() {
     const today = new Date();
     today.setHours(0);
     today.setMinutes(0);
     today.setSeconds(0);
-    const seconds = Math.round((new Date().getTime() - today.getTime()) / 1000);
-    return seconds;
-};
 
-exports.epoch = function () {
-    const seconds = Math.round(new Date().getTime() / 1000);
+    const m = moment(today);
+    const now = moment();
+    const seconds = now.unix() - m.unix();
     return seconds;
 };
 

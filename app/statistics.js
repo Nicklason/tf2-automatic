@@ -1,4 +1,5 @@
 const fs = require('graceful-fs');
+const moment = require('moment');
 
 const utils = require('./utils.js');
 
@@ -30,7 +31,7 @@ function addItem(name, assetid, value, intent) {
 
     intent = intent == 0 ? 'bought' : 'sold';
     history[intent] = value; // Considering that the price of keys can change, we need to use the current value of the item
-    history['time_' + intent] = utils.epoch();
+    history['time_' + intent] = moment().unix();
 
     HISTORY[assetid] = history;
 
@@ -41,7 +42,7 @@ function getProfit(today = false) {
     // if hours is = Infinity, then get all profit
     let total = 0;
 
-    const current = utils.epoch();
+    const current = moment().unix();
     const max = today ? utils.secondsToday() : Infinity; // Convert hours to seconds
 
     for (let assetid in HISTORY) {

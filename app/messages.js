@@ -143,7 +143,7 @@ function friendMessage(steamID, message) {
 				reply += ' / ' + limit;
 			}
 			if (Automatic.isOwner(steamID64)) {
-				const date = moment.unix(match.updated_on).format('DD-MM-YYYY HH:mm:ss');
+				const date = moment(match.updated_on * 1000).utc().format('DD-MM-YYYY HH:mm:ss');
 				reply += ' (last updated ' + date + ' +0000)';
 			}
 			reply += '.';
