@@ -628,18 +628,15 @@ function friendMessage(steamID, message) {
 
 			Trade.requestOffer(steamID64, match.name, amount, selling);
 		} else if (command == 'name' && Automatic.isOwner(steamID64)) {
-				Automatic.message(steamID64, 'Setting new name.');
-				let profileName = message.substr(message.toLowerCase().indexOf('name') + 5);
-
-			if (profileName == '') {
-				Automatic.message(steamID64, 'You forgot to add a name. Here\'s an example: "!name Mr Bot"');
+			const name = message.substr(message.toLowerCase().indexOf('name') + 5);
+			if (name == '') {
+				Automatic.message(steamID64, 'You forgot to add a name. Here\'s an example: "!name Mr. Bot"');
 				return;
-			} else {
-				var someOtherprofileName = profileName;
-				client.setPersona(1, someOtherprofileName);
-				Automatic.message(steamID64, 'New name = ' + someOtherprofileName);
 			}
-			} else {
+
+			client.setPersona(1, name);
+			Automatic.message(steamID64, 'My name has been changed to "' + name + '"');
+		} else {
 			Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
 		}
 	});
