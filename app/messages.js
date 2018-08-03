@@ -213,7 +213,7 @@ function friendMessage(steamID, message) {
 
 			let match = Items.findMatch(input.name);
 			if (match == null) {
-				Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
+				Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + input.name + '", I might not be trading the item you are looking for.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
@@ -406,6 +406,7 @@ function friendMessage(steamID, message) {
 				return;
 			}
 
+			input.name = input.name.trim();
 			const name = input.name;
 
 			let update = {};
@@ -569,13 +570,14 @@ function friendMessage(steamID, message) {
 					if (item.defIndex == 5050) {
 						left--;
 					}
+					
 					if (left == 0) {
 						tf2.removeAllListeners('itemRemoved');
+						client.gamesPlayed([440]);
 						Inventory.getInventory(Automatic.getOwnSteamID(), function () {
-							if (config.get('sortInventory') == true) {
-								log.debug('Sorting inventory');
-								tf2.sortBackpack(3);
-							}
+							client.gamesPlayed([require('../package.json').name, 440]);
+							log.debug('Sorting inventory');
+							tf2.sortBackpack(3);
 							Automatic.message(steamID64, 'I can now fit ' + tf2.backpackSlots + ' items in my TF2 inventory.');
 						});
 					}
