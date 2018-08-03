@@ -49,7 +49,7 @@ function friendMessage(steamID, message) {
 		} else if (command == 'help') {
 			let reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
 			if (Automatic.isOwner(steamID64)) {
-				reply += ', !add, !remove, !update, !profit, !removefriends, !use';
+				reply += ', !add, !remove, !update, !profit, !removefriends, !use, !name';
 			}
 			Automatic.message(steamID64, reply);
 		} else if (command == 'stock') {
@@ -627,6 +627,15 @@ function friendMessage(steamID, message) {
 			const selling = command == 'buy';
 
 			Trade.requestOffer(steamID64, match.name, amount, selling);
+		} else if (command == 'name' && Automatic.isOwner(steamID64)) {
+			const name = message.substr(message.toLowerCase().indexOf('name') + 5);
+			if (name == '') {
+				Automatic.message(steamID64, 'You forgot to add a name. Here\'s an example: "!name Mr. Bot"');
+				return;
+			}
+
+			client.setPersona(1, name);
+			Automatic.message(steamID64, 'My name has been changed to "' + name + '"');
 		} else {
 			Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
 		}
