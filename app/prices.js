@@ -1,6 +1,7 @@
 const TF2Automatic = require('tf2automatic');
 const isObject = require('isobject');
 const fs = require('graceful-fs');
+const Currencies = require('tf2-currencies');
 
 const utils = require('./utils.js');
 
@@ -181,14 +182,15 @@ function valueToPure(value, useKeys = true) {
 }
 
 function valueToCurrencies(value, useKeys = true) {
-    const pure = valueToPure(value, useKeys);
+    const currencies = Currencies.toCurrencies(value, key());
 
-    const metal = utils.scrapToRefined(pure.refined * 9 + pure.reclaimed * 3 + pure.scrap);
+    if (useKeys == false) {
+        const valueOfKeys = currencies.keys * Currencies.toScrap(key());
+        currencies.keys = 0;
+        currencies.metal = Currencies.toRefined(Currencies.toScrap(currencies.metal) + valueOfKeys);
+    }
 
-    return {
-        keys: pure.keys,
-        metal: metal
-    };
+    return currencies.toJSON();
 }
 
 function handleBuyOrders(offer) {
