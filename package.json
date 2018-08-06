@@ -30,7 +30,8 @@
     "scripts": {
         "start": "node automatic.js",
         "lint": "eslint ./",
-        "dev": "nodemon automatic.js --config nodemon.json"
+        "dev": "nodemon automatic.js --config nodemon.json",
+        "update": "git reset HEAD --hard && git pull && npm install"
     },
     "repository": {
         "type": "git",
