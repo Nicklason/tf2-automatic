@@ -184,8 +184,14 @@ function getName(item) {
 
 function getDefindex(item) {
     const link = getAction('Item Wiki Page...', item);
-    const query = utils.stringToObject(link.substring(link.indexOf('?') + 1));
-    return parseInt(query.id);
+    if (link != null) {
+        const query = utils.stringToObject(link.substring(link.indexOf('?') + 1));
+        const defindex = parseInt(query.id);
+        return defindex;
+    }
+    
+    const defindex = parseInt(item.app_data.def_index);
+    return defindex;
 }
 
 function getQuality(item) {
