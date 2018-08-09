@@ -230,7 +230,7 @@ function friendMessage(steamID, message) {
 				return;
 			}
 
-			let limit = null;
+			let limit = config.get('stocklimit');
 			if (input.limit && input.limit != '') {
 				limit = parseInt(input.limit);
 				if (isNaN(limit)) {
@@ -249,57 +249,54 @@ function friendMessage(steamID, message) {
 				killstreak: parseInt(input.killstreak) || 0,
 				australium: input.australium ? input.australium == 'true' : false,
 				effect: input.effect || null,
+				meta: {
+					max_stock: limit
+				},
 				autoprice: true,
 				enabled: true
 			};
-
-			if (limit != null) {
-				add.meta = {
-					max_stock: limit
-				};
-			}
 
 			if (input.autoprice != undefined) {
 				const autoprice = input.autoprice != 'false';
 				add.autoprice = autoprice;
 			}
 
-				let buy = {};
-				let sell = {};
-				if (input.buy_keys) {
-					buy.keys = parseInt(input.buy_keys);
-				}
-				if (input.buy_metal) {
-					buy.metal = parseFloat(input.buy_metal);
-				}
-				if (input.sell_keys) {
-					sell.keys = parseInt(input.sell_keys);
-				}
-				if (input.sell_metal) {
-					sell.metal = parseFloat(input.sell_metal);
-				}
+			let buy = {};
+			let sell = {};
+			if (input.buy_keys) {
+				buy.keys = parseInt(input.buy_keys);
+			}
+			if (input.buy_metal) {
+				buy.metal = parseFloat(input.buy_metal);
+			}
+			if (input.sell_keys) {
+				sell.keys = parseInt(input.sell_keys);
+			}
+			if (input.sell_metal) {
+				sell.metal = parseFloat(input.sell_metal);
+			}
 
-				let prices = {};
-				if (Object.keys(buy) != 0) {
-					if (!buy.hasOwnProperty('keys')) {
-						buy.keys = 0;
-					} else if (!buy.hasOwnProperty('metal')) {
-						buy.metal = 0;
-					}
-					prices.buy = buy;
+			let prices = {};
+			if (Object.keys(buy) != 0) {
+				if (!buy.hasOwnProperty('keys')) {
+					buy.keys = 0;
+				} else if (!buy.hasOwnProperty('metal')) {
+					buy.metal = 0;
 				}
-				if (Object.keys(sell) != 0) {
-					if (!sell.hasOwnProperty('keys')) {
-						sell.keys = 0;
-					} else if (!sell.hasOwnProperty('metal')) {
-						sell.metal = 0;
-					}
-					prices.sell = sell;
+				prices.buy = buy;
+			}
+			if (Object.keys(sell) != 0) {
+				if (!sell.hasOwnProperty('keys')) {
+					sell.keys = 0;
+				} else if (!sell.hasOwnProperty('metal')) {
+					sell.metal = 0;
 				}
-				if (Object.keys(prices) != 0) {
-					add.prices = prices;
-					add.autoprice = false;
-				}
+				prices.sell = sell;
+			}
+			if (Object.keys(prices) != 0) {
+				add.prices = prices;
+				add.autoprice = false;
+			}
 
 			if (input.quality) {
 				input.quality = utils.capitalizeEach(input.quality);
@@ -416,42 +413,42 @@ function friendMessage(steamID, message) {
 				update.autoprice = autoprice;
 			}
 
-				let buy = {};
-				let sell = {};
-				if (input.buy_keys) {
-					buy.keys = parseInt(input.buy_keys);
-				}
-				if (input.buy_metal) {
-					buy.metal = parseFloat(input.buy_metal);
-				}
-				if (input.sell_keys) {
-					sell.keys = parseInt(input.sell_keys);
-				}
-				if (input.sell_metal) {
-					sell.metal = parseFloat(input.sell_metal);
-				}
+			let buy = {};
+			let sell = {};
+			if (input.buy_keys) {
+				buy.keys = parseInt(input.buy_keys);
+			}
+			if (input.buy_metal) {
+				buy.metal = parseFloat(input.buy_metal);
+			}
+			if (input.sell_keys) {
+				sell.keys = parseInt(input.sell_keys);
+			}
+			if (input.sell_metal) {
+				sell.metal = parseFloat(input.sell_metal);
+			}
 
-				let prices = {};
-				if (Object.keys(buy) != 0) {
-					if (!buy.hasOwnProperty('keys')) {
-						buy.keys = 0;
-					} else if (!buy.hasOwnProperty('metal')) {
-						buy.metal = 0;
-					}
-					prices.buy = buy;
+			let prices = {};
+			if (Object.keys(buy) != 0) {
+				if (!buy.hasOwnProperty('keys')) {
+					buy.keys = 0;
+				} else if (!buy.hasOwnProperty('metal')) {
+					buy.metal = 0;
 				}
-				if (Object.keys(sell) != 0) {
-					if (!sell.hasOwnProperty('keys')) {
-						sell.keys = 0;
-					} else if (!sell.hasOwnProperty('metal')) {
-						sell.metal = 0;
-					}
-					prices.sell = sell;
+				prices.buy = buy;
+			}
+			if (Object.keys(sell) != 0) {
+				if (!sell.hasOwnProperty('keys')) {
+					sell.keys = 0;
+				} else if (!sell.hasOwnProperty('metal')) {
+					sell.metal = 0;
 				}
-				if (Object.keys(prices) != 0) {
-					update.prices = prices;
-					update.autoprice = false;
-				}
+				prices.sell = sell;
+			}
+			if (Object.keys(prices) != 0) {
+				update.prices = prices;
+				update.autoprice = false;
+			}
 
 			let limit = null;
 			if (input.limit && input.limit != '') {
@@ -463,6 +460,8 @@ function friendMessage(steamID, message) {
 					Automatic.message(steamID64, '"' + input.limit + '" is not a valid limit. You can use -1 for unlimited, 0 for no buying, 1 for a limit of 1 and so on.');
 					return;
 				}
+			} else {
+				limit = config.get('stocklimit');
 			}
 
 			if (limit != null) {
