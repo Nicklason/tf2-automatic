@@ -44,7 +44,7 @@ const DEFAULT_CONFIG = {
         }
     },
     'owners': ['<steamid64s>'],
-    'friendsToKeep': ['<steamid64s>']
+    'friendsToKeep': ['76561198120070906']
 };
 
 const defaultAccount = {
