@@ -43,7 +43,8 @@ const DEFAULT_CONFIG = {
             'maxFiles': 3
         }
     },
-    'owners': ['<steamid64s>']
+    'owners': ['<steamid64s>'],
+    'friendsToKeep': ['<steamid64s>']
 };
 
 const defaultAccount = {
