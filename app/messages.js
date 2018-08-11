@@ -500,10 +500,10 @@ function friendMessage(steamID, message) {
 			const friendsToKeep = config.get().friendsToKeep;
 
 			let removed = 0;
-			if (friendsToKeep == null) { // friendsToKeep does not exist in config.js
+			if (friendsToKeep == null) { // friendsToKeep does not exist in config.json
 				for (let i = 0; i < friends.length; i++) {
 					const steamid = friends[i];
-					if (!Automatic.isOwner(steamid) && steamid != '76561198120070906' ) {
+					if (!Automatic.isOwner(steamid) && steamid != '76561198120070906') {
 						Automatic.message(steamid, 'I am clearing my friend list. Feel free to add me back if you want to trade');
 						Friends.remove(steamid);
 						removed++;
