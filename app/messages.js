@@ -2,7 +2,7 @@ const moment = require('moment');
 
 const utils = require('./utils.js');
 
-let Automatic, client, log, config, Friends, Inventory, Prices, Trade, Items, Statistics;
+let Automatic, client, log, config, Friends, Inventory, Prices, Trade, Items, Statistics, tf2;
 
 let cache = {};
 const messageInterval = 2000;
@@ -19,6 +19,7 @@ exports.register = function (automatic) {
 	Items = automatic.items;
 	Friends = automatic.friends;
 	Statistics = automatic.statistics;
+	tf2 = automatic.tf2;
 };
 
 exports.init = function () {
@@ -26,6 +27,10 @@ exports.init = function () {
 };
 
 function friendMessage(steamID, message) {
+	if (Automatic.running != true) {
+		return;
+	}
+
 	message = message.trim();
 	const steamID64 = steamID.getSteamID64();
 	Friends.getDetails(steamID64, function (err, details) {
@@ -44,7 +49,7 @@ function friendMessage(steamID, message) {
 		} else if (command == 'help') {
 			let reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
 			if (Automatic.isOwner(steamID64)) {
-				reply += ', !add, !remove, !update, !profit, removefriends';
+				reply += ', !add, !remove, !update, !profit, !removefriends, !use';
 			}
 			Automatic.message(steamID64, reply);
 		} else if (command == 'stock') {
@@ -97,7 +102,7 @@ function friendMessage(steamID, message) {
 
 			let match = Prices.findMatch(name);
 			if (match == null) {
-				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + name + '", try and write the whole name. Keep in mind that I might not be trading the item.');
+				Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
@@ -105,7 +110,7 @@ function friendMessage(steamID, message) {
 					match = match.splice(0, 20);
 				}
 				let reply = 'I\'ve found ' + n + ' items. Try with one of the items shown below:\n' + match.join(',\n');
-				if (n > match.lenght) {
+				if (n > match.length) {
 					const other = n - match.length;
 					reply += ',\nand ' + other + ' other ' + utils.plural('item', other) + '.';
 				}
@@ -208,14 +213,14 @@ function friendMessage(steamID, message) {
 
 			let match = Items.findMatch(input.name);
 			if (match == null) {
-				Automatic.message(steamID64, 'I could not find any items with a similar name to "' + input.name + '", try and write the whole name.');
+				Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
 				return;
 			} else if (Array.isArray(match)) {
 				const n = match.length;
 				if (match.length > 20) {
 					match = match.splice(0, 20);
 				}
-				let reply = 'I found ' + n + ' ' + utils.plural('item', n) + ' that contains "' + input.name + '". Try with one of the items shown below:\n' + match.join(',\n');
+				let reply = 'I\'ve found ' + n + ' items. Try with one of the items shown below:\n' + match.join(',\n');
 				if (n > match.length) {
 					const other = n - match.length;
 					reply += ',\nand ' + other + ' other ' + utils.plural('item', other) + '.';
@@ -259,7 +264,7 @@ function friendMessage(steamID, message) {
 				add.autoprice = autoprice;
 			}
 
-			if (add.autoprice == false) {
+			if (add.autoprice != true) {
 				let buy = {};
 				let sell = {};
 				if (input.buy_keys) {
@@ -342,9 +347,16 @@ function friendMessage(steamID, message) {
 				return;
 			}
 
-			if (input.all == 'true' && input.i_am_sure == 'yes_i_am') {
-				// remove all
-				Prices.removeAll(function(err, result) {
+			if (input.all == 'true') {
+				if (!input.hasOwnProperty('i_am_sure')) {
+					Automatic.message(steamID64, 'Are you sure? Write "!remove all=true&i_am_sure=yes_i_am"');
+					return;
+				} else if (input.i_am_sure != 'yes_i_am') {
+					Automatic.message(steamID64, 'No items were removed');
+					return;
+				}
+
+				Prices.removeAll(function (err, result) {
 					if (err) {
 						const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
 						Automatic.message(steamID64, 'I failed to clear the pricelist: ' + error);
@@ -355,7 +367,7 @@ function friendMessage(steamID, message) {
 					if (removed > 0) {
 						Automatic.message(steamID64, 'The pricelist has been cleared');
 					} else {
-						Automatic.message(steamID64, 'No items were removed');
+						Automatic.message(steamID64, 'No items were removed, your pricelist was already empty');
 					}
 				});
 			} else {
@@ -378,7 +390,7 @@ function friendMessage(steamID, message) {
 					if (removed > 0) {
 						Automatic.message(steamID64, 'The ' + utils.plural('item', removed) + ' has been removed from the pricelist');
 					} else {
-						Automatic.message(steamID64, 'No items were removed. Try and write the name exactly as it is in the pricelist.');
+						Automatic.message(steamID64, 'No items were removed, you need to write out the name exactly as it is in the pricelist.');
 					}
 				});
 			}
@@ -404,7 +416,7 @@ function friendMessage(steamID, message) {
 				update.autoprice = autoprice;
 			}
 
-			if (update.autoprice == false) {
+			if (input.autoprice != true) {
 				let buy = {};
 				let sell = {};
 				if (input.buy_keys) {
@@ -440,11 +452,6 @@ function friendMessage(steamID, message) {
 				if (Object.keys(prices) != 0) {
 					update.prices = prices;
 				}
-			}
-
-			if (input.autoprice == true) {
-				Automatic.message(steamID64, 'You can\'t enable autopricing when the item has been added, this will be changed soon.');
-				return;
 			}
 
 			let limit = null;
@@ -503,6 +510,86 @@ function friendMessage(steamID, message) {
 			}
 
 			Automatic.message(steamID64, 'I\'ve removed ' + removed + ' ' + utils.plural('friend', removed) + '.');
+		} else if (command == 'use' && Automatic.isOwner(steamID64)) {
+			const string = message.substr(message.toLowerCase().indexOf('use') + 4);
+			let input = utils.stringToObject(string);
+			if (input == null) {
+				Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!use name=Backpack Expander&amount=10"');
+				return;
+			}
+
+			if (!input.name) {
+				Automatic.message(steamID64, 'You are missing a name. Here\'s an example: "!use name=Backpack Expander"');
+				return;
+			}
+			let amount = 1;
+			if (input.amount) {
+				amount = parseInt(input.amount);
+				if (isNaN(amount)) {
+					Automatic.message(steamID64, '"' + input.amount + '" is not a valid amount. Here\'s an example: "!use name=Backpack Expander&amount=10"');
+					return;
+				} else if (amount > 3) {
+					amount = 3;
+				}
+			}
+			if (input.name.toLowerCase() == 'backpack expander') {
+				if (tf2.haveGCSession != true) {
+					Automatic.message(steamID64, 'I am not connected to the TF2 game coordinator, try again later.');
+					return;
+				}
+
+				const dict = Inventory.dictionary();
+				let expanders = [];
+				if (dict['Backpack Expander'] != undefined) {
+					expanders = expanders.concat(dict['Backpack Expander']);
+				}
+				if (dict['Non-Craftable Backpack Expander'] != undefined) {
+					expanders = expanders.concat(dict['Non-Craftable Backpack Expander']);
+				}
+
+				if (expanders.length == 0) {
+					Automatic.message(steamID64, 'I don\'t have any Backpack Expanders.');
+					return;
+				} else if (expanders.length < amount) {
+					amount = expanders.length;
+				}
+
+				const maxSlots = 3000;
+				const slots = tf2.backpackSlots;
+				const canUse = (maxSlots - slots) / 100;
+				if (canUse == 0) {
+					Automatic.message(steamID64, 'I can\'t expand my inventory any further, I already have ' + maxSlots + ' slots.');
+					return;
+				} else if (canUse < amount) {
+					amount = canUse;
+				}
+
+				const ids = expanders.slice(0, amount);
+
+				let left = ids.length;
+				tf2.on('itemRemoved', function (item) {
+					if (item.defIndex == 5050) {
+						left--;
+					}
+					if (left == 0) {
+						tf2.removeAllListeners('itemRemoved');
+						Inventory.getInventory(Automatic.getOwnSteamID(), function () {
+							if (config.get('sortInventory') == true) {
+								log.debug('Sorting inventory');
+								tf2.sortBackpack(3);
+							}
+							Automatic.message(steamID64, 'I can now fit ' + tf2.backpackSlots + ' items in my TF2 inventory.');
+						});
+					}
+				});
+
+				for (let i = 0; i < ids.length; i++) {
+					const id = ids[i];
+					tf2.useItem(id);
+				}
+			} else {
+				Automatic.message(steamID64, 'Unknown item, usable items: Backpack Expander');
+			}
 		} else if (command == 'buy' || command == 'sell') {
 			let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
 			let amount = 1;
@@ -528,7 +615,7 @@ function friendMessage(steamID, message) {
 					match = match.splice(0, 20);
 				}
 				let reply = 'I\'ve found ' + n + ' items. Try with one of the items shown below:\n' + match.join(',\n');
-				if (n > match.lenght) {
+				if (n > match.length) {
 					const other = n - match.length;
 					reply += ',\nand ' + other + ' other ' + utils.plural('item', other) + '.';
 				}

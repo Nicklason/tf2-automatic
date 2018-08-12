@@ -17,7 +17,7 @@ exports.register = function (automatic) {
     Items = automatic.items;
     Inventory = automatic.inventory;
 
-    API = new TF2Automatic({ client_id: config.get('client_id'), client_secret: config.get('client_secret'), pollTime: 5 * 60 * 1000 });
+    API = new TF2Automatic({ client_id: config.get('client_id'), client_secret: config.get('client_secret'), pollTime: 2 * 60 * 1000 });
 };
 
 exports.init = function (callback) {
@@ -41,6 +41,7 @@ exports.init = function (callback) {
     API.on('listings', pricesRefreshed);
     API.on('change', priceChanged);
     API.on('rate', rateEmitted);
+    API.on('expired', Automatic.expired);
 };
 
 exports.list = list;
@@ -62,13 +63,21 @@ exports.findListing = function (name) {
 exports.getItem = function (listing) {
     return API.getItem(listing);
 };
+exports.upload = function (data, type, callback) {
+    API.upload(data, type, callback);
+};
 exports.getLimit = function (name) {
     const listing = exports.findListing(name);
-    if (listing == null || !isObject(listing.meta) || !listing.meta.hasOwnProperty('max_stock')) {
-        return config.get('stocklimit');
+    let limit = config.get('stocklimit');
+    if (listing != null && isObject(listing.meta) && listing.meta.hasOwnProperty('max_stock')) {
+        limit = listing.meta.max_stock;
     }
 
-    return listing.meta.max_stock;
+    if (limit == -1) {
+        limit = Infinity;
+    }
+
+    return limit;
 };
 
 exports.findMatch = findMatch;
@@ -78,7 +87,7 @@ exports.handleSellOrders = handleSellOrders;
 
 exports.addItem = function (items, callback) { API.addListing(items, callback); };
 exports.removeItems = function (items, callback) { API.removeListings(items, callback); };
-exports.removeAll = removeAll;
+exports.removeAll = function removeAll(callback) { API.removeAllListings(callback); };
 exports.updateItem = function (name, update, callback) { API.updateListing(name, update, callback); };
 
 exports.required = getRequired;
@@ -87,17 +96,6 @@ exports.afford = canAfford;
 
 exports.valueToPure = valueToPure;
 exports.valueToCurrencies = valueToCurrencies;
-
-function removeAll(callback) {
-    let names = [];
-    const listings = list();
-    for (let i = 0; i < listings.length; i++) {
-        const name = listings[i].name;
-        names.push(name);
-    }
-
-    API.removeListings(names, callback);
-}
 
 function getPrice(name, our) {
     if (name == 'Scrap Metal') {
@@ -202,8 +200,8 @@ function handleBuyOrders(offer) {
         const price = getPrice(name, false);
         if (price == null) return false;
 
-        const value = getValue(price) * amount;
-        offer.currencies.their.metal += value;
+        const value = getValue(price);
+        offer.currencies.their.metal += value * amount;
 
         offer.prices.push({
             intent: 0,
@@ -224,8 +222,8 @@ function handleSellOrders(offer) {
         const price = getPrice(name, true);
         if (price == null) return false;
 
-        const value = getValue(price) * amount;
-        offer.currencies.our.metal += value;
+        const value = getValue(price);
+        offer.currencies.our.metal += value * amount;
 
         offer.prices.push({
             intent: 1,
@@ -302,66 +300,29 @@ function list() { return API.listings; }
 function findMatch(search) {
     search = search.toLowerCase();
 
-    let match = [],
-        max = 0,
-        item = null,
-        total = 0;
+    let match = [];
 
     const pricelist = list();
     for (let i = 0; i < pricelist.length; i++) {
-        if (pricelist[i].prices == null) {
+        const listing = pricelist[i];
+        if (listing.prices == null) {
             continue;
         }
-        const name = pricelist[i].name.toLowerCase();
+        const name = listing.name.toLowerCase();
         if (name == search) {
-            return pricelist[i];
+            return listing;
         }
 
-        const similarity = utils.compareStrings(name, search);
-        if (name.indexOf(search) == -1 && similarity <= 0.4) {
-            continue;
-        }
-
-        if (similarity > max) {
-            max = similarity;
-            item = pricelist[i];
-        }
-
-        total += similarity;
-        let push = pricelist[i];
-        push.similarity = similarity;
-        match.push(push);
-    }
-
-    if (match.length == 0) return null;
-
-    const average = total / match.length;
-
-    for (var i = match.length; i--;) {
-        const name = match[i].name.toLowerCase();
-        if (name.indexOf(search) == -1) {
-            const similarity = utils.compareStrings(name, search);
-            if (average * 0.8 > similarity) {
-                match.splice(i, 1);
-            }
+        if (name.toLowerCase().indexOf(search) != -1) { 
+            match.push(listing);
         }
     }
 
-    if (match.length == 1) {
+    if (match.length == 0) {
+        return null;
+    } else if (match.length == 1) {
         return match[0];
     }
-
-    if (!(max * 0.8 < average || average * 1.2 > max)) {
-        if (max > 0.8) {
-            return item;
-        } else if (0.2 > max) {
-            return null;
-        }
-    }
-
-    match.sort(function (a, b) {
-        return b.similarity - a.similarity;
-    });
 
     for (let i = 0; i < match.length; i++) match[i] = match[i].name;
 

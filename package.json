@@ -1,47 +1,48 @@
 {
-  "name": "tf2-automatic",
-  "version": "1.7.13",
-  "engines": {
-    "node": ">=6.0.0"
-  },
-  "description": "Fully automated TF2 trading bot advertising on www.backpack.tf",
-  "main": "automatic.js",
-  "dependencies": {
-    "bptf-listings": "^2.4.2",
-    "fast-levenshtein": "^2.0.6",
-    "graceful-fs": "^4.1.11",
-    "isobject": "^3.0.1",
-    "moment": "^2.22.2",
-    "steam-totp": "^2.0.1",
-    "steam-tradeoffer-manager": "^2.9.3",
-    "steam-user": "^3.25.1",
-    "steamcommunity": "^3.36.2",
-    "tf2": "^2.1.2",
-    "tf2-items": "^2.0.5",
-    "tf2automatic": "^1.0.7",
-    "winston": "^2.4.3"
-  },
-  "devDependencies": {
-    "eslint": "^4.19.1",
-    "eslint-plugin-node": "^6.0.1",
-    "nodemon": "^1.17.5"
-  },
-  "scripts": {
-    "start": "node automatic.js",
-    "dev": "nodemon automatic.js --config nodemon.json"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Nicklason/tf2-automatic.git"
-  },
-  "author": {
-    "name": "Nicklas Marc Pedersen",
-    "url": "https://steamcommunity.com/id/nicklason/"
-  },
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/Nicklason/tf2-automatic/issues"
-  },
-  "homepage": "https://github.com/Nicklason/tf2-automatic#readme",
-  "private": true
+    "name": "tf2-automatic",
+    "version": "1.7.20",
+    "engines": {
+        "node": ">=6.0.0"
+    },
+    "description": "Fully automated TF2 trading bot advertising on www.backpack.tf",
+    "main": "automatic.js",
+    "dependencies": {
+        "bptf-listings": "^2.5.0",
+        "graceful-fs": "^4.1.11",
+        "isobject": "^3.0.1",
+        "moment": "^2.22.2",
+        "steam-totp": "^2.0.1",
+        "steam-tradeoffer-manager": "^2.9.3",
+        "steam-user": "^3.28.0",
+        "steamcommunity": "^3.37.1",
+        "tf2": "^2.1.2",
+        "tf2-items": "^2.0.5",
+        "tf2automatic": "^1.0.12",
+        "webshot": "^0.18.0",
+        "winston": "^2.4.3"
+    },
+    "devDependencies": {
+        "eslint": "^4.19.1",
+        "eslint-plugin-node": "^6.0.1",
+        "nodemon": "^1.18.2"
+    },
+    "scripts": {
+        "start": "node automatic.js",
+        "lint": "eslint ./",
+        "dev": "nodemon automatic.js --config nodemon.json"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Nicklason/tf2-automatic.git"
+    },
+    "author": {
+        "name": "Nicklas Marc Pedersen",
+        "url": "https://steamcommunity.com/id/nicklason/"
+    },
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Nicklason/tf2-automatic/issues"
+    },
+    "homepage": "https://github.com/Nicklason/tf2-automatic#readme",
+    "private": true
 }

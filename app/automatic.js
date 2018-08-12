@@ -1,4 +1,6 @@
-/*eslint no-console: ["off"]*/
+/*eslint no-console: off*/
+
+global._mckay_statistics_opt_out = true;
 
 let SteamUser;
 let SteamCommunity;
@@ -29,6 +31,7 @@ const items = require('./items.js');
 const prices = require('./prices.js');
 const inventory = require('./inventory.js');
 const friends = require('./friends.js');
+const screenshot = require('./screenshot.js');
 const offer = require('./offer.js');
 const trade = require('./trade.js');
 const statistics = require('./statistics.js');
@@ -40,6 +43,7 @@ const configlog = config.init();
 let recentlyRefreshedSession = false;
 
 let Automatic = {
+    running: false,
     version: version,
     inventory: [],
     getOwnSteamID() {
@@ -55,8 +59,7 @@ let Automatic = {
             if (owners.length == 1 && owners[0] == '<steamid64s>') {
                 return;
             }
-
-            message = '[Alert!] ' + message;
+            
             owners.forEach(function (owner) {
                 Automatic.message(owner, message);
             });
@@ -80,6 +83,14 @@ let Automatic = {
                 recentlyRefreshedSession = false;
             }, 5 * 60 * 1000);
         }
+    },
+    expired() {
+        log.warn('API Access has expired, shutting down...');
+        Automatic.backpack.stop(function () {
+            Automatic.client.gamesPlayed([]);
+            Automatic.client.setPersona(SteamUser.EPersonaState.Snooze);
+            Automatic.running = false;
+        });
     }
 };
 
@@ -107,6 +118,7 @@ Automatic.inventory = inventory;
 Automatic.friends = friends;
 Automatic.trade = trade;
 Automatic.statistics = statistics;
+Automatic.screenshot = screenshot;
 Automatic.tf2 = new TeamFortress2(Automatic.client);
 
 function register(...args) {
@@ -128,6 +140,7 @@ register(
     client,
     friends,
     statistics,
+    screenshot,
     offer,
     confirmations
 );

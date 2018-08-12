@@ -6,11 +6,11 @@ const Offer = require('./offer.js');
 const Queue = require('./queue.js');
 const confirmations = require('./confirmations.js');
 
-let Automatic, client, manager, Inventory, Backpack, Prices, Items, tf2, Friends, Statistics, log, config;
+let Automatic, client, manager, Inventory, Backpack, Prices, Items, tf2, Friends, Statistics, Screenshot, log, config;
 
 const POLLDATA_FILENAME = 'temp/polldata.json';
 
-let READY = false, RECEIVED = [], DOING_QUEUE = false, ITEMS_IN_TRADE = [];
+let READY = false, RECEIVED = [], RECEIVED_OFFER_CHANGED = [], SENT_OFFER_CHANGED = [], DOING_QUEUE = false, ITEMS_IN_TRADE = [];
 
 exports.register = function (automatic) {
     Automatic = automatic;
@@ -26,6 +26,7 @@ exports.register = function (automatic) {
     tf2 = automatic.tf2;
     Friends = automatic.friends;
     Statistics = automatic.statistics;
+    Screenshot = automatic.screenshot;
 
     if (fs.existsSync(POLLDATA_FILENAME)) {
         try {
@@ -51,6 +52,7 @@ exports.init = function () {
     setInterval(checkOfferCount, 3 * 60 * 1000);
 
     organizeQueue();
+    handleChangedOffers();
 };
 
 exports.checkOfferCount = checkOfferCount;
@@ -117,11 +119,28 @@ function organizeQueue() {
         let tradeoffer = RECEIVED[i];
         handleOffer(tradeoffer);
     }
+
+    RECEIVED = [];
+}
+
+function handleChangedOffers() {
+    for (let i = 0; i < RECEIVED_OFFER_CHANGED.length; i++) {
+        receivedOfferChanged(RECEIVED_OFFER_CHANGED[i].offer, RECEIVED_OFFER_CHANGED[i].oldState);
+    }
+    RECEIVED_OFFER_CHANGED = [];
+    for (let i = 0; i < SENT_OFFER_CHANGED.length; i++) {
+        sentOfferChanged(SENT_OFFER_CHANGED[i].offer, SENT_OFFER_CHANGED[i].oldState);
+    }
+    SENT_OFFER_CHANGED = [];
 }
 
 function handleOffer(offer) {
     if (!READY) {
         RECEIVED.push(offer);
+        return;
+    }
+
+    if (Automatic.running != true) {
         return;
     }
 
@@ -560,7 +579,7 @@ function sendOffer(offer, callback) {
                 } else if (err.eresult == 20) {
                     callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
                 } else if (err.eresult == 26) {
-                    callback(null, 'One or more of the items in the offer has been traded away');
+                    callback(null, 'Something went wrong while trying to send the offer, try again later');
                     Inventory.getInventory(Automatic.getOwnSteamID());
                 } else {
                     callback(null, 'An error occurred while sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')');
@@ -866,7 +885,6 @@ function checkReceivedOffer(id, callback) {
 
 function acceptOffer(offer) {
     offer.log('trade', 'is offering enough, accepting. Summary:\n' + offer.summary());
-    Automatic.alert('trade', 'User is offering enough, accepting. Summary:\n' + offer.summary());
 
     offer.accept().then(function (status) {
         offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
@@ -939,11 +957,28 @@ function getOffer(id, callback) {
 }
 
 function receivedOfferChanged(offer, oldState) {
+    if (!READY) {
+        RECEIVED_OFFER_CHANGED.push({ offer: offer, oldState: oldState });
+        return;
+    } else if (Automatic.running != true) {
+        return;
+    }
+
     log.verbose('Offer #' + offer.id + ' state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
     if (offer.state != TradeOfferManager.ETradeOfferState.Active) {
         Queue.removeID(offer.id);
 
         removeItemsInTrade(offer.itemsToGive);
+        Screenshot.receivedOfferChanged(offer.id, function (err, id) {
+            if (err) {
+                log.warn('Error when capturing and sending screenshot: ' + err.message);
+                log.debug(err.stack);
+                return;
+            }
+
+            log.debug('Image uploaded, returned id: ' + id);
+            Automatic.alert('trade', 'Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + ', view it here https://tf2automatic.com/trades?id=' + id);
+        });
     }
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
@@ -955,11 +990,28 @@ function receivedOfferChanged(offer, oldState) {
 }
 
 function sentOfferChanged(offer, oldState) {
+    if (!READY) {
+        SENT_OFFER_CHANGED.push({ offer: offer, oldState: oldState });
+        return;
+    } else if (Automatic.running != true) {
+        return;
+    }
+
     log.verbose('Offer #' + offer.id + ' state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
     if (offer.state != TradeOfferManager.ETradeOfferState.Active) {
         Queue.removeID(offer.id);
 
         removeItemsInTrade(offer.itemsToGive);
+        Screenshot.sentOfferChanged(offer.id, function (err, id) {
+            if (err) {
+                log.warn('Error when capturing and sending screenshot: ' + err.message);
+                log.debug(err.stack);
+                return;
+            }
+
+            log.debug('Image uploaded, returned id: ' + id);
+            Automatic.alert('trade', 'Sent offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + ', view it here https://tf2automatic.com/trades?id=' + id);
+        });
     }
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
@@ -967,12 +1019,10 @@ function sentOfferChanged(offer, oldState) {
         const items = offer.data('items');
         if (!items || items.length == 0) {
             log.trade('Offer #' + offer.id + ' User accepted the offer');
-            Automatic.alert('trade', 'User accepted an offer sent by me');
         } else {
             const price = Prices.valueToCurrencies(items[0].value * items[0].ids.length, items[0].name != 'Mann Co. Supply Crate Key');
             const item = items[0].name + (items[0].ids.length > 1 ? ' x' + items[0].ids.length : '');
-            log.trade('Offer #' + offer.id + ' User accepted an offer sent by me. ' + (items[0].intent == 0 ? 'Bought' : 'Sold') + ' ' + item + ' worth ' + utils.currencyAsText(price));
-            Automatic.alert('trade', 'User accepted an offer sent by me. ' + (items[0].intent == 0 ? 'Bought' : 'Sold') + ' ' + item + ' worth ' + utils.currencyAsText(price));
+            log.trade('Offer #' + offer.id + ' User accepted an offer sent by me.\n' + (items[0].intent == 0 ? 'Bought' : 'Sold') + ' ' + item + ' worth ' + utils.currencyAsText(price));
         }
         offerAccepted(offer);
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Active) {
@@ -994,7 +1044,7 @@ function offerAccepted(offer) {
     Friends.sendGroupInvites(offer.partner);
     Inventory.getInventory(Automatic.getOwnSteamID(), function () {
         const doneSomething = smeltCraftMetal();
-        if (!doneSomething && config.get('sortInventory') == true) {
+        if (!doneSomething) {
             log.debug('Sorting inventory');
             tf2.sortBackpack(3);
         }
@@ -1127,10 +1177,8 @@ function smeltCraftMetal() {
 
         if (doneSomething) {
             log.debug('Done crafting');
-            if (config.get('sortInventory') == true) {
-                log.debug('Sorting inventory');
-                tf2.sortBackpack(3);
-            }
+            log.debug('Sorting inventory');
+            tf2.sortBackpack(3);
             client.gamesPlayed([440]);
             Inventory.getInventory(Automatic.getOwnSteamID(), function () {
                 client.gamesPlayed([require('../package.json').name, 440]);
@@ -1225,7 +1273,6 @@ function removeOldOffers(pollData) {
 const ERRORS = {
     INVALD_ITEMS: function (offer) {
         offer.log('info', 'contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
-        Automatic.alert('trade', 'Contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are taking / offering an item that is not in my pricelist' });
 
         offer.decline().then(function () {
@@ -1240,7 +1287,6 @@ const ERRORS = {
     },
     OVERSTOCKED: function (offer) {
         offer.log('info', 'contains overstocked items, declining. Summary:\n' + offer.summary());
-        Automatic.alert('trade', 'User is offering overstocked items, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are offering overstocked / too many items' });
 
         offer.decline().then(function () {
@@ -1249,21 +1295,18 @@ const ERRORS = {
     },
     INVALID_VALUE: function (offer) {
         offer.log('info', 'is not offering enough, declining. Summary:\n' + offer.summary());
-        Automatic.alert('trade', 'User is not offering enough, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are not offering enough' });
 
         offer.decline().then(function () { offer.log('debug', 'declined'); });
     },
     BPTF_BANNED: function (offer) {
         offer.log('info', 'is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
-        Automatic.alert('trade', 'User is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are all-features banned on www.backpack.tf' });
 
         offer.decline().then(function () { offer.log('debug', 'declined'); });
     },
-    SR_BANNED: function (offer) {
-        offer.log('info', 'user is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
-        Automatic.alert('trade', 'User is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
+    SR_MARKED: function (offer) {
+        offer.log('info', 'user is marked on www.steamrep.com, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are marked on www.steamrep.com as a scammer' });
 
         offer.decline().then(function () { offer.log('debug', 'declined'); });

@@ -7,7 +7,7 @@ const utils = require('./utils.js');
 const Login = require('./login.js');
 const Messages = require('./messages.js');
 
-let Automatic, client, community, manager, log, config, Items, tf2, Backpack, Prices, Inventory, Friends, Trade;
+let Automatic, client, community, manager, log, config, Items, tf2, Backpack, Prices, Inventory, Friends, Trade, Screenshot;
 
 let started = false;
 
@@ -26,6 +26,7 @@ exports.register = function(automatic) {
     Inventory = automatic.inventory;
     Friends = automatic.friends;
     Trade = automatic.trade;
+    Screenshot = automatic.screenshot;
 
     Login.register(automatic);
     Messages.register(automatic);
@@ -36,7 +37,6 @@ exports.register = function(automatic) {
     community.on('confKeyNeeded', confKeyNeeded);
 
     tf2.on('craftingComplete', craftingComplete);
-
 };
 
 exports.connect = function (ratelimit) {
@@ -75,6 +75,7 @@ function handleLogin(err) {
 function saveCookies(sessionID, cookies) {
     log.debug('Setting cookies...');
     community.setCookies(cookies);
+    Screenshot.setCookies(cookies);
 
     manager.setCookies(cookies, function (err) {
         if (err) {
@@ -99,14 +100,14 @@ function ready(err) {
 
     log.debug('Modules are ready!');
 
+    Automatic.running = true;
+
     log.info(`tf2-automatic is ready; ${Prices.list().length} ${utils.plural('item', Prices.list().length)} in the pricelist, ${Backpack.listings().length} ${utils.plural('listing', Backpack.listings().length)} on www.backpack.tf (limit: ${Backpack.cap()})`);
     client.gamesPlayed([require('../package.json').name, 440]);
     client.setPersona(SteamUser.EPersonaState.Online);
 
-    if (config.get('sortInventory') == true) {
-        log.debug('Sorting inventory');
-        tf2.sortBackpack(3);
-    }
+    log.debug('Sorting inventory');
+    tf2.sortBackpack(3);
     
     Messages.init();
     Friends.init();
