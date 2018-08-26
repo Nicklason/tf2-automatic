@@ -179,7 +179,7 @@ function friendMessage(steamID, message) {
 		} else if (command == 'message' && !Automatic.isOwner(steamID64)) {
 			const owners = config.get().owners;
 			if (!owners || owners.length == 0) {
-				Automatic.message(steamID64, 'Sorry, but there are noone that you can message :(');
+				Automatic.message(steamID64, 'Sorry, but there are none that you can message :(');
 				return;
 			}
 
