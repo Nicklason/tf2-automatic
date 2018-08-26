@@ -158,7 +158,7 @@ function friendMessage(steamID, message) {
 
 			const recipient = parts[1];
 			if (recipient.length != 17 || !recipient.startsWith('7656')) {
-				Automatic.message(steamID64, 'Please use a valid SteamID64.');
+				Automatic.message(steamID64, 'Please enter a valid SteamID64.');
 				return;
 			} else if (!Friends.isFriend(recipient)) {
 				Automatic.message(steamID64, 'I am not friends with the user.');
