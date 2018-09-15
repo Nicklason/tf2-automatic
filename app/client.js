@@ -31,7 +31,7 @@ exports.register = function(automatic) {
     Login.register(automatic);
     Messages.register(automatic);
 
-    client.on('webSession', saveCookies);
+    client.on('webSession', webSession);
     client.on('error', clientError);
     community.on('sessionExpired', sessionExpired);
     community.on('confKeyNeeded', confKeyNeeded);
@@ -72,7 +72,7 @@ function handleLogin(err) {
     });
 }
 
-function saveCookies(sessionID, cookies) {
+function webSession(sessionID, cookies) {
     log.debug('Setting cookies...');
     community.setCookies(cookies);
     Screenshot.setCookies(cookies);
@@ -90,6 +90,12 @@ function saveCookies(sessionID, cookies) {
                 gameDetails: SteamCommunity.PrivacyState.Public
             });
         }
+
+        Friends.getLimit(function (err) {
+            if (err) {
+                log.debug(err);
+            }
+        });
     });
 }
 

@@ -2,6 +2,8 @@ const SteamUser = require('steam-user');
 const request = require('request');
 const moment = require('moment');
 
+const utils = require('./utils.js');
+
 let Automatic, client, community, manager, log, config;
 
 let FRIEND_DETAILS = {};
@@ -21,6 +23,9 @@ exports.init = function() {
 		if (relationship == SteamUser.Steam.EFriendRelationship.Friend) {
             log.info('I am now friends with ' + steamID64);
 			friendAddResponse(steamID64);
+			if (Automatic.hasOwnProperty('maxFriends') && getFriends().length + 1 >= Automatic.maxFriends) {
+				removeRandomFriend(steamID64); // Don't remove the user who just friended the bot
+			}
 		} else if (relationship == SteamUser.Steam.EFriendRelationship.RequestRecipient) {
             log.info(steamID64 + ' added me');
 			addFriend(steamID64); // Add them back
@@ -37,6 +42,74 @@ function addFriend(steamID64) {
             log.warn('Failed to send a friend request (' + err.message + ')');
 			log.debug(err.stack);
 		}
+	});
+}
+
+function removeRandomFriend(ignore) {
+	const friendsToKeep = [].concat(config.get('friendsToKeep'));
+	if (ignore !== undefined && friendsToKeep.indexOf(ignore) === -1) {
+		friendsToKeep.push(ignore);
+	}
+
+	const friends = getFriends().filter((steamid64) => friendsToKeep.indexOf(steamid64));
+	if (friends.length === 0) {
+		return;
+	}
+
+	const index = Math.floor(Math.random() * friends.length);
+	const remove = friends[index];
+
+	client.chatMessage(remove, 'You\'ve been randomly selected to be removed.');
+	client.removeFriend(remove);
+}
+
+function getMaxFriends(callback) {
+	if (callback === undefined) {
+		callback = utils.void;
+	}
+
+	request({
+		uri: 'https://api.steampowered.com/IPlayerService/GetBadges/v1/',
+		method: 'GET',
+		json: true,
+		gzip: true,
+		qs: {
+			key: manager.apiKey,
+			steamid: client.steamID.getSteamID64()
+		}
+	}, function (err, response, body) {
+		if (err) {
+			callback(err);
+			return;
+		}
+
+		if (response.statusCode > 299 || response.statusCode < 199) {
+			err = new Error('HTTP error ' + response.statusCode);
+			err.code = response.statusCode;
+			callback(err, response, body);
+			return err;
+		}
+
+		if (!body || typeof body != 'object') {
+			callback(new Error('Invalid response'));
+			return;
+		}
+
+		const result = body.response;
+		const level = result.player_level;
+
+		const base = 250;
+		const multiplier = 5;
+
+		const maxFriends = base + level * multiplier;
+
+		Automatic.maxFriends = maxFriends;
+
+		if (getFriends().length + 1 >= Automatic.maxFriends) {
+			removeRandomFriend();
+		}
+
+		callback(null, maxFriends);
 	});
 }
 
@@ -181,3 +254,4 @@ exports.all = getFriends;
 exports.remove = removeFriend;
 exports.getDetails = getDetails;
 exports.sendGroupInvites = inviteToGroups;
+exports.getLimit = getMaxFriends;

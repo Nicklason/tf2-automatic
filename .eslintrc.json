@@ -1,17 +1,16 @@
 {
     "env": {
-        "browser": true,
-        "commonjs": true,
-        "es6": true
+        "node": true,
+        "browser": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 6
     },
     "plugins": ["node"],
     "extends": [
         "eslint:recommended",
         "plugin:node/recommended"
     ],
-    "parserOptions": {
-        "sourceType": "module"
-    },
     "rules": {
         "quotes": [
             "error",
