@@ -45,8 +45,21 @@ function addFriend(steamID64) {
 	});
 }
 
+function getFriendsToKeep() {
+	let friendsToKeep = [].concat(config.get('friendsToKeep'));
+	const owners = config.get('owners');
+	for (let i = 0; i < owners.length; i++) {
+		const steamid64 = owners[i];
+		if (friendsToKeep.indexOf(steamid64) === -1) {
+			friendsToKeep.push(steamid64);
+		}
+	}
+
+	return friendsToKeep;
+}
+
 function removeRandomFriend(ignore) {
-	const friendsToKeep = [].concat(config.get('friendsToKeep'));
+	let friendsToKeep = getFriendsToKeep();
 	if (ignore !== undefined && friendsToKeep.indexOf(ignore) === -1) {
 		friendsToKeep.push(ignore);
 	}
@@ -255,3 +268,4 @@ exports.remove = removeFriend;
 exports.getDetails = getDetails;
 exports.sendGroupInvites = inviteToGroups;
 exports.getLimit = getMaxFriends;
+exports.toKeep = getFriendsToKeep;

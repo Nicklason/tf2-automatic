@@ -497,13 +497,13 @@ function friendMessage(steamID, message) {
 			Automatic.message(steamID64, response);
 		} else if (command == 'removefriends' && Automatic.isOwner(steamID64)) {
 			const friends = Friends.all();
-			const friendsToKeep = config.get('friendsToKeep');
+			const friendsToKeep = Friends.toKeep();
 
 			let removed = 0;
 			for (let i = 0; i < friends.length; i++) {
 				const steamid = friends[i];
-				if (!Automatic.isOwner(steamid) && !friendsToKeep.includes(steamid)) {
-					Automatic.message(steamid, 'I am clearing my friend list. Feel free to add me back if you want to trade');
+				if (!friendsToKeep.includes(steamid)) {
+					Automatic.message(steamid, 'I am clearing my friends list, feel free to add me again.');
 					Friends.remove(steamid);
 					removed++;
 				}
