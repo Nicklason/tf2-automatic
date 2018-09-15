@@ -137,8 +137,6 @@ function joinGroups() {
             joinGroup(id);
         }
     }
-
-    // todo: leave groups that are not in the list 
 }
 
 function joinGroup(id) {
