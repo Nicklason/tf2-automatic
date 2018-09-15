@@ -11,21 +11,21 @@
         "graceful-fs": "^4.1.11",
         "isobject": "^3.0.1",
         "moment": "^2.22.2",
-        "steam-totp": "^2.0.1",
+        "steam-totp": "^2.1.0",
         "steam-tradeoffer-manager": "^2.9.4",
-        "steam-user": "^3.28.1",
+        "steam-user": "^3.28.2",
         "steamcommunity": "^3.37.1",
         "tf2": "^2.1.2",
         "tf2-currencies": "^1.1.1",
         "tf2-items": "2.0.5",
         "tf2automatic": "1.1.4",
         "webshot": "^0.18.0",
-        "winston": "^2.4.3"
+        "winston": "^2.4.4"
     },
     "devDependencies": {
-        "eslint": "^4.19.1",
-        "eslint-plugin-node": "^6.0.1",
-        "nodemon": "^1.18.3"
+        "eslint": "^5.6.0",
+        "eslint-plugin-node": "^7.0.1",
+        "nodemon": "^1.18.4"
     },
     "scripts": {
         "start": "node automatic.js",
