@@ -72,8 +72,8 @@ function removeRandomFriend(ignore) {
 	const index = Math.floor(Math.random() * friends.length);
 	const remove = friends[index];
 
-	client.chatMessage(remove, 'You\'ve been randomly selected to be removed.');
-	client.removeFriend(remove);
+	Automatic.message(remove, 'You\'ve been randomly selected to be removed.');
+	removeFriend(remove);
 }
 
 function getMaxFriends(callback) {
