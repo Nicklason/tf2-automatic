@@ -1026,7 +1026,7 @@ function sentOfferChanged(offer, oldState) {
         }
         offerAccepted(offer);
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Active) {
-        Automatic.message(offer.partner, 'The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/' + offer.id + '/');
+        Automatic.message(offer.partner, 'Your offer is now active! You can accept it by clicking on either "View trade offer", or https://steamcommunity.com/tradeoffer/' + offer.id + '/');
     } else if (offer.state == TradeOfferManager.ETradeOfferState.Declined) {
         Automatic.message(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.');
     } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
