@@ -251,7 +251,7 @@ function handleQueue() {
                 log.warn('Failed to make the offer (' + failed + ')');
                 Automatic.message(offer.partner, 'I failed to make the offer. Reason: ' + failed + '.');
             } else if (offerid) {
-                Automatic.message(offer.partner, 'The offer is now active! You can accept it here: https://steamcommunity.com/tradeoffer/' + offerid + '/');
+                Automatic.message(offer.partner, 'Your offer is now active! You can accept it by clicking on either "View trade offer", or https://steamcommunity.com/tradeoffer/' + offerid + '/');
             } else {
                 Automatic.message(offer.partner, 'Your offer has been made, please wait while I accept the mobile confirmation.');
             }

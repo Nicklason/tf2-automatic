@@ -158,7 +158,7 @@ function friendMessage(steamID, message) {
 
 			const recipient = parts[1];
 			if (recipient.length != 17 || !recipient.startsWith('7656')) {
-				Automatic.message(steamID64, 'Please write use a valid SteamID64.');
+				Automatic.message(steamID64, 'Please enter a valid SteamID64.');
 				return;
 			} else if (!Friends.isFriend(recipient)) {
 				Automatic.message(steamID64, 'I am not friends with the user.');
@@ -179,7 +179,7 @@ function friendMessage(steamID, message) {
 		} else if (command == 'message' && !Automatic.isOwner(steamID64)) {
 			const owners = config.get().owners;
 			if (!owners || owners.length == 0) {
-				Automatic.message(steamID64, 'Sorry, but there are noone that you can message :(');
+				Automatic.message(steamID64, 'Sorry, but there are no one that you can message :(');
 				return;
 			}
 
@@ -497,11 +497,13 @@ function friendMessage(steamID, message) {
 			Automatic.message(steamID64, response);
 		} else if (command == 'removefriends' && Automatic.isOwner(steamID64)) {
 			const friends = Friends.all();
+			const friendsToKeep = config.get('friendsToKeep');
 
 			let removed = 0;
 			for (let i = 0; i < friends.length; i++) {
 				const steamid = friends[i];
-				if (!Automatic.isOwner(steamid) && steamid != '76561198120070906') {
+				if (!Automatic.isOwner(steamid) && !friendsToKeep.includes(steamid)) {
+					Automatic.message(steamid, 'I am clearing my friend list. Feel free to add me back if you want to trade');
 					Friends.remove(steamid);
 					removed++;
 				}
