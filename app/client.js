@@ -167,7 +167,7 @@ function sessionExpired() {
 function confKeyNeeded(tag, callback) {
     log.debug('New confirmation key needed, generating one.');
     var time = Math.floor(Date.now() / 1000);
-    callback(null, time, SteamTotp.getConfirmationKey(self.options.identity_secret, time, tag));
+    callback(null, time, SteamTotp.getConfirmationKey(config.getAccount().identity_secret, time, tag));
 }
 
 function craftingComplete(recipe, itemsGained) {
