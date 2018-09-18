@@ -35,7 +35,7 @@ const rl = readline.createInterface({
 
 rl.on('line', function (line) {
     if (line === 'update') {
-        updateRepo(false);
+        updateRepo(true);
     }
 });
 
