@@ -637,6 +637,8 @@ function friendMessage(steamID, message) {
 
 			client.setPersona(1, name);
 			Automatic.message(steamID64, 'My name has been changed to "' + name + '"');
+		} else if (message == 'I don\'t know what you mean, please type "!help" for all my commands!') {
+      			return;
 		} else {
 			Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
 		}
