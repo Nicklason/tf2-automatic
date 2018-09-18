@@ -50,7 +50,7 @@ function friendMessage(steamID, message) {
 		} else if (command == 'help') {
 			let reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
 			if (Automatic.isOwner(steamID64)) {
-				reply += ', !add, !remove, !update, !profit, !removefriends, !use, !name, !avatar <url>';
+				reply += ', !add, !remove, !update, !profit, !removefriends, !use, !name, !avatar';
 			}
 			Automatic.message(steamID64, reply);
 		} else if (command == 'stock') {
@@ -644,7 +644,7 @@ function friendMessage(steamID, message) {
 				Automatic.message(steamID64, 'You forgot to add a url. Here\'s an example: "!avatar http://my.com/img.jpg"');
 				return;
 			}
-			community.uploadAvatar(avatarUrl, (err, url)=>{
+			community.uploadAvatar(avatarUrl, function(err, url){
 				if(err){
 					Automatic.message(steamID64, 'There was an error with while changing avatar');
 					return;
