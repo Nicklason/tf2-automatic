@@ -2,7 +2,7 @@ const moment = require('moment');
 
 const utils = require('./utils.js');
 
-let Automatic, client, log, config, Friends, Inventory, Prices, Trade, Items, Statistics, tf2;
+let Automatic, client, log, config, Friends, Inventory, Prices, Trade, Items, Statistics, tf2, community;
 
 let cache = {};
 const messageInterval = 2000;
@@ -20,6 +20,7 @@ exports.register = function (automatic) {
 	Friends = automatic.friends;
 	Statistics = automatic.statistics;
 	tf2 = automatic.tf2;
+	community = automatic.community;
 };
 
 exports.init = function () {
@@ -49,7 +50,7 @@ function friendMessage(steamID, message) {
 		} else if (command == 'help') {
 			let reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
 			if (Automatic.isOwner(steamID64)) {
-				reply += ', !add, !remove, !update, !profit, !removefriends, !use, !name';
+				reply += ', !add, !remove, !update, !profit, !removefriends, !use, !name, !avatar <url>';
 			}
 			Automatic.message(steamID64, reply);
 		} else if (command == 'stock') {
@@ -637,6 +638,21 @@ function friendMessage(steamID, message) {
 
 			client.setPersona(1, name);
 			Automatic.message(steamID64, 'My name has been changed to "' + name + '"');
+		} else if (command == 'avatar' && Automatic.isOwner(steamID64)){
+			const avatarUrl = message.substr(message.toLowerCase().indexOf('avatar') + 7);
+			if (avatarUrl == '') {
+				Automatic.message(steamID64, 'You forgot to add a url. Here\'s an example: "!avatar http://my.com/img.jpg"');
+				return;
+			}
+			community.uploadAvatar(avatarUrl, (err, url)=>{
+				if(err){
+					Automatic.message(steamID64, 'There was an error with while changing avatar');
+					return;
+				} 
+				Automatic.message(steamID64, 'The avatar has been updated');
+			});
+
+
 		} else {
 			Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
 		}

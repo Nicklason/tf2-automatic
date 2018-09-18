@@ -7,6 +7,10 @@ let SteamCommunity;
 let TradeOfferManager;
 let TeamFortress2;
 let Winston;
+let execSync;
+let readline;
+let fs;
+let path;
 
 try {
     SteamUser = require('steam-user');
@@ -14,17 +18,25 @@ try {
     TradeOfferManager = require('steam-tradeoffer-manager');
     TeamFortress2 = require('tf2');
     Winston = require('winston');
+    execSync = require('child_process').execSync;
+    readline = require('readline');
+    fs = require('graceful-fs');
+    path = require('path');
 } catch (ex) {
+    console.log(ex);
     console.error('Missing dependencies. Install a version with dependencies or use npm install.');
     process.exit(1);
 }
 
-const pathTools = require("node-path-tools");
-const execSync  = require('child_process').execSync;
-var readline = require('readline');
-var rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+rl.on('line', function (line) {
+    if (line === 'update') {
+        updateRepo(true);
+    }
 });
 
 const version = require('../package.json').version || 'unknown';
@@ -102,6 +114,23 @@ let Automatic = {
     }
 };
 
+function updateRepo(promptConfirm = false) {
+    if (fs.existsSync(path.resolve(__dirname, '../.git'))) {
+        if (promptConfirm) {
+            log.info('It looks like you have cloned this from GitHub, do you want to pull the changes? [y/n]');
+            rl.question('', function (answer) {
+                if (answer.toLowerCase() === 'y') {
+                    log.info('Attempting to update the repository...');
+                    execSync('npm run update', { stdio: [0, 1, 2] });
+                }
+            });
+        } else {
+            log.info('Attempting to update the repository...');
+            execSync('npm run update', { stdio: [0, 1, 2] });
+        }
+    }
+}
+
 Automatic.config = config;
 Automatic.client = new SteamUser({ 'promptSteamGuardCode': false });
 Automatic.community = new SteamCommunity();
@@ -161,51 +190,26 @@ log.info('tf2-automatic v%s starting', version);
 
 process.nextTick(client.connect);
 
-utils.request.get(
-    {
-        url: 'https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json',
-        json: true
-    }, 
-    function(err, body) {
-        console.log("checking for updates")
-        if (err) 
-        {
-            log.warn('Cannot check for updates: ' + err.message);
-        } 
-        else 
-        {
-            const current = version.split('.');
-            const latest = body.version.split('.');
+utils.request.get({
+    url: 'https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json',
+    json: true
+}, function (err, body) {
+    if (err) {
+        log.warn('Cannot check for updates: ' + err.message);
+    } else {
+        const current = version.split('.');
+        const latest = body.version.split('.');
 
-            const curv = current[0] * 100 + current[1] * 10 + current[2];
-            const latestv = latest[0] * 100 + latest[1] * 10 + latest[2];
-            if (latestv > curv) 
-            {
-                log.info('=====================================================================================');
-                log.info('Update available! Current: v%s, Latest: v%s', version, body.version);
-                if(pathTools.existsInPath("git.exe")||pathTools.existsInPath("git"))
-                {
-                    rl.question("Do you want to update automatically? [y/n]", function(answer) {
-                        rl.close();
-                        if(answer == "y" || answer == "Y") 
-                        {
-                            execSync('git pull'/*, ['pull', 'start cmd.exe /c update.bat']*/);
-                            setTimeout(() => { process.exit(0); }, 30);
-                        }
-                        else
-                        {
-                            log.info('You can downloand update at any time here: https://github.com/Nicklason/tf2-automatic');
-                            log.info('=====================================================================================');
-                        }
-                    });
-                }
-                else
-                {
-                    log.info('Download it here: https://github.com/Nicklason/tf2-automatic');
-                    log.info('============================================================');
-                }
-                
-        }            
+        const curv = current[0] * 100 + current[1] * 10 + current[2];
+        const latestv = latest[0] * 100 + latest[1] * 10 + latest[2];
+        if (latestv > curv) {
+            log.info('============================================================');
+            log.info('Update available! Current: v%s, Latest: v%s', version, body.version);
+            log.info('Download it here: https://github.com/Nicklason/tf2-automatic');
+            log.info('============================================================');
+
+            updateRepo(true);
+        }
     }
 });
 
