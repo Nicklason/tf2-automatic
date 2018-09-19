@@ -666,6 +666,8 @@ function friendMessage (steamID, message) {
                 }
                 Automatic.message(steamID64, 'The avatar has been updated');
             });
+        } else if (command == 'makeprofit' && Automatic.isOwner(steamID64)) {
+            Automatic.message(steamID64, 'Congrats! You just made ' + Math.floor(Math.random() * 100) + ' keys!');
         } else {
             Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
