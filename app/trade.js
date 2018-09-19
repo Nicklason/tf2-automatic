@@ -1015,7 +1015,7 @@ function receivedOfferChanged (offer, oldState) {
     }
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
-        Automatic.message(offer.partner, 'Success! Your offer went through successfully.');
+        Automatic.message(offer.partner, 'Success! Your offer went through successfully. If you like the service i am providing please leave a +rep on my profile.');
         offerAccepted(offer);
     } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
         Automatic.message(offer.partner, 'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).');
@@ -1048,7 +1048,7 @@ function sentOfferChanged (offer, oldState) {
     }
 
     if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
-        Automatic.message(offer.partner, 'Success! The offer went through successfully.');
+        Automatic.message(offer.partner, 'Success! Your offer went through successfully. If you like the service i am providing please leave a +rep on my profile.');
         const items = offer.data('items');
         if (!items || items.length == 0) {
             log.trade('Offer #' + offer.id + ' User accepted the offer');
