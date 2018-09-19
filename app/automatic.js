@@ -1,4 +1,4 @@
-/* eslint no-console: off */
+/* eslint no-console: off*/
 
 global._mckay_statistics_opt_out = true;
 
@@ -8,9 +8,11 @@ let TradeOfferManager;
 let TeamFortress2;
 let Winston;
 let execSync;
+let spawn;
 let readline;
 let fs;
 let path;
+let pm2;
 
 try {
     SteamUser = require('steam-user');
@@ -19,9 +21,11 @@ try {
     TeamFortress2 = require('tf2');
     Winston = require('winston');
     execSync = require('child_process').execSync;
+    spawn = require('child_process').spawn;
     readline = require('readline');
     fs = require('graceful-fs');
     path = require('path');
+    pm2 = require('pm2');
 } catch (ex) {
     console.log(ex);
     console.error('Missing dependencies. Install a version with dependencies or use npm install.');
@@ -35,7 +39,7 @@ const rl = readline.createInterface({
 
 rl.on('line', function (line) {
     if (line === 'update') {
-        updateRepo(true);
+        Automatic.updateRepo(true);
     }
 });
 
@@ -56,6 +60,7 @@ const offer = require('./offer.js');
 const trade = require('./trade.js');
 const statistics = require('./statistics.js');
 const confirmations = require('./confirmations.js');
+const pm = process.env.pm_id;
 
 // Get message from initializing the config.
 const configlog = config.init();
@@ -79,7 +84,6 @@ let Automatic = {
             if (owners.length == 1 && owners[0] == '<steamid64s>') {
                 return;
             }
-
             owners.forEach(function (owner) {
                 Automatic.message(owner, message);
             });
@@ -111,25 +115,49 @@ let Automatic = {
             Automatic.client.setPersona(SteamUser.EPersonaState.Snooze);
             Automatic.running = false;
         });
-    }
-};
-
-function updateRepo (promptConfirm = false) {
-    if (fs.existsSync(path.resolve(__dirname, '../.git'))) {
-        if (promptConfirm) {
-            log.info('It looks like you have cloned this from GitHub, do you want to pull the changes? [y/n]');
-            rl.question('', function (answer) {
-                if (answer.toLowerCase() === 'y') {
+    },
+    updateRepo (promptConfirm = false) {
+        if (fs.existsSync(path.resolve(__dirname, '../.git'))) {
+            if (!pm) {
+                if (promptConfirm) {
+                    log.info('It looks like you have cloned this from GitHub, do you want to pull the changes? [y/n]');
+                    rl.question('', function (answer) {
+                        if (answer.toLowerCase() === 'y') {
+                            log.info('Attempting to update the repository...');
+                            execSync('npm run update', { stdio: [0, 1, 2] });
+                            process.exit();
+                        }
+                    });
+                } else {
                     log.info('Attempting to update the repository...');
                     execSync('npm run update', { stdio: [0, 1, 2] });
+                    process.exit();
                 }
-            });
-        } else {
-            log.info('Attempting to update the repository...');
-            execSync('npm run update', { stdio: [0, 1, 2] });
+            } else {
+                log.info('Attempting to update the repository...');
+                const subprocess = spawn('git', ['pull'], {
+                    detached: true,
+                    stdio: 'ignore'
+                });
+
+                subprocess.unref();
+                pm2.connect(function (err) {
+                    if (err) {
+                        log.error(err);
+                        process.exit(1);
+                    }
+                    pm2.restart(pm, function (err) {
+                        if (err) {
+                            log.error(err);
+                            process.exit(1);
+                        }
+                    });
+                });
+                process.exit();
+            }
         }
     }
-}
+};
 
 Automatic.config = config;
 Automatic.client = new SteamUser({ promptSteamGuardCode: false });
@@ -190,28 +218,37 @@ log.info('tf2-automatic v%s starting', version);
 
 process.nextTick(client.connect);
 
-utils.request.get({
-    url: 'https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json',
-    json: true
-}, function (err, body) {
-    if (err) {
-        log.warn('Cannot check for updates: ' + err.message);
-    } else {
-        const current = version.split('.');
-        const latest = body.version.split('.');
+function checkUpdates (notify = true) {
+    utils.request.get({
+        url: 'https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json',
+        json: true
+    }, function (err, body) {
+        if (err) {
+            log.warn('Cannot check for updates: ' + err.message);
+        } else {
+            const current = version.split('.');
+            const latest = body.version.split('.');
 
-        const curv = current[0] * 100 + current[1] * 10 + current[2];
-        const latestv = latest[0] * 100 + latest[1] * 10 + latest[2];
-        if (latestv > curv) {
-            log.info('============================================================');
-            log.info('Update available! Current: v%s, Latest: v%s', version, body.version);
-            log.info('Download it here: https://github.com/Nicklason/tf2-automatic');
-            log.info('============================================================');
-
-            updateRepo(true);
+            const curv = current[0] * 100 + current[1] * 10 + current[2];
+            const latestv = latest[0] * 100 + latest[1] * 10 + latest[2];
+            if (latestv > curv) {
+                log.info('============================================================');
+                log.info('Update available! Current: v%s, Latest: v%s', version, body.version);
+                log.info('Download it here: https://github.com/Nicklason/tf2-automatic');
+                log.info('============================================================');
+                if (notify) {
+                    config.get('owners').forEach(function (owner) {
+                        Automatic.message(owner, 'Your bot is running outdated version, update it with !updateBot');
+                    });
+                } else {
+                    Automatic.updateRepo(true);
+                }
+            }
         }
-    }
-});
+    });
+}
+checkUpdates(false);
+setInterval(checkUpdates, 60 * 60 * 4 * 1000);
 
 process.on('uncaughtException', function (err) {
     log.error([
