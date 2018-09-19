@@ -34,7 +34,7 @@
         "start": "node automatic.js",
         "lint": "eslint ./",
         "dev": "nodemon automatic.js --config nodemon.json",
-        "update": "git pull && npm install && npm update && node start"
+        "update": "git pull && npm install && npm update && npm start"
     },
     "repository": {
         "type": "git",
