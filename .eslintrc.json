@@ -1,36 +1,26 @@
 {
-    "env": {
-        "node": true,
-        "browser": true
-    },
-    "parserOptions": {
-        "ecmaVersion": 6
-    },
-    "plugins": ["node"],
-    "extends": [
-        "eslint:recommended",
-        "plugin:node/recommended"
-    ],
-    "rules": {
-        "quotes": [
-            "error",
-            "single"
-        ],
-        "semi": [
-            "error",
-            "always"
-        ],
-        "no-process-exit": [
-            "off"
-        ],
-        "node/no-extraneous-require": [
-            "off"
-        ],
-        "node/no-deprecated-api": [
-            "error"
-        ],
-        "node/process-exit-as-throw": [
-            "error"
-        ]
-    }
+  "extends": ["eslint:recommended", "google"],
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 6
+  },
+  "rules": {
+    "comma-dangle": [2, "never"],
+    "max-len": [2, 100, {
+      "ignoreComments": true,
+      "ignoreStrings": true,
+      "ignoreTemplateLiterals": true
+    }],
+    "linebreak-style": 0,
+    "keyword-spacing": 2,
+    "require-jsdoc": [0],
+    "indent": [2, 4, { "SwitchCase": 1 }],
+    "object-curly-spacing": [2, "always"],
+    "space-before-function-paren": ["error", "always"],
+    "quote-props": ["error", "as-needed"],
+    "no-console": [2]
+  }
 }

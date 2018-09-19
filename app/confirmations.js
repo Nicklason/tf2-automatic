@@ -1,4 +1,6 @@
-let community, config, log;
+let community;
+let config;
+let log;
 
 exports.register = function (automatic) {
     log = automatic.log;
@@ -6,9 +8,9 @@ exports.register = function (automatic) {
     community = automatic.community;
 };
 
-exports.accept = function(id, callback) {
+exports.accept = function (id, callback) {
     log.debug('Accepting confirmation for object with id #' + id);
-    community.acceptConfirmationForObject(config.getAccount().identity_secret, id, function(err) {
+    community.acceptConfirmationForObject(config.getAccount().identity_secret, id, function (err) {
         if (err) {
             log.debug('An error occurred while attempting to accept confirmation: ' + err.message + '.');
         }

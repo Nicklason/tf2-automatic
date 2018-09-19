@@ -2,13 +2,13 @@ const SteamTotp = require('steam-totp');
 
 let client;
 
-exports.register = function(automatic) {
+exports.register = function (automatic) {
     client = automatic.client;
 };
 
 exports.performLogin = performLogin;
 
-function performLogin(details, callback) {
+function performLogin (details, callback) {
     let logOnOptions = {
         accountName: details.name,
         password: details.password
@@ -21,7 +21,7 @@ function performLogin(details, callback) {
         }
 
         logOnOptions.twoFactorCode = SteamTotp.getAuthCode(details.shared_secret, offset);
-        
+
         client.logOn(logOnOptions);
 
         callback(null);

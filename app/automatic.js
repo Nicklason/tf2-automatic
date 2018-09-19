@@ -1,4 +1,4 @@
-/*eslint no-console: off*/
+/* eslint no-console: off */
 
 global._mckay_statistics_opt_out = true;
 
@@ -66,32 +66,32 @@ let Automatic = {
     running: false,
     version: version,
     inventory: [],
-    getOwnSteamID() {
+    getOwnSteamID () {
         return Automatic.client.steamID ? Automatic.client.steamID.getSteamID64() : null;
     },
-    isOwner(steamID64) {
+    isOwner (steamID64) {
         return config.get('owners').includes(steamID64);
     },
-    alert(type, message) {
+    alert (type, message) {
         const notify = config.get('notify', 'none');
         if (notify == 'all' || notify == type) {
             const owners = config.get('owners');
             if (owners.length == 1 && owners[0] == '<steamid64s>') {
                 return;
             }
-            
+
             owners.forEach(function (owner) {
                 Automatic.message(owner, message);
             });
         }
     },
-    message(steamID64, message) {
+    message (steamID64, message) {
         Automatic.friends.getDetails(steamID64, function (err, details) {
             log.info('Message sent to ' + (err ? steamID64 : details.personaname + ' (' + steamID64 + ')') + ': ' + message);
             Automatic.client.chatMessage(steamID64, message);
         });
     },
-    refreshSession() {
+    refreshSession () {
         log.debug('Refreshing session...');
         if (!recentlyRefreshedSession) {
             log.debug('We havn\'t refreshed the session recently, continuing');
@@ -104,7 +104,7 @@ let Automatic = {
             }, 5 * 60 * 1000);
         }
     },
-    expired() {
+    expired () {
         log.warn('API Access has expired, shutting down...');
         Automatic.backpack.stop(function () {
             Automatic.client.gamesPlayed([]);
@@ -114,7 +114,7 @@ let Automatic = {
     }
 };
 
-function updateRepo(promptConfirm = false) {
+function updateRepo (promptConfirm = false) {
     if (fs.existsSync(path.resolve(__dirname, '../.git'))) {
         if (promptConfirm) {
             log.info('It looks like you have cloned this from GitHub, do you want to pull the changes? [y/n]');
@@ -132,19 +132,19 @@ function updateRepo(promptConfirm = false) {
 }
 
 Automatic.config = config;
-Automatic.client = new SteamUser({ 'promptSteamGuardCode': false });
+Automatic.client = new SteamUser({ promptSteamGuardCode: false });
 Automatic.community = new SteamCommunity();
 Automatic.manager = new TradeOfferManager({
-    'steam': Automatic.client,
-    'language': 'en',
-    'pollInterval': 2000,
-    'cancelTime': 5 * 60 * 1000,
-    'pendingCancelTime': 1 * 60 * 1000
+    steam: Automatic.client,
+    language: 'en',
+    pollInterval: 2000,
+    cancelTime: 5 * 60 * 1000,
+    pendingCancelTime: 1 * 60 * 1000
 });
 
 let log = Automatic.log = new Winston.Logger({
-    'levels': logging.LOG_LEVELS,
-    'colors': logging.LOG_COLORS
+    levels: logging.LOG_LEVELS,
+    colors: logging.LOG_COLORS
 });
 
 // These should be accessable from (almost) everywhere.
@@ -158,8 +158,8 @@ Automatic.statistics = statistics;
 Automatic.screenshot = screenshot;
 Automatic.tf2 = new TeamFortress2(Automatic.client);
 
-function register(...args) {
-    args.forEach(function(component) {
+function register (...args) {
+    args.forEach(function (component) {
         if (typeof component === 'string') {
             component = require('./' + component);
         }
@@ -221,7 +221,7 @@ process.on('uncaughtException', function (err) {
         require('util').inspect(err)
     ].join('\r\n'));
     log.error('Create an issue here: https://github.com/Nicklason/tf2-automatic/issues/new');
-    setTimeout(function() {
+    setTimeout(function () {
         process.exit(1);
     }, 10);
 });
