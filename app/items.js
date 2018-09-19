@@ -2,7 +2,9 @@ const TF2Items = require('tf2-items');
 
 const Offer = require('./offer.js');
 
-let manager, log, Items;
+let manager;
+let log;
+let Items;
 
 exports.register = function (automatic) {
     manager = automatic.manager;
@@ -13,7 +15,7 @@ exports.init = function (callback) {
     Items = new TF2Items({ apiKey: manager.apiKey });
 
     log.debug('Initializing tf2-items package.');
-    Items.init(function(err) {
+    Items.init(function (err) {
         if (err) {
             callback(new Error('tf2-items (' + err.message + ')'));
             return;
@@ -32,11 +34,11 @@ exports.getQuality = getQuality;
 exports.getEffect = getEffect;
 exports.getName = getName;
 
-exports.getModule = function() {
+exports.getModule = function () {
     return Items;
 };
 
-function createDictionary(items) {
+function createDictionary (items) {
     let dict = {};
     for (let i = 0; i < items.length; i++) {
         const item = Offer.getItem(items[i]);
@@ -50,35 +52,39 @@ function createDictionary(items) {
     return dict;
 }
 
-function getPure(dictionary, getKeys = true) {
+function getPure (dictionary, getKeys = true) {
     const pure = {
-        'keys': getKeys == true ? getItemFromDict(dictionary, 'Mann Co. Supply Crate Key') : [],
-        'refined': getItemFromDict(dictionary, 'Refined Metal'),
-        'reclaimed': getItemFromDict(dictionary, 'Reclaimed Metal'),
-        'scrap': getItemFromDict(dictionary, 'Scrap Metal'),
+        keys: getKeys == true ? getItemFromDict(dictionary, 'Mann Co. Supply Crate Key') : [],
+        refined: getItemFromDict(dictionary, 'Refined Metal'),
+        reclaimed: getItemFromDict(dictionary, 'Reclaimed Metal'),
+        scrap: getItemFromDict(dictionary, 'Scrap Metal')
     };
     return pure;
 }
 
-function getItemFromDict(dictionary, name) {
+function getItemFromDict (dictionary, name) {
     return dictionary[name] || [];
 }
 
-function createSummary(dictionary) {
+function createSummary (dictionary) {
     let summary = {};
     for (let name in dictionary) {
+        if (!dictionary.hasOwnProperty(name)) {
+            continue;
+        }
+
         const amount = dictionary[name].length;
         summary[name] = amount;
     }
     return summary;
 }
 
-function findMatch(search) {
+function findMatch (search) {
     search = search.toLowerCase();
 
     let match = [];
     const schema = Items.schema.items;
-    for (let i in schema) {
+    for (let i = 0; i < schema.length; i++) {
         const name = schema[i].proper_name ? 'The ' + schema[i].item_name : schema[i].item_name;
         if (name.toLowerCase() == search) {
             return schema[i].defindex;
@@ -101,14 +107,14 @@ function findMatch(search) {
     return match;
 }
 
-function getQuality(quality) {
+function getQuality (quality) {
     return Items.schema.getQuality(quality);
 }
 
-function getEffect(effect) {
+function getEffect (effect) {
     return Items.schema.getEffectId(effect);
 }
 
-function getName(item) {
+function getName (item) {
     return Items.schema.getDisplayName(item);
 }

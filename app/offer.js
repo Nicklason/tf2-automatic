@@ -3,10 +3,11 @@ const confirmations = require('./confirmations.js');
 
 const utils = require('./utils.js');
 
-let Automatic, Items;
+let Automatic;
+let Items;
 
 class Offer {
-    constructor(offer, opts = {}) {
+    constructor (offer, opts = {}) {
         this.offer = offer;
         this.items = { our: offer.itemsToGive, their: offer.itemsToReceive };
         this.currencies = { our: { keys: 0, metal: 0 }, their: { keys: 0, metal: 0 } };
@@ -25,32 +26,32 @@ class Offer {
         }
     }
 
-    log(level, message) {
+    log (level, message) {
         Automatic.log[level]('Offer #' + this.offer.id + ' ' + message);
     }
-    id() {
+    id () {
         return this.offer.id;
     }
-    partner() {
+    partner () {
         return this.offer.partner.getSteamID64();
     }
-    fromOwner() {
+    fromOwner () {
         return Automatic.isOwner(this.partner());
     }
-    isGlitched() {
+    isGlitched () {
         return this.offer.isGlitched();
     }
-    isOneSided() {
+    isOneSided () {
         return this.offer.itemsToReceive.length == 0 || this.offer.itemsToGive.length == 0;
     }
-    isGift() {
+    isGift () {
         return this.offer.itemsToReceive.length != 0 && this.offer.itemsToGive.length == 0;
     }
-    state() {
+    state () {
         return this.offer.state;
     }
 
-    static getItem(item) {
+    static getItem (item) {
         let parsed = {
             id: Number(item.assetid),
             defindex: getDefindex(item),
@@ -74,12 +75,12 @@ class Offer {
         return parsed;
     }
 
-    recountCurrencies() {
+    recountCurrencies () {
         this._countCurrencies(true);
         this._countCurrencies(false);
     }
 
-    _countCurrencies(our) {
+    _countCurrencies (our) {
         const items = our ? this.items.our : this.items.their;
         let currencies = our ? this.currencies.our : this.currencies.their;
 
@@ -110,9 +111,9 @@ class Offer {
         this.items[our ? 'our' : 'their'] = other;
     }
 
-    accept() {
+    accept () {
         const self = this;
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             self.offer.accept(function (err, status) {
                 if (err) {
                     reject(getError(err));
@@ -128,10 +129,10 @@ class Offer {
         });
     }
 
-    decline() {
+    decline () {
         const self = this;
-        return new Promise(function(resolve, reject) {
-            self.offer.decline(function(err) {
+        return new Promise(function (resolve, reject) {
+            self.offer.decline(function (err) {
                 if (err) {
                     reject(getError(err));
                     return;
@@ -142,7 +143,7 @@ class Offer {
         });
     }
 
-    summarizeItems(items) {
+    summarizeItems (items) {
         let names = {};
 
         items.forEach((item) => {
@@ -152,21 +153,31 @@ class Offer {
 
         let formattedNames = [];
         for (let name in names) {
+            if (!names.hasOwnProperty(name)) {
+                continue;
+            }
+
             formattedNames.push(name + (names[name] > 1 ? ' x' + names[name] : ''));
         }
 
         return formattedNames.join(', ');
     }
 
-    summary() {
-        const our = { keys: this.currencies.our.keys, metal: utils.scrapToRefined(this.currencies.our.metal) };
-        const their = { keys: this.currencies.their.keys, metal: utils.scrapToRefined(this.currencies.their.metal) };
+    summary () {
+        const our = {
+            keys: this.currencies.our.keys,
+            metal: utils.scrapToRefined(this.currencies.our.metal)
+        };
+        const their = {
+            keys: this.currencies.their.keys,
+            metal: utils.scrapToRefined(this.currencies.their.metal)
+        };
         const message = 'Asked: ' + utils.currencyAsText(our) + ' (' + this.summarizeItems(this.offer.itemsToGive) + ')\nOffered: ' + utils.currencyAsText(their) + ' (' + this.summarizeItems(this.offer.itemsToReceive) + ')';
         return message;
     }
 }
 
-function getName(item) {
+function getName (item) {
     let name = item.market_hash_name;
     const effect = getEffect(item);
 
@@ -182,31 +193,31 @@ function getName(item) {
     return name;
 }
 
-function getDefindex(item) {
+function getDefindex (item) {
     const link = getAction('Item Wiki Page...', item);
     if (link != null) {
         const query = utils.stringToObject(link.substring(link.indexOf('?') + 1));
         const defindex = parseInt(query.id);
         return defindex;
     }
-    
+
     const defindex = parseInt(item.app_data.def_index);
     return defindex;
 }
 
-function getQuality(item) {
+function getQuality (item) {
     return getTag('Quality', item);
 }
 
-function isUnique(item) {
+function isUnique (item) {
     return getQuality(item) == 'Unique';
 }
 
-function isCraftable(item) {
+function isCraftable (item) {
     return !hasDescription('( Not Usable in Crafting )', item);
 }
 
-function isKillstreak(item) {
+function isKillstreak (item) {
     const name = item.market_hash_name;
     if (name.indexOf('Professional Killstreak ') != -1) {
         return 3;
@@ -219,14 +230,14 @@ function isKillstreak(item) {
     }
 }
 
-function isAustralium(item) {
+function isAustralium (item) {
     if (getTag('Quality', item) != 'Strange') {
         return false;
     }
     return item.market_hash_name.indexOf('Australium ') != -1;
 }
 
-function getEffect(item) {
+function getEffect (item) {
     if (isUnique(item)) return null;
     const descriptions = item.descriptions;
     if (!descriptions) return null;
@@ -241,7 +252,7 @@ function getEffect(item) {
     return null;
 }
 
-function isSkin(item) {
+function isSkin (item) {
     const wears = ['Factory New', 'Minimal Wear', 'Field-Tested', 'Well-Worn', 'Battle Scarred'];
 
     for (let i = 0; i < wears.length; i++) {
@@ -253,7 +264,7 @@ function isSkin(item) {
     return false;
 }
 
-function isCraftWeapon(item) {
+function isCraftWeapon (item) {
     if (item.marketable) return false;
     if (!isUnique(item)) return false;
     const type = getTag('Type', item);
@@ -274,11 +285,11 @@ function isCraftWeapon(item) {
     return ['Primary weapon', 'Secondary weapon', 'Melee weapon', 'Primary PDA', 'Secondary PDA'].indexOf(type) != -1;
 }
 
-function isKey(item) {
+function isKey (item) {
     return item.market_name == 'Mann Co. Supply Crate Key' && isUnique(item);
 }
 
-function getMetalValue(item) {
+function getMetalValue (item) {
     if (!isUnique(item)) return 0;
 
     if (isCraftWeapon(item)) return 1 / 18;
@@ -295,7 +306,7 @@ function getMetalValue(item) {
     return 0;
 }
 
-function getAction(action, item) {
+function getAction (action, item) {
     const actions = item.actions;
     if (!actions) return null;
 
@@ -306,7 +317,7 @@ function getAction(action, item) {
     return null;
 }
 
-function getTag(category, item) {
+function getTag (category, item) {
     const tags = item.tags;
     if (!tags) {
         return null;
@@ -321,7 +332,7 @@ function getTag(category, item) {
     return null;
 }
 
-function hasDescription(desc, item) {
+function hasDescription (desc, item) {
     const descriptions = item.descriptions;
     if (!descriptions) return false;
 
@@ -330,7 +341,7 @@ function hasDescription(desc, item) {
     });
 }
 
-function getError(err) {
+function getError (err) {
     let msg = err.cause || err.message;
     if (err.eresult) {
         msg = TradeOfferManager.EResult[err.eresult];
@@ -339,7 +350,7 @@ function getError(err) {
 }
 
 module.exports = Offer;
-module.exports.register = function(automatic) {
+module.exports.register = function (automatic) {
     Automatic = automatic;
     Items = automatic.items;
 };

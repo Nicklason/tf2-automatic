@@ -6,11 +6,28 @@ const Offer = require('./offer.js');
 const Queue = require('./queue.js');
 const confirmations = require('./confirmations.js');
 
-let Automatic, client, manager, Inventory, Backpack, Prices, Items, tf2, Friends, Statistics, Screenshot, log, config;
+let Automatic;
+let client;
+let manager;
+let Inventory;
+let Backpack;
+let Prices;
+let Items;
+let tf2;
+let Friends;
+let Statistics;
+let Screenshot;
+let log;
+let config;
 
 const POLLDATA_FILENAME = 'temp/polldata.json';
 
-let READY = false, RECEIVED = [], RECEIVED_OFFER_CHANGED = [], SENT_OFFER_CHANGED = [], DOING_QUEUE = false, ITEMS_IN_TRADE = [];
+let READY = false;
+let RECEIVED = [];
+let RECEIVED_OFFER_CHANGED = [];
+let SENT_OFFER_CHANGED = [];
+let DOING_QUEUE = false;
+let ITEMS_IN_TRADE = [];
 
 exports.register = function (automatic) {
     Automatic = automatic;
@@ -58,12 +75,16 @@ exports.init = function () {
 exports.checkOfferCount = checkOfferCount;
 exports.requestOffer = requestOffer;
 
-function getActiveOffer(steamID64) {
+function getActiveOffer (steamID64) {
     let pollData = manager.pollData;
 
     if (!pollData.offerData) pollData.offerData = {};
 
     for (let id in pollData.sent) {
+        if (!pollData.hasOwnProperty(id)) {
+            continue;
+        }
+
         const status = pollData.sent[id];
         if (status != TradeOfferManager.ETradeOfferState.Active) continue;
         const data = pollData.offerData[id] || null;
@@ -75,7 +96,7 @@ function getActiveOffer(steamID64) {
     return null;
 }
 
-function requestOffer(steamID64, name, amount, selling) {
+function requestOffer (steamID64, name, amount, selling) {
     if (!Friends.isFriend(steamID64)) {
         log.debug('Not friends with user, but user tried to request a trade (' + steamID64 + ')');
         return;
@@ -112,7 +133,7 @@ function requestOffer(steamID64, name, amount, selling) {
     handleQueue();
 }
 
-function organizeQueue() {
+function organizeQueue () {
     handleQueue();
 
     for (let i = 0; i < RECEIVED.length; i++) {
@@ -123,7 +144,7 @@ function organizeQueue() {
     RECEIVED = [];
 }
 
-function handleChangedOffers() {
+function handleChangedOffers () {
     for (let i = 0; i < RECEIVED_OFFER_CHANGED.length; i++) {
         receivedOfferChanged(RECEIVED_OFFER_CHANGED[i].offer, RECEIVED_OFFER_CHANGED[i].oldState);
     }
@@ -134,7 +155,7 @@ function handleChangedOffers() {
     SENT_OFFER_CHANGED = [];
 }
 
-function handleOffer(offer) {
+function handleOffer (offer) {
     if (!READY) {
         RECEIVED.push(offer);
         return;
@@ -204,7 +225,7 @@ function handleOffer(offer) {
     handleQueue();
 }
 
-function handleQueue() {
+function handleQueue () {
     if (DOING_QUEUE) {
         log.debug('Already processing an offer in the queue');
         return;
@@ -261,7 +282,7 @@ function handleQueue() {
     }
 }
 
-function hasEnoughItems(name, dictionary, amount) {
+function hasEnoughItems (name, dictionary, amount) {
     const ids = dictionary[name] || [];
     const stock = ids.length;
 
@@ -270,11 +291,15 @@ function hasEnoughItems(name, dictionary, amount) {
     return stock;
 }
 
-function filterItems(dictionary) {
+function filterItems (dictionary) {
     let filtered = {};
     for (let name in dictionary) {
+        if (!dictionary.hasOwnProperty(name)) {
+            continue;
+        }
+
         let ids = [].concat(dictionary[name]);
-        for (var i = ids.length - 1; i >= 0; i--) {
+        for (let i = ids.length; i--;) {
             for (let j = 0; j < ITEMS_IN_TRADE.length; j++) {
                 if (ids[i] == ITEMS_IN_TRADE[j]) {
                     ids.splice(i, 1);
@@ -289,7 +314,7 @@ function filterItems(dictionary) {
     return filtered;
 }
 
-function convertPure(pure) {
+function convertPure (pure) {
     let items = {
         'Mann Co. Supply Crate Key': pure.keys,
         'Refined Metal': pure.refined,
@@ -299,7 +324,7 @@ function convertPure(pure) {
     return items;
 }
 
-function createOffer(request, callback) {
+function createOffer (request, callback) {
     const selling = request.details.intent == 1;
     const partner = request.partner;
 
@@ -401,6 +426,10 @@ function createOffer(request, callback) {
             pure = convertPure(pure);
 
             for (let name in pure) {
+                if (!pure.hasOwnProperty(name)) {
+                    continue;
+                }
+
                 const ids = items.buyer[name] || [];
                 for (let i = 0; i < ids.length; i++) {
                     if (pure[name] == 0) break;
@@ -497,7 +526,7 @@ function createOffer(request, callback) {
     });
 }
 
-function finalizeOffer(offer, callback) {
+function finalizeOffer (offer, callback) {
     log.debug('Finalizing offer');
     log.debug(callback != undefined ? 'Offer was requested' : 'Offer was received');
     const time = new Date().getTime();
@@ -514,7 +543,9 @@ function finalizeOffer(offer, callback) {
                 callback(null, 'The offer would be held by escrow');
             } else {
                 log.info('Offer would be held by escrow, declining.');
-                offer.decline().then(function () { offer.log('debug', 'declined'); });
+                offer.decline().then(function () {
+                    offer.log('debug', 'declined');
+                });
             }
         }
     }).catch(function (err) {
@@ -551,7 +582,7 @@ function finalizeOffer(offer, callback) {
     });
 }
 
-function sendOffer(offer, callback) {
+function sendOffer (offer, callback) {
     offer.send(function (err, status) {
         if (err) {
             log.debug('Failed to send the offer');
@@ -609,7 +640,7 @@ function sendOffer(offer, callback) {
     });
 }
 
-function constructOffer(price, dictionary, useKeys) {
+function constructOffer (price, dictionary, useKeys) {
     price = Prices.value(price);
     let pure = Items.createSummary(Items.pure(dictionary));
 
@@ -621,15 +652,15 @@ function constructOffer(price, dictionary, useKeys) {
     return needsChange;
 }
 
-function needChange(price, pure, useKeys) {
+function needChange (price, pure, useKeys) {
     const keyValue = utils.refinedToScrap(Prices.key());
 
-    var keys = 0,
-        refined = 0,
-        reclaimed = 0,
-        scrap = 0;
+    let keys = 0;
+    let refined = 0;
+    let reclaimed = 0;
+    let scrap = 0;
 
-    var metalReq = price;
+    let metalReq = price;
 
     if (useKeys && metalReq > keyValue) {
         keys = Math.floor(metalReq / keyValue);
@@ -679,7 +710,7 @@ function needChange(price, pure, useKeys) {
     };
 }
 
-function makeChange(price, pure, useKeys) {
+function makeChange (price, pure, useKeys) {
     const keyValue = utils.refinedToScrap(Prices.key());
 
     let required = Prices.valueToPure(price, useKeys);
@@ -689,7 +720,7 @@ function makeChange(price, pure, useKeys) {
         keys: Array.isArray(pure.keys) ? pure.keys.length : pure.keys,
         refined: Array.isArray(pure.refined) ? pure.refined.length : pure.refined,
         reclaimed: Array.isArray(pure.reclaimed) ? pure.reclaimed.length : pure.reclaimed,
-        scrap: Array.isArray(pure.scrap) ? pure.scrap.length : pure.scrap,
+        scrap: Array.isArray(pure.scrap) ? pure.scrap.length : pure.scrap
     };
 
     log.debug('The buyer has:', availablePure);
@@ -756,7 +787,7 @@ function makeChange(price, pure, useKeys) {
     };
 }
 
-function overstockedItems(offer) {
+function overstockedItems (offer) {
     const ourSummary = Items.createSummary(Items.createDictionary(offer.items.our));
     const theirSummary = Items.createSummary(Items.createDictionary(offer.items.their));
 
@@ -783,7 +814,7 @@ function overstockedItems(offer) {
     return false;
 }
 
-function checkReceivedOffer(id, callback) {
+function checkReceivedOffer (id, callback) {
     const time = new Date().getTime();
     getOffer(id, function (err, offer) {
         log.debug('Got offer in ' + (new Date().getTime() - time) + ' ms');
@@ -803,26 +834,28 @@ function checkReceivedOffer(id, callback) {
         }
 
         if (Prices.handleBuyOrders(offer) == false || Prices.handleSellOrders(offer) == false) {
-            ERRORS.INVALD_ITEMS(offer);
+            ERRORS.invalid_items(offer);
             callback(null);
             return;
         }
 
         if (offer.offering.items.us == false && offer.offering.items.them == false && offer.offering.keys.us == false && offer.offering.keys.them == false && (config.get('acceptGifts') == false && offer.currencies.our.metal >= offer.currencies.their.metal)) {
-            ERRORS.ONLY_METAL(offer);
+            ERRORS.only_metal(offer);
             callback(null);
             return;
         }
 
-        let our = offer.currencies.our,
-            their = offer.currencies.their;
+        let our = offer.currencies.our;
+        let their = offer.currencies.their;
 
+        /* eslint-disable-next-line max-len */
         const tradingKeys = (offer.offering.keys.us == true || offer.offering.keys.them == true) && offer.offering.items.us == false && offer.offering.items.them == false;
+
         // Allows the bot to trade keys for metal and vice versa.
         if (tradingKeys) {
             let price = Prices.getPrice('Mann Co. Supply Crate Key');
             if (price == null) {
-                ERRORS.INVALD_ITEMS(offer);
+                ERRORS.invalid_items(offer);
                 callback(null);
                 return;
             }
@@ -831,7 +864,7 @@ function checkReceivedOffer(id, callback) {
             const overstocked = Inventory.overstocked('Mann Co. Supply Crate Key', their.keys - our.keys);
 
             if (overstocked == true) {
-                ERRORS.OVERSTOCKED(offer);
+                ERRORS.overstocked(offer);
                 callback(null);
                 return;
             }
@@ -848,14 +881,14 @@ function checkReceivedOffer(id, callback) {
 
         const value = offeringEnough(our, their, tradingKeys);
         if (value.their < value.our) {
-            ERRORS.INVALID_VALUE(offer);
+            ERRORS.invalid_value(offer);
             callback(null);
             return;
         }
 
         const containsOverstocked = overstockedItems(offer);
         if (containsOverstocked && value.overpay < config.get('overstockedOverpay')) {
-            ERRORS.OVERSTOCKED(offer);
+            ERRORS.overstocked(offer);
             callback(null);
             return;
         }
@@ -866,9 +899,9 @@ function checkReceivedOffer(id, callback) {
                 return;
             } else if (reason != false) {
                 if (reason.indexOf('backpack.tf') != -1) {
-                    ERRORS.BPTF_BANNED(offer);
+                    ERRORS.bptf_banned(offer);
                 } else {
-                    ERRORS.SR_MARKED(offer);
+                    ERRORS.sr_marked(offer);
                 }
                 callback(null);
                 return;
@@ -883,7 +916,7 @@ function checkReceivedOffer(id, callback) {
     });
 }
 
-function acceptOffer(offer) {
+function acceptOffer (offer) {
     offer.log('trade', 'by ' + offer.partner() + ' is offering enough, accepting. Summary:\n' + offer.summary());
 
     offer.accept().then(function (status) {
@@ -894,11 +927,11 @@ function acceptOffer(offer) {
     });
 }
 
-function offeringEnough(our, their) {
+function offeringEnough (our, their) {
     const keyValue = utils.refinedToScrap(Prices.key());
 
-    const ourValue = our.metal + our.keys * keyValue,
-        theirValue = their.metal + their.keys * keyValue;
+    const ourValue = our.metal + our.keys * keyValue;
+    const theirValue = their.metal + their.keys * keyValue;
 
     const overpay = (theirValue - ourValue) / ourValue;
 
@@ -909,7 +942,7 @@ function offeringEnough(our, their) {
     };
 }
 
-function determineEscrowDays(offer) {
+function determineEscrowDays (offer) {
     return new Promise((resolve, reject) => {
         offer.getUserDetails((err, my, them) => {
             if (err) {
@@ -933,7 +966,7 @@ function determineEscrowDays(offer) {
     });
 }
 
-function checkEscrow(offer) {
+function checkEscrow (offer) {
     if (config.get().acceptEscrow == true) {
         return Promise.resolve(false);
     }
@@ -944,7 +977,7 @@ function checkEscrow(offer) {
     });
 }
 
-function getOffer(id, callback) {
+function getOffer (id, callback) {
     manager.getOffer(id, function (err, offer) {
         if (err) {
             callback(err);
@@ -956,7 +989,7 @@ function getOffer(id, callback) {
     });
 }
 
-function receivedOfferChanged(offer, oldState) {
+function receivedOfferChanged (offer, oldState) {
     if (!READY) {
         RECEIVED_OFFER_CHANGED.push({ offer: offer, oldState: oldState });
         return;
@@ -989,7 +1022,7 @@ function receivedOfferChanged(offer, oldState) {
     }
 }
 
-function sentOfferChanged(offer, oldState) {
+function sentOfferChanged (offer, oldState) {
     if (!READY) {
         SENT_OFFER_CHANGED.push({ offer: offer, oldState: oldState });
         return;
@@ -1040,7 +1073,7 @@ function sentOfferChanged(offer, oldState) {
     }
 }
 
-function offerAccepted(offer) {
+function offerAccepted (offer) {
     Friends.sendGroupInvites(offer.partner);
     Inventory.getInventory(Automatic.getOwnSteamID(), function () {
         const doneSomething = smeltCraftMetal();
@@ -1052,7 +1085,7 @@ function offerAccepted(offer) {
     });
 }
 
-function handleAcceptedOffer(offer) {
+function handleAcceptedOffer (offer) {
     offer.getReceivedItems(true, function (err, receivedItems) {
         if (err) {
             log.warn('Failed to get received items from offer, retrying in 30 seconds.');
@@ -1100,7 +1133,7 @@ function handleAcceptedOffer(offer) {
     });
 }
 
-function smeltCraftMetal() {
+function smeltCraftMetal () {
     if (tf2.haveGCSession) {
         const dict = Inventory.dictionary();
         const inv = filterItems(dict);
@@ -1189,7 +1222,7 @@ function smeltCraftMetal() {
     }
 }
 
-function addItemsInTrade(items) {
+function addItemsInTrade (items) {
     for (let i = 0; i < items.length; i++) {
         const assetid = items[i].assetid;
         if (!ITEMS_IN_TRADE.includes(assetid)) {
@@ -1198,7 +1231,7 @@ function addItemsInTrade(items) {
     }
 }
 
-function removeItemsInTrade(items) {
+function removeItemsInTrade (items) {
     for (let i = 0; i < items.length; i++) {
         const assetid = items[i].assetid;
 
@@ -1209,7 +1242,7 @@ function removeItemsInTrade(items) {
     }
 }
 
-function checkOfferCount() {
+function checkOfferCount () {
     if (manager.apiKey === null) {
         return;
     }
@@ -1225,16 +1258,16 @@ function checkOfferCount() {
             return;
         }
 
-        let received = body.response.pending_received_count,
-            sent = body.response.pending_sent_count,
-            escrow_received = body.response.escrow_received_count,
-            escrow_sent = body.response.escrow_sent_count;
+        const received = body.response.pending_received_count;
+        const sent = body.response.pending_sent_count;
+        const escrowReceived = body.response.escrow_received_count;
+        const escrowSent = body.response.escrow_sent_count;
 
-        log.verbose(`${received} incoming ${utils.plural('offer', received)} (${escrow_received} on hold), ${sent} sent ${utils.plural('offer', sent)} (${escrow_sent} on hold)`);
+        log.verbose(`${received} incoming ${utils.plural('offer', received)} (${escrowReceived} on hold), ${sent} sent ${utils.plural('offer', sent)} (${escrowSent} on hold)`);
     });
 }
 
-function savePollData(pollData) {
+function savePollData (pollData) {
     pollData = removeOldOffers(pollData);
     manager.pollData = pollData;
 
@@ -1245,18 +1278,23 @@ function savePollData(pollData) {
     });
 }
 
-function removeOldOffers(pollData) {
+function removeOldOffers (pollData) {
     const current = utils.seconds();
     const max = 3600; // 1 hour
 
     if (!pollData.hasOwnProperty('offerData')) pollData.offerData = {};
 
     for (let id in pollData.timestamps) {
+        if (!pollData.timestamps.hasOwnProperty(id)) {
+            continue;
+        }
+
         const time = pollData.timestamps[id];
         let state;
         if (pollData.sent[id]) state = pollData.sent[id];
         else if (pollData.received[id]) state = pollData.received[id];
 
+        /* eslint-disable-next-line max-len */
         const isActive = state == TradeOfferManager.ETradeOfferState.InEscrow || state == TradeOfferManager.ETradeOfferState.Active || state == TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation;
         const old = current - time > max;
         if (!isActive && old) {
@@ -1271,7 +1309,7 @@ function removeOldOffers(pollData) {
 }
 
 const ERRORS = {
-    INVALD_ITEMS: function (offer) {
+    invalid_items: function (offer) {
         offer.log('info', 'contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are taking / offering an item that is not in my pricelist' });
 
@@ -1279,13 +1317,15 @@ const ERRORS = {
             offer.log('debug', 'declined');
         });
     },
-    ONLY_METAL: function (offer) {
+    only_metal: function (offer) {
         offer.log('info', 'we are both offering only metal, declining. Summary:\n' + offer.summary());
         Automatic.alert('trade', 'We are both only offering metal, declining.');
 
-        offer.decline().then(function () { offer.log('debug', 'declined'); });
+        offer.decline().then(function () {
+            offer.log('debug', 'declined');
+        });
     },
-    OVERSTOCKED: function (offer) {
+    overstocked: function (offer) {
         offer.log('info', 'contains overstocked items, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are offering overstocked / too many items' });
 
@@ -1293,22 +1333,28 @@ const ERRORS = {
             offer.log('debug', 'declined');
         });
     },
-    INVALID_VALUE: function (offer) {
+    invalid_value: function (offer) {
         offer.log('info', 'is not offering enough, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are not offering enough' });
 
-        offer.decline().then(function () { offer.log('debug', 'declined'); });
+        offer.decline().then(function () {
+            offer.log('debug', 'declined');
+        });
     },
-    BPTF_BANNED: function (offer) {
+    bptf_banned: function (offer) {
         offer.log('info', 'is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are all-features banned on www.backpack.tf' });
 
-        offer.decline().then(function () { offer.log('debug', 'declined'); });
+        offer.decline().then(function () {
+            offer.log('debug', 'declined');
+        });
     },
-    SR_MARKED: function (offer) {
+    sr_marked: function (offer) {
         offer.log('info', 'user is marked on www.steamrep.com, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are marked on www.steamrep.com as a scammer' });
 
-        offer.decline().then(function () { offer.log('debug', 'declined'); });
+        offer.decline().then(function () {
+            offer.log('debug', 'declined');
+        });
     }
 };

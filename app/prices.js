@@ -5,7 +5,13 @@ const Currencies = require('tf2-currencies');
 
 const utils = require('./utils.js');
 
-let Automatic, log, config, API, Backpack, Items, Inventory;
+let Automatic;
+let log;
+let config;
+let API;
+let Backpack;
+let Items;
+let Inventory;
 
 const FOLDER_NAME = 'temp';
 const LISTINGS_FILENAME = FOLDER_NAME + '/listings.json';
@@ -31,12 +37,12 @@ exports.init = function (callback) {
 
     log.debug('Initializing tf2automatic package.');
     API.steamid = Automatic.getOwnSteamID();
-    API.init(function(err) {
+    API.init(function (err) {
         if (err) {
             callback(new Error('tf2automatic (' + err.message + ')'));
             return;
         }
-        
+
         callback(null);
     });
 
@@ -87,10 +93,18 @@ exports.findMatch = findMatch;
 exports.handleBuyOrders = handleBuyOrders;
 exports.handleSellOrders = handleSellOrders;
 
-exports.addItem = function (items, callback) { API.addListing(items, callback); };
-exports.removeItems = function (items, callback) { API.removeListings(items, callback); };
-exports.removeAll = function removeAll(callback) { API.removeAllListings(callback); };
-exports.updateItem = function (name, update, callback) { API.updateListing(name, update, callback); };
+exports.addItem = function (items, callback) {
+    API.addListing(items, callback);
+};
+exports.removeItems = function (items, callback) {
+    API.removeListings(items, callback);
+};
+exports.removeAll = function removeAll (callback) {
+    API.removeAllListings(callback);
+};
+exports.updateItem = function (name, update, callback) {
+    API.updateListing(name, update, callback);
+};
 
 exports.required = getRequired;
 exports.value = getValue;
@@ -99,7 +113,7 @@ exports.afford = canAfford;
 exports.valueToPure = valueToPure;
 exports.valueToCurrencies = valueToCurrencies;
 
-function getPrice(name, our) {
+function getPrice (name, our) {
     if (name == 'Scrap Metal') {
         return { metal: 0.11 };
     } else if (name == 'Reclaimed Metal') {
@@ -144,7 +158,7 @@ function getValue (currencies) {
     return value;
 }
 
-function pureValue(pure) {
+function pureValue (pure) {
     let value = 0;
 
     const summary = Items.createSummary(pure);
@@ -157,7 +171,7 @@ function pureValue(pure) {
     return value;
 }
 
-function canAfford(price, pure) {
+function canAfford (price, pure) {
     const priceVal = getValue(price);
     const pureVal = pureValue(pure);
 
@@ -165,7 +179,7 @@ function canAfford(price, pure) {
     return amount;
 }
 
-function valueToPure(value, useKeys = true) {
+function valueToPure (value, useKeys = true) {
     const keyValue = utils.refinedToScrap(key());
 
     const keys = useKeys ? Math.floor(value / keyValue) : 0;
@@ -181,7 +195,7 @@ function valueToPure(value, useKeys = true) {
     };
 }
 
-function valueToCurrencies(value, useKeys = true) {
+function valueToCurrencies (value, useKeys = true) {
     const currencies = Currencies.toCurrencies(value, key());
 
     if (useKeys == false) {
@@ -193,11 +207,14 @@ function valueToCurrencies(value, useKeys = true) {
     return currencies.toJSON();
 }
 
-function handleBuyOrders(offer) {
+function handleBuyOrders (offer) {
     const their = offer.items.their;
     const dict = Items.createDictionary(their);
     const summary = Items.createSummary(dict);
     for (let name in summary) {
+        if (!summary.hasOwnProperty(name)) {
+            continue;
+        }
         const amount = summary[name];
 
         const price = getPrice(name, false);
@@ -215,11 +232,14 @@ function handleBuyOrders(offer) {
     }
 }
 
-function handleSellOrders(offer) {
+function handleSellOrders (offer) {
     const our = offer.items.our;
     const dict = Items.createDictionary(our);
     const summary = Items.createSummary(dict);
     for (let name in summary) {
+        if (!summary.hasOwnProperty(name)) {
+            continue;
+        }
         const amount = summary[name];
 
         const price = getPrice(name, true);
@@ -237,7 +257,7 @@ function handleSellOrders(offer) {
     }
 }
 
-function priceChanged(state, item, prices) {
+function priceChanged (state, item, prices) {
     switch (state) {
         case 1:
             log.info('"' + item.name + '" has been added to the pricelist');
@@ -283,7 +303,7 @@ function priceChanged(state, item, prices) {
     }
 }
 
-function pricesRefreshed(pricelist) {
+function pricesRefreshed (pricelist) {
     log.debug('Pricelist has been refreshed.');
     fs.writeFile(LISTINGS_FILENAME, JSON.stringify(pricelist), function (err) {
         if (err) {
@@ -292,15 +312,19 @@ function pricesRefreshed(pricelist) {
     });
 }
 
-function rateEmitted(rate) {
+function rateEmitted (rate) {
     log.debug(rate);
 }
 
-function key() { return API.currencies.keys.price.value; }
-function list() { return API.listings; }
+function key () {
+    return API.currencies.keys.price.value;
+}
+function list () {
+    return API.listings;
+}
 
 // Bunch of random checks, but it works better than just checking for items that contains the search strng
-function findMatch(search) {
+function findMatch (search) {
     search = search.toLowerCase();
 
     let match = [];
@@ -316,7 +340,7 @@ function findMatch(search) {
             return listing;
         }
 
-        if (name.toLowerCase().indexOf(search) != -1) { 
+        if (name.toLowerCase().indexOf(search) != -1) {
             match.push(listing);
         }
     }

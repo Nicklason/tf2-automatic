@@ -1,7 +1,11 @@
+/* eslint-env browser */
+
 const fs = require('graceful-fs');
 const webshot = require('webshot');
 
-let Automatic, log, Prices;
+let Automatic;
+let log;
+let Prices;
 
 const FOLDER_NAME = 'images';
 
@@ -10,15 +14,15 @@ let OPTIONS = {
     renderDelay: 5000,
     cookies: [],
     onLoadFinished: function () {
-        var elements = document.getElementsByClassName('tradeoffer_items_banner');
+        let elements = document.getElementsByClassName('tradeoffer_items_banner');
         if (elements.length == 0) {
             return;
         }
-        var banner = elements[0];
+        let banner = elements[0];
 
-        var text = banner.innerHTML;
-        var digit = text.match(/\d/);
-        var index = text.indexOf(digit);
+        let text = banner.innerHTML;
+        let digit = text.match(/\d/);
+        let index = text.indexOf(digit);
         if (index == -1) {
             return;
         }
@@ -62,11 +66,11 @@ exports.receivedOfferChanged = function (id, callback) {
 };
 
 exports.sentOfferChanged = function (id, callback) {
-    const url = 'https://steamcommunity.com/profiles/' + Automatic.getOwnSteamID() +  '/tradeoffers';
+    const url = 'https://steamcommunity.com/profiles/' + Automatic.getOwnSteamID() + '/tradeoffers';
     screenshot(url + '/sent/?history=1', id, callback);
 };
 
-function screenshot(url, id, callback) {
+function screenshot (url, id, callback) {
     OPTIONS.captureSelector = '.tradeoffer#tradeofferid_' + id + ' .tradeoffer_items_ctn';
     webshot(url, `./${FOLDER_NAME}/${id}.png`, OPTIONS, function (err) {
         if (err) {

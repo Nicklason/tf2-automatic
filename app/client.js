@@ -7,11 +7,24 @@ const utils = require('./utils.js');
 const Login = require('./login.js');
 const Messages = require('./messages.js');
 
-let Automatic, client, community, manager, log, config, Items, tf2, Backpack, Prices, Inventory, Friends, Trade, Screenshot;
+let Automatic;
+let client;
+let community;
+let manager;
+let log;
+let config;
+let Items;
+let tf2;
+let Backpack;
+let Prices;
+let Inventory;
+let Friends;
+let Trade;
+let Screenshot;
 
 let started = false;
 
-exports.register = function(automatic) {
+exports.register = function (automatic) {
     Automatic = automatic;
     client = automatic.client;
     community = automatic.community;
@@ -45,7 +58,7 @@ exports.connect = function (ratelimit) {
     if (account.name != '' && account.password != '' && account.shared_secret != '' && account.identity_secret != '') {
         if (ratelimit) {
             log.warn('Your account has received a login cooldown. Wait half an hour before retrying, otherwise it resets to 30 minutes again. Retrying in an hour...');
-            setTimeout(function() {
+            setTimeout(function () {
                 Login.performLogin(account, handleLogin);
             }, 60 * 60 * 1000);
             return;
@@ -57,13 +70,13 @@ exports.connect = function (ratelimit) {
     }
 };
 
-function handleLogin(err) {
+function handleLogin (err) {
     if (err) {
         utils.fatal(log, 'Failed to sign in: ' + err.message + '.');
         return;
     }
 
-    client.on('loggedOn', function() {
+    client.on('loggedOn', function () {
         log.info('Logged onto Steam!');
         if (started) {
             client.gamesPlayed([require('../package.json').name, 440]);
@@ -72,7 +85,7 @@ function handleLogin(err) {
     });
 }
 
-function webSession(sessionID, cookies) {
+function webSession (sessionID, cookies) {
     log.debug('Setting cookies...');
     community.setCookies(cookies);
     Screenshot.setCookies(cookies);
@@ -99,7 +112,7 @@ function webSession(sessionID, cookies) {
     });
 }
 
-function ready(err) {
+function ready (err) {
     if (err) {
         utils.fatal(log, 'An error occurred while initializing the packages: ' + err.message + '.');
     }
@@ -114,7 +127,7 @@ function ready(err) {
 
     log.debug('Sorting inventory');
     tf2.sortBackpack(3);
-    
+
     Messages.init();
     Friends.init();
     Trade.init();
@@ -123,7 +136,7 @@ function ready(err) {
     joinGroups();
 }
 
-function joinGroups() {
+function joinGroups () {
     const groups = config.get('groups');
 
     const relations = client.myGroups;
@@ -145,8 +158,8 @@ function joinGroups() {
     }
 }
 
-function joinGroup(id) {
-    community.joinGroup(id, function(err) {
+function joinGroup (id) {
+    community.joinGroup(id, function (err) {
         if (err) {
             log.warn('An error occurred while joining a group: ' + err.message);
             log.debug(err.stack);
@@ -155,7 +168,7 @@ function joinGroup(id) {
     });
 }
 
-function clientError(err) {
+function clientError (err) {
     if (err.message == 'RateLimitExceeded') {
         exports.connect(true);
         return;
@@ -165,22 +178,23 @@ function clientError(err) {
     log.debug(err.stack);
 }
 
-function sessionExpired() {
+function sessionExpired () {
     log.debug('Session has expired, refreshing it.');
     Automatic.refreshSession();
 }
 
-function confKeyNeeded(tag, callback) {
+function confKeyNeeded (tag, callback) {
     log.debug('New confirmation key needed, generating one.');
-    var time = Math.floor(Date.now() / 1000);
-    callback(null, time, SteamTotp.getConfirmationKey(config.getAccount().identity_secret, time, tag));
+    const time = Math.floor(Date.now() / 1000);
+    const key = SteamTotp.getConfirmationKey(config.getAccount().identity_secret, time, tag);
+    callback(null, time, key);
 }
 
-function craftingComplete(recipe, itemsGained) {
+function craftingComplete (recipe, itemsGained) {
     log.debug('Crafting complete, gained ' + itemsGained.length + ' ' + utils.plural('item', itemsGained.lenght) + ' (recipe ' + recipe + ')');
 }
 
-function initializePackages() {
+function initializePackages () {
     async.series([
         function (callback) {
             Items.init(callback);
