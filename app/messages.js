@@ -668,6 +668,8 @@ function friendMessage (steamID, message) {
             });
         } else if (command == 'makeprofit' && Automatic.isOwner(steamID64)) {
             Automatic.message(steamID64, 'Congrats! You just made ' + Math.floor(Math.random() * 100) + ' keys!');
+        } else if (command == 'update' && Automatic.isOwner(steamID64)) {
+            Automatic.updateRepo(false);
         } else {
             Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
