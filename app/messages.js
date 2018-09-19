@@ -644,7 +644,7 @@ function friendMessage(steamID, message) {
 				Automatic.message(steamID64, 'You forgot to add a url. Here\'s an example: "!avatar http://my.com/img.jpg"');
 				return;
 			}
-			community.uploadAvatar(avatarUrl, function(err, url){
+			community.uploadAvatar(avatarUrl, function(err){
 				if(err){
 					Automatic.message(steamID64, 'There was an error with while changing avatar');
 					return;
