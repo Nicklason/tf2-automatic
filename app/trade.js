@@ -1349,7 +1349,7 @@ const ERRORS = {
             offer.log('debug', 'declined');
         });
     },
-    SR_MARKED: function (offer) {
+    sr_marked: function (offer) {
         offer.log('info', 'user is marked on www.steamrep.com, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are marked on www.steamrep.com as a scammer' });
 
