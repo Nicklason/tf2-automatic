@@ -8,6 +8,8 @@ let TradeOfferManager;
 let TeamFortress2;
 let Winston;
 let execSync;
+let exec;
+let spawn;
 let readline;
 let fs;
 let path;
@@ -19,6 +21,8 @@ try {
     TeamFortress2 = require('tf2');
     Winston = require('winston');
     execSync = require('child_process').execSync;
+    exec = require('child_process').exec;
+    spawn = require('child_process').spawn;
     readline = require('readline');
     fs = require('graceful-fs');
     path = require('path');
@@ -56,6 +60,7 @@ const offer = require('./offer.js');
 const trade = require('./trade.js');
 const statistics = require('./statistics.js');
 const confirmations = require('./confirmations.js');
+const pm2 = process.env.pm_id;
 
 // Get message from initializing the config.
 const configlog = config.init();
@@ -113,18 +118,30 @@ let Automatic = {
     },
     updateRepo (promptConfirm = false) {
         if (fs.existsSync(path.resolve(__dirname, '../.git'))) {
-            if (promptConfirm) {
-                log.info('It looks like you have cloned this from GitHub, do you want to pull the changes? [y/n]');
-                rl.question('', function (answer) {
-                    if (answer.toLowerCase() === 'y') {
-                        log.info('Attempting to update the repository...');
-                        execSync('npm run update', { stdio: [0, 1, 2] });
-                        process.exit();
-                    }
-                });
+            if (!pm2) {
+                if (promptConfirm) {
+                    log.info('It looks like you have cloned this from GitHub, do you want to pull the changes? [y/n]');
+                    rl.question('', function (answer) {
+                        if (answer.toLowerCase() === 'y') {
+                            log.info('Attempting to update the repository...');
+                            execSync('npm run update', { stdio: [0, 1, 2] });
+                            process.exit();
+                        }
+                    });
+                } else {
+                    log.info('Attempting to update the repository...');
+                    execSync('npm run update', { stdio: [0, 1, 2] });
+                    process.exit();
+                }
             } else {
                 log.info('Attempting to update the repository...');
-                execSync('npm run update', { stdio: [0, 1, 2] });
+                const subprocess = spawn('git', ['pull'], {
+                    detached: true,
+                    stdio: 'ignore'
+                });
+
+                subprocess.unref();
+                exec('pm2 restart ' + pm2, { stdio: [0, 1, 2] });
                 process.exit();
             }
         }
@@ -190,7 +207,7 @@ log.info('tf2-automatic v%s starting', version);
 
 process.nextTick(client.connect);
 
-function checkUpdates (notify = false) {
+function checkUpdates (notify = true) {
     utils.request.get({
         url: 'https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json',
         json: true
@@ -210,7 +227,7 @@ function checkUpdates (notify = false) {
                 log.info('============================================================');
                 if (notify) {
                     config.get('owners').forEach(function (owner) {
-                        Automatic.message(owner, 'Your bot is running outdated version, update it with !update');
+                        Automatic.message(owner, 'Your bot is running outdated version, update it with !updateBot');
                     });
                 } else {
                     Automatic.updateRepo(true);
@@ -218,9 +235,9 @@ function checkUpdates (notify = false) {
             }
         }
     });
-    setTimeout(checkUpdates(true), 60*60*4);
 }
-checkUpdates();
+checkUpdates(false);
+setInterval(checkUpdates, 60 * 60 * 4 * 1000);
 
 process.on('uncaughtException', function (err) {
     log.error([
