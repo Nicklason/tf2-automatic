@@ -8,11 +8,11 @@ let TradeOfferManager;
 let TeamFortress2;
 let Winston;
 let execSync;
-let exec;
 let spawn;
 let readline;
 let fs;
 let path;
+let pm2;
 
 try {
     SteamUser = require('steam-user');
@@ -21,11 +21,11 @@ try {
     TeamFortress2 = require('tf2');
     Winston = require('winston');
     execSync = require('child_process').execSync;
-    exec = require('child_process').exec;
     spawn = require('child_process').spawn;
     readline = require('readline');
     fs = require('graceful-fs');
     path = require('path');
+    pm2 = require('pm2');
 } catch (ex) {
     console.log(ex);
     console.error('Missing dependencies. Install a version with dependencies or use npm install.');
@@ -60,7 +60,7 @@ const offer = require('./offer.js');
 const trade = require('./trade.js');
 const statistics = require('./statistics.js');
 const confirmations = require('./confirmations.js');
-const pm2 = process.env.pm_id;
+const pm = process.env.pm_id;
 
 // Get message from initializing the config.
 const configlog = config.init();
@@ -118,7 +118,7 @@ let Automatic = {
     },
     updateRepo (promptConfirm = false) {
         if (fs.existsSync(path.resolve(__dirname, '../.git'))) {
-            if (!pm2) {
+            if (!pm) {
                 if (promptConfirm) {
                     log.info('It looks like you have cloned this from GitHub, do you want to pull the changes? [y/n]');
                     rl.question('', function (answer) {
@@ -141,7 +141,18 @@ let Automatic = {
                 });
 
                 subprocess.unref();
-                exec('pm2 restart ' + pm2, { stdio: [0, 1, 2] });
+                pm2.connect(function (err) {
+                    if (err) {
+                        log.error(err);
+                        process.exit(1);
+                    }
+                    pm2.restart(pm, function (err) {
+                        if (err) {
+                            log.error(err);
+                            process.exit(1);
+                        }
+                    });
+                });
                 process.exit();
             }
         }
