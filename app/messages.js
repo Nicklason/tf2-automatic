@@ -14,6 +14,7 @@ let Items;
 let Statistics;
 let tf2;
 let community;
+let version;
 
 let cache = {};
 const messageInterval = 2000;
@@ -23,6 +24,7 @@ exports.register = function (automatic) {
     client = automatic.client;
     log = automatic.log;
     config = automatic.config;
+    version = automatic.version;
 
     Inventory = automatic.inventory;
     Prices = automatic.prices;
@@ -61,7 +63,7 @@ function friendMessage (steamID, message) {
         } else if (command == 'help') {
             let reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
             if (Automatic.isOwner(steamID64)) {
-                reply += ', !add, !remove, !update, !profit, !removefriends, !use, !name, !avatar';
+                reply += ', !add, !remove, !update, !profit, !removefriends, !use, !name, !avatar, !updateBot, !version';
             }
             Automatic.message(steamID64, reply);
         } else if (command == 'stock') {
@@ -668,6 +670,10 @@ function friendMessage (steamID, message) {
             });
         } else if (command == 'makeprofit' && Automatic.isOwner(steamID64)) {
             Automatic.message(steamID64, 'Congrats! You just made ' + Math.floor(Math.random() * 100) + ' keys!');
+        } else if (command == 'updatebot' && Automatic.isOwner(steamID64)) {
+            Automatic.updateRepo(false);
+        } else if (command == 'version' && Automatic.isOwner(steamID64)) {
+            Automatic.message(steamID64, version);
         } else {
             Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
