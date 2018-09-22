@@ -675,7 +675,7 @@ function friendMessage (steamID, message) {
                 return;
             }
             
-            client.removeFriend(friendtoremove function(err) {
+            client.removeFriend(friendtoremove, function(err) {
                 if(err) {
                     Automatic.message(steamID64, "There was an error while trying to remove the friend")
                 } else {
