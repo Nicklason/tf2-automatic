@@ -661,13 +661,26 @@ function friendMessage (steamID, message) {
 
             community.uploadAvatar(avatarUrl, function (err) {
                 if (err) {
-                    Automatic.message(steamID64, 'There was an error with while changing avatar');
+                    Automatic.message(steamID64, 'There was an error with changing the avatar');
                     return;
                 }
                 Automatic.message(steamID64, 'The avatar has been updated');
             });
         } else if (command == 'makeprofit' && Automatic.isOwner(steamID64)) {
             Automatic.message(steamID64, 'Congrats! You just made ' + Math.floor(Math.random() * 100) + ' keys!');
+        } else if (command == 'removefriend' && Automatic.isOwner(steamID64)) {  
+            const friendtoremove = message.substr(message.toLowerCase().indexOf('removefriend') + 13);
+            if (friendtoremove == '') {
+                Automatic.message(steamID64, 'You forgot to add a steamID64. Here\'s an example: "!removefriend 76561198403256399"')
+                return;
+            }
+            
+            client.removeFriend(friendtoremove, function(err) {
+                if (err) {
+                    Automatic.message(steamID64, 'There was an error with removing the desired friend.'
+                    return;
+            }
+            Automatic.message(steamID64, 'Successfully removed the friend')
         } else {
             Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
