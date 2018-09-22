@@ -661,7 +661,7 @@ function friendMessage (steamID, message) {
 
             community.uploadAvatar(avatarUrl, function (err) {
                 if (err) {
-                    Automatic.message(steamID64, 'There was an error with while changing avatar');
+                    Automatic.message(steamID64, 'There was an error with changing avatar');
                     return;
                 }
                 Automatic.message(steamID64, 'The avatar has been updated');
@@ -675,8 +675,12 @@ function friendMessage (steamID, message) {
                 return;
             }
             
-            client.removeFriend(friendtoremove) {
+            client.removeFriend(friendtoremove function(err) {
+                if(err) {
+                    Automatic.message(steamID64, "There was an error while trying to remove the friend")
+                } else {
                 Automatic.message(steamID64, 'Successfully removed ' + friendtoremove + ' from my friendslist.') 
+                }
             })
         } else {
             Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
