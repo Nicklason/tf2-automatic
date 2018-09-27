@@ -65,74 +65,73 @@ function friendMessage (steamID, message) {
                 reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
                 if (Automatic.isOwner(steamID64)) {
                     reply += '\n !add, !remove, !update, !profit, !removefriends, !use, !name, !avatar';
-                    reply += '\n for more informatio use !help <COMMAND>';
+                    reply += '\n For more information use !help <COMMAND>';
                 }
-                
             } else if (helpCmd == 'add') {
                 reply += `!add <params> -- creates new listing
                 Params - separated by  &
-                reqired : 
+                required :
                 name= name of item you want to sell
                 optional: 
                 quality= Sets quality of item. Avalible qualities: Collector's; Genuine; Haunted; Strange; Unique; Unusual; Vintage; Default = Unique
                 effect= name of unusual efect. Default: None
-                killstreak= Sets killstreak of item. 0 - none; 1 = basic killstreak; 2 - specialized killstreak; 3 - professional killstreak; Default: 0
-                craftable= Sets if items is crafteable. Default: true
-                australium= Sets if item australium or not. Default: false
+                killstreak= Sets the killstreak of the item. 0 = none; 1 = basic killstreak; 2 = specialized killstreak; 3 = professional killstreak; Default 0
+                craftable= Defines the craftability of the item. Craftable = true; Uncraftabe = false;  Default: true;
+                australium= efines if the item is australium or not; Australium = true; Not Australium = false; Default: false;
 
-                buy_keys= Sets buy price in keys. Default: autoprice
-                buy_metal= Sets buy price in refined metal. Default: autoprice
-                sell_keys= Sets sell price in keys. Default: autoprice
-                sell_metal= Sets sell price in refined metal. Default: autoprice
+                buy_keys= Sets the buy price in keys. Default: autoprice
+                buy_metal= Sets the buy price in refined metal. Default: autoprice
+                sell_keys= Sets the sell price in keys. Default: autoprice
+                sell_metal= Sets the sell price in refined metal. Default: autoprice
                 autoprice= If set to true and no price is set it will set prices automatically. Default: true
                 limit= Sets how many items will your bot buy. Minimum 1, Default: 1
-                `
+                `;
             } else if (helpCmd == 'remove') {
                 reply += `!remove <params> -- remove listing(s)
                 Params - separated by  &
-                reqired : 
+                required :
                 items= full names if items you want to remove.
                 optional: 
                 all= if set to true removes all listings. Default: false
-                `
-            } else if (helpCmd == 'update') { //TODO: continue
+                `;
+            } else if (helpCmd == 'update') {
                 reply += `!update <params> -- updates listing
                 Params - separated by  &
-                reqired : 
+                required :
                 name= full name of item you are selling.
                 optional: 
                 quality= Sets quality of item. Avalible qualities: Collector's; Genuine; Haunted; Strange; Unique; Unusual; Vintage;
                 effect= name of unusual efect.
-                killstreak= Sets killstreak of item. 0 - none; 1 = basic killstreak; 2 - specialized killstreak; 3 - professional killstreak;
-                craftable= Sets if items is crafteable.
-                australium= Sets if item australium or not.
+                killstreak= Sets the killstreak of the item. 0 = none; 1 = basic killstreak; 2 = specialized killstreak; 3 = professional killstreak; Default 0
+                craftable= Defines the craftability of the item. Craftable = true; Uncraftabe = false;  Default: true;
+                australium= Defines if the item is australium or not; Australium = true; Not Australium = false; Default: false;
 
-                buy_keys= Sets buy price in keys.
-                buy_metal= Sets buy price in refined metal.
-                sell_keys= Sets sell price in keys.
-                sell_metal= Sets sell price in refined metal.
+                buy_keys= Sets the buy price in keys.
+                buy_metal= Sets the buy price in refined metal.
+                sell_keys= Sets the sell price in keys.
+                sell_metal= Sets the sell price in refined metal.
                 autoprice= If set to true and no price is set it will set prices automatically.
                 limit= Sets how many items will your bot buy. Minimum 1          
-                `
+                `;
             } else if (helpCmd == 'profit') {
-                reply += `!profit <no parameters> --, returns how much profit did you made `
+                reply += `!profit <no parameters> --, returns how much profit did you made `;
             } else if (helpCmd == 'removefriends') {
-                reply += `!removefriends <no parameters> -- clears friendlist, excluding people in friends to keep config`
+                reply += `!removefriends <no parameters> -- clears friendslist, excluding people that are in the config file`;
             } else if (helpCmd == 'use') {
                 reply += `!use <params>
                 Params - separated by  &
-                reqired : 
+                required :
                 name= Name of item to use, only supports Backpack Expander now.
                 optional: 
                 amount= specifies how many items should be used.          
-                `
+                `;
             } else if (helpCmd == 'name') {
-                reply += `!name <new name> changes name of your bot to <new name>. 
-                `
+                reply += `!name <new name> changes the name of your bot to <new name>. 
+                `;
             } else if (helpCmd == 'avatar') {
-                reply += `!remove <avatar URL> uploads picture from link to yours bot avatar`
+                reply += `!avatar <picture URL> takes the picture from the link and uses that as the steam avatar`;
             } else {
-                reply += `I don't understand this command that you want to help with.`
+                reply += `I can't help you with that, I don't understand it.`;
             }
             Automatic.message(steamID64, reply);
         } else if (command == 'stock') {
