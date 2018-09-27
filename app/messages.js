@@ -59,9 +59,80 @@ function friendMessage (steamID, message) {
         if (command == 'how2trade') {
             Automatic.message(steamID64, 'You can either send me an offer yourself, or use one of my two commands to request a trade. They are "!buy" and "!sell". Say you want to buy a Team Captain, just type "!buy The Team Captain".');
         } else if (command == 'help') {
-            let reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
-            if (Automatic.isOwner(steamID64)) {
-                reply += ', !add, !remove, !update, !profit, !removefriends, !use, !name, !avatar';
+            const helpCmd = message.substr(message.toLowerCase().indexOf('help') + 5).toLowerCase();
+            let reply = '';
+            if (helpCmd == '' || !Automatic.isOwner(steamID64)) {
+                reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
+                if (Automatic.isOwner(steamID64)) {
+                    reply += '\n !add, !remove, !update, !profit, !removefriends, !use, !name, !avatar';
+                    reply += '\n for more informatio use !help <COMMAND>';
+                }
+                
+            } else if (helpCmd == 'add') {
+                reply += `!add <params> -- creates new listing
+                Params - separated by  &
+                reqired : 
+                name= name of item you want to sell
+                optional: 
+                quality= Sets quality of item. Avalible qualities: Collector's; Genuine; Haunted; Strange; Unique; Unusual; Vintage; Default = Unique
+                effect= name of unusual efect. Default: None
+                killstreak= Sets killstreak of item. 0 - none; 1 = basic killstreak; 2 - specialized killstreak; 3 - professional killstreak; Default: 0
+                craftable= Sets if items is crafteable. Default: true
+                australium= Sets if item australium or not. Default: false
+
+                buy_keys= Sets buy price in keys. Default: autoprice
+                buy_metal= Sets buy price in refined metal. Default: autoprice
+                sell_keys= Sets sell price in keys. Default: autoprice
+                sell_metal= Sets sell price in refined metal. Default: autoprice
+                autoprice= If set to true and no price is set it will set prices automatically. Default: true
+                limit= Sets how many items will your bot buy. Minimum 1, Default: 1
+                `
+            } else if (helpCmd == 'remove') {
+                reply += `!remove <params> -- remove listing(s)
+                Params - separated by  &
+                reqired : 
+                items= full names if items you want to remove.
+                optional: 
+                all= if set to true removes all listings. Default: false
+                `
+            } else if (helpCmd == 'update') { //TODO: continue
+                reply += `!update <params> -- updates listing
+                Params - separated by  &
+                reqired : 
+                name= full name of item you are selling.
+                optional: 
+                quality= Sets quality of item. Avalible qualities: Collector's; Genuine; Haunted; Strange; Unique; Unusual; Vintage;
+                effect= name of unusual efect.
+                killstreak= Sets killstreak of item. 0 - none; 1 = basic killstreak; 2 - specialized killstreak; 3 - professional killstreak;
+                craftable= Sets if items is crafteable.
+                australium= Sets if item australium or not.
+
+                buy_keys= Sets buy price in keys.
+                buy_metal= Sets buy price in refined metal.
+                sell_keys= Sets sell price in keys.
+                sell_metal= Sets sell price in refined metal.
+                autoprice= If set to true and no price is set it will set prices automatically.
+                limit= Sets how many items will your bot buy. Minimum 1          
+                `
+            } else if (helpCmd == 'profit') {
+                reply += `!profit <no parameters> --, returns how much profit did you made `
+            } else if (helpCmd == 'removefriends') {
+                reply += `!removefriends <no parameters> -- clears friendlist, excluding people in friends to keep config`
+            } else if (helpCmd == 'use') {
+                reply += `!use <params>
+                Params - separated by  &
+                reqired : 
+                name= Name of item to use, only supports Backpack Expander now.
+                optional: 
+                amount= specifies how many items should be used.          
+                `
+            } else if (helpCmd == 'name') {
+                reply += `!name <new name> changes name of your bot to <new name>. 
+                `
+            } else if (helpCmd == 'avatar') {
+                reply += `!remove <avatar URL> uploads picture from link to yours bot avatar`
+            } else {
+                reply += `I don't understand this command that you want to help with.`
             }
             Automatic.message(steamID64, reply);
         } else if (command == 'stock') {
