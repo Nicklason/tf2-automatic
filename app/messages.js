@@ -354,7 +354,7 @@ function friendMessage (steamID, message) {
             const string = message.substr(message.toLowerCase().indexOf('remove') + 7);
             let input = utils.stringToObject(string);
             if (input == null) {
-                Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!remove items=Strange Rocket Launcher, Strange Australium Rocket Launcher"');
+                Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!remove item=Strange Rocket Launcher"');
                 return;
             }
 
@@ -382,18 +382,18 @@ function friendMessage (steamID, message) {
                     }
                 });
             } else {
-                let items = input.items;
-                if (!items || items == '') {
-                    Automatic.message(steamID64, 'You are missing items. Here\'s an example: "!remove items=Strange Rocket Launcher, Strange Australium Rocket Launcher"');
+                let item = input.item;
+                if (!item || item == '') {
+                    Automatic.message(steamID64, 'You are missing items. Here\'s an example: "!remove item=Strange Rocket Launcher"');
                     return;
                 }
 
-                items = items.trim().replace(/  +/g, '').replace(/, /g, ',').split(',');
+                const items = [item];
 
                 Prices.removeItems(items, function (err, result) {
                     if (err) {
                         const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
-                        Automatic.message(steamID64, 'I failed to remove the ' + utils.plural('item', items.length) + ' from the pricelist: ' + error);
+                        Automatic.message(steamID64, 'I failed to remove the item from the pricelist: ' + error);
                         return;
                     }
 
