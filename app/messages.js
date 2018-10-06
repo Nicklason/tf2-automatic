@@ -668,6 +668,13 @@ function friendMessage (steamID, message) {
             });
         } else if (command == 'makeprofit' && Automatic.isOwner(steamID64)) {
             Automatic.message(steamID64, 'Congrats! You just made ' + Math.floor(Math.random() * 100) + ' keys!');
+        } else if (command == 'blacklist' && Automatic.isOwner(steamID64)) {
+            const steamID = message.substr(message.toLowerCase().indexOf('blacklist') + 10);
+            if (steamID == '') {
+                Automatic.message(steamID64, 'You forgot to specify SteamID. Here\'s an example: "!blacklist 76561198120070906"');
+                return;
+            }
+            Automatic.config.addBlacklisted(steamID);
         } else {
             Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }

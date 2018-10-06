@@ -3,6 +3,7 @@ const fs = require('graceful-fs');
 const FOLDER_NAME = 'temp';
 const CONFIG_FILENAME = FOLDER_NAME + '/config.json';
 const ACCOUNT_FILENAME = FOLDER_NAME + '/account.json';
+const BLACKLIST_FILENAME = FOLDER_NAME + '/blacklist.json';
 const DEFAULT_CONFIG = {
     client_id: '<your client id>',
     client_secret: '<your client secret>',
@@ -55,8 +56,11 @@ const defaultAccount = {
     bptfToken: ''
 };
 
+const defaultBlacklist = [];
+
 let CONFIG = {};
 let ACCOUNT = {};
+let BLACKLIST = [];
 
 let WAIT;
 
@@ -140,6 +144,17 @@ exports.init = function () {
         msgs.push('created account file');
     }
 
+    if (fs.existsSync(BLACKLIST_FILENAME)) {
+        BLACKLIST = parseJSON(BLACKLIST_FILENAME);
+        if (typeof BLACKLIST === 'string') {
+            msgs.push('can\'t load ' + BLACKLIST_FILENAME + ' ' + BLACKLIST.toString());
+            BLACKLIST = {};
+        }
+    } else {
+        saveJSON(BLACKLIST_FILENAME, defaultBlacklist);
+        msgs.push('created blacklist file');
+    }
+
     return msgs.join(', ');
 };
 
@@ -147,4 +162,17 @@ function getAccount () {
     return ACCOUNT;
 }
 
+function isBlacklisted (SteamID) {
+    return (BLACKLIST.indexOf(SteamID) > -1);
+}
+
+function addBlacklisted (SteamID) {
+    if (!isBlacklisted(SteamID)) {
+        BLACKLIST.push(SteamID);
+        saveJSON(BLACKLIST_FILENAME, BLACKLIST);
+    }
+}
+
 exports.getAccount = getAccount;
+exports.isBlacklisted = isBlacklisted;
+exports.addBlacklisted = addBlacklisted;
