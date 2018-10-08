@@ -263,7 +263,11 @@ function handleQueue () {
             if (err) {
                 log.warn('Failed to create offer (' + err.message + ')');
                 log.debug(err.stack);
-                Automatic.message(offer.partner, 'Ohh nooooes! It looks like an error occurred. That\'s all we know, please try again later!');
+                if (err.message.indexOf('This profile is private') !== -1) {
+                    Automatic.message(offer.partner, 'I failed to make the offer. Reason: Your profile is private.');
+                } else {
+                    Automatic.message(offer.partner, 'Ohh nooooes! It looks like an error occurred. That\'s all we know, please try again later!');
+                }
                 setTimeout(handleQueue, 5000);
                 return;
             }
