@@ -188,6 +188,15 @@ function handleOffer (offer) {
         });
         return;
     }
+    if (offer.fromBlacklisted()) {
+        offer.log('info', 'is from someone on blacklist, declining');
+        Automatic.alert('trade', 'Offer from someone on blacklist, declining');
+
+        offer.decline().then(function () {
+            offer.log('debug', 'declined offer from a user that\'s on the blacklist');
+        });
+        return;
+    }
 
     if (offer.isOneSided()) {
         if (offer.isGift() && config.get('acceptGifts') == true) {

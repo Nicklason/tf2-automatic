@@ -38,6 +38,9 @@ class Offer {
     fromOwner () {
         return Automatic.isOwner(this.partner());
     }
+    fromBlacklisted () {
+        return Automatic.config.isBlacklisted(this.partner());
+    }
     isGlitched () {
         return this.offer.isGlitched();
     }
