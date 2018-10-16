@@ -661,7 +661,7 @@ function friendMessage (steamID, message) {
 
             community.uploadAvatar(avatarUrl, function (err) {
                 if (err) {
-                    Automatic.message(steamID64, 'There was an error with while changing avatar');
+                    Automatic.message(steamID64, 'There was an error while changing the avatar');
                     return;
                 }
                 Automatic.message(steamID64, 'The avatar has been updated');
