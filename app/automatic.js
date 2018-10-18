@@ -116,13 +116,16 @@ let Automatic = {
     }
 };
 
-Automatic.updateRepo = function (askUpdate = true, promptConfirm = false) {
+Automatic.updateRepo = function (askUpdate = true, promptConfirm = false, callback) {
     if (fs.existsSync(path.resolve(__dirname, '../.git'))) {
         // check if the repo should be updated
 
         repoInfo(function (err, info) {
             if (err) {
                 log.warn('An error occurred while checking for updates, try again later.');
+                if (callback) {
+                    callback(err);
+                }
                 return;
             }
 
@@ -133,6 +136,9 @@ Automatic.updateRepo = function (askUpdate = true, promptConfirm = false) {
             const latestv = latest[0] * 100 + latest[1] * 10 + latest[2];
             if (latestv == curv) {
                 log.info('No new update available.');
+                if (callback) {
+                    callback(null, false);
+                }
                 return;
             }
 
@@ -141,7 +147,14 @@ Automatic.updateRepo = function (askUpdate = true, promptConfirm = false) {
                 rl.question('', function (answer) {
                     if (answer.toLowerCase() === 'y') {
                         log.info('Attempting to update the repository...');
-                        execSync('npm run update', { stdio: [0, 1, 2] });
+                        try {
+                            execSync('npm run update', { stdio: [0, 1, 2] });
+                            callback(null, true);
+                        } catch (err) {
+                            callback(err);
+                            return;
+                        }
+
                         Automatic.restart();
                     }
                 });
@@ -150,7 +163,14 @@ Automatic.updateRepo = function (askUpdate = true, promptConfirm = false) {
                 rl.question('', function (answer) {
                     if (answer.toLowerCase() === 'y') {
                         log.info('Attempting to update the repository...');
-                        execSync('npm run update', { stdio: [0, 1, 2] });
+                        try {
+                            execSync('npm run update', { stdio: [0, 1, 2] });
+                            callback(null, true);
+                        } catch (err) {
+                            callback(err);
+                            return;
+                        }
+
                         Automatic.restart();
                     }
                 });
