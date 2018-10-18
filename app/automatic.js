@@ -174,8 +174,21 @@ Automatic.updateRepo = function (askUpdate = true, promptConfirm = false, callba
                         Automatic.restart();
                     }
                 });
+            } else {
+                log.info('Attempting to update the repository...');
+                try {
+                    execSync('npm run update', { stdio: [0, 1, 2] });
+                    callback(null, true);
+                } catch (err) {
+                    callback(err);
+                    return;
+                }
+
+                Automatic.restart();
             }
         });
+    } else {
+        callback(null, false);
     }
 };
 
