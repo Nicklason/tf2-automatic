@@ -38,6 +38,8 @@ const rl = readline.createInterface({
 rl.on('line', function (line) {
     if (line === 'update') {
         Automatic.updateRepo(false, true);
+    } else if (line === 'restart') {
+        Automatic.restart();
     }
 });
 
