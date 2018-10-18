@@ -670,7 +670,7 @@ function friendMessage (steamID, message) {
             Automatic.message(steamID64, 'Congrats! You just made ' + Math.floor(Math.random() * 100) + ' keys!');
         } else if (command == 'updaterepo') {
             Automatic.message(steamID64, 'Attempting to update the repository...');
-            Automatic.update(false, false);
+            Automatic.updateRepo(false, false);
         } else if (command == 'restart' && Automatic.isOwner(steamID64)) {
             const restarting = Automatic.restart();
             if (restarting === false) {
