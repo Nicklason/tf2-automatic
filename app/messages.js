@@ -675,6 +675,10 @@ function friendMessage (steamID, message) {
                     Automatic.message(steamID64, 'An error occurred while trying to update the repository: ' + err.message);
                     return;
                 }
+
+                if (updating === false) {
+                    Automatic.message(steamID64, 'No new updates available, ');
+                }
             });
         } else if (command == 'restart' && Automatic.isOwner(steamID64)) {
             const restarting = Automatic.restart();
@@ -682,8 +686,6 @@ function friendMessage (steamID, message) {
                 Automatic.message(steamID64, 'The bot is not being managed by PM2, follow this guide to set it up: https://github.com/Nicklason/tf2-automatic/wiki/Setup-on-Linux#pm2');
                 return;
             }
-
-            Automatic.message(steamID64, 'Restarting...');
         } else {
             Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }

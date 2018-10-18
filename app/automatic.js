@@ -135,9 +135,9 @@ Automatic.updateRepo = function (askUpdate = true, promptConfirm = false, callba
             const curv = current[0] * 100 + current[1] * 10 + current[2];
             const latestv = latest[0] * 100 + latest[1] * 10 + latest[2];
             if (latestv == curv) {
-                log.info('No new update available.');
+                log.info('No new updates available.');
                 if (callback) {
-                    callback(null, false);
+                    callback(new Error('No new updates available'));
                 }
                 return;
             }
@@ -188,7 +188,7 @@ Automatic.updateRepo = function (askUpdate = true, promptConfirm = false, callba
             }
         });
     } else {
-        callback(null, false);
+        callback(new Error('Not cloned from GitHub'));
     }
 };
 
