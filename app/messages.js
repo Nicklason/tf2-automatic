@@ -668,6 +668,17 @@ function friendMessage (steamID, message) {
             });
         } else if (command == 'makeprofit' && Automatic.isOwner(steamID64)) {
             Automatic.message(steamID64, 'Congrats! You just made ' + Math.floor(Math.random() * 100) + ' keys!');
+        } else if (command == 'updaterepo') {
+            Automatic.message(steamID64, 'Attempting to update the repository...');
+            Automatic.update(false, false);
+        } else if (command == 'restart' && Automatic.isOwner(steamID64)) {
+            const restarting = Automatic.restart();
+            if (restarting === false) {
+                Automatic.message(steamID64, 'The bot is not being managed by PM2, follow this guide to set it up: https://github.com/Nicklason/tf2-automatic/wiki/Setup-on-Linux#pm2');
+                return;
+            }
+
+            Automatic.message(steamID64, 'Restarting...');
         } else {
             Automatic.message(steamID64, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }

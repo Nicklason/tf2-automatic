@@ -11,6 +11,7 @@ let execSync;
 let readline;
 let fs;
 let path;
+let pm2;
 
 try {
     SteamUser = require('steam-user');
@@ -22,6 +23,7 @@ try {
     readline = require('readline');
     fs = require('graceful-fs');
     path = require('path');
+    pm2 = require('pm2');
 } catch (ex) {
     console.log(ex);
     console.error('Missing dependencies. Install a version with dependencies or use npm install.');
@@ -35,7 +37,7 @@ const rl = readline.createInterface({
 
 rl.on('line', function (line) {
     if (line === 'update') {
-        updateRepo(true);
+        Automatic.updateRepo(false, true);
     }
 });
 
@@ -114,22 +116,59 @@ let Automatic = {
     }
 };
 
-function updateRepo (promptConfirm = false) {
+Automatic.updateRepo = function (askUpdate = true, promptConfirm = false) {
     if (fs.existsSync(path.resolve(__dirname, '../.git'))) {
-        if (promptConfirm) {
-            log.info('It looks like you have cloned this from GitHub, do you want to pull the changes? [y/n]');
-            rl.question('', function (answer) {
-                if (answer.toLowerCase() === 'y') {
-                    log.info('Attempting to update the repository...');
-                    execSync('npm run update', { stdio: [0, 1, 2] });
-                }
-            });
-        } else {
-            log.info('Attempting to update the repository...');
-            execSync('npm run update', { stdio: [0, 1, 2] });
-        }
+        // check if the repo should be updated
+
+        repoInfo(function (err, info) {
+            if (err) {
+                log.warn('An error occurred while checking for updates, try again later.');
+                return;
+            }
+
+            const current = Automatic.version.split('.');
+            const latest = info.version.split('.');
+
+            const curv = current[0] * 100 + current[1] * 10 + current[2];
+            const latestv = latest[0] * 100 + latest[1] * 10 + latest[2];
+            if (latestv == curv) {
+                log.info('No new update available.');
+                return;
+            }
+
+            if (askUpdate) {
+                log.info('It looks like you have cloned this from GitHub, do you want to pull the changes? [y/n]');
+                rl.question('', function (answer) {
+                    if (answer.toLowerCase() === 'y') {
+                        log.info('Attempting to update the repository...');
+                        execSync('npm run update', { stdio: [0, 1, 2] });
+                        Automatic.restart();
+                    }
+                });
+            } else if (promptConfirm) {
+                log.info('Are you sure that you want to update? [y/n]');
+                rl.question('', function (answer) {
+                    if (answer.toLowerCase() === 'y') {
+                        log.info('Attempting to update the repository...');
+                        execSync('npm run update', { stdio: [0, 1, 2] });
+                        Automatic.restart();
+                    }
+                });
+            }
+        });
     }
-}
+};
+
+Automatic.restart = function () {
+    if (process.env.pm_id !== undefined) {
+        // The script is being managed by PM2
+        log.warn('Restarting the bot...');
+        pm2.restart(process.env.pm_id);
+        return;
+    }
+
+    return false;
+};
 
 Automatic.config = config;
 Automatic.client = new SteamUser({ promptSteamGuardCode: false });
@@ -186,32 +225,54 @@ if (configlog) {
     utils.fatal(log, 'Config messages: ' + configlog);
 }
 
-log.info('tf2-automatic v%s starting', version);
+log.debug('Attempting to connect to PM2...');
 
-process.nextTick(client.connect);
-
-utils.request.get({
-    url: 'https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json',
-    json: true
-}, function (err, body) {
+pm2.connect(function (err) {
     if (err) {
-        log.warn('Cannot check for updates: ' + err.message);
-    } else {
-        const current = version.split('.');
-        const latest = body.version.split('.');
-
-        const curv = current[0] * 100 + current[1] * 10 + current[2];
-        const latestv = latest[0] * 100 + latest[1] * 10 + latest[2];
-        if (latestv > curv) {
-            log.info('============================================================');
-            log.info('Update available! Current: v%s, Latest: v%s', version, body.version);
-            log.info('Download it here: https://github.com/Nicklason/tf2-automatic');
-            log.info('============================================================');
-
-            updateRepo(true);
-        }
+        log.warn('Error occurred while trying to connect to PM2: ' + err.message);
+        log.debug(err.stack);
+        process.exit(1);
     }
+
+    log.debug('Successfully connected to PM2!');
+
+    log.info('tf2-automatic v%s starting', Automatic.version);
+
+    process.nextTick(client.connect);
+
+    repoInfo(function (err, info) {
+        if (err) {
+            log.warn('Cannot check for updates: ' + err.message);
+        } else {
+            const current = Automatic.version.split('.');
+            const latest = info.version.split('.');
+
+            const curv = current[0] * 100 + current[1] * 10 + current[2];
+            const latestv = latest[0] * 100 + latest[1] * 10 + latest[2];
+            if (latestv > curv) {
+                log.info('============================================================');
+                log.info('Update available! Current: v%s, Latest: v%s', Automatic.version, info.version);
+                log.info('Download it here: https://github.com/Nicklason/tf2-automatic');
+                log.info('============================================================');
+
+                Automatic.updateRepo(true);
+            }
+        }
+    });
 });
+
+function repoInfo (callback) {
+    utils.request.get({
+        url: 'https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json',
+        json: true
+    }, function (err, body) {
+        if (err) {
+            callback(err);
+        } else {
+            callback(null, body);
+        }
+    });
+}
 
 process.on('uncaughtException', function (err) {
     log.error([
