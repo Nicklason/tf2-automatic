@@ -911,7 +911,6 @@ function checkReceivedOffer (id, callback) {
                 return;
             }
 
-            // ye boi
             offer.offer.data('items', offer.prices);
 
             finalizeOffer(offer);
