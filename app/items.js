@@ -1,4 +1,5 @@
 const TF2Items = require('tf2-items');
+const fs = require('graceful-fs');
 
 const Offer = require('./offer.js');
 
@@ -13,6 +14,14 @@ exports.register = function (automatic) {
 
 exports.init = function (callback) {
     Items = new TF2Items({ apiKey: manager.apiKey });
+
+    Items.on('schema', schemaUpdate);
+
+    if (fs.existsSync('./temp/schema.json')) {
+        const json = fs.readFileSync('./temp/schema.json');
+        const schema = JSON.parse(json);
+        Items.setSchema(schema);
+    }
 
     log.debug('Initializing tf2-items package.');
     Items.init(function (err) {
@@ -44,8 +53,8 @@ function createDictionary (items) {
         const item = Offer.getItem(items[i]);
 
         let name = getName(item);
-        if (item.quality == 15) {
-            name = 'Decorated Weapon ' + name;
+        if (item.quality == 15 || name == null) {
+            continue;
         }
         (dict[name] = (dict[name] || [])).push(item.id);
     }
@@ -112,9 +121,14 @@ function getQuality (quality) {
 }
 
 function getEffect (effect) {
-    return Items.schema.getEffectId(effect);
+    return Items.schema.getEffect(effect);
 }
 
 function getName (item) {
-    return Items.schema.getDisplayName(item);
+    return Items.schema.getName(item);
+}
+
+function schemaUpdate (schema) {
+    const json = schema.toJSON();
+    fs.writeFileSync('./temp/schema.json', JSON.stringify(json));
 }

@@ -58,7 +58,8 @@ class Offer {
             quality: getQuality(item),
             craftable: isCraftable(item),
             killstreak: isKillstreak(item),
-            australium: isAustralium(item)
+            australium: isAustralium(item),
+            effect: null
         };
 
         const effect = getEffect(item);

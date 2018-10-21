@@ -4,7 +4,6 @@ const async = require('async');
 const utils = require('./utils.js');
 
 let Automatic;
-let manager;
 let Items;
 let log;
 let config;
@@ -22,7 +21,6 @@ exports.register = function (automatic) {
     Automatic = automatic;
     log = automatic.log;
     config = automatic.config;
-    manager = automatic.manager;
 
     Items = automatic.items;
     Prices = automatic.prices;
@@ -32,8 +30,7 @@ exports.register = function (automatic) {
 exports.init = function (callback) {
     Listings = new BptfListings({
         steamid64: Automatic.getOwnSteamID(),
-        key: manager.apiKey,
-        token: config.getAccount().bptfToken,
+        accessToken: config.getAccount().bptfToken,
         items: Items.getModule()
     });
 
@@ -95,7 +92,7 @@ exports.removeSellOrders = removeSellOrders;
 exports.startUpdater = startListingUpdater;
 
 exports.itemFromBuyOrder = function (listing) {
-    return Listings.getItem(listing.item);
+    return Listings._getItem(listing.item);
 };
 exports.listings = getListings;
 exports.sellOrders = sellOrders;
@@ -173,7 +170,7 @@ function removeSellOrders (search) {
     const sell = sellOrders();
     for (let i = 0; i < sell.length; i++) {
         const listing = sell[i];
-        const item = Listings.getItem(listing.item);
+        const item = Listings._getItem(listing.item);
         const name = Items.getName(item);
 
         if (name != search) {
@@ -304,7 +301,7 @@ function findBuyOrder (search) {
     let buy = buyOrders();
     for (let i = 0; i < buy.length; i++) {
         let listing = buy[i];
-        const item = Listings.getItem(listing.item);
+        const item = Listings._getItem(listing.item);
         const name = Items.getName(item);
         if (name == search) {
             listing.item = item;
