@@ -242,6 +242,10 @@ function updateOrders (lost, gained) {
             continue;
         }
 
+        let currencies = listing.currencies;
+        currencies.metal = currencies.metal || 0;
+        currencies.keys = currencies.keys || 0;
+
         const limit = Prices.getLimit(name);
         const stock = Inventory.amount(name);
         if (stock >= limit) {
@@ -250,8 +254,8 @@ function updateOrders (lost, gained) {
             Listings.createListing({
                 intent: 0,
                 item: listing.item,
-                currencies: listing.currencies,
-                details: listingComment(0, name, listing.currencies)
+                currencies: currencies,
+                details: listingComment(0, name, currencies)
             }, true);
         }
     }
