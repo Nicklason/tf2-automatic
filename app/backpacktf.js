@@ -370,7 +370,7 @@ function updateListings () {
 }
 
 function banned (steamid64, callback) {
-    if (config.get().acceptBanned === true) {
+    if (config.get().acceptBanned) {
         callback(null, false);
         return;
     }
@@ -379,14 +379,14 @@ function banned (steamid64, callback) {
         function (callback) {
             isBanned(steamid64, function (err, banned) {
                 if (err) callback(err);
-                else if (banned == true) callback(null, 'banned on www.backpack.tf');
+                else if (banned) callback(null, 'banned on www.backpack.tf');
                 else callback(null, false);
             });
         },
         function (callback) {
             isMarked(steamid64, function (err, marked) {
                 if (err) callback(err);
-                else if (marked == true) callback(null, 'marked on www.steamrep.com as a scammer');
+                else if (marked) callback(null, 'marked on www.steamrep.com as a scammer');
                 else callback(null, false);
             });
         }
