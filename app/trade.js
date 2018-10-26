@@ -190,7 +190,7 @@ function handleOffer (offer) {
     }
 
     if (offer.isOneSided()) {
-        if (offer.isGift() && config.get('acceptGifts') == true) {
+        if (offer.isGift() && config.get('acceptGifts')) {
             offer.log('trade', 'is a gift offer asking for nothing in return, accepting');
             Automatic.alert('trade', 'Gift offer asking for nothing in return, accepting');
 
@@ -368,7 +368,7 @@ function createOffer (request, callback) {
 
         const enoughItems = hasEnoughItems(name, items.seller, amount);
         if (enoughItems == false) {
-            if (selling == true) {
+            if (selling) {
                 const inInv = Inventory.amount(name);
                 if (inInv != 0) {
                     callback(null, 'I am already trading my ' + name + '(s)');
@@ -379,7 +379,7 @@ function createOffer (request, callback) {
             callback(null, (selling ? 'I' : 'You') + ' don\'t have any ' + name + '(s) in ' + (selling ? 'my' : 'your') + ' inventory');
             return;
         } else if (typeof enoughItems != 'boolean') {
-            if (selling == true) {
+            if (selling) {
                 alteredMessage = 'I only have ' + enoughItems + ' ' + name + (enoughItems > 1 ? '(s)' : '') + ' for trade';
             } else {
                 alteredMessage = (selling ? 'I' : 'You') + ' only have ' + enoughItems + ' ' + name + (enoughItems > 1 ? '(s)' : '') + ' in ' + (selling ? 'my' : 'your') + ' inventory';
@@ -389,7 +389,7 @@ function createOffer (request, callback) {
 
         if (selling == false) {
             const overstocked = Inventory.overstocked(name);
-            if (overstocked === true) {
+            if (overstocked) {
                 callback(null, 'I am overstocked on ' + name + '(s)');
                 return;
             } else if (typeof overstocked != 'boolean' && overstocked - amount < 0) {
@@ -451,7 +451,7 @@ function createOffer (request, callback) {
                 }
             }
 
-            if (missing == true) {
+            if (missing) {
                 log.debug('Items missing:', items);
                 callback(null, 'Something went wrong constructing the offer');
                 return;
@@ -650,7 +650,7 @@ function constructOffer (price, dictionary, useKeys) {
 
     const needsChange = needChange(price, pure, useKeys);
     log.debug(needsChange ? 'Offer needs change' : 'Offer does not need change');
-    if (needsChange == true) {
+    if (needsChange) {
         return makeChange(price, pure, useKeys);
     }
     return needsChange;
@@ -853,7 +853,7 @@ function checkReceivedOffer (id, callback) {
         let their = offer.currencies.their;
 
         /* eslint-disable-next-line max-len */
-        const tradingKeys = (offer.offering.keys.us == true || offer.offering.keys.them == true) && offer.offering.items.us == false && offer.offering.items.them == false;
+        const tradingKeys = (offer.offering.keys.us || offer.offering.keys.them) && offer.offering.items.us == false && offer.offering.items.them == false;
 
         // Allows the bot to trade keys for metal and vice versa.
         if (tradingKeys) {
@@ -867,7 +867,7 @@ function checkReceivedOffer (id, callback) {
             price = price.price;
             const overstocked = Inventory.overstocked('Mann Co. Supply Crate Key', their.keys - our.keys);
 
-            if (overstocked == true) {
+            if (overstocked) {
                 ERRORS.overstocked(offer);
                 callback(null);
                 return;
@@ -971,7 +971,7 @@ function determineEscrowDays (offer) {
 }
 
 function checkEscrow (offer) {
-    if (config.get().acceptEscrow == true) {
+    if (config.get().acceptEscrow) {
         return Promise.resolve(false);
     }
 
