@@ -61,7 +61,7 @@ function friendMessage (steamID, message) {
         } else if (command == 'help') {
             let reply = 'Here\'s a list of all my commands: !help, !message <message>, !how2trade, !stock, !price <name>, !buy <amount> <name>, !sell <amount> <name>';
             if (Automatic.isOwner(steamID64)) {
-                reply += ', !add, !remove, !update, !profit, !removefriends, !use, !name, !avatar';
+                reply += ', !add, !remove, !update, !profit, !removefriends, !use, !name, !avatar, !version, !restart, !updaterepo';
             }
             Automatic.message(steamID64, reply);
         } else if (command == 'stock') {
