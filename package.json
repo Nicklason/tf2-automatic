@@ -1,12 +1,13 @@
 {
     "name": "tf2-automatic",
-    "version": "1.9.3",
+    "version": "1.10.0",
     "engines": {
         "node": ">=6.0.0"
     },
     "description": "Fully automated TF2 trading bot advertising on www.backpack.tf",
     "main": "automatic.js",
     "dependencies": {
+        "@nicklason/api-request": "^1.1.1",
         "bptf-listings": "^3.1.1",
         "child_process": "^1.0.2",
         "graceful-fs": "^4.1.11",

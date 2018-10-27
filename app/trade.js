@@ -1,5 +1,7 @@
 const TradeOfferManager = require('steam-tradeoffer-manager');
 const fs = require('graceful-fs');
+const TF2Currencies = require('tf2-currencies');
+const request = require('@nicklason/api-request');
 
 const utils = require('./utils.js');
 const Offer = require('./offer.js');
@@ -516,12 +518,25 @@ function createOffer (request, callback) {
                 offer.setMessage(config.get('offerMessage'));
 
                 offer.data('partner', partner);
-                offer.data('items', [{
+                const prices = [{
                     intent: selling == true ? 1 : 0,
                     ids: assetids,
                     name: name,
                     value: Prices.value(currencies)
-                }]);
+                }];
+
+                offer.data('items', prices);
+
+                for (let i = 0; i < prices.length; i++) {
+                    if (prices[i].intent != 0) {
+                        continue;
+                    }
+                    const keys = TF2Currencies.toCurrencies(prices[i].value, Prices.key()).keys;
+                    if (config.get('altcheckThreshold') < keys) {
+                        altcheckOffer(offer, callback);
+                        return;
+                    }
+                }
 
                 log.debug('Finishing the offer');
                 finalizeOffer(offer, callback);
@@ -914,9 +929,56 @@ function checkReceivedOffer (id, callback) {
             // ye boi
             offer.offer.data('items', offer.prices);
 
-            finalizeOffer(offer);
             callback(null);
+
+            for (let i = 0; i < offer.prices.length; i++) {
+                if (offer.prices[i].intent != 0) {
+                    continue;
+                }
+
+                const keys = TF2Currencies.toCurrencies(offer.prices[i].value, Prices.key()).keys;
+                if (config.get('altcheckThreshold') < keys) {
+                    altcheckOffer(offer);
+                    return;
+                }
+            }
+
+            // no need for alt check
+            finalizeOffer(offer);
         });
+    });
+}
+
+function altcheckOffer (offer, callback) {
+    const steamid = callback ? offer.partner.getSteamID64() : offer.partner();
+    const time = new Date().getTime();
+    request({
+        url: 'https://api.tf2automatic.com/v1/users/alt',
+        method: 'GET',
+        qs: {
+            steamid: steamid
+        }
+    }, function (err, response, body) {
+        log.debug('Got alt-check response in ' + (new Date().getTime() - time) + ' ms');
+        if (err) {
+            log.warn('An error occurred while doing alt check, trying again in 10 seconds...');
+            setTimeout(function () {
+                altcheckOffer(offer, callback);
+            }, 10000);
+            return;
+        }
+
+        const isAlt = body.result.is_alt;
+
+        if (isAlt) {
+            finalizeOffer(offer, callback);
+        } else {
+            if (callback) {
+                callback(null, 'Your account is suspicious and has therefore been marked. For more information, ask a moderator in our discord server: https://tf2automatic.com/discord');
+            } else {
+                ERRORS.suspicious(offer);
+            }
+        }
     });
 }
 
@@ -1356,6 +1418,15 @@ const ERRORS = {
     sr_marked: function (offer) {
         offer.log('info', 'user is marked on www.steamrep.com, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are marked on www.steamrep.com as a scammer' });
+
+        offer.decline().then(function () {
+            offer.log('debug', 'declined');
+        });
+    },
+    suspicious: function (offer) {
+        offer.log('info', 'user is suspicious (detected by the alt checker), declining. Summary:\n' + offer.summary());
+        Friends.alert(offer.partner(), {
+            type: 'trade', status: 'declined', reason: 'Your account is suspicious and has therefore been marked. For more information, ask a moderator in our discord server https://tf2automatic.com/discord' });
 
         offer.decline().then(function () {
             offer.log('debug', 'declined');
