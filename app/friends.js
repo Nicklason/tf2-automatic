@@ -28,7 +28,7 @@ exports.init = function () {
         if (relationship == SteamUser.Steam.EFriendRelationship.Friend) {
             log.info('I am now friends with ' + steamID64);
             friendAddResponse(steamID64);
-            if (Automatic.hasOwnProperty('maxFriends') && getFriends().length + 1 >= Automatic.maxFriends) {
+            if (Automatic.hasOwnProperty('maxFriends') && getFriends().length + 50 >= Automatic.maxFriends) {
                 removeRandomFriend(steamID64); // Don't remove the user who just friended the bot
             }
         } else if (relationship == SteamUser.Steam.EFriendRelationship.RequestRecipient) {
