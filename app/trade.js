@@ -970,7 +970,7 @@ function altcheckOffer (offer, callback) {
 
         const isAlt = body.result.is_alt;
 
-        if (isAlt) {
+        if (!isAlt) {
             finalizeOffer(offer, callback);
         } else {
             if (callback) {
