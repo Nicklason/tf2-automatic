@@ -974,7 +974,7 @@ function altcheckOffer (offer, callback) {
             finalizeOffer(offer, callback);
         } else {
             if (callback) {
-                callback(null, 'Your account is suspicious and has therefore been marked. For more information, ask a moderator in our discord server: https://tf2automatic.com/discord');
+                callback(null, 'Your account is suspicious and has therefore been marked.');
             } else {
                 ERRORS.suspicious(offer);
             }
@@ -1426,7 +1426,7 @@ const ERRORS = {
     suspicious: function (offer) {
         offer.log('info', 'user is suspicious (detected by the alt checker), declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), {
-            type: 'trade', status: 'declined', reason: 'Your account is suspicious and has therefore been marked. For more information, ask a moderator in our discord server https://tf2automatic.com/discord' });
+            type: 'trade', status: 'declined', reason: 'Your account is suspicious and has therefore been marked.' });
 
         offer.decline().then(function () {
             offer.log('debug', 'declined');
