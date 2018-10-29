@@ -151,9 +151,13 @@ Automatic.updateRepo = function (askUpdate = true, promptConfirm = false, callba
                         log.info('Attempting to update the repository...');
                         try {
                             execSync('npm run update', { stdio: [0, 1, 2] });
-                            callback(null, true);
+                            if (callback) {
+                                callback(null, true);
+                            }
                         } catch (err) {
-                            callback(err);
+                            if (callback) {
+                                callback(err);
+                            }
                             return;
                         }
 
@@ -167,9 +171,13 @@ Automatic.updateRepo = function (askUpdate = true, promptConfirm = false, callba
                         log.info('Attempting to update the repository...');
                         try {
                             execSync('npm run update', { stdio: [0, 1, 2] });
-                            callback(null, true);
+                            if (callback) {
+                                callback(null, true);
+                            }
                         } catch (err) {
-                            callback(err);
+                            if (callback) {
+                                callback(err);
+                            }
                             return;
                         }
 
@@ -180,9 +188,13 @@ Automatic.updateRepo = function (askUpdate = true, promptConfirm = false, callba
                 log.info('Attempting to update the repository...');
                 try {
                     execSync('npm run update', { stdio: [0, 1, 2] });
-                    callback(null, true);
+                    if (callback) {
+                        callback(null, true);
+                    }
                 } catch (err) {
-                    callback(err);
+                    if (callback) {
+                        callback(err);
+                    }
                     return;
                 }
 
@@ -190,7 +202,9 @@ Automatic.updateRepo = function (askUpdate = true, promptConfirm = false, callba
             }
         });
     } else {
-        callback(new Error('Not cloned from GitHub'));
+        if (callback) {
+            callback(new Error('Not cloned from GitHub'));
+        }
     }
 };
 
