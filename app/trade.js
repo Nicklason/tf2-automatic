@@ -906,7 +906,7 @@ function checkReceivedOffer (id, callback) {
         }
 
         const containsOverstocked = overstockedItems(offer);
-        if (containsOverstocked && value.overpay < config.get('overstockedOverpay')) {
+        if (containsOverstocked) {
             ERRORS.overstocked(offer);
             callback(null);
             return;
@@ -969,14 +969,19 @@ function altcheckOffer (offer, callback) {
         }
 
         const isAlt = body.result.is_alt;
+        const reviewed = body.result.reviewed;
 
         if (!isAlt) {
             finalizeOffer(offer, callback);
         } else {
             if (callback) {
-                callback(null, 'Your account is suspicious and has therefore been marked.');
+                if (reviewed) {
+                    callback(null, 'Your account is suspicious and has therefore been marked.');
+                } else {
+                    callback(null, 'Your account is suspicious. Please wait while your account is reviewed and try again later - this is to prevent trading with obvious scammer alts.');
+                }
             } else {
-                ERRORS.suspicious(offer);
+                ERRORS.suspicious(offer, reviewed);
             }
         }
     });
@@ -999,12 +1004,9 @@ function offeringEnough (our, their) {
     const ourValue = our.metal + our.keys * keyValue;
     const theirValue = their.metal + their.keys * keyValue;
 
-    const overpay = (theirValue - ourValue) / ourValue;
-
     return {
         our: ourValue,
-        their: theirValue,
-        overpay: overpay
+        their: theirValue
     };
 }
 
@@ -1423,10 +1425,21 @@ const ERRORS = {
             offer.log('debug', 'declined');
         });
     },
-    suspicious: function (offer) {
-        offer.log('info', 'user is suspicious (detected by the alt checker), declining. Summary:\n' + offer.summary());
+    suspicious: function (offer, reviewed) {
+        let msg;
+        if (reviewed) {
+            offer.log('info', 'user is marked as an obvious scammer alt, declining. Summary:\n' + offer.summary());
+            msg = 'Your account is suspicious and has therefore been marked.';
+        } else {
+            offer.log('info', 'user is suspicious (detected by the alt checker), declining. Summary:\n' + offer.summary());
+            msg = 'Your account is suspicious. Please wait while your account is reviewed and try again later - this is to prevent trading with obvious scammer alts.';
+        }
+
         Friends.alert(offer.partner(), {
-            type: 'trade', status: 'declined', reason: 'Your account is suspicious and has therefore been marked.' });
+            type: 'trade',
+            status: 'declined',
+            reason: msg
+        });
 
         offer.decline().then(function () {
             offer.log('debug', 'declined');

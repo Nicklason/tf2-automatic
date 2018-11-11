@@ -20,7 +20,6 @@ const DEFAULT_CONFIG = {
     stocklimit: 1,
     notify: 'trade', // "all" / "none" / "price" / "trade"
     offerMessage: '',
-    overstockOverpay: 0.05,
     logs: {
         console: {
             type: 'Console',
