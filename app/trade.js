@@ -1072,7 +1072,7 @@ function receivedOfferChanged (offer, oldState) {
         removeItemsInTrade(offer.itemsToGive);
         Screenshot.receivedOfferChanged(offer.id, function (err, id) {
             if (err) {
-                Automatic.alert('trade', 'Recieved offer #' + offer.id + '(' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + '.');
+                Automatic.alert('trade', 'Recieved offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + '.');
                 log.warn('Error when capturing and sending screenshot: ' + err.message);
                 log.debug(err.stack);
                 return;
@@ -1106,7 +1106,7 @@ function sentOfferChanged (offer, oldState) {
         removeItemsInTrade(offer.itemsToGive);
         Screenshot.sentOfferChanged(offer.id, function (err, id) {
             if (err) {
-                Automatic.alert('trade', 'Sent offer #' + offer.id + '(' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + '.');
+                Automatic.alert('trade', 'Sent offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + '.');
                 log.warn('Error when capturing and sending screenshot: ' + err.message);
                 log.debug(err.stack);
                 return;
