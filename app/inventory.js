@@ -117,9 +117,10 @@ function amountInDictionary (dictionary, name) {
 }
 
 function isOverstocked (name, difference = 0) {
-    if (difference < 0) {
+    if (difference < 1) {
         return false;
     }
+
     const listing = Prices.findListing(name);
     const limit = Prices.getLimit(listing.name);
 

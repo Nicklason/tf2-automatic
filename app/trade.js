@@ -822,6 +822,10 @@ function overstockedItems (offer) {
         const name = items[i];
 
         const change = (theirSummary[name] || 0) - (ourSummary[name] || 0);
+        if (change < 1) {
+            continue;
+        }
+
         const amount = Inventory.amount(name) + change;
         const limit = Prices.getLimit(name);
 
