@@ -390,7 +390,7 @@ function createOffer (request, callback) {
         }
 
         if (selling == false) {
-            const overstocked = Inventory.overstocked(name);
+            const overstocked = Inventory.overstocked(name, amount);
             if (overstocked === true) {
                 callback(null, 'I am overstocked on ' + name + '(s)');
                 return;
