@@ -129,9 +129,9 @@ function isOverstocked (name, difference = 0) {
     }
 
     const stock = amountInDictionary(name);
-    const canBuy = limit - stock - difference;
+    const canBuy = limit - stock;
 
-    if (canBuy >= 0 && difference != 0) {
+    if (canBuy >= difference && difference != 0) {
         return false;
     } else if (canBuy > 0) {
         return canBuy;
