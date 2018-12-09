@@ -19,6 +19,7 @@ const DEFAULT_CONFIG = {
     groups: ['103582791462300957'], // groupid64, this is the tf2automatic steam group
     stocklimit: 1,
     notify: 'trade', // "all" / "none" / "price" / "trade"
+    chatCommands: 'on', // "on" / "off"
     offerMessage: '',
     logs: {
         console: {

@@ -607,42 +607,42 @@ function friendMessage (steamID, message) {
                 Automatic.message(steamID64, 'Unknown item, usable items: Backpack Expander');
             }
         } else if (command == 'buy' || command == 'sell') {
-            let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
-            let amount = 1;
-            if (/^[-]?\d+$/.test(name.split(' ')[0])) {
-                amount = parseInt(name.split(' ')[0]);
-                name = name.replace(amount, '').trim();
-            }
+            const chatCommands = config.get('chatCommands');
 
-            if (name == '') {
-                Automatic.message(steamID64, 'You forgot to add a name. Here\'s an example: "!buy The Team Captain"');
-                return;
-            }
-
-            if (1 > amount) amount = 1;
-
-            let match = Prices.findMatch(name);
-            if (match == null) {
-                Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
-                return;
-            } else if (Array.isArray(match)) {
-                const n = match.length;
-                if (match.length > 20) {
-                    match = match.splice(0, 20);
+            if (chatCommands === 'on') {
+                let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
+                let amount = 1;
+                if (/^[-]?\d+$/.test(name.split(' ')[0])) {
+                    amount = parseInt(name.split(' ')[0]);
+                    name = name.replace(amount, '').trim();
                 }
-                let reply = 'I\'ve found ' + n + ' items. Try with one of the items shown below:\n' + match.join(',\n');
-                if (n > match.length) {
-                    const other = n - match.length;
-                    reply += ',\nand ' + other + ' other ' + utils.plural('item', other) + '.';
+                if (name == '') {
+                    Automatic.message(steamID64, 'You forgot to add a name. Here\'s an example: "!buy The Team Captain"');
+                    return;
                 }
-
-                Automatic.message(steamID64, reply);
-                return;
+                if (1 > amount) amount = 1;
+                let match = Prices.findMatch(name);
+                if (match == null) {
+                    Automatic.message(steamID64, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
+                    return;
+                } else if (Array.isArray(match)) {
+                    const n = match.length;
+                    if (match.length > 20) {
+                        match = match.splice(0, 20);
+                    }
+                    let reply = 'I\'ve found ' + n + ' items. Try with one of the items shown below:\n' + match.join(',\n');
+                    if (n > match.length) {
+                        const other = n - match.length;
+                        reply += ',\nand ' + other + ' other ' + utils.plural('item', other) + '.';
+                    }
+                    Automatic.message(steamID64, reply);
+                    return;
+                }
+                const selling = command == 'buy';
+                Trade.requestOffer(steamID64, match.name, amount, selling);
+            } else {
+                Automatic.message(steamID64, 'Chat commands have been disabled by the bot owner.');
             }
-
-            const selling = command == 'buy';
-
-            Trade.requestOffer(steamID64, match.name, amount, selling);
         } else if (command == 'name' && Automatic.isOwner(steamID64)) {
             const name = message.substr(message.toLowerCase().indexOf('name') + 5);
             if (name == '') {
