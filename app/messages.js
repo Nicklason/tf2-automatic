@@ -686,6 +686,12 @@ function friendMessage (steamID, message) {
                 Automatic.message(steamID64, 'The bot is not being managed by PM2, follow this guide to set it up: https://github.com/Nicklason/tf2-automatic/wiki/Setup-on-Linux#pm2');
                 return;
             }
+        } else if (command == 'shutdown' && Automatic.isOwner(steamID64)) {
+            const stopping = Automatic.stop();
+            if (stopping === false) {
+                Automatic.message(steamID64, 'The bot is not being managed by PM2, follow this guide to set it up: https://github.com/Nicklason/tf2-automatic/wiki/Setup-on-Linux#pm2');
+                return;
+            }
         } else if (command == 'version' && (Automatic.isOwner(steamID64) || steamID64 === '76561198120070906')) {
             Automatic.message(steamID64, 'tf2-automatic@' + Automatic.version);
         } else {

@@ -219,6 +219,17 @@ Automatic.restart = function () {
     return false;
 };
 
+Automatic.stop = function () {
+    if (process.env.pm_id === undefined) {
+        return false;
+    }
+
+    Automatic.backpack.removeAll(function (err) {
+        log.warn('Stopping the bot...');
+        pm2.restart(process.env.pm_id);
+    });
+};
+
 Automatic.config = config;
 Automatic.client = new SteamUser({ promptSteamGuardCode: false });
 Automatic.community = new SteamCommunity();

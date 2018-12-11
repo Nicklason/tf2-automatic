@@ -100,6 +100,9 @@ exports.buyOrders = buyOrders;
 
 exports.isListed = isListed;
 exports.getLimit = getLimit;
+exports.removeAll = function (callback) {
+    Listings.removeAll(callback);
+};
 
 exports.cap = function () {
     return Listings.cap;
