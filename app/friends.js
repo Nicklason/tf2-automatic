@@ -69,7 +69,7 @@ function removeRandomFriend (ignore) {
         friendsToKeep.push(ignore);
     }
 
-    const friends = getFriends().filter((steamid64) => friendsToKeep.indexOf(steamid64));
+    const friends = getFriends().filter((steamid64) => friendsToKeep.indexOf(steamid64) === -1);
     if (friends.length === 0) {
         return;
     }
