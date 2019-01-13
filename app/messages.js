@@ -109,6 +109,7 @@ function friendMessage (steamID, message) {
             reply += '.\nYou can see my inventory and prices here as well: https://backpack.tf/profiles/' + Automatic.getOwnSteamID();
             Automatic.message(steamID64, reply);
         } else if (command == 'price') {
+            message = removeLinkProtocol(message);
             const name = message.substr(message.toLowerCase().indexOf('price') + 6);
             if (name == '') {
                 Automatic.message(steamID64, 'You forgot to add a name. Here\'s an example: "!price Team Captain"');
@@ -212,6 +213,7 @@ function friendMessage (steamID, message) {
 
             Automatic.message(steamID64, 'Your message has been sent.');
         } else if (command == 'add' && Automatic.isOwner(steamID64)) {
+            message = removeLinkProtocol(message);
             const string = message.substr(message.toLowerCase().indexOf('add') + 4);
             let input = utils.stringToObject(string);
             if (input == null) {
@@ -351,6 +353,7 @@ function friendMessage (steamID, message) {
                 Automatic.message(steamID64, reply);
             });
         } else if (command == 'remove' && Automatic.isOwner(steamID64)) {
+            message = removeLinkProtocol(message);
             const string = message.substr(message.toLowerCase().indexOf('remove') + 7);
             let input = utils.stringToObject(string);
             if (input == null) {
@@ -406,6 +409,7 @@ function friendMessage (steamID, message) {
                 });
             }
         } else if (command == 'update' && Automatic.isOwner(steamID64)) {
+            message = removeLinkProtocol(message);
             const string = message.substr(message.toLowerCase().indexOf('update') + 7);
             let input = utils.stringToObject(string);
             if (input == null) {
@@ -607,6 +611,7 @@ function friendMessage (steamID, message) {
                 Automatic.message(steamID64, 'Unknown item, usable items: Backpack Expander');
             }
         } else if (command == 'buy' || command == 'sell') {
+            message = removeLinkProtocol(message);
             let name = message.substr(message.toLowerCase().indexOf(command) + command.length + 1);
             let amount = 1;
             if (/^[-]?\d+$/.test(name.split(' ')[0])) {
@@ -707,6 +712,10 @@ function isCommand (message) {
     } else {
         return false;
     }
+}
+
+function removeLinkProtocol (message) {
+    return message.replace(/(\w+:|^)\/\//g, '');
 }
 
 function isSpam (key) {
