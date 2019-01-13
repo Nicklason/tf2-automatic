@@ -45,7 +45,7 @@ function friendMessage (steamID, message) {
 
     message = message.trim();
 	let removedHttp = false;
-	if(message.indexOf('http://') != -1) {
+	if (message.indexOf('http://') != -1) {
 		message = message.replace('http://', '');
 		removedHttp = true;
 	}
@@ -659,7 +659,7 @@ function friendMessage (steamID, message) {
             Automatic.message(steamID64, 'My name has been changed to "' + name + '"');
         } else if (command == 'avatar' && Automatic.isOwner(steamID64)) {
             let avatarUrl = message.substr(message.toLowerCase().indexOf('avatar') + 7);
-			if (removedHttp) avatarUrl = 'http://' + avatarUrl;		//If url is not https
+	    if (removedHttp) avatarUrl = 'http://' + avatarUrl;
             if (avatarUrl == '') {
                 Automatic.message(steamID64, 'You forgot to add a url. Here\'s an example: "!avatar http://my.com/img.jpg"');
                 return;
