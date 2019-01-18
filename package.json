@@ -37,7 +37,7 @@
         "start": "node automatic.js",
         "lint": "eslint ./",
         "dev": "nodemon automatic.js --config nodemon.json",
-        "update": "git reset HEAD --hard && git pull && npm install"
+        "update": "git reset HEAD --hard && git pull && npm install --only=production"
     },
     "repository": {
         "type": "git",
