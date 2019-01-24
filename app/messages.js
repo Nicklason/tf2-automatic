@@ -673,7 +673,7 @@ function friendMessage (steamID, message) {
             });
         } else if (command == 'makeprofit' && Automatic.isOwner(steamID64)) {
             Automatic.message(steamID64, 'Congrats! You just made ' + Math.floor(Math.random() * 100) + ' keys!');
-        } else if (command == 'updaterepo') {
+        } else if (command == 'updaterepo' && Automatic.isOwner(steamID64)) {
             Automatic.message(steamID64, 'Attempting to update the repository...');
             Automatic.updateRepo(false, false, function (err, updating) {
                 if (err) {
