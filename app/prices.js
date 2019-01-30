@@ -123,7 +123,15 @@ function getPrice (name, our) {
     }
 
     let price = exports.getPrice(name);
-    if (price == null || price.price == null) return null;
+    if (price == null || price.price == null ) {
+        // If the item is not in the pricelist / not priced / we are not selling / banking the item
+        return null;
+    }
+    if ((price.intent != 1 && price.intent != 2 && our === true) || (price.intent != 0 && price.intent != 2 && our === false)) {
+        // If they ask for our item, and we are not selling / banking, or if they sell an item, but we are not buying / banking, then don't price the item :thinksmart:
+        return null;
+    }
+
     price = price.price;
 
     const intent = our == true ? 'sell' : 'buy';
