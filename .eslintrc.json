@@ -9,11 +9,7 @@
   },
   "rules": {
     "comma-dangle": [2, "never"],
-    "max-len": [2, 100, {
-      "ignoreComments": true,
-      "ignoreStrings": true,
-      "ignoreTemplateLiterals": true
-    }],
+    "max-len": [0],
     "linebreak-style": 0,
     "keyword-spacing": 2,
     "require-jsdoc": [0],
