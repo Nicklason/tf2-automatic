@@ -284,7 +284,7 @@ function priceChanged (state, item, prices) {
     if ((state == 1 || state == 2) && prices != null) {
         const limit = exports.getLimit(item.name);
         const inInv = Inventory.amount(item.name);
-        if (prices.buy) {
+        if (prices.buy && (prices.intent == 2 || prices.intent == 0)) {
             if (!(limit != -1 && inInv >= limit)) {
                 Backpack.createListing({
                     intent: 0,
@@ -299,7 +299,7 @@ function priceChanged (state, item, prices) {
                 }
             }
         }
-        if (prices.sell) {
+        if (prices.sell && (prices.intent == 2 || prices.intent == 1)) {
             Backpack.updateSellOrders(item.name);
         }
     } else if (state == 3) {

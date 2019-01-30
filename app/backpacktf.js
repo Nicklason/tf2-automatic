@@ -138,6 +138,11 @@ function makeSellOrders () {
 
         let price = Prices.getPrice(name);
         if (price == null || price.price == null) continue;
+
+        if (price.intent != 1 && price.intent != 2) {
+            continue;
+        }
+
         price = price.price;
         if (!price.hasOwnProperty('sell')) continue;
         const id = list[name];
@@ -155,6 +160,9 @@ function makeBuyOrders () {
     for (let i = 0; i < prices.length; i++) {
         const listing = prices[i];
         if (listing.prices == null || !listing.prices.hasOwnProperty('buy')) continue;
+        if (listing.intent != 0 && listing.intent != 2) {
+            continue;
+        }
         const item = Prices.getItem(listing);
         const limit = Prices.getLimit(item.name);
         const stock = Inventory.amount(item.name);
