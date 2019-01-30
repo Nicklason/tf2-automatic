@@ -1,6 +1,6 @@
 {
     "name": "tf2-automatic",
-    "version": "1.10.13",
+    "version": "1.11.0",
     "engines": {
         "node": ">=6.0.0"
     },
@@ -12,14 +12,14 @@
         "child_process": "^1.0.2",
         "graceful-fs": "^4.1.15",
         "isobject": "^3.0.1",
-        "moment": "^2.23.0",
+        "moment": "^2.24.0",
         "natives": "^1.1.6",
         "path": "^0.12.7",
         "pm2": "^3.2.9",
         "readline": "^1.3.0",
         "steam-totp": "^2.1.0",
         "steam-tradeoffer-manager": "^2.9.4",
-        "steam-user": "^3.29.1",
+        "steam-user": "^3.29.3",
         "steamcommunity": "^3.38.0",
         "tf2": "^2.1.2",
         "tf2-currencies": "^1.1.1",
