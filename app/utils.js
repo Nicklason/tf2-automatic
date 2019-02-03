@@ -1,4 +1,5 @@
 const request = require('request');
+const moment = require('moment');
 
 exports.fatal = function (log, msg) {
     log.error(msg);
@@ -13,17 +14,20 @@ exports.paginateArray = function (array, size, page) {
     return array.slice(page * size, (page + 1) * size);
 };
 
-exports.secondsToday = function() {
+exports.seconds = function () {
+    const seconds = Math.round(new Date().getTime() / 1000);
+    return seconds;
+};
+
+exports.secondsToday = function () {
     const today = new Date();
     today.setHours(0);
     today.setMinutes(0);
     today.setSeconds(0);
-    const seconds = Math.round((new Date().getTime() - today.getTime()) / 1000);
-    return seconds;
-};
 
-exports.epoch = function () {
-    const seconds = Math.round(new Date().getTime() / 1000);
+    const m = moment(today);
+    const now = moment();
+    const seconds = now.unix() - m.unix();
     return seconds;
 };
 
@@ -54,7 +58,7 @@ exports.capitalizeEach = function (string) {
     });
 };
 
-exports.between = function(x, min, max) {
+exports.between = function (x, min, max) {
     return x >= min && x <= max;
 };
 
@@ -85,7 +89,7 @@ exports.request = {
 };
 
 exports.currencyAsText = function (currencies) {
-    var text = '';
+    let text = '';
 
     if (currencies.keys && currencies.keys != 0) {
         text = currencies.keys + ' ' + exports.plural('key', currencies.keys);
@@ -103,9 +107,12 @@ exports.currencyAsText = function (currencies) {
     return text;
 };
 
-function decimalPlaces(num) {
-    var match = ('' + num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
-    if (!match) { return 0; }
+function decimalPlaces (num) {
+    const match = ('' + num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
+    if (!match) {
+        return 0;
+    }
+
     return Math.max(
         0,
         // Number of digits right of decimal point.
@@ -115,7 +122,7 @@ function decimalPlaces(num) {
 }
 
 exports.scrapToRefined = function (scrap) {
-    var refined = exports.trunc(scrap / 9, 2);
+    const refined = exports.trunc(scrap / 9, 2);
     return refined;
 };
 
@@ -125,11 +132,11 @@ exports.trunc = function (number, decimals = 2) {
 };
 
 exports.refinedToScrap = function (refined) {
-    var scrap = round(refined * 9, 0.5);
+    const scrap = round(refined * 9, 0.5);
     return scrap;
 };
 
-function round(value, step = 1) {
-    var inv = 1.0 / step;
+function round (value, step = 1) {
+    const inv = 1.0 / step;
     return Math.round(value * inv) / inv;
 }

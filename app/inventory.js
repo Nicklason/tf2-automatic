@@ -1,11 +1,16 @@
 const fs = require('graceful-fs');
 const utils = require('./utils.js');
 
-let Automatic, log, manager, Items, Prices;
+let Automatic;
+let log;
+let manager;
+let Items;
+let Prices;
 
 const INVENTORY_FILENAME = 'temp/inventory.json';
 
-let INVENTORY = [], DICTIONARY = {};
+let INVENTORY = [];
+let DICTIONARY = {};
 
 exports.register = function (automatic) {
     Automatic = automatic;
@@ -36,7 +41,7 @@ exports.amount = amountInDictionary;
 exports.overstocked = isOverstocked;
 exports.save = save;
 
-function getInventory(steamid64, callback) {
+function getInventory (steamid64, callback) {
     if (callback == undefined) {
         callback = utils.void;
     }
@@ -46,7 +51,7 @@ function getInventory(steamid64, callback) {
     let args = [];
 
     if (!own) args.push(steamid64);
-    args = args.concat([440, 2, true, function(err, inventory) {
+    args = args.concat([440, 2, true, function (err, inventory) {
         if (err) {
             callback(err);
             return;
@@ -58,10 +63,11 @@ function getInventory(steamid64, callback) {
         callback(null, inventory);
     }]);
 
+    /* eslint-disable-next-line prefer-spread */
     manager[method].apply(manager, args);
 }
 
-function save(inventory) {
+function save (inventory) {
     update(inventory);
     fs.writeFile(INVENTORY_FILENAME, JSON.stringify(inventory), function (err) {
         if (err) {
@@ -70,20 +76,20 @@ function save(inventory) {
     });
 }
 
-function update(inventory) {
+function update (inventory) {
     INVENTORY = inventory;
     DICTIONARY = Items.createDictionary(inventory);
 }
 
-function dictionary() {
+function dictionary () {
     return DICTIONARY;
 }
 
-function inventory() {
+function inventory () {
     return INVENTORY;
 }
 
-function getDictionary(steamid64, callback) {
+function getDictionary (steamid64, callback) {
     if (steamid64 == Automatic.getOwnSteamID()) {
         callback(null, DICTIONARY);
         return;
@@ -100,7 +106,7 @@ function getDictionary(steamid64, callback) {
     });
 }
 
-function amountInDictionary(dictionary, name) {
+function amountInDictionary (dictionary, name) {
     if (name == undefined) {
         name = dictionary;
         dictionary = DICTIONARY;
@@ -110,21 +116,24 @@ function amountInDictionary(dictionary, name) {
     return amount;
 }
 
-function isOverstocked(name, difference = 0) {
-    if (difference < 0) {
+function isOverstocked (name, difference = 0) {
+    if (difference < 1) {
         return false;
     }
+
     const listing = Prices.findListing(name);
     const limit = Prices.getLimit(listing.name);
-    
+
     if (limit == 0) {
         return true;
     }
 
     const stock = amountInDictionary(name);
-    const canBuy = limit - stock - difference;
+    const canBuy = limit - stock;
 
-    if (canBuy > 0) {
+    if (canBuy >= difference && difference != 0) {
+        return false;
+    } else if (canBuy > 0) {
         return canBuy;
     } else {
         return true;

@@ -4,54 +4,55 @@ const FOLDER_NAME = 'temp';
 const CONFIG_FILENAME = FOLDER_NAME + '/config.json';
 const ACCOUNT_FILENAME = FOLDER_NAME + '/account.json';
 const DEFAULT_CONFIG = {
-    'client_id': '<your client id>',
-    'client_secret': '<your client secret>',
-    'bptfKey': '<your api key for the bptf api>',
-    'dateFormat': 'DD-MM-YYYY HH:mm:ss',
-    'acceptGifts': true,
-    'acceptBanned': false,
-    'acceptEscrow': false,
-    'comment': {
-        'buy': 'I am buying your %name% for %price%, I have %current_stock% / %max_stock%.',
-        'sell': 'I am selling my %name% for %price%, I have %current_stock%.'
+    client_id: '<your client id>',
+    client_secret: '<your client secret>',
+    bptfKey: '<your api key for the bptf api>',
+    dateFormat: 'DD-MM-YYYY HH:mm:ss',
+    acceptGifts: true,
+    acceptBanned: false,
+    acceptEscrow: false,
+    altcheckThreshold: 10, // an item worth more than 10 keys will trigger an alt check
+    comment: {
+        buy: 'I am buying your %name% for %price%, I have %current_stock% / %max_stock%.',
+        sell: 'I am selling my %name% for %price%, I have %current_stock%.'
     },
-    'groups': ['103582791462300957'], // groupid64, this is the tf2automatic steam group
-    'stocklimit': 1,
-    'notify': 'trade', // "all" / "none" / "price" / "trade"
-    'offerMessage': '',
-    'overstockOverpay': 0.05,
-    'logs': {
-        'console': {
-            'type': 'Console',
-            'level': 'verbose',
-            'colorize': true
+    groups: ['103582791462300957'], // groupid64, this is the tf2automatic steam group
+    stocklimit: 1,
+    notify: 'trade', // "all" / "none" / "price" / "trade"
+    offerMessage: '',
+    logs: {
+        console: {
+            type: 'Console',
+            level: 'verbose',
+            colorize: true
         },
-        'file': {
-            'type': 'File',
-            'filename': 'automatic.log',
-            'level': 'debug',
-            'json': false,
-            'maxsize': 5242880,
-            'maxFiles': 10
+        file: {
+            type: 'File',
+            filename: 'automatic.log',
+            level: 'debug',
+            json: false,
+            maxsize: 5242880,
+            maxFiles: 10
         },
-        'trade': {
-            'type': 'File',
-            'filename': 'automatic.trade.log',
-            'level': 'trade',
-            'json': false,
-            'maxsize': 5242880,
-            'maxFiles': 3
+        trade: {
+            type: 'File',
+            filename: 'automatic.trade.log',
+            level: 'trade',
+            json: false,
+            maxsize: 5242880,
+            maxFiles: 3
         }
     },
-    'owners': ['<steamid64s>']
+    owners: ['<steamid64s>'],
+    friendsToKeep: ['76561198120070906']
 };
 
 const defaultAccount = {
-    'name': '',
-    'password': '',
-    'shared_secret': '',
-    'identity_secret': '',
-    'bptfToken': ''
+    name: '',
+    password: '',
+    shared_secret: '',
+    identity_secret: '',
+    bptfToken: ''
 };
 
 let CONFIG = {};
@@ -59,7 +60,7 @@ let ACCOUNT = {};
 
 let WAIT;
 
-function parseJSON(file) {
+function parseJSON (file) {
     try {
         return JSON.parse(fs.readFileSync(file));
     } catch (e) {
@@ -67,7 +68,7 @@ function parseJSON(file) {
     }
 }
 
-function saveJSON(file, data, wait = false) {
+function saveJSON (file, data, wait = false) {
     if (wait == false) {
         fs.writeFileSync(file, JSON.stringify(data, null, '\t'));
         return;
@@ -80,7 +81,7 @@ function saveJSON(file, data, wait = false) {
     }, 1000);
 }
 
-function get(val, def) {
+function get (val, def) {
     if (val) {
         if (CONFIG[val] != undefined) {
             return CONFIG[val];
@@ -94,7 +95,7 @@ function get(val, def) {
     return CONFIG;
 }
 
-function getDefault(val) {
+function getDefault (val) {
     if (val) {
         return DEFAULT_CONFIG[val];
     }
@@ -142,7 +143,7 @@ exports.init = function () {
     return msgs.join(', ');
 };
 
-function getAccount() {
+function getAccount () {
     return ACCOUNT;
 }
 

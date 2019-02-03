@@ -7,3 +7,5 @@ node_js:
   - "10"
 script:
   - npm run lint
+notifications:
+  email: false

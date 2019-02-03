@@ -2,37 +2,42 @@ const Winston = require('winston');
 const moment = require('moment');
 
 const LOG_LEVELS = {
-    'debug': 5,
-    'verbose': 4,
-    'info': 3,
-    'warn': 2,
-    'error': 1,
-    'trade': 0
+    debug: 5,
+    verbose: 4,
+    info: 3,
+    warn: 2,
+    error: 1,
+    trade: 0
 };
 
 const LOG_COLORS = {
-    'debug': 'blue',
-    'verbose': 'cyan',
-    'info': 'green',
-    'warn': 'yellow',
-    'error': 'red',
-    'trade': 'magenta'
+    debug: 'blue',
+    verbose: 'cyan',
+    info: 'green',
+    warn: 'yellow',
+    error: 'red',
+    trade: 'magenta'
 };
 
 exports.LOG_LEVELS = LOG_LEVELS;
 exports.LOG_COLORS = LOG_COLORS;
 
-let logger, config;
+let logger;
+let config;
 
-exports.register = function(Automatic) {
+exports.register = function (Automatic) {
     logger = Automatic.log;
     config = Automatic.config.get();
 
     createTransports();
 };
 
-function createTransports() {
+function createTransports () {
     for (let name in config.logs) {
+        if (!config.logs.hasOwnProperty(name)) {
+            continue;
+        }
+
         let transport = config.logs[name];
         let type = transport.type;
 
@@ -44,6 +49,6 @@ function createTransports() {
     }
 }
 
-function getTimestamp() {
+function getTimestamp () {
     return moment().format(config.dateFormat || 'HH:mm:ss');
 }
