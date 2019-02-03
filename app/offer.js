@@ -54,14 +54,19 @@ class Offer {
     static getItem (item) {
         let parsed = {
             id: Number(item.assetid),
-            defindex: getDefindex(item),
+            defindex: null,
             quality: getQuality(item),
             craftable: isCraftable(item),
             killstreak: isKillstreak(item),
             australium: isAustralium(item),
             effect: null
         };
-
+        
+        const defindex = getDefindex(item);
+        if (defindex != null) {
+            parsed.defindex = defindex;
+        }
+        
         const effect = getEffect(item);
         if (effect != null) {
             parsed.effect = Items.getEffect(effect);
@@ -200,10 +205,9 @@ function getDefindex (item) {
         const query = utils.stringToObject(link.substring(link.indexOf('?') + 1));
         const defindex = parseInt(query.id);
         return defindex;
+    } else {
+        return null;
     }
-
-    const defindex = parseInt(item.app_data.def_index);
-    return defindex;
 }
 
 function getQuality (item) {
