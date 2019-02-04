@@ -529,6 +529,34 @@ function friendMessage (steamID, message) {
             }
 
             Automatic.message(steamID64, 'I\'ve removed ' + removed + ' ' + utils.plural('friend', removed) + '.');
+        } else if (command == 'unfriend' && Automatic.isOwner(steamID64)) {
+	        const parts = message.split(' ');
+	        if (parts.length < 2) {
+		        Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!unfriend 76561198120070906"');
+		        return;
+	        }
+
+	        const friend = parts[1];
+	        if (friend.length != 17 || !friend.startsWith('7656')) {
+	        	Automatic.message(steamID64, 'Please enter a valid SteamID64.');
+        		return;
+        	} else if (!Friends.isFriend(friend)) {
+        		Automatic.message(steamID64, 'I am not friends with the user.');
+        		return;
+        	} else if (friend === 76561198120070906) {
+        		Automatic.message(steamID64, 'You may not remove Nicklason from your friendslist');
+        		return;
+        	} else {
+        		Friends.remove(friend);
+        	}
+
+        	const owners = config.get().owners || [];
+	        for (let i = 0; i < owners.length; i++) {
+	        	if (owners[i] == steamID64) {
+	        		continue;
+        		}
+	        	Automatic.message(owners[i], 'Removed' + friend + ' from my friendslist.');
+        	}
         } else if (command == 'use' && Automatic.isOwner(steamID64)) {
             const string = message.substr(message.toLowerCase().indexOf('use') + 4);
             let input = utils.stringToObject(string);
