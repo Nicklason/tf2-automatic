@@ -596,7 +596,10 @@ function finalizeOffer (offer, callback) {
         } else if (err.message.indexOf('is not available to trade') != -1) {
             callback(null, 'We can\'t trade (more information will be shown if you try and send an offer)');
             return;
-        }
+        } else if (err.message.indexOf('trade offers canceled') != -1) {
+	    callback(null, 'We can\'t trade you because you recently had all your trade offers canceled');
+	    return;
+	}
 
         if (err.message == 'Not Logged In' || err.message == 'ESOCKETTIMEDOUT') {
             Automatic.refreshSession();
