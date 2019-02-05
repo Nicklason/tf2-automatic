@@ -183,29 +183,35 @@ function handleOffer (offer) {
         offer.log('info', 'is from an owner, accepting');
         Automatic.alert('trade', 'Offer from owner, accepting');
 
-        offer.accept().then(function (status) {
-            offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
-        }).catch(function (err) {
-            offer.log('warn', `could not be accepted: ${err}`);
+        offer.accept(function (err, status) {
+            if (err) {
+                offer.log('warn', `could not be accepted: ${err.message}`);
+                log.debug(err.stack);
+            } else {
+                offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
+            }
         });
         return;
     }
 
     if (offer.isOneSided()) {
         if (offer.isGift() && config.get('acceptGifts') == true) {
-            offer.log('trade', 'is a gift offer asking for nothing in return, accepting');
-            Automatic.alert('trade', 'Gift offer asking for nothing in return, accepting');
+            offer.log('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
+            Automatic.alert('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
 
-            offer.accept().then(function (status) {
-                offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
-            }).catch(function (err) {
-                offer.log('warn', `could not be accepted: ${err}`);
+            offer.accept(function (err, status) {
+                if (err) {
+                    offer.log('warn', `could not be accepted: ${err.message}`);
+                    log.debug(err.stack);
+                } else {
+                    offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
+                }
             });
         } else {
-            offer.log('trade', 'is a gift offer, declining');
-            Automatic.alert('Gift offer, declining');
+            offer.log('trade', 'by ' + offer.partner() + ' is a gift offer, declining');
+            Automatic.alert('Gift offer by ' + offer.partner() + ', declining');
 
-            offer.decline().then(function () {
+            offer.decline(function () {
                 offer.log('debug', 'declined');
             });
         }
@@ -217,7 +223,7 @@ function handleOffer (offer) {
         Automatic.alert('trade', 'Contains non-TF2 items, declining');
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'The offer contains non-TF2 items' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
         return;
@@ -562,7 +568,7 @@ function finalizeOffer (offer, callback) {
                 callback(null, 'The offer would be held by escrow');
             } else {
                 log.info('Offer would be held by escrow, declining.');
-                offer.decline().then(function () {
+                offer.decline(function () {
                     offer.log('debug', 'declined');
                 });
             }
@@ -585,6 +591,9 @@ function finalizeOffer (offer, callback) {
             return;
         } else if (err.message.indexOf('is not available to trade') != -1) {
             callback(null, 'We can\'t trade (more information will be shown if you try and send an offer)');
+            return;
+        } else if (err.message.indexOf('trade offers canceled') != -1) {
+            callback(null, 'We can\'t trade you because you recently had all your trade offers canceled');
             return;
         }
 
@@ -1004,11 +1013,13 @@ function altcheckOffer (offer, callback) {
 function acceptOffer (offer) {
     offer.log('trade', 'by ' + offer.partner() + ' is offering enough, accepting. Summary:\n' + offer.summary());
 
-    offer.accept().then(function (status) {
-        offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
-    }).catch(function (err) {
-        offer.log('warn', 'could not be accepted: ' + err);
-        log.debug(err.stack);
+    offer.accept(function (err, status) {
+        if (err) {
+            offer.log('warn', `could not be accepted: ${err.message}`);
+            log.debug(err.stack);
+        } else {
+            offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
+        }
     });
 }
 
@@ -1397,7 +1408,7 @@ const ERRORS = {
         offer.log('info', 'contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are taking / offering an item that is not in my pricelist' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1405,7 +1416,7 @@ const ERRORS = {
         offer.log('info', 'we are both offering only metal, declining. Summary:\n' + offer.summary());
         Automatic.alert('trade', 'We are both only offering metal, declining.');
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1413,7 +1424,7 @@ const ERRORS = {
         offer.log('info', 'contains overstocked items, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are offering overstocked / too many items' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1421,7 +1432,7 @@ const ERRORS = {
         offer.log('info', 'is not offering enough, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are not offering enough' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1429,7 +1440,7 @@ const ERRORS = {
         offer.log('info', 'is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are all-features banned on www.backpack.tf' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1437,7 +1448,7 @@ const ERRORS = {
         offer.log('info', 'user is marked on www.steamrep.com, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are marked on www.steamrep.com as a scammer' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1457,7 +1468,7 @@ const ERRORS = {
             reason: msg
         });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     }
