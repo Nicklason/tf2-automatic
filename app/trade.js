@@ -29,7 +29,7 @@ let RECEIVED = [];
 let RECEIVED_OFFER_CHANGED = [];
 let SENT_OFFER_CHANGED = [];
 let DOING_QUEUE = false;
-let ITEMS_IN_TRADE = [];
+const ITEMS_IN_TRADE = [];
 
 exports.register = function (automatic) {
     Automatic = automatic;
@@ -78,11 +78,11 @@ exports.checkOfferCount = checkOfferCount;
 exports.requestOffer = requestOffer;
 
 function getActiveOffer (steamID64) {
-    let pollData = manager.pollData;
+    const pollData = manager.pollData;
 
     if (!pollData.offerData) pollData.offerData = {};
 
-    for (let id in pollData.sent) {
+    for (const id in pollData.sent) {
         if (!pollData.hasOwnProperty(id)) {
             continue;
         }
@@ -139,7 +139,7 @@ function organizeQueue () {
     handleQueue();
 
     for (let i = 0; i < RECEIVED.length; i++) {
-        let tradeoffer = RECEIVED[i];
+        const tradeoffer = RECEIVED[i];
         handleOffer(tradeoffer);
     }
 
@@ -185,26 +185,26 @@ function handleOffer (offer) {
 
         offer.accept().then(function (status) {
             offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
-		}).catch(function (err) {
-			if (err.message == 'Not Logged In' || err.message == 'ESOCKETTIMEDOUT') {
-			offer.log('warn', `could not be accepted: ${err} , retrying`);
-				Automatic.refreshSession();
-				offer.accept().then(function (status) {
-					offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
-				}).catch(function (err) {
-					offer.log('warn', `could not be accepted again: ${err}`);
-				});
-			} else {
-				offer.log('warn', `could not be accepted: ${err}`);
-			}
-		});
-		return;
-	}
+        }).catch(function (err) {
+            if (err.message == 'Not Logged In' || err.message == 'ESOCKETTIMEDOUT') {
+                offer.log('warn', `could not be accepted: ${err} , retrying`);
+                Automatic.refreshSession();
+                offer.accept().then(function (status) {
+                    offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
+                }).catch(function (err) {
+                    offer.log('warn', `could not be accepted again: ${err}`);
+                });
+            } else {
+                offer.log('warn', `could not be accepted: ${err}`);
+            }
+        });
+        return;
+    }
 
     if (offer.isOneSided()) {
         if (offer.isGift() && config.get('acceptGifts') == true) {
-			offer.log('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
-			Automatic.alert('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
+            offer.log('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
+            Automatic.alert('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
 
             offer.accept().then(function (status) {
                 offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
@@ -212,8 +212,8 @@ function handleOffer (offer) {
                 offer.log('warn', `could not be accepted: ${err}`);
             });
         } else {
-			offer.log('trade', 'by ' + offer.partner() + ' is a gift offer, declining');
-			Automatic.alert('Gift offer by ' + offer.partner() + ', declining');
+            offer.log('trade', 'by ' + offer.partner() + ' is a gift offer, declining');
+            Automatic.alert('Gift offer by ' + offer.partner() + ', declining');
 
             offer.decline().then(function () {
                 offer.log('debug', 'declined');
@@ -308,13 +308,13 @@ function hasEnoughItems (name, dictionary, amount) {
 }
 
 function filterItems (dictionary) {
-    let filtered = {};
-    for (let name in dictionary) {
+    const filtered = {};
+    for (const name in dictionary) {
         if (!dictionary.hasOwnProperty(name)) {
             continue;
         }
 
-        let ids = [].concat(dictionary[name]);
+        const ids = [].concat(dictionary[name]);
         for (let i = ids.length; i--;) {
             for (let j = 0; j < ITEMS_IN_TRADE.length; j++) {
                 if (ids[i] == ITEMS_IN_TRADE[j]) {
@@ -331,7 +331,7 @@ function filterItems (dictionary) {
 }
 
 function convertPure (pure) {
-    let items = {
+    const items = {
         'Mann Co. Supply Crate Key': pure.keys,
         'Refined Metal': pure.refined,
         'Reclaimed Metal': pure.reclaimed,
@@ -373,7 +373,7 @@ function createOffer (request, callback) {
             return;
         }
 
-        let items = {};
+        const items = {};
         items.seller = selling == true ? filterItems(dict) : dict;
 
         let alteredMessage;
@@ -441,7 +441,7 @@ function createOffer (request, callback) {
             let change = pure.change || 0;
             pure = convertPure(pure);
 
-            for (let name in pure) {
+            for (const name in pure) {
                 if (!pure.hasOwnProperty(name)) {
                     continue;
                 }
@@ -456,7 +456,7 @@ function createOffer (request, callback) {
             }
 
             let missing = false;
-            for (let name in pure) {
+            for (const name in pure) {
                 if (pure[name] != 0) {
                     missing = true;
                     break;
@@ -469,7 +469,7 @@ function createOffer (request, callback) {
                 return;
             }
 
-            let assetids = [];
+            const assetids = [];
 
             let missingItems = amount;
             for (let i = 0; i < items.seller[name].length; i++) {
@@ -597,9 +597,9 @@ function finalizeOffer (offer, callback) {
             callback(null, 'We can\'t trade (more information will be shown if you try and send an offer)');
             return;
         } else if (err.message.indexOf('trade offers canceled') != -1) {
-	    callback(null, 'We can\'t trade you because you recently had all your trade offers canceled');
-	    return;
-	}
+            callback(null, 'We can\'t trade you because you recently had all your trade offers canceled');
+            return;
+        }
 
         if (err.message == 'Not Logged In' || err.message == 'ESOCKETTIMEDOUT') {
             Automatic.refreshSession();
@@ -674,7 +674,7 @@ function sendOffer (offer, callback) {
 
 function constructOffer (price, dictionary, useKeys) {
     price = Prices.value(price);
-    let pure = Items.createSummary(Items.pure(dictionary));
+    const pure = Items.createSummary(Items.pure(dictionary));
 
     const needsChange = needChange(price, pure, useKeys);
     log.debug(needsChange ? 'Offer needs change' : 'Offer does not need change');
@@ -745,10 +745,10 @@ function needChange (price, pure, useKeys) {
 function makeChange (price, pure, useKeys) {
     const keyValue = utils.refinedToScrap(Prices.key());
 
-    let required = Prices.valueToPure(price, useKeys);
+    const required = Prices.valueToPure(price, useKeys);
     let change = 0;
 
-    let availablePure = {
+    const availablePure = {
         keys: Array.isArray(pure.keys) ? pure.keys.length : pure.keys,
         refined: Array.isArray(pure.refined) ? pure.refined.length : pure.refined,
         reclaimed: Array.isArray(pure.reclaimed) ? pure.reclaimed.length : pure.reclaimed,
@@ -762,9 +762,9 @@ function makeChange (price, pure, useKeys) {
         if (availablePure.keys > required.keys) {
             required.keys++;
 
-            let refined = Math.floor(keyValue / 9);
-            let reclaimed = Math.floor((keyValue - refined * 9) / 3);
-            let scrap = keyValue - refined * 9 - reclaimed * 3;
+            const refined = Math.floor(keyValue / 9);
+            const reclaimed = Math.floor((keyValue - refined * 9) / 3);
+            const scrap = keyValue - refined * 9 - reclaimed * 3;
 
             required.refined -= refined;
             required.reclaimed -= reclaimed;
@@ -823,11 +823,11 @@ function overstockedItems (offer) {
     const ourSummary = Items.createSummary(Items.createDictionary(offer.items.our));
     const theirSummary = Items.createSummary(Items.createDictionary(offer.items.their));
 
-    let items = [];
-    for (let name in ourSummary) {
+    const items = [];
+    for (const name in ourSummary) {
         if (!items.includes(name)) items.push(name);
     }
-    for (let name in theirSummary) {
+    for (const name in theirSummary) {
         if (!items.includes(name)) items.push(name);
     }
 
@@ -881,8 +881,8 @@ function checkReceivedOffer (id, callback) {
             return;
         }
 
-        let our = offer.currencies.our;
-        let their = offer.currencies.their;
+        const our = offer.currencies.our;
+        const their = offer.currencies.their;
 
         /* eslint-disable-next-line max-len */
         const tradingKeys = (offer.offering.keys.us == true || offer.offering.keys.them == true) && offer.offering.items.us == false && offer.offering.items.them == false;
@@ -1196,13 +1196,13 @@ function handleAcceptedOffer (offer) {
 
         const received = Items.createDictionary(receivedItems);
 
-        let items = offer.data('items') || [];
+        const items = offer.data('items') || [];
         for (let i = 0; i < items.length; i++) {
             if (items[i].intent != 0) {
                 continue;
             }
 
-            for (let name in received) {
+            for (const name in received) {
                 if (name == items[i].name) {
                     items[i].ids = received[name];
                     break;
@@ -1371,7 +1371,7 @@ function removeOldOffers (pollData) {
 
     if (!pollData.hasOwnProperty('offerData')) pollData.offerData = {};
 
-    for (let id in pollData.timestamps) {
+    for (const id in pollData.timestamps) {
         if (!pollData.timestamps.hasOwnProperty(id)) {
             continue;
         }

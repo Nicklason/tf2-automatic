@@ -211,7 +211,7 @@ function handleBuyOrders (offer) {
     const their = offer.items.their;
     const dict = Items.createDictionary(their);
     const summary = Items.createSummary(dict);
-    for (let name in summary) {
+    for (const name in summary) {
         if (!summary.hasOwnProperty(name)) {
             continue;
         }
@@ -236,7 +236,7 @@ function handleSellOrders (offer) {
     const our = offer.items.our;
     const dict = Items.createDictionary(our);
     const summary = Items.createSummary(dict);
-    for (let name in summary) {
+    for (const name in summary) {
         if (!summary.hasOwnProperty(name)) {
             continue;
         }
@@ -285,7 +285,7 @@ function priceChanged (state, item, prices) {
                     details: Backpack.listingComment(0, item.name, prices.buy)
                 }, true);
             } else {
-                let order = Backpack.findBuyOrder(item.name);
+                const order = Backpack.findBuyOrder(item.name);
                 if (order) {
                     Backpack.removeListing(order.id);
                 }
@@ -295,7 +295,7 @@ function priceChanged (state, item, prices) {
             Backpack.updateSellOrders(item.name);
         }
     } else if (state == 3) {
-        let order = Backpack.findBuyOrder(item.name);
+        const order = Backpack.findBuyOrder(item.name);
         if (order) {
             Backpack.removeListing(order.id);
         }
@@ -327,7 +327,7 @@ function list () {
 function findMatch (search) {
     search = search.toLowerCase();
 
-    let match = [];
+    const match = [];
 
     const pricelist = list();
     for (let i = 0; i < pricelist.length; i++) {

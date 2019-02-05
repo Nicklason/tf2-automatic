@@ -112,7 +112,7 @@ exports.write = function (conf) {
 };
 
 exports.init = function () {
-    let msgs = [];
+    const msgs = [];
     if (!fs.existsSync(FOLDER_NAME)) {
         fs.mkdirSync(FOLDER_NAME);
         msgs.push('created temp folder');
