@@ -62,6 +62,7 @@ exports.getPrice = function (name) {
     const item = API.getItem(listing);
     return {
         item: item,
+        intent: listing.intent,
         price: listing.prices
     };
 };
@@ -281,7 +282,7 @@ function priceChanged (state, item, prices) {
             break;
     }
 
-    if ((state == 1 || state == 2) && prices != null) {
+    if ((state == 0 || state == 2) && prices != null) {
         const limit = exports.getLimit(item.name);
         const inInv = Inventory.amount(item.name);
         if (prices.buy && (prices.intent == 2 || prices.intent == 0)) {

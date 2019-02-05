@@ -455,7 +455,7 @@ function createOffer (request, callback) {
 
             if (missing == true) {
                 log.debug('Items missing:', items);
-                callback(null, 'Something went wrong constructing the offer');
+                callback(null, 'Something went wrong constructing the offer (missing change)');
                 return;
             }
 

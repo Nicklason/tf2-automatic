@@ -142,11 +142,11 @@ function friendMessage (steamID, message) {
             const limit = Prices.getLimit(match.name);
 
             const segments = [];
-            if (buy != null) {
+            if (buy != null && (match.intent === 0 || match.inent === 2)) {
                 segments.push('I am buying a ' + match.name + ' for ' + buy);
             }
 
-            if (sell != null) {
+            if (sell != null && (match.intent === 1 || match.inent === 2)) {
                 if (segments.length == 0) {
                     segments.push('I am selling a ' + match.name + ' for ' + sell);
                 } else {
@@ -665,7 +665,7 @@ function friendMessage (steamID, message) {
 
             const selling = command == 'buy';
 
-            if (match.intent != 2 && (match.intent != 0 && selling == true) || (match.intent != 1 && selling == false)) {
+            if (match.intent != 2 && (match.intent == 0 && selling == true) || (match.intent == 1 && selling == false)) {
                 // yes i know that if match.intent != 2 and != 0 then it must be 1, but pls mekal
                 Automatic.message(steamID64, 'Sorry, but I am not ' + (selling == true ? 'selling' : 'buying' ) + ' "' + name + '".');
                 return;
