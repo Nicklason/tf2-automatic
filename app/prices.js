@@ -62,6 +62,7 @@ exports.getPrice = function (name) {
     const item = API.getItem(listing);
     return {
         item: item,
+        intent: listing.intent,
         price: listing.prices
     };
 };
@@ -123,7 +124,15 @@ function getPrice (name, our) {
     }
 
     let price = exports.getPrice(name);
-    if (price == null || price.price == null) return null;
+    if (price == null || price.price == null ) {
+        // If the item is not in the pricelist / not priced / we are not selling / banking the item
+        return null;
+    }
+    if ((price.intent != 1 && price.intent != 2 && our === true) || (price.intent != 0 && price.intent != 2 && our === false)) {
+        // If they ask for our item, and we are not selling / banking, or if they sell an item, but we are not buying / banking, then don't price the item :thinksmart:
+        return null;
+    }
+
     price = price.price;
 
     const intent = our == true ? 'sell' : 'buy';
@@ -273,10 +282,10 @@ function priceChanged (state, item, prices) {
             break;
     }
 
-    if ((state == 1 || state == 2) && prices != null) {
+    if ((state == 0 || state == 2) && prices != null) {
         const limit = exports.getLimit(item.name);
         const inInv = Inventory.amount(item.name);
-        if (prices.buy) {
+        if (prices.buy && (prices.intent == 2 || prices.intent == 0)) {
             if (!(limit != -1 && inInv >= limit)) {
                 Backpack.createListing({
                     intent: 0,
@@ -290,9 +299,19 @@ function priceChanged (state, item, prices) {
                     Backpack.removeListing(order.id);
                 }
             }
+        } else {
+            // We are not buying, remove listing if one is active
+            const order = Backpack.findBuyOrder(item.name);
+            if (order) {
+                Backpack.removeListing(order.id);
+            }
         }
-        if (prices.sell) {
+
+        if (prices.sell && (prices.intent == 2 || prices.intent == 1)) {
             Backpack.updateSellOrders(item.name);
+        } else {
+            // We are not selling, remove listing if one is active
+            Backpack.removeSellOrders(item.name);
         }
     } else if (state == 3) {
         const order = Backpack.findBuyOrder(item.name);

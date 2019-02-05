@@ -142,11 +142,11 @@ function friendMessage (steamID, message) {
             const limit = Prices.getLimit(match.name);
 
             const segments = [];
-            if (buy != null) {
+            if (buy != null && (match.intent === 0 || match.intent === 2)) {
                 segments.push('I am buying a ' + match.name + ' for ' + buy);
             }
 
-            if (sell != null) {
+            if (sell != null && (match.intent === 1 || match.intent === 2)) {
                 if (segments.length == 0) {
                     segments.push('I am selling a ' + match.name + ' for ' + sell);
                 } else {
@@ -334,6 +334,15 @@ function friendMessage (steamID, message) {
                 add.effect = effect;
             }
 
+            if (input.intent) {
+                const intent = ['buy', 'sell', 'bank'].indexOf(input.intent);
+                if (intent === -1) {
+                    Automatic.message(steamID64, 'Invalid intent, use "buy", "sell", or "bank".');
+                    return;
+                }
+                add.intent = intent;
+            }
+
             Prices.addItem(add, function (err, listing) {
                 if (err) {
                     const error = err.messages ? err.messages.join(', ').toLowerCase() : err.message;
@@ -487,6 +496,15 @@ function friendMessage (steamID, message) {
                 update.meta = {
                     max_stock: limit
                 };
+            }
+
+            if (input.intent) {
+                const intent = ['buy', 'sell', 'bank'].indexOf(input.intent);
+                if (intent === -1) {
+                    Automatic.message(steamID64, 'Invalid intent, use "buy", "sell", or "bank".');
+                    return;
+                }
+                update.intent = intent;
             }
 
             Prices.updateItem(name, update, function (err, result) {
@@ -674,6 +692,12 @@ function friendMessage (steamID, message) {
             }
 
             const selling = command == 'buy';
+
+            if (match.intent != 2 && (match.intent == 0 && selling == true) || (match.intent == 1 && selling == false)) {
+                // yes i know that if match.intent != 2 and != 0 then it must be 1, but pls mekal
+                Automatic.message(steamID64, 'Sorry, but I am not ' + (selling == true ? 'selling' : 'buying' ) + ' "' + name + '".');
+                return;
+            }
 
             Trade.requestOffer(steamID64, match.name, amount, selling);
         } else if (command == 'name' && Automatic.isOwner(steamID64)) {

@@ -461,7 +461,7 @@ function createOffer (request, callback) {
 
             if (missing == true) {
                 log.debug('Items missing:', items);
-                callback(null, 'Something went wrong constructing the offer');
+                callback(null, 'Something went wrong constructing the offer (missing change)');
                 return;
             }
 
@@ -887,6 +887,16 @@ function checkReceivedOffer (id, callback) {
         if (tradingKeys) {
             let price = Prices.getPrice('Mann Co. Supply Crate Key');
             if (price == null) {
+                ERRORS.invalid_items(offer);
+                callback(null);
+                return;
+            } else if (our.keys != 0 && price.intent != 2 && price.intent != 1) {
+                // The user is trying to buy keys from us (we are selling), but we are not selling
+                ERRORS.invalid_items(offer);
+                callback(null);
+                return;
+            } else if (their.keys != 0 && price.intent != 2 && price.intent != 0) {
+                // We are not buying keys
                 ERRORS.invalid_items(offer);
                 callback(null);
                 return;
