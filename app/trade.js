@@ -185,7 +185,7 @@ function handleOffer (offer) {
 
         offer.accept().then(function (status) {
             offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
-        }).catch(function (err) {
+		}).catch(function (err) {
 			if (err.message == 'Not Logged In' || err.message == 'ESOCKETTIMEDOUT') {
 			offer.log('warn', `could not be accepted: ${err} , retrying`);
 				Automatic.refreshSession();
@@ -197,14 +197,14 @@ function handleOffer (offer) {
 			} else {
 				offer.log('warn', `could not be accepted: ${err}`);
 			}
-        });
-        return;
-    }
+		});
+		return;
+	}
 
     if (offer.isOneSided()) {
         if (offer.isGift() && config.get('acceptGifts') == true) {
-            offer.log('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
-            Automatic.alert('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
+			offer.log('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
+			Automatic.alert('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
 
             offer.accept().then(function (status) {
                 offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
@@ -212,8 +212,8 @@ function handleOffer (offer) {
                 offer.log('warn', `could not be accepted: ${err}`);
             });
         } else {
-            offer.log('trade', 'by ' + offer.partner() + ' is a gift offer, declining');
-            Automatic.alert('Gift offer by ' + offer.partner() + ', declining');
+			offer.log('trade', 'by ' + offer.partner() + ' is a gift offer, declining');
+			Automatic.alert('Gift offer by ' + offer.partner() + ', declining');
 
             offer.decline().then(function () {
                 offer.log('debug', 'declined');
