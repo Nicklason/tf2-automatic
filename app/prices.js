@@ -298,9 +298,19 @@ function priceChanged (state, item, prices) {
                     Backpack.removeListing(order.id);
                 }
             }
+        } else {
+            // We are not buying, remove listing if one is active
+            const order = Backpack.findBuyOrder(item.name);
+            if (order) {
+                Backpack.removeListing(order.id);
+            }
         }
+
         if (prices.sell && (prices.intent == 2 || prices.intent == 1)) {
             Backpack.updateSellOrders(item.name);
+        } else {
+            // We are not selling, remove listing if one is active
+            Backpack.removeSellOrders(item.name);
         }
     } else if (state == 3) {
         const order = Backpack.findBuyOrder(item.name);
