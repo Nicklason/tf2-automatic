@@ -67,8 +67,8 @@ function friendMessage (steamID, message) {
         } else if (command == 'stock') {
             const summary = Items.createSummary(Inventory.dictionary());
 
-            let parsed = [];
-            for (let name in summary) {
+            const parsed = [];
+            for (const name in summary) {
                 if (name == 'Mann Co. Supply Crate Key' || name == 'Refined Metal' || name == 'Reclaimed Metal' || name == 'Scrap Metal') {
                     continue;
                 }
@@ -92,7 +92,7 @@ function friendMessage (steamID, message) {
 
             parsed.splice(0, 0, ...pure);
 
-            let stock = [];
+            const stock = [];
             let left = 0;
 
             for (let i = 0; i < parsed.length; i++) {
@@ -141,7 +141,7 @@ function friendMessage (steamID, message) {
             const inInv = Inventory.amount(match.name);
             const limit = Prices.getLimit(match.name);
 
-            let segments = [];
+            const segments = [];
             if (buy != null) {
                 segments.push('I am buying a ' + match.name + ' for ' + buy);
             }
@@ -215,7 +215,7 @@ function friendMessage (steamID, message) {
         } else if (command == 'add' && Automatic.isOwner(steamID64)) {
             message = removeLinkProtocol(message);
             const string = message.substr(message.toLowerCase().indexOf('add') + 4);
-            let input = utils.stringToObject(string);
+            const input = utils.stringToObject(string);
             if (input == null) {
                 Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!add name=Rocket Launcher&quality=Strange"');
                 return;
@@ -259,7 +259,7 @@ function friendMessage (steamID, message) {
                 }
             }
 
-            let add = {
+            const add = {
                 defindex: Number(match),
                 quality: 6,
                 craftable: input.craftable ? input.craftable == 'true' : true,
@@ -278,8 +278,8 @@ function friendMessage (steamID, message) {
                 add.autoprice = autoprice;
             }
 
-            let buy = {};
-            let sell = {};
+            const buy = {};
+            const sell = {};
             if (input.buy_keys) {
                 buy.keys = parseInt(input.buy_keys);
             }
@@ -293,7 +293,7 @@ function friendMessage (steamID, message) {
                 sell.metal = parseFloat(input.sell_metal);
             }
 
-            let prices = {};
+            const prices = {};
             if (Object.keys(buy) != 0) {
                 if (!buy.hasOwnProperty('keys')) {
                     buy.keys = 0;
@@ -364,7 +364,7 @@ function friendMessage (steamID, message) {
         } else if (command == 'remove' && Automatic.isOwner(steamID64)) {
             message = removeLinkProtocol(message);
             const string = message.substr(message.toLowerCase().indexOf('remove') + 7);
-            let input = utils.stringToObject(string);
+            const input = utils.stringToObject(string);
             if (input == null) {
                 Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!remove item=Strange Rocket Launcher"');
                 return;
@@ -394,7 +394,7 @@ function friendMessage (steamID, message) {
                     }
                 });
             } else {
-                let item = input.item;
+                const item = input.item;
                 if (!item || item == '') {
                     Automatic.message(steamID64, 'You are missing items. Here\'s an example: "!remove item=Strange Rocket Launcher"');
                     return;
@@ -420,7 +420,7 @@ function friendMessage (steamID, message) {
         } else if (command == 'update' && Automatic.isOwner(steamID64)) {
             message = removeLinkProtocol(message);
             const string = message.substr(message.toLowerCase().indexOf('update') + 7);
-            let input = utils.stringToObject(string);
+            const input = utils.stringToObject(string);
             if (input == null) {
                 Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!update name=Rocket Launcher&limit=2"');
                 return;
@@ -434,15 +434,15 @@ function friendMessage (steamID, message) {
             input.name = input.name.trim();
             const name = input.name;
 
-            let update = {};
+            const update = {};
 
             if (input.autoprice != undefined) {
                 const autoprice = input.autoprice != 'false';
                 update.autoprice = autoprice;
             }
 
-            let buy = {};
-            let sell = {};
+            const buy = {};
+            const sell = {};
             if (input.buy_keys) {
                 buy.keys = parseInt(input.buy_keys);
             }
@@ -456,7 +456,7 @@ function friendMessage (steamID, message) {
                 sell.metal = parseFloat(input.sell_metal);
             }
 
-            let prices = {};
+            const prices = {};
             if (Object.keys(buy) != 0) {
                 if (!buy.hasOwnProperty('keys')) {
                     buy.keys = 0;
@@ -549,7 +549,7 @@ function friendMessage (steamID, message) {
             Automatic.message(steamID64, 'I\'ve removed ' + removed + ' ' + utils.plural('friend', removed) + '.');
         } else if (command == 'use' && Automatic.isOwner(steamID64)) {
             const string = message.substr(message.toLowerCase().indexOf('use') + 4);
-            let input = utils.stringToObject(string);
+            const input = utils.stringToObject(string);
             if (input == null) {
                 Automatic.message(steamID64, 'Your syntax is wrong. Here\'s an example: "!use name=Backpack Expander&amount=10"');
                 return;
@@ -743,7 +743,7 @@ function removeLinkProtocol (message) {
 }
 
 function isSpam (key) {
-    let count = (cache[key] || 0) + 1;
+    const count = (cache[key] || 0) + 1;
     cache[key] = count;
     return count > 1;
 }

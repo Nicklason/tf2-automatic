@@ -11,7 +11,7 @@ let manager;
 let log;
 let config;
 
-let FRIEND_DETAILS = {};
+const FRIEND_DETAILS = {};
 
 exports.register = function (automatic) {
     Automatic = automatic;
@@ -51,7 +51,7 @@ function addFriend (steamID64) {
 }
 
 function getFriendsToKeep () {
-    let friendsToKeep = [].concat(config.get('friendsToKeep'));
+    const friendsToKeep = [].concat(config.get('friendsToKeep'));
     const owners = config.get('owners');
     for (let i = 0; i < owners.length; i++) {
         const steamid64 = owners[i];
@@ -64,7 +64,7 @@ function getFriendsToKeep () {
 }
 
 function removeRandomFriend (ignore) {
-    let friendsToKeep = getFriendsToKeep();
+    const friendsToKeep = getFriendsToKeep();
     if (ignore !== undefined && friendsToKeep.indexOf(ignore) === -1) {
         friendsToKeep.push(ignore);
     }
@@ -233,7 +233,7 @@ function requestDetails (steamID64, callback) {
             return;
         }
 
-        let details = body.response.players[0];
+        const details = body.response.players[0];
         delete details.steamid;
         details.time = moment().unix();
 
@@ -245,7 +245,7 @@ function requestDetails (steamID64, callback) {
 
 function detailsCleanup () {
     // Remove old details
-    for (let i in FRIEND_DETAILS) {
+    for (const i in FRIEND_DETAILS) {
         if (isOldDetails(FRIEND_DETAILS[i])) {
             delete FRIEND_DETAILS[i];
         }

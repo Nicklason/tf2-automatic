@@ -52,7 +52,7 @@ class Offer {
     }
 
     static getItem (item) {
-        let parsed = {
+        const parsed = {
             id: Number(item.assetid),
             defindex: getDefindex(item),
             quality: getQuality(item),
@@ -83,9 +83,9 @@ class Offer {
 
     _countCurrencies (our) {
         const items = our ? this.items.our : this.items.their;
-        let currencies = our ? this.currencies.our : this.currencies.their;
+        const currencies = our ? this.currencies.our : this.currencies.their;
 
-        let other = [];
+        const other = [];
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
 
@@ -145,15 +145,15 @@ class Offer {
     }
 
     summarizeItems (items) {
-        let names = {};
+        const names = {};
 
         items.forEach((item) => {
-            let name = getName(item);
+            const name = getName(item);
             names[name] = (names[name] || 0) + 1;
         });
 
-        let formattedNames = [];
-        for (let name in names) {
+        const formattedNames = [];
+        for (const name in names) {
             if (!names.hasOwnProperty(name)) {
                 continue;
             }
@@ -244,7 +244,7 @@ function getEffect (item) {
     if (!descriptions) return null;
 
     for (let i = 0; i < descriptions.length; i += 1) {
-        let value = descriptions[i].value;
+        const value = descriptions[i].value;
         if (value[0] == '\u2605') {
             return value.substr(18); // Remove "★ Unusual Effect: "
         }

@@ -113,8 +113,8 @@ exports.isBanned = banned;
 function makeSellOrders () {
     const dict = Inventory.dictionary();
 
-    let list = [];
-    for (let name in dict) {
+    const list = [];
+    for (const name in dict) {
         if (name == 'Refined Metal' || name == 'Reclaimed Metal' || name == 'Scrap Metal') continue;
         const ids = dict[name];
 
@@ -131,7 +131,7 @@ function makeSellOrders () {
         }
     }
 
-    for (let name in list) {
+    for (const name in list) {
         if (!list.hasOwnProperty(name)) {
             continue;
         }
@@ -230,7 +230,7 @@ function updateOrders (lost, gained) {
     log.debug('Lost: ' + lost.length + ' - Gained: ' + gained.length);
     const lostSummary = Items.createSummary(Items.createDictionary(lost));
     const gainedSummary = Items.createSummary(Items.createDictionary(gained));
-    let names = [];
+    const names = [];
 
     for (const name in lostSummary) {
         if (!names.includes(name)) names.push(name);
@@ -240,7 +240,7 @@ function updateOrders (lost, gained) {
         if (!names.includes(name)) names.push(name);
     }
 
-    let list = [];
+    const list = [];
     for (let i = 0; i < names.length; i++) {
         const name = names[i];
         if (name == 'Scrap Metal' || name == 'Reclaimed Metal' || name == 'Refined Metal') continue;
@@ -253,7 +253,7 @@ function updateOrders (lost, gained) {
             continue;
         }
 
-        let currencies = listing.currencies;
+        const currencies = listing.currencies;
         currencies.metal = currencies.metal || 0;
         currencies.keys = currencies.keys || 0;
 
@@ -313,9 +313,9 @@ function listingComment (intent, name, price) {
 }
 
 function findBuyOrder (search) {
-    let buy = buyOrders();
+    const buy = buyOrders();
     for (let i = 0; i < buy.length; i++) {
-        let listing = buy[i];
+        const listing = buy[i];
         const item = Listings._getItem(listing.item);
         const name = Items.getName(item);
         if (name == search) {
@@ -334,9 +334,9 @@ function findSellOrder (search) {
         return null;
     }
 
-    let sell = sellOrders();
+    const sell = sellOrders();
     for (let i = 0; i < sell.length; i++) {
-        let listing = sell[i];
+        const listing = sell[i];
         for (let j = 0; j < ids.length; j++) {
             const id = ids[j];
             if (listing.item.id == id) {
