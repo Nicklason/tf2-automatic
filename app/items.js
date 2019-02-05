@@ -51,6 +51,9 @@ function createDictionary (items) {
     const dict = {};
     for (let i = 0; i < items.length; i++) {
         const item = Offer.getItem(items[i]);
+        if (item === null) {
+            continue;
+        }
 
         let name = getName(item);
         if (item.quality == 15) {

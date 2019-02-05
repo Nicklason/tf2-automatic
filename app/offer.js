@@ -52,20 +52,20 @@ class Offer {
     }
 
     static getItem (item) {
+        const defindex = getDefindex(item);
+        if (defindex === null) {
+            return null;
+        }
+
         const parsed = {
             id: Number(item.assetid),
-            defindex: null,
+            defindex: defindex,
             quality: getQuality(item),
             craftable: isCraftable(item),
             killstreak: isKillstreak(item),
             australium: isAustralium(item),
             effect: null
         };
-
-        const defindex = getDefindex(item);
-        if (defindex != null) {
-            parsed.defindex = defindex;
-        }
 
         const effect = getEffect(item);
         if (effect != null) {
