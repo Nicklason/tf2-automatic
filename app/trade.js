@@ -29,7 +29,7 @@ let RECEIVED = [];
 let RECEIVED_OFFER_CHANGED = [];
 let SENT_OFFER_CHANGED = [];
 let DOING_QUEUE = false;
-let ITEMS_IN_TRADE = [];
+const ITEMS_IN_TRADE = [];
 
 exports.register = function (automatic) {
     Automatic = automatic;
@@ -78,11 +78,11 @@ exports.checkOfferCount = checkOfferCount;
 exports.requestOffer = requestOffer;
 
 function getActiveOffer (steamID64) {
-    let pollData = manager.pollData;
+    const pollData = manager.pollData;
 
     if (!pollData.offerData) pollData.offerData = {};
 
-    for (let id in pollData.sent) {
+    for (const id in pollData.sent) {
         if (!pollData.hasOwnProperty(id)) {
             continue;
         }
@@ -139,7 +139,7 @@ function organizeQueue () {
     handleQueue();
 
     for (let i = 0; i < RECEIVED.length; i++) {
-        let tradeoffer = RECEIVED[i];
+        const tradeoffer = RECEIVED[i];
         handleOffer(tradeoffer);
     }
 
@@ -183,29 +183,35 @@ function handleOffer (offer) {
         offer.log('info', 'is from an owner, accepting');
         Automatic.alert('trade', 'Offer from owner, accepting');
 
-        offer.accept().then(function (status) {
-            offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
-        }).catch(function (err) {
-            offer.log('warn', `could not be accepted: ${err}`);
+        offer.accept(function (err, status) {
+            if (err) {
+                offer.log('warn', `could not be accepted: ${err.message}`);
+                log.debug(err.stack);
+            } else {
+                offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
+            }
         });
         return;
     }
 
     if (offer.isOneSided()) {
         if (offer.isGift() && config.get('acceptGifts') == true) {
-            offer.log('trade', 'is a gift offer asking for nothing in return, accepting');
-            Automatic.alert('trade', 'Gift offer asking for nothing in return, accepting');
+            offer.log('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
+            Automatic.alert('trade', 'by ' + offer.partner() + ' is a gift offer asking for nothing in return, accepting');
 
-            offer.accept().then(function (status) {
-                offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
-            }).catch(function (err) {
-                offer.log('warn', `could not be accepted: ${err}`);
+            offer.accept(function (err, status) {
+                if (err) {
+                    offer.log('warn', `could not be accepted: ${err.message}`);
+                    log.debug(err.stack);
+                } else {
+                    offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
+                }
             });
         } else {
-            offer.log('trade', 'is a gift offer, declining');
-            Automatic.alert('Gift offer, declining');
+            offer.log('trade', 'by ' + offer.partner() + ' is a gift offer, declining');
+            Automatic.alert('Gift offer by ' + offer.partner() + ', declining');
 
-            offer.decline().then(function () {
+            offer.decline(function () {
                 offer.log('debug', 'declined');
             });
         }
@@ -217,7 +223,7 @@ function handleOffer (offer) {
         Automatic.alert('trade', 'Contains non-TF2 items, declining');
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'The offer contains non-TF2 items' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
         return;
@@ -298,13 +304,13 @@ function hasEnoughItems (name, dictionary, amount) {
 }
 
 function filterItems (dictionary) {
-    let filtered = {};
-    for (let name in dictionary) {
+    const filtered = {};
+    for (const name in dictionary) {
         if (!dictionary.hasOwnProperty(name)) {
             continue;
         }
 
-        let ids = [].concat(dictionary[name]);
+        const ids = [].concat(dictionary[name]);
         for (let i = ids.length; i--;) {
             for (let j = 0; j < ITEMS_IN_TRADE.length; j++) {
                 if (ids[i] == ITEMS_IN_TRADE[j]) {
@@ -321,7 +327,7 @@ function filterItems (dictionary) {
 }
 
 function convertPure (pure) {
-    let items = {
+    const items = {
         'Mann Co. Supply Crate Key': pure.keys,
         'Refined Metal': pure.refined,
         'Reclaimed Metal': pure.reclaimed,
@@ -363,7 +369,7 @@ function createOffer (request, callback) {
             return;
         }
 
-        let items = {};
+        const items = {};
         items.seller = selling == true ? filterItems(dict) : dict;
 
         let alteredMessage;
@@ -431,7 +437,7 @@ function createOffer (request, callback) {
             let change = pure.change || 0;
             pure = convertPure(pure);
 
-            for (let name in pure) {
+            for (const name in pure) {
                 if (!pure.hasOwnProperty(name)) {
                     continue;
                 }
@@ -446,7 +452,7 @@ function createOffer (request, callback) {
             }
 
             let missing = false;
-            for (let name in pure) {
+            for (const name in pure) {
                 if (pure[name] != 0) {
                     missing = true;
                     break;
@@ -459,7 +465,7 @@ function createOffer (request, callback) {
                 return;
             }
 
-            let assetids = [];
+            const assetids = [];
 
             let missingItems = amount;
             for (let i = 0; i < items.seller[name].length; i++) {
@@ -562,7 +568,7 @@ function finalizeOffer (offer, callback) {
                 callback(null, 'The offer would be held by escrow');
             } else {
                 log.info('Offer would be held by escrow, declining.');
-                offer.decline().then(function () {
+                offer.decline(function () {
                     offer.log('debug', 'declined');
                 });
             }
@@ -585,6 +591,9 @@ function finalizeOffer (offer, callback) {
             return;
         } else if (err.message.indexOf('is not available to trade') != -1) {
             callback(null, 'We can\'t trade (more information will be shown if you try and send an offer)');
+            return;
+        } else if (err.message.indexOf('trade offers canceled') != -1) {
+            callback(null, 'We can\'t trade you because you recently had all your trade offers canceled');
             return;
         }
 
@@ -661,7 +670,7 @@ function sendOffer (offer, callback) {
 
 function constructOffer (price, dictionary, useKeys) {
     price = Prices.value(price);
-    let pure = Items.createSummary(Items.pure(dictionary));
+    const pure = Items.createSummary(Items.pure(dictionary));
 
     const needsChange = needChange(price, pure, useKeys);
     log.debug(needsChange ? 'Offer needs change' : 'Offer does not need change');
@@ -732,10 +741,10 @@ function needChange (price, pure, useKeys) {
 function makeChange (price, pure, useKeys) {
     const keyValue = utils.refinedToScrap(Prices.key());
 
-    let required = Prices.valueToPure(price, useKeys);
+    const required = Prices.valueToPure(price, useKeys);
     let change = 0;
 
-    let availablePure = {
+    const availablePure = {
         keys: Array.isArray(pure.keys) ? pure.keys.length : pure.keys,
         refined: Array.isArray(pure.refined) ? pure.refined.length : pure.refined,
         reclaimed: Array.isArray(pure.reclaimed) ? pure.reclaimed.length : pure.reclaimed,
@@ -749,9 +758,9 @@ function makeChange (price, pure, useKeys) {
         if (availablePure.keys > required.keys) {
             required.keys++;
 
-            let refined = Math.floor(keyValue / 9);
-            let reclaimed = Math.floor((keyValue - refined * 9) / 3);
-            let scrap = keyValue - refined * 9 - reclaimed * 3;
+            const refined = Math.floor(keyValue / 9);
+            const reclaimed = Math.floor((keyValue - refined * 9) / 3);
+            const scrap = keyValue - refined * 9 - reclaimed * 3;
 
             required.refined -= refined;
             required.reclaimed -= reclaimed;
@@ -810,11 +819,11 @@ function overstockedItems (offer) {
     const ourSummary = Items.createSummary(Items.createDictionary(offer.items.our));
     const theirSummary = Items.createSummary(Items.createDictionary(offer.items.their));
 
-    let items = [];
-    for (let name in ourSummary) {
+    const items = [];
+    for (const name in ourSummary) {
         if (!items.includes(name)) items.push(name);
     }
-    for (let name in theirSummary) {
+    for (const name in theirSummary) {
         if (!items.includes(name)) items.push(name);
     }
 
@@ -868,8 +877,8 @@ function checkReceivedOffer (id, callback) {
             return;
         }
 
-        let our = offer.currencies.our;
-        let their = offer.currencies.their;
+        const our = offer.currencies.our;
+        const their = offer.currencies.their;
 
         /* eslint-disable-next-line max-len */
         const tradingKeys = (offer.offering.keys.us == true || offer.offering.keys.them == true) && offer.offering.items.us == false && offer.offering.items.them == false;
@@ -994,11 +1003,13 @@ function altcheckOffer (offer, callback) {
 function acceptOffer (offer) {
     offer.log('trade', 'by ' + offer.partner() + ' is offering enough, accepting. Summary:\n' + offer.summary());
 
-    offer.accept().then(function (status) {
-        offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
-    }).catch(function (err) {
-        offer.log('warn', 'could not be accepted: ' + err);
-        log.debug(err.stack);
+    offer.accept(function (err, status) {
+        if (err) {
+            offer.log('warn', `could not be accepted: ${err.message}`);
+            log.debug(err.stack);
+        } else {
+            offer.log('trade', 'successfully accepted' + (status == 'pending' ? '; confirmation required' : ''));
+        }
     });
 }
 
@@ -1183,13 +1194,13 @@ function handleAcceptedOffer (offer) {
 
         const received = Items.createDictionary(receivedItems);
 
-        let items = offer.data('items') || [];
+        const items = offer.data('items') || [];
         for (let i = 0; i < items.length; i++) {
             if (items[i].intent != 0) {
                 continue;
             }
 
-            for (let name in received) {
+            for (const name in received) {
                 if (name == items[i].name) {
                     items[i].ids = received[name];
                     break;
@@ -1358,7 +1369,7 @@ function removeOldOffers (pollData) {
 
     if (!pollData.hasOwnProperty('offerData')) pollData.offerData = {};
 
-    for (let id in pollData.timestamps) {
+    for (const id in pollData.timestamps) {
         if (!pollData.timestamps.hasOwnProperty(id)) {
             continue;
         }
@@ -1387,7 +1398,7 @@ const ERRORS = {
         offer.log('info', 'contains an item that is not in the pricelist, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are taking / offering an item that is not in my pricelist' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1395,7 +1406,7 @@ const ERRORS = {
         offer.log('info', 'we are both offering only metal, declining. Summary:\n' + offer.summary());
         Automatic.alert('trade', 'We are both only offering metal, declining.');
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1403,7 +1414,7 @@ const ERRORS = {
         offer.log('info', 'contains overstocked items, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are offering overstocked / too many items' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1411,7 +1422,7 @@ const ERRORS = {
         offer.log('info', 'is not offering enough, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are not offering enough' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1419,7 +1430,7 @@ const ERRORS = {
         offer.log('info', 'is all-features banned on www.backpack.tf, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are all-features banned on www.backpack.tf' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1427,7 +1438,7 @@ const ERRORS = {
         offer.log('info', 'user is marked on www.steamrep.com, declining. Summary:\n' + offer.summary());
         Friends.alert(offer.partner(), { type: 'trade', status: 'declined', reason: 'You are marked on www.steamrep.com as a scammer' });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     },
@@ -1447,7 +1458,7 @@ const ERRORS = {
             reason: msg
         });
 
-        offer.decline().then(function () {
+        offer.decline(function () {
             offer.log('debug', 'declined');
         });
     }

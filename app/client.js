@@ -144,7 +144,7 @@ function joinGroups () {
         const id = groups[i];
 
         let relation = SteamUser.EClanRelationship.None;
-        for (let group in relations) {
+        for (const group in relations) {
             if (id != group) {
                 continue;
             }

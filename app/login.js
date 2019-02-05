@@ -9,7 +9,7 @@ exports.register = function (automatic) {
 exports.performLogin = performLogin;
 
 function performLogin (details, callback) {
-    let logOnOptions = {
+    const logOnOptions = {
         accountName: details.name,
         password: details.password
     };

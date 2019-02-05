@@ -29,7 +29,7 @@ exports.profit = getProfit;
 exports.potentialProfit = getPotentialProfit;
 
 function addItem (name, assetid, value, intent) {
-    let history = HISTORY[assetid] || { name: name };
+    const history = HISTORY[assetid] || { name: name };
 
     intent = intent == 0 ? 'bought' : 'sold';
     history[intent] = value; // Considering that the price of keys can change, we need to use the current value of the item
@@ -47,7 +47,7 @@ function getProfit (today = false) {
     const current = moment().unix();
     const max = today ? utils.secondsToday() : Infinity; // Convert hours to seconds
 
-    for (let assetid in HISTORY) {
+    for (const assetid in HISTORY) {
         if (!HISTORY.hasOwnProperty(assetid)) {
             continue;
         }
@@ -68,7 +68,7 @@ function getProfit (today = false) {
 function getPotentialProfit () {
     let total = 0;
 
-    for (let assetid in HISTORY) {
+    for (const assetid in HISTORY) {
         if (!HISTORY.hasOwnProperty(assetid)) {
             continue;
         }

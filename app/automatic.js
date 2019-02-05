@@ -66,7 +66,7 @@ const configlog = config.init();
 
 let recentlyRefreshedSession = false;
 
-let Automatic = {
+const Automatic = {
     running: false,
     version: version,
     inventory: [],
@@ -241,7 +241,7 @@ Automatic.manager = new TradeOfferManager({
     pendingCancelTime: 1 * 60 * 1000
 });
 
-let log = Automatic.log = new Winston.Logger({
+const log = Automatic.log = new Winston.Logger({
     levels: logging.LOG_LEVELS,
     colors: logging.LOG_COLORS
 });

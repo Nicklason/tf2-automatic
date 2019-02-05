@@ -48,9 +48,12 @@ exports.getModule = function () {
 };
 
 function createDictionary (items) {
-    let dict = {};
+    const dict = {};
     for (let i = 0; i < items.length; i++) {
         const item = Offer.getItem(items[i]);
+        if (item === null) {
+            continue;
+        }
 
         let name = getName(item);
         if (item.quality == 15) {
@@ -77,8 +80,8 @@ function getItemFromDict (dictionary, name) {
 }
 
 function createSummary (dictionary) {
-    let summary = {};
-    for (let name in dictionary) {
+    const summary = {};
+    for (const name in dictionary) {
         if (!dictionary.hasOwnProperty(name)) {
             continue;
         }
@@ -92,7 +95,7 @@ function createSummary (dictionary) {
 function findMatch (search) {
     search = search.toLowerCase();
 
-    let match = [];
+    const match = [];
     const schema = Items.schema.items;
     for (let i = 0; i < schema.length; i++) {
         const name = schema[i].proper_name ? 'The ' + schema[i].item_name : schema[i].item_name;

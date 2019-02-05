@@ -33,13 +33,13 @@ exports.register = function (Automatic) {
 };
 
 function createTransports () {
-    for (let name in config.logs) {
+    for (const name in config.logs) {
         if (!config.logs.hasOwnProperty(name)) {
             continue;
         }
 
-        let transport = config.logs[name];
-        let type = transport.type;
+        const transport = config.logs[name];
+        const type = transport.type;
 
         delete transport.type;
         transport.name = name;

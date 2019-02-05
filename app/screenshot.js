@@ -9,20 +9,20 @@ let Prices;
 
 const FOLDER_NAME = 'images';
 
-let OPTIONS = {
+const OPTIONS = {
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36',
     renderDelay: 5000,
     cookies: [],
     onLoadFinished: function () {
-        let elements = document.getElementsByClassName('tradeoffer_items_banner');
+        const elements = document.getElementsByClassName('tradeoffer_items_banner');
         if (elements.length == 0) {
             return;
         }
-        let banner = elements[0];
+        const banner = elements[0];
 
         let text = banner.innerHTML;
-        let digit = text.match(/\d/);
-        let index = text.indexOf(digit);
+        const digit = text.match(/\d/);
+        const index = text.indexOf(digit);
         if (index == -1) {
             return;
         }
