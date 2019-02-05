@@ -117,35 +117,41 @@ class Offer {
         this.items[our ? 'our' : 'their'] = other;
     }
 
-    accept () {
-        const self = this;
-        return new Promise(function (resolve, reject) {
-            self.offer.accept(function (err, status) {
-                if (err) {
-                    reject(getError(err));
-                    return;
+    accept (callback, tries = 0) {
+        this.offer.accept((err, status) => {
+            tries++;
+            if (err) {
+                if (tries > 2) {
+                    return callback(getError(err), tries);
                 }
 
-                if (status == 'pending') {
-                    confirmations.accept(self.offer.id);
+                this.log('warn', `could not be accepted: ${err.message}, retrying in 5 seconds...`);
+
+                if (err.message == 'Not Logged In' || err.message == 'ESOCKETTIMEDOUT') {
+                    Automatic.refreshSession();
                 }
 
-                resolve(status);
-            });
+                setTimeout(() => {
+                    this.accept(callback, tries);
+                }, 5000);
+                return;
+            }
+
+            if (status == 'pending') {
+                confirmations.accept(this.offer.id);
+            }
+
+            return callback(null, status);
         });
     }
 
-    decline () {
-        const self = this;
-        return new Promise(function (resolve, reject) {
-            self.offer.decline(function (err) {
-                if (err) {
-                    reject(getError(err));
-                    return;
-                }
+    decline (callback) {
+        this.offer.decline(function (err) {
+            if (err) {
+                return callback(getError(err));
+            }
 
-                resolve();
-            });
+            return callback(null);
         });
     }
 
