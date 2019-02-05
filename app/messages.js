@@ -142,11 +142,11 @@ function friendMessage (steamID, message) {
             const limit = Prices.getLimit(match.name);
 
             const segments = [];
-            if (buy != null && (match.intent === 0 || match.inent === 2)) {
+            if (buy != null && (match.intent === 0 || match.intent === 2)) {
                 segments.push('I am buying a ' + match.name + ' for ' + buy);
             }
 
-            if (sell != null && (match.intent === 1 || match.inent === 2)) {
+            if (sell != null && (match.intent === 1 || match.intent === 2)) {
                 if (segments.length == 0) {
                     segments.push('I am selling a ' + match.name + ' for ' + sell);
                 } else {
