@@ -231,7 +231,7 @@ Automatic.stop = function () {
 };
 
 Automatic.config = config;
-Automatic.client = new SteamUser();
+Automatic.client = new SteamUser({ promptSteamGuardCode: false });
 Automatic.community = new SteamCommunity();
 Automatic.manager = new TradeOfferManager({
     steam: Automatic.client,
