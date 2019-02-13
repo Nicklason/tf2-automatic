@@ -3,6 +3,13 @@ const fs = require('graceful-fs');
 const TF2Currencies = require('tf2-currencies');
 const request = require('@nicklason/api-request');
 
+
+// discord
+const Discord = require('discord.js');
+const discordbot = new Discord.Client();
+const discordbotconfig = require('./discordconfig.json');
+// ^^
+
 const utils = require('./utils.js');
 const Offer = require('./offer.js');
 const Queue = require('./queue.js');
@@ -1098,6 +1105,11 @@ function receivedOfferChanged (offer, oldState) {
         Screenshot.receivedOfferChanged(offer.id, function (err, id) {
             if (err) {
                 Automatic.alert('trade', 'Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + '.');
+                let embed = new Discord.RichEmbed()
+                .setTitle("New trade!")
+                .setDescription("I received a trade.")
+                .addField('Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase())
+            discordbot.channels.get(discordbotconfig.channelid).send(embed);
                 log.warn('Error when capturing and sending screenshot: ' + err.message);
                 log.debug(err.stack);
                 return;
@@ -1105,6 +1117,12 @@ function receivedOfferChanged (offer, oldState) {
 
             log.debug('Image uploaded, returned id: ' + id);
             Automatic.alert('trade', 'Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + ', view it here https://tf2automatic.com/trades?id=' + id);
+            let embed = new Discord.RichEmbed()
+                .setTitle("New trade!")
+                .setDescription("I recieved a trade.")
+                .addField('Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase())
+                .setImage('https://tf2automatic.com/trades?id=' + id)
+            discordbot.channels.get(discordbotconfig.channelid).send(embed);
         });
     }
 
@@ -1132,6 +1150,10 @@ function sentOfferChanged (offer, oldState) {
         Screenshot.sentOfferChanged(offer.id, function (err, id) {
             if (err) {
                 Automatic.alert('trade', 'Sent offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + '.');
+                let embed = new Discord.RichEmbed()
+                .setTitle("New trade!")
+                .setDescription("I recieved a trade.")
+                .addField('Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase())
                 log.warn('Error when capturing and sending screenshot: ' + err.message);
                 log.debug(err.stack);
                 return;
@@ -1139,6 +1161,12 @@ function sentOfferChanged (offer, oldState) {
 
             log.debug('Image uploaded, returned id: ' + id);
             Automatic.alert('trade', 'Sent offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + ', view it here https://tf2automatic.com/trades?id=' + id);
+            let embed = new Discord.RichEmbed()
+                .setTitle("New trade!")
+                .setDescription("I sent a trade offer.")
+                .addField('Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase())
+                .setImage('https://tf2automatic.com/trades?id=' + id)
+            discordbot.channels.get(discordbotconfig.channelid).send(embed);
         });
     }
 
@@ -1473,3 +1501,5 @@ const ERRORS = {
         });
     }
 };
+
+discordbot.login(discordbotconfig.tokenForBot);
