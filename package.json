@@ -10,6 +10,7 @@
         "@nicklason/api-request": "^1.1.7",
         "bptf-listings": "^3.2.0",
         "child_process": "^1.0.2",
+        "discord.js": "^11.4.2",
         "graceful-fs": "^4.1.15",
         "isobject": "^3.0.1",
         "moment": "^2.24.0",
