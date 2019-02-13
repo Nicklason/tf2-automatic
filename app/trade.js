@@ -84,7 +84,7 @@ exports.init = function () {
 exports.checkOfferCount = checkOfferCount;
 exports.requestOffer = requestOffer;
 
-function getActiveOffer (steamID64) {
+function getActiveOffer(steamID64) {
     const pollData = manager.pollData;
 
     if (!pollData.offerData) pollData.offerData = {};
@@ -105,7 +105,7 @@ function getActiveOffer (steamID64) {
     return null;
 }
 
-function requestOffer (steamID64, name, amount, selling) {
+function requestOffer(steamID64, name, amount, selling) {
     if (!Friends.isFriend(steamID64)) {
         log.debug('Not friends with user, but user tried to request a trade (' + steamID64 + ')');
         return;
@@ -142,7 +142,7 @@ function requestOffer (steamID64, name, amount, selling) {
     handleQueue();
 }
 
-function organizeQueue () {
+function organizeQueue() {
     handleQueue();
 
     for (let i = 0; i < RECEIVED.length; i++) {
@@ -153,7 +153,7 @@ function organizeQueue () {
     RECEIVED = [];
 }
 
-function handleChangedOffers () {
+function handleChangedOffers() {
     for (let i = 0; i < RECEIVED_OFFER_CHANGED.length; i++) {
         receivedOfferChanged(RECEIVED_OFFER_CHANGED[i].offer, RECEIVED_OFFER_CHANGED[i].oldState);
     }
@@ -164,7 +164,7 @@ function handleChangedOffers () {
     SENT_OFFER_CHANGED = [];
 }
 
-function handleOffer (offer) {
+function handleOffer(offer) {
     if (!READY) {
         RECEIVED.push(offer);
         return;
@@ -240,7 +240,7 @@ function handleOffer (offer) {
     handleQueue();
 }
 
-function handleQueue () {
+function handleQueue() {
     if (DOING_QUEUE) {
         log.debug('Already processing an offer in the queue');
         return;
@@ -301,7 +301,7 @@ function handleQueue () {
     }
 }
 
-function hasEnoughItems (name, dictionary, amount) {
+function hasEnoughItems(name, dictionary, amount) {
     const ids = dictionary[name] || [];
     const stock = ids.length;
 
@@ -310,7 +310,7 @@ function hasEnoughItems (name, dictionary, amount) {
     return stock;
 }
 
-function filterItems (dictionary) {
+function filterItems(dictionary) {
     const filtered = {};
     for (const name in dictionary) {
         if (!dictionary.hasOwnProperty(name)) {
@@ -333,7 +333,7 @@ function filterItems (dictionary) {
     return filtered;
 }
 
-function convertPure (pure) {
+function convertPure(pure) {
     const items = {
         'Mann Co. Supply Crate Key': pure.keys,
         'Refined Metal': pure.refined,
@@ -343,7 +343,7 @@ function convertPure (pure) {
     return items;
 }
 
-function createOffer (request, callback) {
+function createOffer(request, callback) {
     const selling = request.details.intent == 1;
     const partner = request.partner;
 
@@ -558,7 +558,7 @@ function createOffer (request, callback) {
     });
 }
 
-function finalizeOffer (offer, callback) {
+function finalizeOffer(offer, callback) {
     log.debug('Finalizing offer');
     log.debug(callback != undefined ? 'Offer was requested' : 'Offer was received');
     const time = new Date().getTime();
@@ -617,7 +617,7 @@ function finalizeOffer (offer, callback) {
     });
 }
 
-function sendOffer (offer, callback) {
+function sendOffer(offer, callback) {
     offer.send(function (err, status) {
         if (err) {
             log.debug('Failed to send the offer');
@@ -675,7 +675,7 @@ function sendOffer (offer, callback) {
     });
 }
 
-function constructOffer (price, dictionary, useKeys) {
+function constructOffer(price, dictionary, useKeys) {
     price = Prices.value(price);
     const pure = Items.createSummary(Items.pure(dictionary));
 
@@ -687,7 +687,7 @@ function constructOffer (price, dictionary, useKeys) {
     return needsChange;
 }
 
-function needChange (price, pure, useKeys) {
+function needChange(price, pure, useKeys) {
     const keyValue = utils.refinedToScrap(Prices.key());
 
     let keys = 0;
@@ -745,7 +745,7 @@ function needChange (price, pure, useKeys) {
     };
 }
 
-function makeChange (price, pure, useKeys) {
+function makeChange(price, pure, useKeys) {
     const keyValue = utils.refinedToScrap(Prices.key());
 
     const required = Prices.valueToPure(price, useKeys);
@@ -822,7 +822,7 @@ function makeChange (price, pure, useKeys) {
     };
 }
 
-function overstockedItems (offer) {
+function overstockedItems(offer) {
     const ourSummary = Items.createSummary(Items.createDictionary(offer.items.our));
     const theirSummary = Items.createSummary(Items.createDictionary(offer.items.their));
 
@@ -853,7 +853,7 @@ function overstockedItems (offer) {
     return false;
 }
 
-function checkReceivedOffer (id, callback) {
+function checkReceivedOffer(id, callback) {
     const time = new Date().getTime();
     getOffer(id, function (err, offer) {
         log.debug('Got offer in ' + (new Date().getTime() - time) + ' ms');
@@ -979,7 +979,7 @@ function checkReceivedOffer (id, callback) {
     });
 }
 
-function altcheckOffer (offer, callback) {
+function altcheckOffer(offer, callback) {
     const steamid = callback ? offer.partner.getSteamID64() : offer.partner();
     const time = new Date().getTime();
     request({
@@ -1017,7 +1017,7 @@ function altcheckOffer (offer, callback) {
     });
 }
 
-function acceptOffer (offer) {
+function acceptOffer(offer) {
     offer.log('trade', 'by ' + offer.partner() + ' is offering enough, accepting. Summary:\n' + offer.summary());
 
     offer.accept(function (err, status) {
@@ -1030,7 +1030,7 @@ function acceptOffer (offer) {
     });
 }
 
-function offeringEnough (our, their) {
+function offeringEnough(our, their) {
     const keyValue = utils.refinedToScrap(Prices.key());
 
     const ourValue = our.metal + our.keys * keyValue;
@@ -1042,7 +1042,7 @@ function offeringEnough (our, their) {
     };
 }
 
-function determineEscrowDays (offer) {
+function determineEscrowDays(offer) {
     return new Promise((resolve, reject) => {
         offer.getUserDetails((err, my, them) => {
             if (err) {
@@ -1066,7 +1066,7 @@ function determineEscrowDays (offer) {
     });
 }
 
-function checkEscrow (offer) {
+function checkEscrow(offer) {
     if (config.get().acceptEscrow == true) {
         return Promise.resolve(false);
     }
@@ -1077,7 +1077,7 @@ function checkEscrow (offer) {
     });
 }
 
-function getOffer (id, callback) {
+function getOffer(id, callback) {
     manager.getOffer(id, function (err, offer) {
         if (err) {
             callback(err);
@@ -1089,7 +1089,7 @@ function getOffer (id, callback) {
     });
 }
 
-function receivedOfferChanged (offer, oldState) {
+function receivedOfferChanged(offer, oldState) {
     if (!READY) {
         RECEIVED_OFFER_CHANGED.push({ offer: offer, oldState: oldState });
         return;
@@ -1106,10 +1106,10 @@ function receivedOfferChanged (offer, oldState) {
             if (err) {
                 Automatic.alert('trade', 'Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + '.');
                 let embed = new Discord.RichEmbed()
-                .setTitle("New trade!")
-                .setDescription("I received a trade.")
-                .addField('Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase())
-            discordbot.channels.get(discordbotconfig.channelid).send(embed);
+                    .setTitle("New trade!")
+                    .setDescription("I received a trade.")
+                    .addField('Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase())
+                discordbot.channels.get(discordbotconfig.channelid).send(embed);
                 log.warn('Error when capturing and sending screenshot: ' + err.message);
                 log.debug(err.stack);
                 return;
@@ -1134,7 +1134,7 @@ function receivedOfferChanged (offer, oldState) {
     }
 }
 
-function sentOfferChanged (offer, oldState) {
+function sentOfferChanged(offer, oldState) {
     if (!READY) {
         SENT_OFFER_CHANGED.push({ offer: offer, oldState: oldState });
         return;
@@ -1151,9 +1151,9 @@ function sentOfferChanged (offer, oldState) {
             if (err) {
                 Automatic.alert('trade', 'Sent offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase() + '.');
                 let embed = new Discord.RichEmbed()
-                .setTitle("New trade!")
-                .setDescription("I recieved a trade.")
-                .addField('Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase())
+                    .setTitle("New trade!")
+                    .setDescription("I recieved a trade.")
+                    .addField('Received offer #' + offer.id + ' (' + offer.partner.getSteamID64() + ') is now marked as ' + TradeOfferManager.ETradeOfferState[offer.state].toLowerCase())
                 log.warn('Error when capturing and sending screenshot: ' + err.message);
                 log.debug(err.stack);
                 return;
@@ -1196,7 +1196,7 @@ function sentOfferChanged (offer, oldState) {
     }
 }
 
-function offerAccepted (offer) {
+function offerAccepted(offer) {
     Friends.sendGroupInvites(offer.partner);
     Inventory.getInventory(Automatic.getOwnSteamID(), function () {
         const doneSomething = smeltCraftMetal();
@@ -1208,7 +1208,7 @@ function offerAccepted (offer) {
     });
 }
 
-function handleAcceptedOffer (offer) {
+function handleAcceptedOffer(offer) {
     offer.getReceivedItems(true, function (err, receivedItems) {
         if (err) {
             log.warn('Failed to get received items from offer, retrying in 30 seconds.');
@@ -1256,7 +1256,7 @@ function handleAcceptedOffer (offer) {
     });
 }
 
-function smeltCraftMetal () {
+function smeltCraftMetal() {
     if (tf2.haveGCSession) {
         const dict = Inventory.dictionary();
         const inv = filterItems(dict);
@@ -1345,7 +1345,7 @@ function smeltCraftMetal () {
     }
 }
 
-function addItemsInTrade (items) {
+function addItemsInTrade(items) {
     for (let i = 0; i < items.length; i++) {
         const assetid = items[i].assetid;
         if (!ITEMS_IN_TRADE.includes(assetid)) {
@@ -1354,7 +1354,7 @@ function addItemsInTrade (items) {
     }
 }
 
-function removeItemsInTrade (items) {
+function removeItemsInTrade(items) {
     for (let i = 0; i < items.length; i++) {
         const assetid = items[i].assetid;
 
@@ -1365,7 +1365,7 @@ function removeItemsInTrade (items) {
     }
 }
 
-function checkOfferCount () {
+function checkOfferCount() {
     if (manager.apiKey === null) {
         return;
     }
@@ -1390,7 +1390,7 @@ function checkOfferCount () {
     });
 }
 
-function savePollData (pollData) {
+function savePollData(pollData) {
     pollData = removeOldOffers(pollData);
     manager.pollData = pollData;
 
@@ -1401,7 +1401,7 @@ function savePollData (pollData) {
     });
 }
 
-function removeOldOffers (pollData) {
+function removeOldOffers(pollData) {
     const current = utils.seconds();
     const max = 3600; // 1 hour
 
