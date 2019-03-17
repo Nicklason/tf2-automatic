@@ -7,7 +7,7 @@ let Automatic;
 let Items;
 
 class Offer {
-    constructor (offer, opts = {}) {
+    constructor (offer) {
         this.offer = offer;
         this.items = { our: offer.itemsToGive, their: offer.itemsToReceive };
         this.currencies = { our: { keys: 0, metal: 0 }, their: { keys: 0, metal: 0 } };
@@ -21,9 +21,7 @@ class Offer {
         };
 
         this.games = [];
-        if (opts.countCurrency != false) {
-            this.recountCurrencies();
-        }
+        this.recountCurrencies();
     }
 
     log (level, message) {
