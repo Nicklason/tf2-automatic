@@ -1307,10 +1307,14 @@ function smeltCraftMetal () {
             log.debug('Done crafting');
             log.debug('Sorting inventory');
             tf2.sortBackpack(3);
-            client.gamesPlayed([440]);
-            Inventory.getInventory(Automatic.getOwnSteamID(), function () {
-                client.gamesPlayed([require('../package.json').name, 440]);
-            });
+            client.gamesPlayed([]);
+
+            // Wait some time for the inventory to update
+            setTimeout(function () {
+                Inventory.getInventory(Automatic.getOwnSteamID(), function () {
+                    client.gamesPlayed([require('../package.json').name, 440]);
+                });
+            }, 5000);
         }
 
         return doneSomething;

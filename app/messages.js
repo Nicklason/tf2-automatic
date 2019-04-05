@@ -41,6 +41,9 @@ exports.init = function () {
 function friendMessage (steamID, message) {
     if (Automatic.running != true) {
         return;
+    } else if (message.startsWith('[tradeoffer sender=') && message.endsWith('[/tradeoffer]')) {
+        // Ignore messages sent when a user sends a trade offer
+        return;
     }
 
     message = message.trim();

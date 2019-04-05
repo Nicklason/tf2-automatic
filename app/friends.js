@@ -25,13 +25,13 @@ exports.register = function (automatic) {
 exports.init = function () {
     client.on('friendRelationship', function (steamID, relationship) {
         const steamID64 = steamID.getSteamID64();
-        if (relationship == SteamUser.Steam.EFriendRelationship.Friend) {
+        if (relationship == SteamUser.EFriendRelationship.Friend) {
             log.info('I am now friends with ' + steamID64);
             friendAddResponse(steamID64);
             if (Automatic.hasOwnProperty('maxFriends') && getFriends().length + 20 >= Automatic.maxFriends) {
                 removeRandomFriend(steamID64); // Don't remove the user who just friended the bot
             }
-        } else if (relationship == SteamUser.Steam.EFriendRelationship.RequestRecipient) {
+        } else if (relationship == SteamUser.EFriendRelationship.RequestRecipient) {
             log.info(steamID64 + ' added me');
             addFriend(steamID64); // Add them back
         }
@@ -139,7 +139,7 @@ function getFriends () {
         }
 
         const relation = client.myFriends[steamID64];
-        if (relation == SteamUser.Steam.EFriendRelationship.Friend) {
+        if (relation == SteamUser.EFriendRelationship.Friend) {
             friends.push(steamID64);
         }
     }
@@ -167,7 +167,7 @@ function checkFriendRequests () {
         }
 
         const relation = client.myFriends[steamID64];
-        if (relation == SteamUser.Steam.EFriendRelationship.RequestRecipient) {
+        if (relation == SteamUser.EFriendRelationship.RequestRecipient) {
             addFriend(steamID64);
         }
     }
