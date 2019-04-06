@@ -8,22 +8,26 @@ exports.register = function (automatic) {
 
 exports.performLogin = performLogin;
 
+exports.getAuthCode = getAuthCode;
+
 function performLogin (details, callback) {
     const logOnOptions = {
         accountName: details.name,
         password: details.password
     };
 
+    client.logOn(logOnOptions);
+}
+
+function getAuthCode (sharedSecret, callback) {
     SteamTotp.getTimeOffset(function (err, offset) {
         if (err) {
             callback(err);
             return;
         }
 
-        logOnOptions.twoFactorCode = SteamTotp.getAuthCode(details.shared_secret, offset);
+        const code = SteamTotp.getAuthCode(sharedSecret, offset);
 
-        client.logOn(logOnOptions);
-
-        callback(null);
+        callback(null, code);
     });
 }

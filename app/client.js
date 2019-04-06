@@ -46,6 +46,7 @@ exports.register = function (automatic) {
 
     client.on('webSession', webSession);
     client.on('error', clientError);
+    client.on('steamGuard', steamGuard);
     community.on('sessionExpired', sessionExpired);
     community.on('confKeyNeeded', confKeyNeeded);
 
@@ -109,6 +110,19 @@ function webSession (sessionID, cookies) {
                 log.debug(err);
             }
         });
+    });
+}
+
+function steamGuard (domain, callback) {
+    log.debug('Steam guard code needed');
+
+    if (domain !== null) {
+        throw new Error('This account does not have a mobile authenticator');
+    }
+
+    const account = config.getAccount();
+    Login.getAuthCode(account.shared_secret, function (err, code) {
+        callback(code);
     });
 }
 
