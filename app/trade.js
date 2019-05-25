@@ -538,7 +538,7 @@ function createOffer (request, callback) {
                         continue;
                     }
                     const keys = TF2Currencies.toCurrencies(prices[i].value, Prices.key()).keys;
-                    if (config.get('altcheckThreshold') < keys) {
+                    if (config.get('altcheck') && config.get('altcheckThreshold') < keys) {
                         altcheckOffer(offer, callback);
                         return;
                     }
@@ -960,7 +960,7 @@ function checkReceivedOffer (id, callback) {
                 }
 
                 const keys = TF2Currencies.toCurrencies(offer.prices[i].value, Prices.key()).keys;
-                if (config.get('altcheckThreshold') < keys) {
+                if (config.get('altcheck') && config.get('altcheckThreshold') < keys) {
                     altcheckOffer(offer);
                     return;
                 }

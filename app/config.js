@@ -11,6 +11,7 @@ const DEFAULT_CONFIG = {
     acceptGifts: true,
     acceptBanned: false,
     acceptEscrow: false,
+    altcheck: false, // if an alt check should be made or not
     altcheckThreshold: 10, // an item worth more than 10 keys will trigger an alt check
     comment: {
         buy: 'I am buying your %name% for %price%, I have %current_stock% / %max_stock%.',
