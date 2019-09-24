@@ -7,7 +7,7 @@
     "description": "Fully automated TF2 trading bot advertising on www.backpack.tf",
     "main": "automatic.js",
     "dependencies": {
-        "@nicklason/api-request": "^1.1.7",
+        "@nicklason/request-retry": "^1.1.1",
         "bptf-listings": "^3.2.0",
         "child_process": "^1.0.2",
         "graceful-fs": "^4.1.15",

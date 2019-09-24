@@ -1,7 +1,7 @@
 const TradeOfferManager = require('steam-tradeoffer-manager');
 const fs = require('graceful-fs');
 const TF2Currencies = require('tf2-currencies');
-const request = require('@nicklason/api-request');
+const request = require('@nicklason/request-retry');
 
 const utils = require('./utils.js');
 const Offer = require('./offer.js');
@@ -980,7 +980,9 @@ function altcheckOffer (offer, callback) {
         method: 'GET',
         qs: {
             steamid: steamid
-        }
+        },
+        gzip: true,
+        json: true
     }, function (err, response, body) {
         log.debug('Got alt-check response in ' + (new Date().getTime() - time) + ' ms');
         if (err) {
