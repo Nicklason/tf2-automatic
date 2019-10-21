@@ -61,7 +61,6 @@ typings/
 temp/
 images/
 
-tests/
-locals/
+local/
 
 TODO.md
