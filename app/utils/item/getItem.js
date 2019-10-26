@@ -173,7 +173,7 @@ function getEffect (item) {
  * @return {Number}
  */
 function getWear (item) {
-    const wear = ['Factory New', 'Minimal Wear', 'Field-Tested', 'Well-Worn', 'Battle Scarred'].findIndex((wear) => item.market_hash_name.indexOf(wear) !== -1);
+    const wear = ['Factory New', 'Minimal Wear', 'Field-Tested', 'Well-Worn', 'Battle Scarred'].indexOf(item.getTag('Exterior'));
 
     return wear === -1 ? null : wear + 1;
 }
