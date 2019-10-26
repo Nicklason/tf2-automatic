@@ -5,7 +5,7 @@ const isObject = require('isobject');
 const schemaManager = require('lib/tf2-schema');
 
 module.exports = function () {
-    const item = {
+    const item = Object.assign({
         defindex: getDefindex(this),
         quality: getQuality(this),
         craftable: isCraftable(this),
@@ -16,7 +16,7 @@ module.exports = function () {
         wear: getWear(this),
         paintkit: getPaintKit(this),
         quality2: getElevatedQuality(this)
-    };
+    }, getOutput(this));
 
     // Adds missing properties
     return fixItem(SKU.fromString(SKU.fromObject(item)));
@@ -218,10 +218,60 @@ function getPaintKit (item) {
     return schemaManager.schema.getSkinIdByName(skin);
 }
 
+/**
+ * Gets the elevated quality of an item
+ * @param {Object} item
+ * @return {Number}
+ */
 function getElevatedQuality (item) {
     if (item.hasDescription('Strange Stat Clock Attached')) {
         return 11;
     } else {
         return null;
     }
+}
+
+function getOutput (item) {
+    let index = -1;
+
+    for (let i = 0; i < item.descriptions.length; i++) {
+        const description = item.descriptions[i].value;
+
+        if (description == 'You will receive all of the following outputs once all of the inputs are fulfilled.') {
+            index = i;
+            break;
+        }
+    }
+
+    if (index === -1) {
+        return {
+            target: null,
+            output: null,
+            outputQuality: null
+        };
+    }
+
+    const output = item.descriptions[index + 1].value;
+
+    let target = null;
+    let outputQuality = null;
+    let outputDefindex = null;
+
+    const killstreak = getKillstreak(item);
+
+    if (killstreak !== 0) {
+        // Item is a killstreak kit fabricator
+
+        const name = output.replace(['Killstreak', 'Specialized Killstreak', 'Professional Killstreak'][killstreak - 1], '').replace('Kit', '').trim();
+
+        target = schemaManager.schema.getItemByItemName(name).defindex;
+        outputQuality = 6;
+        outputDefindex = [6527, 6523, 6526][killstreak - 1];
+    }
+
+    return {
+        target: target,
+        output: outputDefindex,
+        outputQuality: outputQuality
+    };
 }
