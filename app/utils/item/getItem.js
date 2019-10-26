@@ -18,6 +18,11 @@ module.exports = function () {
         quality2: getElevatedQuality(this)
     }, getOutput(this));
 
+    const target = getTarget(this);
+    if (target !== null) {
+        item.target = target;
+    }
+
     // Adds missing properties
     return fixItem(SKU.fromString(SKU.fromObject(item)));
 };
@@ -259,14 +264,31 @@ function getOutput (item) {
 
     const killstreak = getKillstreak(item);
 
+    const defindex = getDefindex(item);
+
     if (killstreak !== 0) {
-        // Item is a killstreak kit fabricator
+        // Killstreak Kit Fabricator
 
         const name = output.replace(['Killstreak', 'Specialized Killstreak', 'Professional Killstreak'][killstreak - 1], '').replace('Kit', '').trim();
 
         target = schemaManager.schema.getItemByItemName(name).defindex;
         outputQuality = 6;
         outputDefindex = [6527, 6523, 6526][killstreak - 1];
+    } else if (defindex === 20005) {
+        // Strangifier Chemistry Set
+
+        const name = output.replace('Strangifier', '').trim();
+
+        target = schemaManager.schema.getItemByItemName(name).defindex;
+        outputQuality = 6;
+        outputDefindex = 6522;
+    } else if (defindex === 20006) {
+        // Collector's Chemistry Set
+
+        const name = output.replace('Collector\'s', '').trim();
+
+        outputQuality = 14;
+        outputDefindex = schemaManager.schema.getItemByItemName(name).defindex;
     }
 
     return {
@@ -274,4 +296,12 @@ function getOutput (item) {
         output: outputDefindex,
         outputQuality: outputQuality
     };
+}
+
+function getTarget (item) {
+    if (item.market_hash_name.indexOf('Strangifier') === -1) {
+        return null;
+    }
+
+    return schemaManager.schema.raw.items_game.items[getDefindex(item)].static_attrs['tool target item'];
 }
