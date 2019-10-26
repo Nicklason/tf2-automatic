@@ -4,13 +4,18 @@ const TradeOfferManager = require('steam-tradeoffer-manager');
 
 exports.onRun = function (done) {};
 
+exports.onShutdown = function (done) {};
+
 exports.onReady = function () {};
 
 exports.onLoginThrottle = function (wait) {};
 
 exports.onLoginSuccessful = function () {};
 
-exports.onLoginFailure = function (err) {};
+exports.onLoginFailure = function (err) {
+    // Graceful stop
+    exports.shutdown();
+};
 
 exports.onTradeOfferUpdated = function (offer, oldState) {
     if (offer.state === TradeOfferManager.ETradeOfferState.Active && !offer.isOurOffer) {

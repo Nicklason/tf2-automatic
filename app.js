@@ -23,14 +23,14 @@ handlerManager.setup();
 
 const handler = handlerManager.getHandler();
 
-schemaManager.init(function (err) {
-    if (err) {
-        throw err;
-    }
+handler.onRun(function () {
+    schemaManager.init(function (err) {
+        if (err) {
+            throw err;
+        }
 
-    listingManager.schema = schemaManager.schema;
+        listingManager.schema = schemaManager.schema;
 
-    handler.onRun(function () {
         require('app/login')(function (err) {
             if (err) {
                 handler.onLoginFailure(err);

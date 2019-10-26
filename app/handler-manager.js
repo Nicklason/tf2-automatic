@@ -1,5 +1,16 @@
-const REQUIRED_EVENTS = ['onRun', 'onReady', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onTradeOfferUpdated', 'onPollData', 'onSchema'];
+const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onTradeOfferUpdated', 'onPollData', 'onSchema'];
 const OPTIONAL_EVENTS = ['onHeartbeat', 'onListings', 'onActions'];
+const EXPORTED_FUNCTIONS = {
+    shutdown: function () {
+        handler.onShutdown(function () {
+            require('lib/manager').shutdown();
+            require('lib/bptf-listings').stop();
+            require('lib/ptf-socket').disconnect();
+            // Probably not needed, but just to be safe
+            require('lib/client').logOff();
+        });
+    }
+};
 
 let handler;
 
@@ -19,16 +30,16 @@ exports.setup = function () {
         throw err;
     }
 
-    validateEvents();
+    validate();
 
     bindThis();
 };
 
 /**
- * Makes sure every required event is added to the handler
+ * Makes sure every required event is added to the handler and adds exported functions
  * @throw Throws an error when missing required event listener
  */
-function validateEvents () {
+function validate () {
     REQUIRED_EVENTS.forEach(function (event) {
         if (typeof handler[event] !== 'function') {
             throw new Error(`Missing required listener for the event "${event}" in handler`);
@@ -42,6 +53,12 @@ function validateEvents () {
             handler[event] = noop;
         }
     });
+
+    for (const func in EXPORTED_FUNCTIONS) {
+        if (Object.prototype.hasOwnProperty.call(EXPORTED_FUNCTIONS, func)) {
+            handler[func] = EXPORTED_FUNCTIONS[func];
+        }
+    }
 }
 
 /**
