@@ -3,17 +3,21 @@ require('module-alias/register');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const tf2 = require('lib/tf2');
+const client = require('lib/client');
+const schemaManager = require('lib/tf2-schema');
+const listingManager = require('lib/bptf-listings');
 
 const handlerManager = require('app/handler-manager');
 handlerManager.setup();
 
 const handler = handlerManager.getHandler();
 
-tf2.init(function (err) {
+schemaManager.init(function (err) {
     if (err) {
         throw err;
     }
+
+    listingManager.schema = schemaManager.schema;
 
     handler.onRun(function () {
         require('app/login')(function (err) {
@@ -23,6 +27,16 @@ tf2.init(function (err) {
             }
 
             handler.onLoginSuccessful();
+
+            listingManager.steamid = client.steamID;
+
+            listingManager.init(function (err) {
+                if (err) {
+                    throw err;
+                }
+
+                handler.onReady();
+            });
         });
     });
 });

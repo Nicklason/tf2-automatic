@@ -1,4 +1,5 @@
-const REQUIRED_EVENTS = ['onRun', 'onLoginSuccessful', 'onLoginFailure', 'onTradeOfferUpdated', 'onPollData', 'onSchemaUpdated'];
+const REQUIRED_EVENTS = ['onRun', 'onReady', 'onLoginSuccessful', 'onLoginFailure', 'onTradeOfferUpdated', 'onPollData', 'onSchema'];
+const OPTIONAL_EVENTS = ['onHeartbeat', 'onListings', 'onActions'];
 
 let handler;
 
@@ -33,6 +34,14 @@ function validateEvents () {
             throw new Error(`Missing required listener for the event "${event}" in handler`);
         }
     });
+
+    OPTIONAL_EVENTS.forEach(function (event) {
+        if (handler[event] !== undefined && typeof handler[event] !== 'function') {
+            throw new Error(`exported value in handler for "${event}" must be a function`);
+        } else if (handler[event] === undefined) {
+            handler[event] = noop;
+        }
+    });
 }
 
 /**
@@ -45,6 +54,8 @@ function bindThis () {
         handler[event] = handler[event].bind(client);
     });
 }
+
+function noop () {}
 
 /**
  * Gets the handler

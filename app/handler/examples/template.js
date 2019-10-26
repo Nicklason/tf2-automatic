@@ -4,6 +4,8 @@ const TradeOfferManager = require('steam-tradeoffer-manager');
 
 exports.onRun = function (done) {};
 
+exports.onReady = function () {};
+
 exports.onLoginSuccessful = function () {};
 
 exports.onLoginFailure = function (err) {};
@@ -18,4 +20,4 @@ function onNewTradeOffer (offer) {}
 
 exports.onPollData = function (pollData) {};
 
-exports.onSchemaUpdated = function (schema) {};
+exports.onSchema = function (schema) {};

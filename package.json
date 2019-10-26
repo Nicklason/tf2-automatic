@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@nicklason/request-retry": "^1.1.1",
+    "bptf-listings": "^4.0.1",
     "dotenv": "^8.2.0",
     "module-alias": "^2.2.2",
     "path": "^0.12.7",
@@ -38,7 +39,7 @@
     "tf2-schema": "^1.1.0"
   },
   "devDependencies": {
-    "eslint": "^6.5.1",
+    "eslint": "^6.6.0",
     "eslint-config-google": "^0.14.0",
     "nodemon": "^1.19.4"
   },
