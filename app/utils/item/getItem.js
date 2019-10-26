@@ -159,5 +159,14 @@ function getPaintKit (item) {
         return null;
     }
 
+    if (skin.indexOf('Mk.I') !== -1) {
+        return schemaManager.schema.getSkinIdByName(skin);
+    }
+
+    const schemaItem = schemaManager.schema.getItemByDefindex(getDefindex(item));
+
+    // Remove weapon from skin name
+    skin = skin.replace(schemaItem.item_type_name, '').trim();
+
     return schemaManager.schema.getSkinIdByName(skin);
 }
