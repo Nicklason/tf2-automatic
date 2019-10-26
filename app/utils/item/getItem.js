@@ -131,7 +131,38 @@ function getWear (item) {
     return wear === -1 ? null : wear + 1;
 }
 
-// TODO: Add this
+/**
+ * Get skin from item
+ * @param {Object} item
+ * @return {Number}
+ */
 function getPaintKit (item) {
+    if (getWear(item) === null) {
+        return;
+    }
+
+    let hasCaseCollection = false;
+    let skin = null;
+
+    for (let i = 0; i < item.descriptions.length; i++) {
+        const description = item.descriptions[i].value;
+
+        if (!hasCaseCollection && description.endsWith('Collection')) {
+            hasCaseCollection = true;
+        } else if (hasCaseCollection && description.startsWith('✔')) {
+            skin = description.replace('✔ ', '').replace(' War Paint', '');
+            break;
+        }
+    }
+
+    if (skin === null) {
+        return null;
+    }
+
+    if (skin.indexOf('Mk.II') !== -1) {
+        skin = skin.replace('Mk.II', '').trim();
+        return schemaManager.schema.getSkinIdByName(skin);
+    }
+
     return null;
 }
