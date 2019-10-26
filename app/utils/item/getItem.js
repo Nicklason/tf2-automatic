@@ -117,7 +117,7 @@ function getEffect (item) {
 
     const effect = item.descriptions.find((description) => description.value[0] === '\u2605');
 
-    return effect === undefined ? null : schemaManager.schema.getEffectIdByName(effect.substring(18));
+    return effect === undefined ? null : schemaManager.schema.getEffectIdByName(effect.value.substring(18));
 }
 
 /**
@@ -159,10 +159,5 @@ function getPaintKit (item) {
         return null;
     }
 
-    if (skin.indexOf('Mk.II') !== -1) {
-        skin = skin.replace('Mk.II', '').trim();
-        return schemaManager.schema.getSkinIdByName(skin);
-    }
-
-    return null;
+    return schemaManager.schema.getSkinIdByName(skin);
 }
