@@ -14,7 +14,8 @@ module.exports = function () {
         festive: isFestive(this),
         effect: getEffect(this),
         wear: getWear(this),
-        paintkit: getPaintKit(this)
+        paintkit: getPaintKit(this),
+        quality2: getElevatedQuality(this)
     };
 
     // Adds missing properties
@@ -56,6 +57,11 @@ function fixItem (item) {
         if (series !== null) {
             item.crateseries = parseInt(series);
         }
+    }
+
+    if (item.quality2 !== null && item.wear !== null) {
+        // Item is a skin
+        item.quality = 15;
     }
 
     return item;
@@ -210,4 +216,12 @@ function getPaintKit (item) {
     skin = skin.replace(schemaItem.item_type_name, '').trim();
 
     return schemaManager.schema.getSkinIdByName(skin);
+}
+
+function getElevatedQuality (item) {
+    if (item.hasDescription('Strange Stat Clock Attached')) {
+        return 11;
+    } else {
+        return null;
+    }
 }
