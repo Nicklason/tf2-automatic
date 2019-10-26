@@ -14,14 +14,6 @@ const CEconItem = require(path.join(__dirname, './node_modules/steamcommunity/cl
     CEconItem.prototype[v] = func;
 });
 
-/* EconItem.prototype.hasDescription = require('utils/item/hasDescription');
-EconItem.prototype.getAction = require('utils/item/getAction');
-EconItem.prototype.getTag = require('utils/item/getTag');
-
-EconItem.prototype.getItem = require('utils/item/getItem');
-EconItem.prototype.getSKU = require('utils/item/getSKU');
-EconItem.prototype.getName = require('utils/item/getName'); */
-
 const client = require('lib/client');
 const schemaManager = require('lib/tf2-schema');
 const listingManager = require('lib/bptf-listings');
