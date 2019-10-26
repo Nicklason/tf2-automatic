@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@nicklason/request-retry": "^1.1.1",
-    "bptf-listings": "^4.0.1",
+    "bptf-listings": "^4.0.2",
     "dotenv": "^8.2.0",
     "module-alias": "^2.2.2",
     "path": "^0.12.7",
@@ -36,7 +36,8 @@
     "steam-tradeoffer-manager": "^2.10.1",
     "steam-user": "^4.12.4",
     "steamcommunity": "^3.41.1",
-    "tf2-schema": "^1.1.0"
+    "tf2-schema": "^1.1.2",
+    "url": "^0.11.0"
   },
   "devDependencies": {
     "eslint": "^6.6.0",
