@@ -29,6 +29,7 @@
     "@nicklason/request-retry": "^1.1.1",
     "bptf-listings": "^4.0.2",
     "dotenv": "^8.2.0",
+    "isobject": "^4.0.0",
     "module-alias": "^2.2.2",
     "path": "^0.12.7",
     "socket.io-client": "^2.3.0",
