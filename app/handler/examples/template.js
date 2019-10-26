@@ -6,6 +6,8 @@ exports.onRun = function (done) {};
 
 exports.onReady = function () {};
 
+exports.onLoginThrottle = function (wait) {};
+
 exports.onLoginSuccessful = function () {};
 
 exports.onLoginFailure = function (err) {};

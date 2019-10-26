@@ -1,4 +1,4 @@
-const REQUIRED_EVENTS = ['onRun', 'onReady', 'onLoginSuccessful', 'onLoginFailure', 'onTradeOfferUpdated', 'onPollData', 'onSchema'];
+const REQUIRED_EVENTS = ['onRun', 'onReady', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onTradeOfferUpdated', 'onPollData', 'onSchema'];
 const OPTIONAL_EVENTS = ['onHeartbeat', 'onListings', 'onActions'];
 
 let handler;
