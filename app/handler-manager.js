@@ -56,6 +56,10 @@ function validate () {
 
     for (const func in EXPORTED_FUNCTIONS) {
         if (Object.prototype.hasOwnProperty.call(EXPORTED_FUNCTIONS, func)) {
+            if (handler[func] !== undefined) {
+                throw new Error(`exported function "${func}" already exists`);
+            }
+
             handler[func] = EXPORTED_FUNCTIONS[func];
         }
     }
