@@ -5,6 +5,10 @@ const isObject = require('isobject');
 const schemaManager = require('lib/tf2-schema');
 
 module.exports = function () {
+    if (this.appid != 440) {
+        return null;
+    }
+
     const item = Object.assign({
         defindex: getDefindex(this),
         quality: getQuality(this),
