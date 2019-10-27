@@ -35,6 +35,7 @@ handler.onRun(function (opts) {
 
         const loginKey = opts.loginKey || null;
 
+        // Set schema for bptf-listings
         listingManager.schema = schemaManager.schema;
 
         let lastLoginFailed = false;
@@ -58,13 +59,16 @@ handler.onRun(function (opts) {
 
             handler.onLoginSuccessful();
 
+            // Set steamid for bptf-listings
             listingManager.steamid = client.steamID;
 
             async.parallel([
                 function (callback) {
+                    // Initialize bptf-listings
                     listingManager.init(callback);
                 },
                 function (callback) {
+                    // Wait for steamcommunity session
                     require('utils/communityLoginCallback')(callback);
                 }
             ], function (err) {
