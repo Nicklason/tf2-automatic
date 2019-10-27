@@ -46,6 +46,8 @@ exports.onLoginKey = function (loginKey) {
     fs.writeFileSync(LOGIN_KEY_PATH, loginKey);
 };
 
+exports.onMessage = function (steamID, message) {};
+
 exports.onTradeOfferUpdated = function (offer, oldState) {};
 
 exports.onPollData = function (pollData) {};

@@ -53,6 +53,14 @@ exports.onLoginFailure = function (err) {
 exports.onLoginKey = function (loginKey) {};
 
 /**
+ * Event listener for the message event
+ * @param {Object} steamID SteamID object
+ * @param {String} message
+ * @description This event is emitted when you receive a friend message from a user on Steam
+ */
+exports.onMessage = function (steamID, message) {};
+
+/**
  * Event listener for the trade offer updated event
  * @param {Object} offer The offer which state has changed
  * @param {Number} oldState null if the offer is new (current state is active)

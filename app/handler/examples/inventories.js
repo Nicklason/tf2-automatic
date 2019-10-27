@@ -1,7 +1,5 @@
 /* eslint-disable no-console */
 
-const TradeOfferManager = require('steam-tradeoffer-manager');
-
 const manager = require('lib/manager');
 
 exports.onRun = function (done) {
@@ -47,17 +45,9 @@ exports.onLoginFailure = function (err) {
 
 exports.onLoginKey = function (loginKey) {};
 
-exports.onTradeOfferUpdated = function (offer, oldState) {
-    if (offer.state === TradeOfferManager.ETradeOfferState.Active && !offer.isOurOffer) {
-        onNewTradeOffer.call(this, offer);
-    } else if (oldState !== null) {
-        console.log('Offer #' + offer.id + ' state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
-    }
-};
+exports.onMessage = function (steamID, message) {};
 
-function onNewTradeOffer (offer) {
-    console.log('Received an offer from ' + offer.partner.getSteamID64());
-}
+exports.onTradeOfferUpdated = function (offer, oldState) {};
 
 exports.onPollData = function (pollData) {};
 

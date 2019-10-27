@@ -34,6 +34,10 @@ exports.onLoginFailure = function (err) {
 
 exports.onLoginKey = function (loginKey) {};
 
+exports.onMessage = function (steamID, message) {
+    console.log('Message from ' + steamID.getSteamID64() + ': ' + message);
+};
+
 exports.onTradeOfferUpdated = function (offer, oldState) {
     if (offer.state === TradeOfferManager.ETradeOfferState.Active && !offer.isOurOffer) {
         onNewTradeOffer.call(this, offer);

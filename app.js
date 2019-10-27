@@ -78,6 +78,8 @@ handler.onRun(function (opts) {
                     }
 
                     handler.onReady();
+
+                    client.on('friendMessage', handler.onMessage);
                 });
             });
         }
