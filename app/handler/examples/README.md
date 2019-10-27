@@ -16,8 +16,9 @@ There is a list of events that you are required to use in order for the bot to w
 // In order to start the bot, you need to call the done command
 
 /**
- * Event listener for the run event, is emitted once the bot starts
+ * Event listener for the run event
  * @param {Function} done The bot will only start once you call the done function
+ * @description Event is emitted once the bot starts
  */
 exports.onRun = function (done) {
     console.log('Starting the bot...');
@@ -34,7 +35,6 @@ Once the bot it set up and ready, the `ready` event will be emitted.
 ```js
 /**
  * Event listener for the ready event
- * 
  * @description Event is emitted shoryly after the bot has logged. The bot will be signed in, and the bptf-listings module will be initialized once the event is emitted.
  */
 exports.onReady = function () {
@@ -49,9 +49,8 @@ exports.onReady = function () {
 There are also exported functions. These functions can only be called once the `run` event has been emitted.
 
 ```js
-
 /**
- * Event listener for the loginFailure event
+ * Event listener for the login failure event
  * @param {Error} err Error emitted when a login attempt was made
  * @description Event is emitted if the bot fails to sign in on startup, this error is caught and parsed as an argument to the listener.
  */
@@ -64,6 +63,7 @@ exports.onLoginFailure = function (err) {
 
 /**
  * Event listener for the shutdown event
+ * @param {Function} done
  * @description Event is emitted once a shutdown has been requested. Same idea as the "ready" event, except after calling the done function the bot will stop and the process will be killed
  */
 exports.onShutdown = function (done) {
