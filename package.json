@@ -30,6 +30,7 @@
     "@nicklason/request-retry": "^1.1.1",
     "bptf-listings": "^4.0.3",
     "dotenv": "^8.2.0",
+    "is-path-inside": "^3.0.2",
     "isobject": "^4.0.0",
     "module-alias": "^2.2.2",
     "path": "^0.12.7",

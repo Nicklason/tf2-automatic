@@ -1,3 +1,6 @@
+const path = require('path');
+const isPathInside = require('is-path-inside');
+
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onLoginKey', 'onTradeOfferUpdated', 'onPollData', 'onSchema', 'onLoginAttempts'];
 const OPTIONAL_EVENTS = ['onHeartbeat', 'onListings', 'onActions'];
 const EXPORTED_FUNCTIONS = {
@@ -26,8 +29,20 @@ let handler;
  * @throw Throws an error if missing handler or if there is a problem with the handler
  */
 exports.setup = function () {
+    let handlerPath;
+
+    if (process.env.HANDLER_PATH !== undefined) {
+        handlerPath = path.join(__dirname, '../', process.env.HANDLER_PATH);
+    } else {
+        handlerPath = path.join(__dirname, '../app/handler/index.js');
+    }
+
+    if (!isPathInside(handlerPath, path.join(__dirname, '../app/handler'))) {
+        throw new Error('Handler file must be inside app/handler');
+    }
+
     try {
-        handler = require('handler');
+        handler = require(handlerPath);
     } catch (err) {
         if (err.code === 'MODULE_NOT_FOUND') {
             throw new Error('Missing handler file');
