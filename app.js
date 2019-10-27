@@ -3,6 +3,7 @@ require('module-alias/register');
 const dotenv = require('dotenv');
 dotenv.config();
 
+const async = require('async');
 const path = require('path');
 
 const EconItem = require(path.join(__dirname, './node_modules/steam-tradeoffer-manager/lib/classes/EconItem.js'));
@@ -60,12 +61,25 @@ handler.onRun(function (opts) {
 
             listingManager.steamid = client.steamID;
 
-            listingManager.init(function (err) {
+            async.parallel([
+                function (callback) {
+                    listingManager.init(callback);
+                },
+                function (callback) {
+                    require('utils/communityLoginCallback')(callback);
+                }
+            ], function (err) {
                 if (err) {
                     throw err;
                 }
 
-                handler.onReady();
+                listingManager.init(function (err) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    handler.onReady();
+                });
             });
         }
     });
