@@ -161,9 +161,7 @@ function isFestive (item) {
  * @return {String}
  */
 function getEffect (item) {
-    if (getQuality(item) === 6) {
-        return null;
-    } else if (!Array.isArray(item.descriptions)) {
+    if (!Array.isArray(item.descriptions)) {
         return null;
     }
 
@@ -201,8 +199,8 @@ function getPaintKit (item) {
 
         if (!hasCaseCollection && description.endsWith('Collection')) {
             hasCaseCollection = true;
-        } else if (hasCaseCollection && description.startsWith('✔')) {
-            skin = description.replace('✔ ', '').replace(' War Paint', '');
+        } else if (hasCaseCollection && (description.startsWith('✔') || description.startsWith('★'))) {
+            skin = description.substring(1).replace(' War Paint', '').trim();
             break;
         }
     }
