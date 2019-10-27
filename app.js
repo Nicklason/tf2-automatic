@@ -26,6 +26,8 @@ handlerManager.setup();
 const handler = handlerManager.getHandler();
 
 handler.onRun(function (opts) {
+    opts = opts || {};
+
     schemaManager.init(function (err) {
         if (err) {
             throw err;
