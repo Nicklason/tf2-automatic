@@ -17,6 +17,8 @@ exports.onLoginFailure = function (err) {
     exports.shutdown();
 };
 
+exports.onLoginKey = function (loginKey) {};
+
 exports.onTradeOfferUpdated = function (offer, oldState) {
     if (offer.state === TradeOfferManager.ETradeOfferState.Active && !offer.isOurOffer) {
         onNewTradeOffer.call(this, offer);
@@ -28,3 +30,5 @@ function onNewTradeOffer (offer) {}
 exports.onPollData = function (pollData) {};
 
 exports.onSchema = function (schema) {};
+
+exports.onLoginAttempts = function (attempts) {};
