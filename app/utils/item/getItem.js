@@ -299,9 +299,23 @@ function getOutput (item) {
 }
 
 function getTarget (item) {
-    if (item.market_hash_name.indexOf('Strangifier') === -1) {
-        return null;
+    const defindex = getDefindex(item);
+
+    if (item.market_hash_name.indexOf('Strangifier') !== -1) {
+        // Strangifiers
+        return schemaManager.schema.raw.items_game.items[defindex].static_attrs['tool target item'];
     }
 
-    return schemaManager.schema.raw.items_game.items[getDefindex(item)].static_attrs['tool target item'];
+    if (defindex === 6527) {
+        // Killstreak Kit
+        return schemaManager.schema.getItemByItemName(item.market_hash_name.substring(10, item.market_hash_name.length - 3).replace('Killstreak', '').trim()).defindex;
+    } else if (defindex === 6523) {
+        // Specialized Killstreak Kit
+        return schemaManager.schema.getItemByItemName(item.market_hash_name.substring(22, item.market_hash_name.length - 3).trim()).defindex;
+    } else if (defindex === 6526) {
+        // Professional Killstreak Kit
+        return schemaManager.schema.getItemByItemName(item.market_hash_name.substring(23, item.market_hash_name.length - 3).trim()).defindex;
+    }
+
+    return null;
 }
