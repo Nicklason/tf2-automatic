@@ -14,6 +14,8 @@ const CEconItem = require(path.join(__dirname, './node_modules/steamcommunity/cl
     CEconItem.prototype[v] = func;
 });
 
+const SteamUser = require('steam-user');
+
 const client = require('lib/client');
 const schemaManager = require('lib/tf2-schema');
 const listingManager = require('lib/bptf-listings');
@@ -23,17 +25,32 @@ handlerManager.setup();
 
 const handler = handlerManager.getHandler();
 
-handler.onRun(function () {
+handler.onRun(function (opts) {
     schemaManager.init(function (err) {
         if (err) {
             throw err;
         }
 
+        const loginKey = opts.loginKey || null;
+
         listingManager.schema = schemaManager.schema;
 
-        require('app/login')(function (err) {
+        let lastLoginFailed = false;
+
+        const login = require('app/login');
+
+        // Perform login
+        login(loginKey, loginResponse);
+
+        function loginResponse (err) {
             if (err) {
-                handler.onLoginFailure(err);
+                if (!lastLoginFailed && err.eresult !== SteamUser.EFriendRelationship.RateLimitExceeded && err.eresult !== SteamUser.EFriendRelationship.InvalidPassword) {
+                    lastLoginFailed = true;
+                    // Try and sign in without login key
+                    login(null, loginResponse);
+                } else {
+                    handler.onLoginFailure(err);
+                }
                 return;
             }
 
@@ -48,6 +65,6 @@ handler.onRun(function () {
 
                 handler.onReady();
             });
-        });
+        }
     });
 });

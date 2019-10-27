@@ -1,37 +1,58 @@
 const client = require('lib/client');
+const loginAttempts = require('app/login-attempts');
+const handlerManager = require('app/handler-manager');
 
 /**
  * Signs in to Steam and catches login error
+ * @param {String} loginKey
  * @param {Function} callback
  */
-module.exports = function (callback) {
-    const listeners = client.listeners('error');
+module.exports = function (loginKey, callback) {
+    const wait = loginAttempts.wait();
 
-    client.removeAllListeners('error');
-
-    client.logOn({
-        accountName: process.env.STEAM_ACCOUNT_NAME,
-        password: process.env.STEAM_PASSWORD
-    });
-
-    client.on('loggedOn', loggedOnEvent);
-    client.on('error', errorEvent);
-
-    function loggedOnEvent () {
-        client.off('error', errorEvent);
-        gotEvent();
+    if (wait !== 0) {
+        handlerManager.getHandler().onLoginThrottle(wait);
     }
 
-    function errorEvent (err) {
-        client.off('loggedOn', loggedOnEvent);
-        gotEvent(err);
-    }
+    setTimeout(function () {
+        const listeners = client.listeners('error');
 
-    function gotEvent (err) {
-        listeners.forEach(function (listener) {
-            client.on('error', listener);
-        });
+        client.removeAllListeners('error');
 
-        callback(err);
-    }
+        const opts = {
+            accountName: process.env.STEAM_ACCOUNT_NAME
+        };
+
+        if (loginKey !== null) {
+            opts.loginKey = loginKey;
+        } else {
+            opts.password = process.env.STEAM_PASSWORD;
+            opts.rememberPassword = true;
+        }
+
+        loginAttempts.newAttempt();
+
+        client.logOn(opts);
+
+        client.on('loggedOn', loggedOnEvent);
+        client.on('error', errorEvent);
+
+        function loggedOnEvent () {
+            client.off('error', errorEvent);
+            gotEvent();
+        }
+
+        function errorEvent (err) {
+            client.off('loggedOn', loggedOnEvent);
+            gotEvent(err);
+        }
+
+        function gotEvent (err) {
+            listeners.forEach(function (listener) {
+                client.on('error', listener);
+            });
+
+            callback(err);
+        }
+    }, wait);
 };

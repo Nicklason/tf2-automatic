@@ -1,4 +1,4 @@
-const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onTradeOfferUpdated', 'onPollData', 'onSchema'];
+const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onLoginKey', 'onTradeOfferUpdated', 'onPollData', 'onSchema', 'onLoginAttempts'];
 const OPTIONAL_EVENTS = ['onHeartbeat', 'onListings', 'onActions'];
 const EXPORTED_FUNCTIONS = {
     shutdown: function () {
@@ -6,9 +6,13 @@ const EXPORTED_FUNCTIONS = {
             require('lib/manager').shutdown();
             require('lib/bptf-listings').stop();
             require('lib/ptf-socket').disconnect();
+            require('lib/login-attempts').save();
             // Probably not needed, but just to be safe
             require('lib/client').logOff();
         });
+    },
+    setLoginAttempts (attempts) {
+        require('app/login-attempts').setAttempts(attempts);
     }
 };
 
