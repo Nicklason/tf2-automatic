@@ -4,10 +4,9 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const async = require('async');
-const path = require('path');
 
-const EconItem = require(path.join(__dirname, './node_modules/steam-tradeoffer-manager/lib/classes/EconItem.js'));
-const CEconItem = require(path.join(__dirname, './node_modules/steamcommunity/classes/CEconItem.js'));
+const EconItem = require('steam-tradeoffer-manager/lib/classes/EconItem.js');
+const CEconItem = require('steamcommunity/classes/CEconItem.js');
 
 ['hasDescription', 'getAction', 'getTag', 'getItem', 'getSKU', 'getName'].forEach(function (v) {
     const func = require('utils/item/' + v);
