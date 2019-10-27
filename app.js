@@ -72,15 +72,9 @@ handler.onRun(function (opts) {
                     throw err;
                 }
 
-                listingManager.init(function (err) {
-                    if (err) {
-                        throw err;
-                    }
+                handler.onReady();
 
-                    handler.onReady();
-
-                    client.on('friendMessage', handler.onMessage);
-                });
+                client.on('friendMessage', handler.onMessage);
             });
         }
     });
