@@ -13,6 +13,9 @@ const EXPORTED_FUNCTIONS = {
     },
     setLoginAttempts (attempts) {
         require('app/login-attempts').setAttempts(attempts);
+    },
+    setPollData (pollData) {
+        require('lib/manager').pollData = pollData;
     }
 };
 
