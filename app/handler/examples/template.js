@@ -32,3 +32,9 @@ exports.onPollData = function (pollData) {};
 exports.onSchema = function (schema) {};
 
 exports.onLoginAttempts = function (attempts) {};
+
+exports.onHeartbeat = function (bumped) {};
+
+exports.onListings = function (listings) {};
+
+exports.onActions = function (actions) {};
