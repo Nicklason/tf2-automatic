@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 
 const TradeOfferManager = require('steam-tradeoffer-manager');
+
 exports.onRun = function (done) {
     console.log('The bot is starting...');
 
