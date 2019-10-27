@@ -44,7 +44,7 @@ exports.setup = function () {
     try {
         handler = require(handlerPath);
     } catch (err) {
-        if (err.code === 'MODULE_NOT_FOUND') {
+        if (err.code === 'MODULE_NOT_FOUND' && err.message.indexOf(handlerPath) !== -1) {
             throw new Error('Missing handler file');
         }
 
