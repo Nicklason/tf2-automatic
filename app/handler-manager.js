@@ -96,6 +96,10 @@ function bindThis () {
     REQUIRED_EVENTS.forEach(function (event) {
         handler[event] = handler[event].bind(client);
     });
+
+    OPTIONAL_EVENTS.forEach(function (event) {
+        handler[event] = handler[event].bind(client);
+    });
 }
 
 function noop () {}
