@@ -62,21 +62,28 @@ handler.onRun(function (opts) {
             // Set steamid for bptf-listings
             listingManager.steamid = client.steamID;
 
-            async.parallel([
-                function (callback) {
+            async.parallel({
+                listings: function (callback) {
                     // Initialize bptf-listings
                     listingManager.init(callback);
                 },
-                function (callback) {
+                cookies: function (callback) {
                     // Wait for steamcommunity session
                     require('utils/communityLoginCallback')(callback);
                 }
-            ], function (err) {
+            }, function (err, result) {
                 if (err) {
                     throw err;
                 }
 
-                handler.onReady();
+                // Set cookies for the tradeoffer manager which will start the polling
+                require('lib/manager').setCookies(result.cookies, function (err) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    handler.onReady();
+                });
             });
         }
     });
