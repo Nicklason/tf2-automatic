@@ -11,10 +11,11 @@ exports.onRun = function (done) {};
 
 /**
  * Event listener for the shutdown event
+ * @param {Error} error Error object
  * @param {Function} done
  * @description Event is emitted once a shutdown has been requested. Same idea as the "ready" event, except after calling the done function the bot will stop and the process will be killed
  */
-exports.onShutdown = function (done) {};
+exports.onShutdown = function (error, done) {};
 
 /**
  * Event listener for the ready event

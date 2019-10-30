@@ -4,14 +4,14 @@ const isPathInside = require('is-path-inside');
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onLoginKey', 'onTradeOfferUpdated', 'onLoginAttempts'];
 const OPTIONAL_EVENTS = ['onMessage', 'onPollData', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
 const EXPORTED_FUNCTIONS = {
-    shutdown: function () {
-        handler.onShutdown(function () {
+    shutdown: function (err) {
+        handler.onShutdown(err, function () {
             require('lib/manager').shutdown();
             require('lib/bptf-listings').stop();
             require('lib/ptf-socket').disconnect();
-            require('lib/login-attempts').save();
-            // Probably not needed, but just to be safe
             require('lib/client').logOff();
+
+            process.exit(0);
         });
     },
     setLoginAttempts (attempts) {

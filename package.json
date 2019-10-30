@@ -4,6 +4,7 @@
   "description": "Fully automated TF2 trading bot advertising on www.backpack.tf",
   "main": "app.js",
   "scripts": {
+    "start": "node app.js",
     "dev": "nodemon app.js",
     "lint": "eslint ./",
     "release": "np --no-cleanup --no-publish"
@@ -29,6 +30,7 @@
   "dependencies": {
     "@nicklason/request-retry": "^1.1.1",
     "bptf-listings": "^4.0.3",
+    "death": "^1.1.0",
     "dotenv": "^8.2.0",
     "is-path-inside": "^3.0.2",
     "isobject": "^4.0.0",

@@ -3,8 +3,6 @@ require('module-alias/register');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const async = require('async');
-
 const EconItem = require('steam-tradeoffer-manager/lib/classes/EconItem.js');
 const CEconItem = require('steamcommunity/classes/CEconItem.js');
 
@@ -15,6 +13,7 @@ const CEconItem = require('steamcommunity/classes/CEconItem.js');
 });
 
 const SteamUser = require('steam-user');
+const async = require('async');
 
 const client = require('lib/client');
 const schemaManager = require('lib/tf2-schema');
@@ -24,6 +23,14 @@ const handlerManager = require('app/handler-manager');
 handlerManager.setup();
 
 const handler = handlerManager.getHandler();
+
+require('death')(function (signal, err) {
+    if (typeof err === 'string') {
+        err = new Error(err);
+    }
+
+    handler.shutdown(err);
+});
 
 handler.onRun(function (opts) {
     opts = opts || {};
@@ -88,3 +95,4 @@ handler.onRun(function (opts) {
         }
     });
 });
+

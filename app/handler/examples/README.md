@@ -63,10 +63,11 @@ exports.onLoginFailure = function (err) {
 
 /**
  * Event listener for the shutdown event
+ * @param {Error} error Error object
  * @param {Function} done
  * @description Event is emitted once a shutdown has been requested. Same idea as the "ready" event, except after calling the done function the bot will stop and the process will be killed
  */
-exports.onShutdown = function (done) {
+exports.onShutdown = function (error, done) {
     console.log('The bot is stopping, cleaning up...');
     doAsyncWork(() => {
         console.log('Done cleaning up, stopping...');
