@@ -1,11 +1,19 @@
 const client = require('lib/client');
 const community = require('lib/community');
 
-module.exports = function (callback) {
-    const cookies = getCookies();
-    if (cookies.length !== 0) {
-        // We are already signed in to steamcommunity
-        return callback(null, cookies);
+/**
+ * Waits for webSession event to fire
+ * @param {Boolean} eventOnly If you only look for the event
+ * @param {function} callback
+ */
+module.exports = function (eventOnly, callback) {
+    if (!eventOnly) {
+        const cookies = getCookies();
+        if (cookies.length !== 0) {
+            // We are already signed in to steamcommunity
+            callback(null, cookies);
+            return;
+        }
     }
 
     // Listen for webSession event

@@ -72,7 +72,7 @@ handler.onRun(function (opts) {
                 },
                 cookies: function (callback) {
                     // Wait for steamcommunity session
-                    require('utils/communityLoginCallback')(callback);
+                    require('utils/communityLoginCallback')(false, callback);
                 }
             }, function (err, result) {
                 if (err) {
