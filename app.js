@@ -25,11 +25,7 @@ handlerManager.setup();
 const handler = handlerManager.getHandler();
 
 require('death')(function (signal, err) {
-    if (typeof err === 'string') {
-        err = new Error(err);
-    }
-
-    handler.shutdown(err);
+    handler.shutdown(typeof err === 'string' ? null : err);
 });
 
 handler.onRun(function (opts) {

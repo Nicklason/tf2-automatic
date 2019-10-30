@@ -11,7 +11,7 @@ const EXPORTED_FUNCTIONS = {
             require('lib/ptf-socket').disconnect();
             require('lib/client').logOff();
 
-            process.exit(0);
+            process.exit(err === null ? 0 : 1);
         });
     },
     setLoginAttempts (attempts) {
