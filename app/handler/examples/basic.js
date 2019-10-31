@@ -39,19 +39,11 @@ exports.onMessage = function (steamID, message) {
 };
 
 exports.onTradeOfferUpdated = function (offer, oldState) {
-    if (offer.state === TradeOfferManager.ETradeOfferState.Active && !offer.isOurOffer) {
-        onNewTradeOffer.call(this, offer);
-    } else if (oldState !== null) {
-        console.log('Offer #' + offer.id + ' state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
-    }
+    console.log('Offer #' + offer.id + ' state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
 };
 
-function onNewTradeOffer (offer) {
+exports.onNewTradeOffer = function (offer) {
     console.log('Received an offer from ' + offer.partner.getSteamID64());
-}
-
-exports.onPollData = function (pollData) {};
-
-exports.onSchema = function (schema) {};
+};
 
 exports.onLoginAttempts = function (attempts) {};
