@@ -1,7 +1,5 @@
 /* eslint-disable no-console */
 
-const TradeOfferManager = require('steam-tradeoffer-manager');
-
 /**
  * Event listener for the run event
  * @param {Function} done The bot will only start once you call the done function
@@ -67,13 +65,22 @@ exports.onMessage = function (steamID, message) {};
  * @param {Number} oldState null if the offer is new (current state is active)
  * @description This event is emitted when a new offer is received, or a received / sent offer has changed states
  */
-exports.onTradeOfferUpdated = function (offer, oldState) {
-    if (offer.state === TradeOfferManager.ETradeOfferState.Active && !offer.isOurOffer) {
-        onNewTradeOffer.call(this, offer);
-    }
-};
+exports.onTradeOfferUpdated = function (offer, oldState) {};
 
-function onNewTradeOffer (offer) {}
+/**
+ * Event listener for the new trade offer event
+ * @param {Object} offer
+ * @param {Function} done Function to call when done processing the offer
+ * @description This event is emitted when a new offer is received. Only one offer will be processed at a time, it is therefore important to call the done or any other offers won't be emitted
+ */
+exports.onNewTradeOffer = function (offer, done) {};
+
+/**
+ * Event listener for the trade fetch error
+ * @param {String} offerId Id of the trade offer
+ * @param {Error} error Error received after multiple retries to fetch the offer
+ */
+exports.onTradeFetchError = function (offerId, error) {};
 
 /**
  * Event listener for the poll data event
