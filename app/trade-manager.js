@@ -63,6 +63,12 @@ exports.processNextOffer = function () {
     });
 };
 
+/**
+ * Gets an offer
+ * @param {String} offerId
+ * @param {Function} callback
+ * @param {Number} tries
+ */
 function getOfferRetry (offerId, callback, tries) {
     require('lib/manager').getOffer(offerId, function (err, offer) {
         tries++;
@@ -104,6 +110,10 @@ function getOfferRetry (offerId, callback, tries) {
     });
 }
 
+/**
+ * Removes an offer from the queue
+ * @param {String} offerId
+ */
 function removeFromQueue (offerId) {
     const index = receivedOffers.indexOf(offerId);
 
