@@ -24,7 +24,7 @@ handlerManager.setup();
 
 const handler = handlerManager.getHandler();
 
-require('death')(function (signal, err) {
+require('death')({ uncaughtException: true })(function (signal, err) {
     handler.shutdown(typeof err === 'string' ? null : err);
 });
 
