@@ -19,6 +19,12 @@ const EXPORTED_FUNCTIONS = {
     },
     setPollData (pollData) {
         require('lib/manager').pollData = pollData;
+    },
+    acceptOffer (offer, callback) {
+        require('app/trade-manager').acceptOffer(offer, callback);
+    },
+    declineOffer (offer, callback) {
+        require('app/trade-manager').declineOffer(offer, callback);
     }
 };
 
