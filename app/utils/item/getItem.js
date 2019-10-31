@@ -169,17 +169,9 @@ function getEffect (item) {
         return null;
     }
 
-    if (item.descriptions.some((description) => description.value === 'Case Global Unusual Effect(s)')) {
-        return null;
-    }
+    const effect = item.descriptions.find((description) => description.value[0] === '\u2605');
 
-    const effects = item.descriptions.filter((description) => description.value[0] === '\u2605');
-
-    if (effects.length !== 1) {
-        return null;
-    }
-
-    return schemaManager.schema.getEffectIdByName(effects[0].value.substring(18));
+    return effect === undefined ? null : schemaManager.schema.getEffectIdByName(effect.value.substring(18));
 }
 
 /**

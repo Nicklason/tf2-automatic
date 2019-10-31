@@ -1,7 +1,7 @@
 const path = require('path');
 const isPathInside = require('is-path-inside');
 
-const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onLoginKey', 'onNewTradeOffer', 'onTradeOfferUpdated', 'onLoginAttempts'];
+const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onLoginKey', 'onTradeOfferUpdated', 'onLoginAttempts'];
 const OPTIONAL_EVENTS = ['onMessage', 'onPollData', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
 const EXPORTED_FUNCTIONS = {
     shutdown: function (err) {
