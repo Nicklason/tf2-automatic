@@ -27,6 +27,26 @@ exports.enqueueOffer = function (offer) {
     }
 };
 
+exports.sendOffer = function (offer, callback) {
+    if (callback === undefined) {
+        callback = noop;
+    }
+
+    offer.send(function (err, status) {
+        if (err) {
+            return callback(err);
+        }
+
+        // TODO: Error handling
+
+        if (status == 'pending') {
+            acceptConfirmation(offer.id);
+        }
+
+        callback(null, status);
+    });
+};
+
 exports.acceptOffer = function (offer, callback) {
     if (callback === undefined) {
         callback = noop;

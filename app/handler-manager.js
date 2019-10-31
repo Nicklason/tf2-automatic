@@ -25,6 +25,9 @@ const EXPORTED_FUNCTIONS = {
     },
     declineOffer (offer, callback) {
         require('app/trade-manager').declineOffer(offer, callback);
+    },
+    sendOffer (offer, callback) {
+        require('app/trade-manager').sendOffer(offer, callback);
     }
 };
 
