@@ -20,10 +20,10 @@ exports.enqueueOffer = function (offer) {
             handlerManager.getHandler().onNewTradeOffer(offer, function () {
                 removeFromQueue(offer.id);
                 processingOffer = false;
-                exports.processNextOffer();
+                processNextOffer();
             });
         } else {
-            exports.processNextOffer();
+            processNextOffer();
         }
     }
 };
@@ -31,7 +31,7 @@ exports.enqueueOffer = function (offer) {
 /**
  * Processes a new offer, can only process one at a time
  */
-exports.processNextOffer = function () {
+function processNextOffer () {
     if (processingOffer || receivedOffers.length === 0) {
         return;
     }
@@ -51,17 +51,17 @@ exports.processNextOffer = function () {
             }
 
             handlerManager.getHandler().onTradeFetchError(offerId, err);
-            exports.processNextOffer();
+            processNextOffer();
             return;
         }
 
         handlerManager.getHandler().onNewTradeOffer(offer, function () {
             removeFromQueue(offerId);
             processingOffer = false;
-            exports.processNextOffer();
+            processNextOffer();
         });
     });
-};
+}
 
 /**
  * Gets an offer
