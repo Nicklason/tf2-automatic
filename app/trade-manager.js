@@ -20,11 +20,7 @@ exports.enqueueOffer = function (offer) {
 
         if (receivedOffers.length === 1) {
             // Queue is empty, check the offer right away
-            handlerManager.getHandler().onNewTradeOffer(offer, function () {
-                removeFromQueue(offer.id);
-                processingOffer = false;
-                processNextOffer();
-            });
+            handlerProcessOffer(offer);
         } else {
             processNextOffer();
         }
@@ -134,13 +130,39 @@ function processNextOffer () {
             processingOffer = false;
             processNextOffer();
         } else {
-            handlerManager.getHandler().onNewTradeOffer(offer, function () {
-                removeFromQueue(offerId);
-                processingOffer = false;
-                processNextOffer();
-            });
+            handlerProcessOffer(offer);
         }
     });
+}
+
+function handlerProcessOffer (offer) {
+    handlerManager.getHandler().onNewTradeOffer(offer, function (action) {
+        if (action === 'accept') {
+            exports.acceptOffer(offer, function (err) {
+                if (err) {
+                    handlerManager.getHandler().onTradeAcceptError(offer.id, err);
+                }
+
+                finishedProcessing(offer);
+            });
+        } else if (action === 'decline') {
+            exports.declineOffer(offer, function (err) {
+                if (err) {
+                    handlerManager.getHandler().onTradeDeclineError(offer.id, err);
+                }
+
+                finishedProcessing(offer);
+            });
+        } else {
+            finishedProcessing(offer);
+        }
+    });
+}
+
+function finishedProcessing (offer) {
+    removeFromQueue(offer.id);
+    processingOffer = false;
+    processNextOffer();
 }
 
 /**
