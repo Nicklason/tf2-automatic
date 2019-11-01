@@ -59,7 +59,7 @@ function sendOfferRetry (offer, callback, tries = 0) {
                 return callback(err);
             } else if (err.eresult !== undefined) {
                 if (err.eresult == 16) {
-                    // This error usually means that the offer did get accepted
+                    // This error usually means that the offer did get sent
                     return callback(null, offer.id !== undefined && offer.itemsToGive.length !== 0 ? 'pending' : undefined);
                 } else if (err.eresult == 26) {
                     // One or more of the items does not exist in the inventories, refresh our inventory and return the error
