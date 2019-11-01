@@ -16,6 +16,8 @@ const SteamUser = require('steam-user');
 const async = require('async');
 
 const client = require('lib/client');
+const manager = require('lib/manager');
+
 const schemaManager = require('lib/tf2-schema');
 const listingManager = require('lib/bptf-listings');
 
@@ -62,8 +64,9 @@ handler.onRun(function (opts) {
 
             handler.onLoginSuccessful();
 
-            // Set steamid for bptf-listings
+            // Set steamid
             listingManager.steamid = client.steamID;
+            manager.steamID = client.steamID;
 
             async.parallel({
                 inventory: function (callback) {
@@ -84,7 +87,7 @@ handler.onRun(function (opts) {
                 }
 
                 // Set cookies for the tradeoffer manager which will start the polling
-                require('lib/manager').setCookies(result.cookies, function (err) {
+                manager.setCookies(result.cookies, function (err) {
                     if (err) {
                         throw err;
                     }

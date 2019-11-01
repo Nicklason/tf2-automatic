@@ -21,13 +21,13 @@ const EXPORTED_FUNCTIONS = {
         require('lib/manager').pollData = pollData;
     },
     acceptOffer (offer, callback) {
-        require('app/trade-manager').acceptOffer(offer, callback);
+        require('app/trade').acceptOffer(offer, callback);
     },
     declineOffer (offer, callback) {
-        require('app/trade-manager').declineOffer(offer, callback);
+        require('app/trade').declineOffer(offer, callback);
     },
     sendOffer (offer, callback) {
-        require('app/trade-manager').sendOffer(offer, callback);
+        require('app/trade').sendOffer(offer, callback);
     },
     getInventory (steamid, callback) {
         require('app/inventory').getInventory(steamid, callback);
