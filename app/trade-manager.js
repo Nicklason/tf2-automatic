@@ -32,12 +32,10 @@ exports.sendOffer = function (offer, callback) {
         callback = noop;
     }
 
-    offer.send(function (err, status) {
+    sendOfferRetry(offer, function (err, status) {
         if (err) {
             return callback(err);
         }
-
-        // TODO: Error handling
 
         if (status == 'pending') {
             acceptConfirmation(offer.id);
@@ -46,6 +44,49 @@ exports.sendOffer = function (offer, callback) {
         callback(null, status);
     });
 };
+
+function sendOfferRetry (offer, callback, tries = 0) {
+    offer.send(function (err, status) {
+        tries++;
+        if (err) {
+            if (tries >= 5) {
+                return callback(err);
+            }
+
+            if (err.message.indexOf('can only be sent to friends') !== -1) {
+                return callback(err);
+            } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') !== -1) {
+                return callback(err);
+            } else if (err.eresult !== undefined) {
+                if (err.eresult == 16) {
+                    // This error usually means that the offer did get accepted
+                    return callback(null, offer.id !== undefined && offer.itemsToGive.length !== 0 ? 'pending' : undefined);
+                } else if (err.eresult == 26) {
+                    // One or more of the items does not exist in the inventories, refresh our inventory and return the error
+
+                    // TODO: Refresh inventory
+                }
+                return callback(err);
+            }
+
+            if (err.message !== 'Not Logged In') {
+                setTimeout(function () {
+                    acceptOfferRetry(offer, callback, tries);
+                }, 5000 * tries);
+                return;
+            }
+
+            communityLoginCallback(true, function (err) {
+                setTimeout(function () {
+                    acceptOfferRetry(offer, callback, tries);
+                }, err !== null ? 5000 * tries : 0);
+            });
+            return;
+        }
+
+        callback(null, status);
+    });
+}
 
 exports.acceptOffer = function (offer, callback) {
     if (callback === undefined) {
