@@ -66,6 +66,10 @@ handler.onRun(function (opts) {
             listingManager.steamid = client.steamID;
 
             async.parallel({
+                inventory: function (callback) {
+                    // Load inventory
+                    require('app/inventory').getInventory(client.steamID, callback);
+                },
                 listings: function (callback) {
                     // Initialize bptf-listings
                     listingManager.init(callback);
@@ -91,4 +95,3 @@ handler.onRun(function (opts) {
         }
     });
 });
-

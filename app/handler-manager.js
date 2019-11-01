@@ -2,7 +2,7 @@ const path = require('path');
 const isPathInside = require('is-path-inside');
 
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onLoginKey', 'onNewTradeOffer', 'onTradeOfferUpdated', 'onLoginAttempts'];
-const OPTIONAL_EVENTS = ['onMessage', 'onTradeFetchError', 'onTradeAcceptError', 'onTradeDeclineError', 'onPollData', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
+const OPTIONAL_EVENTS = ['onMessage', 'onTradeFetchError', 'onTradeAcceptError', 'onTradeDeclineError', 'onInventoryUpdated', 'onPollData', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
 const EXPORTED_FUNCTIONS = {
     shutdown: function (err) {
         handler.onShutdown(err, function () {
@@ -28,6 +28,12 @@ const EXPORTED_FUNCTIONS = {
     },
     sendOffer (offer, callback) {
         require('app/trade-manager').sendOffer(offer, callback);
+    },
+    getInventory (steamid, callback) {
+        require('app/inventory').getInventory(steamid, callback);
+    },
+    getOwnInventory () {
+        require('app/inventory').getOwnInventory();
     }
 };
 

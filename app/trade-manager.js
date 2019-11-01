@@ -3,6 +3,7 @@ const TradeOfferManager = require('steam-tradeoffer-manager');
 const community = require('lib/community');
 
 const handlerManager = require('app/handler-manager');
+const inventoryManager = require('app/inventory');
 
 const communityLoginCallback = require('utils/communityLoginCallback');
 
@@ -63,10 +64,12 @@ function sendOfferRetry (offer, callback, tries = 0) {
                     return callback(null, offer.id !== undefined && offer.itemsToGive.length !== 0 ? 'pending' : undefined);
                 } else if (err.eresult == 26) {
                     // One or more of the items does not exist in the inventories, refresh our inventory and return the error
-
-                    // TODO: Refresh inventory
+                    inventoryManager.getInventory(function () {
+                        callback(err);
+                    });
+                } else {
+                    return callback(err);
                 }
-                return callback(err);
             }
 
             if (err.message !== 'Not Logged In') {
