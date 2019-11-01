@@ -8,14 +8,76 @@ const inventoryManager = require('app/inventory');
 const communityLoginCallback = require('utils/communityLoginCallback');
 
 const receivedOffers = [];
+const itemsInTrade = [];
 
 let processingOffer = false;
+
+/**
+ * Called when the state of an offer changes
+ * @param {Object} offer
+ * @param {Number} oldState
+ */
+exports.offerChanged = function (offer, oldState) {
+    if (offer.state === TradeOfferManager.ETradeOfferState.Accepted || offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
+        // Remove lost items from inventory
+        offer.itemsToGive.forEach(function (item) {
+            inventoryManager.removeItem(item.assetid);
+        });
+    }
+
+    if (offer.state === TradeOfferManager.ETradeOfferState.Active) {
+        // Offer is active, items are in trade
+        offer.itemsToGive.forEach(function (item) {
+            itemIsInTrade(item.id);
+        });
+    } else {
+        // Remove items from list of items we are offering
+        offer.itemsToGive.forEach(function (item) {
+            itemIsNotInTrade(item.id);
+        });
+    }
+};
+
+/**
+ * Called when a new offer is received
+ * @param {Object} offer
+ */
+exports.newOffer = function (offer) {
+    // Offer is active, items are in trade
+    offer.itemsToGive.forEach(function (item) {
+        itemIsInTrade(item.id);
+    });
+
+    // Enqueue the offer
+    enqueueOffer(offer);
+};
+
+/**
+ * Removes an item from the items in trade list
+ * @param {String} assetid
+ */
+function itemIsNotInTrade (assetid) {
+    const index = itemsInTrade.indexOf(assetid);
+
+    if (index !== -1) {
+        itemsInTrade.splice(index, 1);
+    }
+}
+
+// Adds an item to the items in trade list
+function itemIsInTrade (assetid) {
+    const index = itemsInTrade.indexOf(assetid);
+
+    if (index === -1) {
+        itemsInTrade.push(assetid);
+    }
+}
 
 /**
  * Enqueues a new offer
  * @param {Object} offer
  */
-exports.enqueueOffer = function (offer) {
+function enqueueOffer (offer) {
     if (receivedOffers.indexOf(offer.id) === -1) {
         receivedOffers.push(offer.id);
 
@@ -26,15 +88,28 @@ exports.enqueueOffer = function (offer) {
             processNextOffer();
         }
     }
-};
+}
 
+/**
+ * Sends an offer and handles errors
+ * @param {Object} offer
+ * @param {Function} callback
+ */
 exports.sendOffer = function (offer, callback) {
     if (callback === undefined) {
         callback = noop;
     }
 
+    offer.itemsToGive.forEach(function (item) {
+        itemIsInTrade(item.id);
+    });
+
     sendOfferRetry(offer, function (err, status) {
         if (err) {
+            // Failed to send the offer, the items are no longer in trade
+            offer.itemsToGive.forEach(function (item) {
+                itemIsNotInTrade(item.id);
+            });
             return callback(err);
         }
 
