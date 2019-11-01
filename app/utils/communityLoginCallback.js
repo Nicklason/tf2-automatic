@@ -17,7 +17,7 @@ module.exports = function (eventOnly, callback) {
     }
 
     // Listen for webSession event
-    client.on('webSession', webSessionEvent);
+    client.once('webSession', webSessionEvent);
 
     // Start timeout that will return an error if we have not gotten the websession within 10 seconds
     const timeout = setTimeout(function () {
