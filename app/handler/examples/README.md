@@ -111,7 +111,7 @@ exports.onReady = function () {
     console.log('My steamid: ' + client.steamID.getSteamID64());
 
     // Set Steam account as Online
-    this.client.setPersona(SteamUser.EPersonaState.Online);
+    this.setPersona(SteamUser.EPersonaState.Online);
 };
 ```
 
