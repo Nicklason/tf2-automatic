@@ -68,10 +68,12 @@ function processJob (job) {
 function handleJobsQueue () {
     if (processingQueue) {
         return;
-    } else if (startedProcessing && craftJobs.length === 0) {
-        // We finished processing the job queue
-        startedProcessing = false;
-        handlerManager.getHandler().onCraftingQueueCompleted();
+    } else if (craftJobs.length === 0) {
+        if (startedProcessing) {
+            // We finished processing the job queue
+            startedProcessing = false;
+            handlerManager.getHandler().onCraftingQueueCompleted();
+        }
         return;
     }
 
