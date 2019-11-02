@@ -1,5 +1,7 @@
 /* eslint-disable no-console */
 
+const SteamUser = require('steam-user');
+
 exports.onRun = function (done) {
     console.log('The bot is starting...');
 
@@ -16,17 +18,23 @@ exports.onShutdown = function (err, done) {
 exports.onReady = function () {
     console.log('Everything is ready!');
 
+    this.setPersona(SteamUser.EPersonaState.Online);
+
     this.gamesPlayed(['Two plus two is four']);
 
-    // Smelt refined metal into three reclaimed
-    exports.smeltMetal(5002, 1);
-    // Smelt one reclaimed metal into three scrap
-    exports.smeltMetal(5001, 1);
+    setTimeout(function () {
+        console.log('Adding craft jobs...');
 
-    // Combine three scrap metal into one reclaimed
-    exports.combineMetal(5000, 1);
-    // Combine three reclaimed metal into one refined
-    exports.combineMetal(5001, 1);
+        // Smelt refined metal into three reclaimed
+        exports.smeltMetal(5002, 1);
+        // Smelt one reclaimed metal into three scrap
+        exports.smeltMetal(5001, 1);
+
+        // Combine three scrap metal into one reclaimed
+        exports.combineMetal(5000, 1);
+        // Combine three reclaimed metal into one refined
+        exports.combineMetal(5001, 1);
+    }, 1000);
 };
 
 exports.onCraftingQueueCompleted = function () {
