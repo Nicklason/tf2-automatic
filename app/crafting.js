@@ -20,7 +20,7 @@ exports.smeltMetal = function (defindex, amount) {
     }
 
     for (let i = 0; i < amount; i++) {
-        craftJobs.push({ action: 'smelt', defindex: defindex });
+        craftJobs.push({ smelt: true, defindex: defindex });
     }
 
     handleJobsQueue();
@@ -37,7 +37,7 @@ exports.combineMetal = function (defindex, amount) {
     }
 
     for (let i = 0; i < amount; i++) {
-        craftJobs.push({ action: 'combine', defindex: defindex });
+        craftJobs.push({ smelt: false, defindex: defindex });
     }
 
     handleJobsQueue();
@@ -49,22 +49,17 @@ exports.combineMetal = function (defindex, amount) {
  * @return {Boolean|Array<String>} false if the job could not be made, and a list of assetids if it was made
  */
 function processJob (job) {
-    if (job.action === 'smelt' || job.action === 'combine') {
-        const assetids = inventoryManager.findBySKU(job.defindex + ';6', false);
+    const assetids = inventoryManager.findBySKU(job.defindex + ';6', false);
 
-        const smelting = job.action === 'smelt';
-        if ((smelting && assetids.length === 0) || (!smelting && assetids.length < 3)) {
-            return false;
-        }
-
-        const ids = assetids.slice(0, smelting ? 1 : 3);
-
-        tf2.craft(ids);
-
-        return ids;
+    if ((job.smelt && assetids.length === 0) || (!job.smelt && assetids.length < 3)) {
+        return false;
     }
 
-    return false;
+    const ids = assetids.slice(0, job.smelt ? 1 : 3);
+
+    tf2.craft(ids);
+
+    return ids;
 }
 
 /**
