@@ -205,7 +205,7 @@ function acceptConfirmation (objectID, callback) {
 
     // TODO: Add retrying / error handling
 
-    community.acceptConfirmationForObject(process.env.STEAM_SHARED_SECRET, objectID, callback);
+    community.acceptConfirmationForObject(process.env.STEAM_IDENTITY_SECRET, objectID, callback);
 }
 
 function acceptOfferRetry (offer, callback, tries = 0) {
