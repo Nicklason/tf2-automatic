@@ -3,7 +3,6 @@ const TradeOfferManager = require('steam-tradeoffer-manager');
 const community = require('lib/community');
 
 const handlerManager = require('app/handler-manager');
-const inventoryManager = require('app/inventory');
 
 const communityLoginCallback = require('utils/communityLoginCallback');
 
@@ -19,6 +18,8 @@ let processingOffer = false;
  */
 exports.offerChanged = function (offer, oldState) {
     if (offer.state === TradeOfferManager.ETradeOfferState.Accepted || offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
+        const inventoryManager = require('app/inventory');
+
         // Remove lost items from inventory
         offer.itemsToGive.forEach(function (item) {
             inventoryManager.removeItem(item.assetid);
@@ -50,6 +51,14 @@ exports.newOffer = function (offer) {
 
     // Enqueue the offer
     enqueueOffer(offer);
+};
+
+/**
+ * Get items that are being traded
+ * @return {Array<String>}
+ */
+exports.inTrade = function () {
+    return itemsInTrade;
 };
 
 /**
@@ -139,7 +148,7 @@ function sendOfferRetry (offer, callback, tries = 0) {
                     return callback(null, offer.id !== undefined && offer.itemsToGive.length !== 0 ? 'pending' : undefined);
                 } else if (err.eresult == 26) {
                     // One or more of the items does not exist in the inventories, refresh our inventory and return the error
-                    inventoryManager.getInventory(function () {
+                    require('app/inventory').getInventory(function () {
                         callback(err);
                     });
                 } else {

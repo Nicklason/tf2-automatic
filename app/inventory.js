@@ -1,4 +1,4 @@
-let inventory = [];
+let dictionary = {};
 
 const manager = require('lib/manager');
 
@@ -10,7 +10,7 @@ const handlerManager = require('app/handler-manager');
  * @param {Function} callback
  */
 exports.getInventory = function (steamid, callback) {
-    manager.getUserInventoryContents(steamid, 440, 2, false, function (err, items) {
+    manager.getUserInventoryContents(steamid, 440, 2, true, function (err, items) {
         if (err) {
             return callback(err);
         }
@@ -25,10 +25,10 @@ exports.getInventory = function (steamid, callback) {
 
 /**
  * Returns own cached inventory
- * @return {Array<Object>}
+ * @return {Object}
  */
 exports.getOwnInventory = function () {
-    return inventory;
+    return dictionary;
 };
 
 /**
@@ -37,17 +37,24 @@ exports.getOwnInventory = function () {
  * @return {Number}
  */
 exports.getAmount = function (sku) {
-    let amount = 0;
+    return exports.findBySKU(sku).length;
+};
 
-    for (let i = 0; i < inventory.length; i++) {
-        const item = inventory[i];
+/**
+ * Returns all assetids with a matching sku
+ * @param {String} sku
+ * @param {Boolean} [includeInTrade=true]
+ * @return {Array<Object>}
+ */
+exports.findBySKU = function (sku, includeInTrade = true) {
+    const assetids = (dictionary[sku] || []);
 
-        if (item.getSKU() === sku) {
-            amount++;
-        }
+    if (includeInTrade) {
+        return assetids;
     }
 
-    return amount;
+    const itemsInTrade = require('app/trade').inTrade();
+    return assetids.filter((assetid) => itemsInTrade.indexOf(assetid) === -1);
 };
 
 /**
@@ -55,21 +62,45 @@ exports.getAmount = function (sku) {
  * @param {String} assetid
  */
 exports.removeItem = function (assetid) {
-    for (let i = 0; i < inventory.length; i++) {
-        const item = inventory[i];
+    for (const sku in dictionary) {
+        if (!Object.prototype.hasOwnProperty.call(dictionary, sku)) {
+            continue;
+        }
 
-        if (item.assetid == assetid) {
-            inventory.splice(i, 1);
-            break;
+        if (dictionary[sku] === undefined) {
+            continue;
+        }
+
+        const index = dictionary[sku].indexOf(assetid);
+        if (index !== -1) {
+            dictionary[sku].splice(index, 1);
         }
     }
 };
 
 /**
- * Function is called when our cached inventory is updated
+ * Adds an item to our cached inventory
+ * @param {String} sku
+ * @param {String} assetid
+ */
+exports.addItem = function (sku, assetid) {
+    (dictionary[sku] = (dictionary[sku] || [])).push(assetid);
+};
+
+/**
+ * Function is called when our inventory is fetched
  * @param {Array<Object>} items
  */
 function inventoryUpdated (items) {
-    inventory = items;
-    handlerManager.getHandler().onInventoryUpdated(inventory);
+    const dict = {};
+
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const sku = item.getSKU();
+        (dict[sku] = (dict[sku] || [])).push(item.id);
+    }
+
+    dictionary = dict;
+
+    handlerManager.getHandler().onInventoryUpdated(dict);
 }

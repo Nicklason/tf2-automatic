@@ -2,7 +2,7 @@ const path = require('path');
 const isPathInside = require('is-path-inside');
 
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onLoginKey', 'onNewTradeOffer', 'onTradeOfferUpdated', 'onLoginAttempts'];
-const OPTIONAL_EVENTS = ['onMessage', 'onTradeFetchError', 'onTradeAcceptError', 'onTradeDeclineError', 'onInventoryUpdated', 'onPollData', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
+const OPTIONAL_EVENTS = ['onMessage', 'onTradeFetchError', 'onTradeAcceptError', 'onTradeDeclineError', 'onInventoryUpdated', 'onCraftingCompleted', 'onCraftingQueueCompleted', 'onPollData', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
 const EXPORTED_FUNCTIONS = {
     shutdown: function (err) {
         handler.onShutdown(err, function () {
@@ -34,6 +34,12 @@ const EXPORTED_FUNCTIONS = {
     },
     getOwnInventory () {
         require('app/inventory').getOwnInventory();
+    },
+    smeltMetal (defindex, amount) {
+        require('app/crafting').smeltMetal(defindex, amount);
+    },
+    combineMetal (defindex, amount) {
+        require('app/crafting').combineMetal(defindex, amount);
     }
 };
 
