@@ -24,6 +24,10 @@ exports.offerChanged = function (offer, oldState) {
         offer.itemsToGive.forEach(function (item) {
             inventoryManager.removeItem(item.assetid);
         });
+
+        if (offer.state === TradeOfferManager.ETradeOfferState.Accepted && offer.itemsToReceive.length !== 0) {
+            inventoryManager.getInventory(community.steamID, function () {});
+        }
     }
 
     if (offer.state === TradeOfferManager.ETradeOfferState.Active) {
