@@ -33,7 +33,7 @@ const EXPORTED_FUNCTIONS = {
         require('app/inventory').getInventory(steamid, callback);
     },
     getOwnInventory () {
-        require('app/inventory').getOwnInventory();
+        return require('app/inventory').getOwnInventory();
     },
     smeltMetal (defindex, amount) {
         require('app/crafting').smeltMetal(defindex, amount);

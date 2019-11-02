@@ -102,5 +102,5 @@ function inventoryUpdated (items) {
 
     dictionary = dict;
 
-    handlerManager.getHandler().onInventoryUpdated(dict);
+    handlerManager.getHandler().onInventoryUpdated(dictionary);
 }
