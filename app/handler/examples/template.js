@@ -60,6 +60,13 @@ exports.onLoginKey = function (loginKey) {};
 exports.onMessage = function (steamID, message) {};
 
 /**
+ * Event listener for the friend relationship event
+ * @param {Object} steamID SteamID object
+ * @param {Number} relationship New relation with the user
+ */
+exports.onFriendRelationship = function (steamID, relationship) {};
+
+/**
  * Event listener for the trade offer updated event
  * @param {Object} offer The offer which state has changed
  * @param {Number} oldState null if the offer is new (current state is active)
@@ -76,11 +83,24 @@ exports.onTradeOfferUpdated = function (offer, oldState) {};
 exports.onNewTradeOffer = function (offer, done) {};
 
 /**
- * Event listener for the trade fetch error
+ * Event listener for the trade fetch error event
  * @param {String} offerId Id of the trade offer
  * @param {Error} error Error received after multiple retries to fetch the offer
  */
 exports.onTradeFetchError = function (offerId, error) {};
+
+/**
+ * Event listener for the crafting completed event
+ * @param {String} sku
+ * @param {Array<String>} assetids
+ */
+exports.onCraftingCompleted = function (sku, assetids) {};
+
+/**
+ * Event listener for the craftuing queue completed event
+ * @description This event is emitted when the crafting queue is empty after processing the queue
+ */
+exports.onCraftingQueueCompleted = function () {};
 
 /**
  * Event listener for the poll data event
