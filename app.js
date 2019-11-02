@@ -21,6 +21,9 @@ const manager = require('lib/manager');
 const schemaManager = require('lib/tf2-schema');
 const listingManager = require('lib/bptf-listings');
 
+/* eslint-disable-next-line no-unused-vars */
+const tf2 = require('lib/tf2');
+
 const handlerManager = require('app/handler-manager');
 handlerManager.setup();
 
@@ -33,68 +36,82 @@ require('death')({ uncaughtException: true })(function (signal, err) {
 handler.onRun(function (opts) {
     opts = opts || {};
 
-    schemaManager.init(function (err) {
+    const loginKey = opts.loginKey || null;
+
+    let lastLoginFailed = false;
+
+    const login = require('app/login');
+
+    // Perform login
+    login(loginKey, loginResponse);
+
+    function loginResponse (err) {
         if (err) {
-            throw err;
+            if (!lastLoginFailed && err.eresult !== SteamUser.EFriendRelationship.RateLimitExceeded && err.eresult !== SteamUser.EFriendRelationship.InvalidPassword) {
+                lastLoginFailed = true;
+                // Try and sign in without login key
+                login(null, loginResponse);
+            } else {
+                handler.onLoginFailure(err);
+            }
+            return;
         }
 
-        const loginKey = opts.loginKey || null;
+        handler.onLoginSuccessful();
 
-        // Set schema for bptf-listings
-        listingManager.schema = schemaManager.schema;
-
-        let lastLoginFailed = false;
-
-        const login = require('app/login');
-
-        // Perform login
-        login(loginKey, loginResponse);
-
-        function loginResponse (err) {
+        require('utils/limitationsCallback')(function (err, limitations) {
             if (err) {
-                if (!lastLoginFailed && err.eresult !== SteamUser.EFriendRelationship.RateLimitExceeded && err.eresult !== SteamUser.EFriendRelationship.InvalidPassword) {
-                    lastLoginFailed = true;
-                    // Try and sign in without login key
-                    login(null, loginResponse);
-                } else {
-                    handler.onLoginFailure(err);
-                }
-                return;
+                throw err;
             }
 
-            handler.onLoginSuccessful();
+            if (limitations.limited) {
+                throw new Error('The account is limited');
+            } else if (limitations.communityBanned) {
+                throw new Error('The account is community banned');
+            } else if (limitations.locked) {
+                throw new Error('The account is locked');
+            }
 
-            // Set steamid
-            listingManager.steamid = client.steamID;
-            manager.steamID = client.steamID;
-
-            async.parallel({
-                inventory: function (callback) {
-                    // Load inventory
-                    require('app/inventory').getInventory(client.steamID, callback);
-                },
-                listings: function (callback) {
-                    // Initialize bptf-listings
-                    listingManager.init(callback);
-                },
-                cookies: function (callback) {
-                    // Wait for steamcommunity session
-                    require('utils/communityLoginCallback')(false, callback);
-                }
-            }, function (err, result) {
+            schemaManager.init(function (err) {
                 if (err) {
                     throw err;
                 }
 
-                // Set cookies for the tradeoffer manager which will start the polling
-                manager.setCookies(result.cookies, function (err) {
+                // Set schema for bptf-listings
+                listingManager.schema = schemaManager.schema;
+
+                // Set steamid
+                listingManager.steamid = client.steamID;
+                manager.steamID = client.steamID;
+
+                async.parallel({
+                    inventory: function (callback) {
+                        // Load inventory
+                        require('app/inventory').getInventory(client.steamID, callback);
+                    },
+                    listings: function (callback) {
+                        // Initialize bptf-listings
+                        listingManager.init(callback);
+                    },
+                    cookies: function (callback) {
+                        // Wait for steamcommunity session
+                        require('utils/communityLoginCallback')(false, callback);
+                    }
+                }, function (err, result) {
                     if (err) {
                         throw err;
                     }
 
-                    handler.onReady();
+                    // Set cookies for the tradeoffer manager which will start the polling
+                    manager.setCookies(result.cookies, function (err) {
+                        if (err) {
+                            throw err;
+                        }
+
+                        handler.onReady();
+                    });
                 });
             });
-        }
-    });
+        });
+    }
 });
