@@ -1,8 +1,8 @@
-let dictionary = {};
-
 const manager = require('lib/manager');
 
 const handlerManager = require('app/handler-manager');
+
+let dictionary = {};
 
 /**
  * Fetches an inventory
@@ -55,6 +55,43 @@ exports.findBySKU = function (sku, includeInTrade = true) {
 
     const itemsInTrade = require('app/trade').inTrade();
     return assetids.filter((assetid) => itemsInTrade.indexOf(assetid) === -1);
+};
+
+exports.getCurrencies = function (dict) {
+    let keys = 0;
+    let refined = 0;
+    let reclaimed = 0;
+    let scrap = 0;
+
+    for (const sku in dict) {
+        if (!Object.prototype.hasOwnProperty.call(dict, sku)) {
+            continue;
+        }
+
+        switch (sku) {
+            case '5021;6':
+                keys++;
+                break;
+            case '5002;6':
+                refined++;
+                break;
+            case '5001;6':
+                reclaimed++;
+                break;
+            case '5000;6':
+                scrap++;
+                break;
+            default:
+                break;
+        }
+    }
+
+    return {
+        keys,
+        refined,
+        reclaimed,
+        scrap
+    };
 };
 
 /**
