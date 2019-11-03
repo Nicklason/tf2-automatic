@@ -17,17 +17,13 @@ let processingOffer = false;
  * @param {Number} oldState
  */
 exports.offerChanged = function (offer, oldState) {
-    if (offer.state === TradeOfferManager.ETradeOfferState.Accepted || offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
-        const inventoryManager = require('app/inventory');
+    const inventoryManager = require('app/inventory');
 
+    if (offer.state === TradeOfferManager.ETradeOfferState.Accepted || offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
         // Remove lost items from inventory
         offer.itemsToGive.forEach(function (item) {
             inventoryManager.removeItem(item.assetid);
         });
-
-        if (offer.state === TradeOfferManager.ETradeOfferState.Accepted && offer.itemsToReceive.length !== 0) {
-            inventoryManager.getInventory(community.steamID, function () {});
-        }
     }
 
     if (offer.state === TradeOfferManager.ETradeOfferState.Active) {
@@ -40,6 +36,15 @@ exports.offerChanged = function (offer, oldState) {
         offer.itemsToGive.forEach(function (item) {
             itemIsNotInTrade(item.id);
         });
+    }
+
+    if (offer.state === TradeOfferManager.ETradeOfferState.Accepted && offer.itemsToReceive.length !== 0) {
+        // Offer is accepted, update inventory
+        inventoryManager.getInventory(community.steamID, function () {
+            handlerManager.getHandler().onTradeOfferUpdated(offer, oldState);
+        });
+    } else {
+        handlerManager.getHandler().onTradeOfferUpdated(offer, oldState);
     }
 };
 
