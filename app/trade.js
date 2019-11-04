@@ -101,6 +101,7 @@ function enqueueOffer (offer) {
 
         if (receivedOffers.length === 1) {
             // Queue is empty, check the offer right away
+            processingOffer = true;
             handlerProcessOffer(offer);
         } else {
             processNextOffer();
@@ -266,10 +267,6 @@ function processNextOffer () {
     const offerId = receivedOffers[0];
 
     getOfferRetry(offerId, function (err, offer) {
-        if (offer === null || offer === undefined) {
-            removeFromQueue(offerId);
-        }
-
         if (err) {
             // After many retries we could not get the offer data
 
@@ -279,13 +276,10 @@ function processNextOffer () {
             }
 
             handlerManager.getHandler().onTradeFetchError(offerId, err);
-            processNextOffer();
-            return;
         }
 
-        if (offer === null) {
-            processingOffer = false;
-            processNextOffer();
+        if (!offer) {
+            finishedProcessing();
         } else {
             handlerProcessOffer(offer);
         }
