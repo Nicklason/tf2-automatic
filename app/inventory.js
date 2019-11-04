@@ -68,18 +68,20 @@ exports.getCurrencies = function (dict) {
             continue;
         }
 
+        const amount = dict[sku].length;
+
         switch (sku) {
             case '5021;6':
-                keys++;
+                keys += amount;
                 break;
             case '5002;6':
-                refined++;
+                refined += amount;
                 break;
             case '5001;6':
-                reclaimed++;
+                reclaimed += amount;
                 break;
             case '5000;6':
-                scrap++;
+                scrap += amount;
                 break;
             default:
                 break;
@@ -125,10 +127,11 @@ exports.addItem = function (sku, assetid) {
 };
 
 /**
- * Function is called when our inventory is fetched
+ * Makes a dictionary of items
  * @param {Array<Object>} items
+ * @return {Object}
  */
-function inventoryUpdated (items) {
+exports.createDictionary = function (items) {
     const dict = {};
 
     for (let i = 0; i < items.length; i++) {
@@ -137,7 +140,15 @@ function inventoryUpdated (items) {
         (dict[sku] = (dict[sku] || [])).push(item.id);
     }
 
-    dictionary = dict;
+    return dict;
+};
+
+/**
+ * Function is called when our inventory is fetched
+ * @param {Array<Object>} items
+ */
+function inventoryUpdated (items) {
+    dictionary = exports.createDictionary(items);
 
     handlerManager.getHandler().onInventoryUpdated(dictionary);
 }
