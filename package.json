@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@nicklason/request-retry": "^1.1.1",
-    "bptf-listings": "^4.1.1",
+    "bptf-listings": "^4.2.1",
     "death": "^1.1.0",
     "dotenv": "^8.2.0",
     "is-path-inside": "^3.0.2",
