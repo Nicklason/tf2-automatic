@@ -158,7 +158,7 @@ function sendOfferRetry (offer, callback, tries = 0) {
                     return callback(null, offer.id !== undefined && offer.itemsToGive.length !== 0 ? 'pending' : undefined);
                 } else if (err.eresult == 26) {
                     // One or more of the items does not exist in the inventories, refresh our inventory and return the error
-                    require('app/inventory').getInventory(function () {
+                    require('app/inventory').getInventory(community.steamID, function () {
                         callback(err);
                     });
                 } else {
