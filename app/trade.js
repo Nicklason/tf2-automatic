@@ -26,11 +26,15 @@ exports.offerChanged = function (offer, oldState) {
         });
     }
 
-    if (offer.state === TradeOfferManager.ETradeOfferState.Active) {
-        // Offer is active, items are in trade
+    if (offer.state === TradeOfferManager.ETradeOfferState.Active || offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+        // Offer is active / made, items are in trade
         offer.itemsToGive.forEach(function (item) {
             itemIsInTrade(item.id);
         });
+
+        if (offer.data('assetids') === null) {
+            offer.data('assetids', offer.itemsToGive.map((item) => item.assetid));
+        }
     } else {
         // Remove items from list of items we are offering
         offer.itemsToGive.forEach(function (item) {
@@ -119,9 +123,14 @@ exports.sendOffer = function (offer, callback) {
         callback = noop;
     }
 
+    const ourAssetids = [];
+
     offer.itemsToGive.forEach(function (item) {
-        itemIsInTrade(item.id);
+        itemIsInTrade(item.assetid);
+        ourAssetids.push(item.assetid);
     });
+
+    offer.data('assetids', ourAssetids);
 
     sendOfferRetry(offer, function (err, status) {
         if (err) {
