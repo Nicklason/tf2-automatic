@@ -200,7 +200,7 @@ function getWear (item) {
  */
 function getPaintKit (item) {
     if (getWear(item) === null) {
-        return;
+        return null;
     }
 
     let hasCaseCollection = false;
