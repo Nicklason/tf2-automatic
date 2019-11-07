@@ -22,9 +22,8 @@ module.exports = function () {
         quality2: getElevatedQuality(this)
     }, getOutput(this));
 
-    const target = getTarget(this);
-    if (target !== null) {
-        item.target = target;
+    if (item.target === null) {
+        item.target = getTarget(this);
     }
 
     // Adds missing properties
@@ -313,7 +312,13 @@ function getTarget (item) {
 
     if (item.market_hash_name.indexOf('Strangifier') !== -1) {
         // Strangifiers
-        return schemaManager.schema.raw.items_game.items[defindex].static_attrs['tool target item'];
+        const gameItem = schemaManager.schema.raw.items_game.items[defindex];
+
+        if (gameItem.attributes !== undefined && gameItem.attributes['tool target item'] !== undefined) {
+            return parseInt(gameItem.attributes['tool target item'].value, 10);
+        }
+
+        return parseInt(gameItem.static_attrs['tool target item'], 10);
     }
 
     if (defindex === 6527) {
