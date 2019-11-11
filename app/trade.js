@@ -29,7 +29,7 @@ exports.offerChanged = function (offer, oldState) {
     if (offer.state === TradeOfferManager.ETradeOfferState.Active || offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
         // Offer is active / made, items are in trade
         offer.itemsToGive.forEach(function (item) {
-            itemIsInTrade(item.id);
+            exports.setItemInTrade(item.id);
         });
 
         if (offer.data('assetids') === null) {
@@ -38,7 +38,7 @@ exports.offerChanged = function (offer, oldState) {
     } else {
         // Remove items from list of items we are offering
         offer.itemsToGive.forEach(function (item) {
-            itemIsNotInTrade(item.id);
+            exports.unsetItemInTrade(item.id);
         });
     }
 
@@ -59,7 +59,7 @@ exports.offerChanged = function (offer, oldState) {
 exports.newOffer = function (offer) {
     // Offer is active, items are in trade
     offer.itemsToGive.forEach(function (item) {
-        itemIsInTrade(item.id);
+        exports.setItemInTrade(item.id);
     });
 
     // Enqueue the offer
@@ -78,22 +78,25 @@ exports.inTrade = function () {
  * Removes an item from the items in trade list
  * @param {String} assetid
  */
-function itemIsNotInTrade (assetid) {
+exports.unsetItemInTrade = function (assetid) {
     const index = itemsInTrade.indexOf(assetid);
 
     if (index !== -1) {
         itemsInTrade.splice(index, 1);
     }
-}
+};
 
-// Adds an item to the items in trade list
-function itemIsInTrade (assetid) {
+/**
+ * Adds an item to the items in trade list
+ * @param {String} assetid
+ */
+exports.setItemInTrade = function (assetid) {
     const index = itemsInTrade.indexOf(assetid);
 
     if (index === -1) {
         itemsInTrade.push(assetid);
     }
-}
+};
 
 /**
  * Enqueues a new offer
@@ -126,7 +129,7 @@ exports.sendOffer = function (offer, callback) {
     const ourAssetids = [];
 
     offer.itemsToGive.forEach(function (item) {
-        itemIsInTrade(item.assetid);
+        exports.setItemInTrade(item.assetid);
         ourAssetids.push(item.assetid);
     });
 
@@ -136,12 +139,12 @@ exports.sendOffer = function (offer, callback) {
         if (err) {
             // Failed to send the offer, the items are no longer in trade
             offer.itemsToGive.forEach(function (item) {
-                itemIsNotInTrade(item.id);
+                exports.unsetItemInTrade(item.id);
             });
             return callback(err);
         }
 
-        if (status == 'pending') {
+        if (status === 'pending') {
             acceptConfirmation(offer.id);
         }
 
@@ -204,7 +207,7 @@ exports.acceptOffer = function (offer, callback) {
             return callback(err);
         }
 
-        if (status == 'pending') {
+        if (status === 'pending') {
             acceptConfirmation(offer.id);
         }
 
