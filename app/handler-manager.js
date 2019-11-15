@@ -77,8 +77,8 @@ function setPollData (pollData) {
     for (let i = 0; i < activeOrCreatedNeedsConfirmation.length; i++) {
         const id = activeOrCreatedNeedsConfirmation[i];
 
-        const pollData = pollData.offerData[id] || {};
-        const assetids = pollData.assetids || [];
+        const offerData = pollData.offerData[id] || {};
+        const assetids = offerData.assetids || [];
 
         for (let i = 0; i < assetids.length; i++) {
             tradeManager.setItemInTrade(assetids[i]);
