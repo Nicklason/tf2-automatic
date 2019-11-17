@@ -162,6 +162,8 @@ function sendOfferRetry (offer, callback, tries = 0) {
 
             if (err.message.indexOf('can only be sent to friends') !== -1) {
                 return callback(err);
+            } else if (err.message.indexOf('is not available to trade')) {
+                return callback(err);
             } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') !== -1) {
                 return callback(err);
             } else if (err.eresult !== undefined) {
