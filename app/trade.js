@@ -12,19 +12,96 @@ const itemsInTrade = [];
 let processingOffer = false;
 
 /**
+ * This function is called when polldata is emitted by the manager
+ * @param {Object} pollData
+ */
+exports.onPollData = function (pollData) {
+    // Remove data from old offers
+
+    const current = Math.round(new Date().getTime() / 1000);
+    const max = 3600;
+
+    for (const id in pollData.timestamps) {
+        if (!Object.prototype.hasOwnProperty.call(pollData.timestamps, id)) {
+            continue;
+        }
+
+        const time = pollData.timestamps[id];
+        let state;
+
+        if (pollData.sent[id] !== undefined) {
+            state = pollData.sent[id];
+        } else if (pollData.received[id] !== undefined) {
+            state = pollData.received[id];
+        }
+
+        const isActive = state === TradeOfferManager.ETradeOfferState.Accepted || state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation || state === TradeOfferManager.ETradeOfferState.InEscrow;
+
+        if (!isActive && current - time > max) {
+            // FIXME: All these checks are not really nessesary
+            if (pollData.offerData !== undefined && pollData.offerData[id]) {
+                delete pollData.offerData[id];
+            }
+            if (pollData.timestamps[id]) {
+                delete pollData.timestamps[id];
+            }
+        }
+    }
+
+    handlerManager.getHandler().onPollData(pollData);
+};
+
+exports.setPollData = function (pollData) {
+    // Go through sent and received offers
+
+    const activeOrCreatedNeedsConfirmation = [];
+
+    for (const id in pollData.sent) {
+        if (!Object.prototype.hasOwnProperty.call(pollData.sent, id)) {
+            continue;
+        }
+
+        const state = pollData.sent[id];
+
+        if (state === TradeOfferManager.ETradeOfferState.Active || state === TradeOfferManager.EConfirmationMethod.CreatedNeedsConfirmation) {
+            activeOrCreatedNeedsConfirmation.push(id);
+        }
+    }
+
+    for (const id in pollData.received) {
+        if (!Object.prototype.hasOwnProperty.call(pollData.received, id)) {
+            continue;
+        }
+
+        const state = pollData.received[id];
+
+        if (state === TradeOfferManager.ETradeOfferState.Active) {
+            activeOrCreatedNeedsConfirmation.push(id);
+        }
+    }
+
+    // Go through all sent / received offers and mark the items as in trade
+    for (let i = 0; i < activeOrCreatedNeedsConfirmation.length; i++) {
+        const id = activeOrCreatedNeedsConfirmation[i];
+
+        const offerData = pollData.offerData === undefined ? {} : (pollData.offerData[id] || {});
+        const assetids = offerData.assetids || [];
+
+        for (let i = 0; i < assetids.length; i++) {
+            exports.setItemInTrade(assetids[i]);
+        }
+    }
+
+    require('lib/manager').pollData = pollData;
+};
+
+/**
  * Called when the state of an offer changes
  * @param {Object} offer
  * @param {Number} oldState
  */
 exports.offerChanged = function (offer, oldState) {
     const inventoryManager = require('app/inventory');
-
-    if (offer.state === TradeOfferManager.ETradeOfferState.Accepted || offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
-        // Remove lost items from inventory
-        offer.itemsToGive.forEach(function (item) {
-            inventoryManager.removeItem(item.assetid);
-        });
-    }
 
     if (offer.state === TradeOfferManager.ETradeOfferState.Active || offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
         // Offer is active / made, items are in trade
@@ -42,14 +119,23 @@ exports.offerChanged = function (offer, oldState) {
         });
     }
 
-    if (offer.state === TradeOfferManager.ETradeOfferState.Accepted && offer.itemsToReceive.length !== 0) {
-        // Offer is accepted, update inventory
-        inventoryManager.getInventory(community.steamID, function () {
-            handlerManager.getHandler().onTradeOfferUpdated(offer, oldState);
-        });
-    } else {
+    if (offer.state !== TradeOfferManager.ETradeOfferState.Accepted) {
         handlerManager.getHandler().onTradeOfferUpdated(offer, oldState);
+        return;
     }
+
+    // Offer is accepted, update inventory
+    if (offer.itemsToGive.length !== 0) {
+        // Remove lost items from inventory
+        offer.itemsToGive.forEach(function (item) {
+            inventoryManager.removeItem(item.assetid);
+        });
+    }
+
+    // Fetch inventory to get received items
+    inventoryManager.getInventory(community.steamID, function () {
+        handlerManager.getHandler().onTradeOfferUpdated(offer, oldState);
+    });
 };
 
 /**
@@ -139,6 +225,8 @@ exports.sendOffer = function (offer, callback) {
 
     sendOfferRetry(offer, function (err, status) {
         if (err) {
+            // TODO: On eresult 16 then make the bot wait a few seconds and check if the trade was made, then accept mobile confirmation
+
             // Failed to send the offer, the items are no longer in trade
             offer.itemsToGive.forEach(function (item) {
                 exports.unsetItemInTrade(item.id);
@@ -147,6 +235,7 @@ exports.sendOffer = function (offer, callback) {
         }
 
         if (status === 'pending') {
+            offer.data('actedOnConfirmation', true);
             acceptConfirmation(offer.id);
         }
 
@@ -156,6 +245,8 @@ exports.sendOffer = function (offer, callback) {
 
 function sendOfferRetry (offer, callback, tries = 0) {
     offer.send(function (err, status) {
+        offer.data('handledByUs', true);
+
         tries++;
         if (err) {
             if (tries >= 5) {
@@ -210,6 +301,7 @@ exports.acceptOffer = function (offer, callback) {
 
         if (status === 'pending') {
             acceptConfirmation(offer.id);
+            offer.data('actedOnConfirmation', true);
         }
 
         callback(null, status);
@@ -233,6 +325,8 @@ function acceptConfirmation (objectID, callback) {
 
 function acceptOfferRetry (offer, callback, tries = 0) {
     offer.accept(function (err, status) {
+        offer.data('handledByUs', true);
+
         tries++;
         if (err) {
             if (tries >= 5) {
@@ -264,7 +358,10 @@ exports.declineOffer = function (offer, callback) {
     }
 
     // TODO: Add error handling
-    offer.decline(callback);
+    offer.decline(function (err) {
+        offer.data('handledByUs', true);
+        callback(err);
+    });
 };
 
 /**
