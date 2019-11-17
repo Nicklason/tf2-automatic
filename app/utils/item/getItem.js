@@ -67,9 +67,17 @@ function fixItem (item) {
         }
     }
 
-    if (item.quality2 !== null && item.wear !== null) {
-        // Item is a skin
-        item.quality = 15;
+    if (item.effect !== null) {
+        // Fix quality for items with effects
+        if (item.quality === 11) {
+            item.quality2 = 11;
+        }
+
+        item.quality = 5;
+    } else if (item.paintkit !== null && item.quality2 === 11) {
+        // Fix quality for skins without effect
+        item.quality = 11;
+        item.quality2 = null;
     }
 
     return item;
