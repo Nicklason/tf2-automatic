@@ -135,6 +135,8 @@ exports.sendOffer = function (offer, callback) {
 
     offer.data('assetids', ourAssetids);
 
+    // FIXME: Fix problem with not accepting mobile confirmation for offers if steam returns an error
+
     sendOfferRetry(offer, function (err, status) {
         if (err) {
             // Failed to send the offer, the items are no longer in trade
@@ -167,10 +169,7 @@ function sendOfferRetry (offer, callback, tries = 0) {
             } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') !== -1) {
                 return callback(err);
             } else if (err.eresult !== undefined) {
-                if (err.eresult == 16) {
-                    // This error usually means that the offer did get sent
-                    return callback(null, offer.id !== undefined && offer.itemsToGive.length !== 0 ? 'pending' : undefined);
-                } else if (err.eresult == 26) {
+                if (err.eresult == 26) {
                     // One or more of the items does not exist in the inventories, refresh our inventory and return the error
                     require('app/inventory').getInventory(community.steamID, function () {
                         callback(err);
