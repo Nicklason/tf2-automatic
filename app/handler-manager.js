@@ -1,6 +1,5 @@
 const path = require('path');
 const isPathInside = require('is-path-inside');
-const TradeOfferManager = require('steam-tradeoffer-manager');
 
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onLoginKey', 'onNewTradeOffer', 'onTradeOfferUpdated', 'onLoginAttempts'];
 const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onTradeFetchError', 'onTradeAcceptError', 'onTradeDeclineError', 'onInventoryUpdated', 'onCraftingCompleted', 'onCraftingQueueCompleted', 'onPollData', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
@@ -18,7 +17,9 @@ const EXPORTED_FUNCTIONS = {
     setLoginAttempts (attempts) {
         require('app/login-attempts').setAttempts(attempts);
     },
-    setPollData: setPollData,
+    setPollData: function (pollData) {
+        require('app/trade').setPollData(pollData);
+    },
     acceptOffer (offer, callback) {
         require('app/trade').acceptOffer(offer, callback);
     },
@@ -41,52 +42,6 @@ const EXPORTED_FUNCTIONS = {
         require('app/crafting').combineMetal(defindex, amount);
     }
 };
-
-function setPollData (pollData) {
-    // Go through sent and received offers
-
-    const activeOrCreatedNeedsConfirmation = [];
-
-    for (const id in pollData.sent) {
-        if (!Object.prototype.hasOwnProperty.call(pollData.sent, id)) {
-            continue;
-        }
-
-        const state = pollData.sent[id];
-
-        if (state === TradeOfferManager.ETradeOfferState.Active || state === TradeOfferManager.EConfirmationMethod.CreatedNeedsConfirmation) {
-            activeOrCreatedNeedsConfirmation.push(id);
-        }
-    }
-
-    for (const id in pollData.received) {
-        if (!Object.prototype.hasOwnProperty.call(pollData.received, id)) {
-            continue;
-        }
-
-        const state = pollData.received[id];
-
-        if (state === TradeOfferManager.ETradeOfferState.Active) {
-            activeOrCreatedNeedsConfirmation.push(id);
-        }
-    }
-
-    const tradeManager = require('app/trade');
-
-    // Go through all sent / received offers and mark the items as in trade
-    for (let i = 0; i < activeOrCreatedNeedsConfirmation.length; i++) {
-        const id = activeOrCreatedNeedsConfirmation[i];
-
-        const offerData = pollData.offerData[id] || {};
-        const assetids = offerData.assetids || [];
-
-        for (let i = 0; i < assetids.length; i++) {
-            tradeManager.setItemInTrade(assetids[i]);
-        }
-    }
-
-    require('lib/manager').pollData = pollData;
-}
 
 let handler;
 
