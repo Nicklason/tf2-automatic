@@ -42,7 +42,7 @@
     "steam-user": "^4.12.4",
     "steamcommunity": "^3.41.3",
     "tf2": "^3.0.1",
-    "tf2-schema": "^1.2.1",
+    "tf2-schema": "^1.3.0",
     "tf2-sku": "^1.1.3",
     "url": "^0.11.0"
   },
