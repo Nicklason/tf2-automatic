@@ -281,8 +281,6 @@ function getOutput (item) {
 
     const killstreak = getKillstreak(item);
 
-    const defindex = getDefindex(item);
-
     if (killstreak !== 0) {
         // Killstreak Kit Fabricator
 
@@ -291,7 +289,7 @@ function getOutput (item) {
         target = schemaManager.schema.getItemByItemName(name).defindex;
         outputQuality = 6;
         outputDefindex = [6527, 6523, 6526][killstreak - 1];
-    } else if (defindex === 20005) {
+    } else if (output.indexOf(' Strangifier') !== -1) {
         // Strangifier Chemistry Set
 
         const name = output.replace('Strangifier', '').trim();
@@ -299,7 +297,7 @@ function getOutput (item) {
         target = schemaManager.schema.getItemByItemName(name).defindex;
         outputQuality = 6;
         outputDefindex = 6522;
-    } else if (defindex === 20006) {
+    } else if (output.indexOf(' Collector\'s') !== -1) {
         // Collector's Chemistry Set
 
         const name = output.replace('Collector\'s', '').trim();
@@ -324,9 +322,11 @@ function getTarget (item) {
 
         if (gameItem.attributes !== undefined && gameItem.attributes['tool target item'] !== undefined) {
             return parseInt(gameItem.attributes['tool target item'].value, 10);
+        } else if (gameItem.static_attrs !== undefined && gameItem.static_attrs['tool target item'] !== undefined) {
+            return parseInt(gameItem.static_attrs['tool target item'], 10);
         }
 
-        return parseInt(gameItem.static_attrs['tool target item'], 10);
+        throw new Error('Could not find target for item "' + item.market_hash_name + '"');
     }
 
     if (defindex === 6527) {
