@@ -143,6 +143,11 @@ exports.offerChanged = function (offer, oldState) {
  * @param {Object} offer
  */
 exports.newOffer = function (offer) {
+    if (offer.isGlitched()) {
+        // The offer is glitched, skip it
+        return;
+    }
+
     // Offer is active, items are in trade
     offer.itemsToGive.forEach(function (item) {
         exports.setItemInTrade(item.id);
@@ -324,7 +329,8 @@ function acceptConfirmation (objectID, callback) {
 }
 
 function acceptOfferRetry (offer, callback, tries = 0) {
-    offer.accept(function (err, status) {
+    // true - skip state update used to check if a trade is being held
+    offer.accept(true, function (err, status) {
         offer.data('handledByUs', true);
 
         tries++;
