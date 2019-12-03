@@ -59,6 +59,8 @@ handler.onRun(function (opts) {
 
         handler.onLoginSuccessful();
 
+        // TODO: Detect when steam is down using the limitations callback function
+
         require('utils/limitationsCallback')(function (err, limitations) {
             if (err) {
                 throw err;
