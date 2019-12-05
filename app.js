@@ -21,8 +21,8 @@ const manager = require('lib/manager');
 const schemaManager = require('lib/tf2-schema');
 const listingManager = require('lib/bptf-listings');
 
-/* eslint-disable-next-line no-unused-vars */
-const tf2 = require('lib/tf2');
+// Set up node-tf2
+require('lib/tf2');
 
 const handlerManager = require('app/handler-manager');
 handlerManager.setup();
@@ -30,6 +30,7 @@ handlerManager.setup();
 const handler = handlerManager.getHandler();
 
 require('death')({ uncaughtException: true })(function (signal, err) {
+    // Check if it is an error (error object) or a signal (string)
     handler.shutdown(typeof err === 'string' ? null : err);
 });
 
