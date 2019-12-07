@@ -85,10 +85,10 @@ exports.setPollData = function (pollData) {
         const id = activeOrCreatedNeedsConfirmation[i];
 
         const offerData = pollData.offerData === undefined ? {} : (pollData.offerData[id] || {});
-        const assetids = offerData.assetids || [];
+        const items = offerData.items || [];
 
-        for (let i = 0; i < assetids.length; i++) {
-            exports.setItemInTrade(assetids[i]);
+        for (let i = 0; i < items.length; i++) {
+            exports.setItemInTrade(items[i].assetid);
         }
     }
 
@@ -104,19 +104,25 @@ exports.offerChanged = function (offer, oldState) {
     const inventoryManager = require('app/inventory');
 
     if (offer.state === TradeOfferManager.ETradeOfferState.Active || offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
-        // Offer is active / made, items are in trade
+        // Offer is active
+
+        // Mark items as in trade
         offer.itemsToGive.forEach(function (item) {
             exports.setItemInTrade(item.id);
         });
 
-        if (offer.data('assetids') === null) {
-            offer.data('assetids', offer.itemsToGive.map((item) => item.assetid));
+        // No items saved, save them
+        if (offer.data('items') === null) {
+            offer.data('items', offer.itemsToGive.map((item) => mapItem(item)));
         }
     } else {
-        // Remove items from list of items we are offering
+        // Offer is not active and items are not in trade
         offer.itemsToGive.forEach(function (item) {
             exports.unsetItemInTrade(item.id);
         });
+
+        // Unset items
+        offer.data('items', undefined);
     }
 
     if (offer.state !== TradeOfferManager.ETradeOfferState.Accepted) {
@@ -217,21 +223,23 @@ exports.sendOffer = function (offer, callback) {
         callback = noop;
     }
 
-    const ourAssetids = [];
+    const ourItems = [];
 
     offer.itemsToGive.forEach(function (item) {
         exports.setItemInTrade(item.assetid);
-        ourAssetids.push(item.assetid);
+        ourItems.push(mapItem(item));
     });
 
-    offer.data('assetids', ourAssetids);
+    offer.data('items', ourItems);
 
     // FIXME: Fix problem with not accepting mobile confirmation for offers if steam returns an error
 
-    sendOfferRetry(offer, function (err, status) {
-        if (err) {
-            // TODO: On eresult 16 then make the bot wait a few seconds and check if the trade was made, then accept mobile confirmation
+    const sendTime = new Date().getTime();
 
+    sendOfferRetry(offer, function (err, status) {
+        offer.data('actionTime', new Date().getTime() - sendTime);
+
+        if (err) {
             // Failed to send the offer, the items are no longer in trade
             offer.itemsToGive.forEach(function (item) {
                 exports.unsetItemInTrade(item.id);
@@ -240,8 +248,7 @@ exports.sendOffer = function (offer, callback) {
         }
 
         if (status === 'pending') {
-            offer.data('actedOnConfirmation', true);
-            acceptConfirmation(offer.id);
+            acceptConfirmation(offer);
         }
 
         callback(null, status);
@@ -260,16 +267,58 @@ function sendOfferRetry (offer, callback, tries = 0) {
 
             if (err.message.indexOf('can only be sent to friends') !== -1) {
                 return callback(err);
-            } else if (err.message.indexOf('is not available to trade')) {
+            } else if (err.message.indexOf('is not available to trade') !== -1) {
                 return callback(err);
             } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') !== -1) {
                 return callback(err);
             } else if (err.eresult !== undefined) {
-                if (err.eresult == 26) {
+                if (err.eresult === TradeOfferManager.EResult.Revoked) {
                     // One or more of the items does not exist in the inventories, refresh our inventory and return the error
-                    require('app/inventory').getInventory(community.steamID, function () {
+                    return require('app/inventory').getInventory(community.steamID, function () {
                         callback(err);
                     });
+                } else if (err.eresult === TradeOfferManager.EResult.Timeout) {
+                    // Failed to send offer, but there is a chance that it has been made anyway
+
+                    // I am actually not sure if this works, but I don't see why it wouldn't ¯\_(ツ)_/¯
+
+                    return setTimeout(function () {
+                        // Check if the offer was made
+                        findMatchingOffer(offer, true, function (err2, match) {
+                            if (err2) {
+                                return callback(err2);
+                            }
+
+                            if (match === null) {
+                                // No match, retry sending the offer
+                                return sendOfferRetry(offer, callback, tries);
+                            }
+
+                            // Update the offer we attempted to send with the properties from the matching offer
+                            offer.id = match.id;
+                            offer.state = match.state;
+                            offer.created = match.created;
+                            offer.updated = match.updated;
+                            offer.expires = match.expires;
+                            offer.confirmationMethod = match.confirmationMethod;
+
+                            // Move data set on the offer to polldata (https://github.com/DoctorMcKay/node-steam-tradeoffer-manager/blob/master/lib/classes/TradeOffer.js#L370)
+                            for (const property in offer._tempData) {
+                                if (Object.prototype.hasOwnProperty.call(offer._tempData, property)) {
+                                    offer.manager.pollData.offerData = offer.manager.pollData.offerData || {};
+                                    offer.manager.pollData.offerData[offer.id] = offer.manager.pollData.offerData[offer.id] || {};
+                                    offer.manager.pollData.offerData[offer.id][property] = offer._tempData[property];
+                                }
+                            }
+
+                            delete offer._tempData;
+
+                            // Emit polldata
+                            offer.manager.emit('pollData', offer.manager.pollData);
+
+                            callback(null, offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation ? 'pending' : 'sent');
+                        });
+                    }, 10000 * tries);
                 } else {
                     return callback(err);
                 }
@@ -277,14 +326,14 @@ function sendOfferRetry (offer, callback, tries = 0) {
 
             if (err.message !== 'Not Logged In') {
                 setTimeout(function () {
-                    acceptOfferRetry(offer, callback, tries);
+                    sendOfferRetry(offer, callback, tries);
                 }, 5000 * tries);
                 return;
             }
 
             communityLoginCallback(true, function (err) {
                 setTimeout(function () {
-                    acceptOfferRetry(offer, callback, tries);
+                    sendOfferRetry(offer, callback, tries);
                 }, err !== null ? 5000 * tries : 0);
             });
             return;
@@ -294,19 +343,104 @@ function sendOfferRetry (offer, callback, tries = 0) {
     });
 }
 
+function getOffers (includeInactive, callback) {
+    if (typeof includeInactive === 'function') {
+        callback = includeInactive;
+        includeInactive = false;
+    }
+
+    require('lib/manager').getOffers(includeInactive ? TradeOfferManager.EOfferFilter.All : TradeOfferManager.EOfferFilter.ActiveOnly, callback);
+}
+
+/**
+ * Finds matching offer
+ * @param {Object} offer
+ * @param {Boolean} isSent Search for sent or received offers
+ * @param {Functions} callback
+ */
+function findMatchingOffer (offer, isSent, callback) {
+    // Get current offers
+    getOffers(function (err, sent, received) {
+        if (err) {
+            return callback(err);
+        }
+
+        // Find matching offer
+        const match = (isSent ? sent : received).find((v) => offerEquals(offer, v));
+
+        // Return match
+        return callback(null, match === undefined ? null : match);
+    });
+}
+
+/**
+ * Checks if two offers are identical - if they are to / from same account and contains same items
+ * @param {Object} a
+ * @param {Object} b
+ * @return {Boolean}
+ */
+function offerEquals (a, b) {
+    return a.isOurOffer === b.isOurOffer && a.partner.getSteamID64() === b.partner.getSteamID64() && itemsEquals(a.itemsToGive, b.itemsToGive) && itemsEquals(a.itemsToReceive, b.itemsToReceive);
+}
+
+/**
+ * Checks if two lists contains the same items
+ * @param {Array<Object>} a
+ * @param {Array<Object>} b
+ * @return {Boolean}
+ */
+function itemsEquals (a, b) {
+    if (a.length !== b.length) {
+        return false;
+    }
+
+    const copy = b.concat();
+
+    for (let i = 0; i < a.length; i++) {
+        // Find index of matching item
+        const index = copy.findIndex((item) => itemEquals(item, a[i]));
+
+        if (index === -1) {
+            // Item was not found, offers don't match
+            return false;
+        }
+
+        // Remove match from list
+        copy.splice(index, 1);
+    }
+
+    return copy.length === 0;
+}
+
+function itemEquals (a, b) {
+    return a.appid == b.appid && a.contextid == b.contextid && (a.assetid || a.id) == (b.assetid || b.id);
+}
+
+function mapItem (item) {
+    return {
+        appid: item.appid,
+        contextid: item.contextid,
+        assetid: item.assetid,
+        amount: item.amount
+    };
+}
+
 exports.acceptOffer = function (offer, callback) {
     if (callback === undefined) {
         callback = noop;
     }
 
+    const acceptTime = new Date().getTime();
+
     acceptOfferRetry(offer, function (err, status) {
+        offer.data('actionTime', new Date().getTime() - acceptTime);
+
         if (err) {
             return callback(err);
         }
 
         if (status === 'pending') {
-            acceptConfirmation(offer.id);
-            offer.data('actedOnConfirmation', true);
+            acceptConfirmation(offer);
         }
 
         callback(null, status);
@@ -314,18 +448,34 @@ exports.acceptOffer = function (offer, callback) {
 };
 
 /**
- * Accepts a confirmation
- * @param {String} objectID
+ * Accepts a confirmation for offer
+ * @param {Object} offer
  * @param {Function} callback
  */
-function acceptConfirmation (objectID, callback) {
+function acceptConfirmation (offer, callback) {
     if (callback === undefined) {
         callback = noop;
     }
 
     // TODO: Add retrying / error handling
 
-    community.acceptConfirmationForObject(process.env.STEAM_IDENTITY_SECRET, objectID, callback);
+    const confirmationTime = new Date().getTime();
+
+    offer.data('actedOnConfirmation', true);
+
+    community.acceptConfirmationForObject(process.env.STEAM_IDENTITY_SECRET, offer.id, function (err) {
+        offer.data('confirmationTime', new Date().getTime() - confirmationTime);
+
+        const handler = handlerManager.getHandler();
+
+        if (err) {
+            handler.onConfirmationError(offer.id, err);
+        } else {
+            handler.onConfirmationAccepted(offer.id);
+        }
+
+        callback(err);
+    });
 }
 
 function acceptOfferRetry (offer, callback, tries = 0) {
@@ -370,6 +520,17 @@ exports.declineOffer = function (offer, callback) {
     });
 };
 
+exports.cancelOffer = function (offer, callback) {
+    if (callback === undefined) {
+        callback = noop;
+    }
+
+    // TODO: Add error handling
+    offer.decline(function (err) {
+        callback(err);
+    });
+};
+
 /**
  * Processes a new offer, can only process one at a time
  */
@@ -403,26 +564,29 @@ function processNextOffer () {
 }
 
 function handlerProcessOffer (offer) {
-    handlerManager.getHandler().onNewTradeOffer(offer, function (action) {
-        if (action === 'accept') {
-            exports.acceptOffer(offer, function (err) {
-                if (err) {
-                    handlerManager.getHandler().onTradeAcceptError(offer.id, err);
-                }
-
-                finishedProcessing(offer);
-            });
-        } else if (action === 'decline') {
-            exports.declineOffer(offer, function (err) {
-                if (err) {
-                    handlerManager.getHandler().onTradeDeclineError(offer.id, err);
-                }
-
-                finishedProcessing(offer);
-            });
-        } else {
-            finishedProcessing(offer);
+    handlerManager.getHandler().onNewTradeOffer(offer, function (action, callback) {
+        if (typeof callback !== 'function') {
+            callback = noop;
         }
+
+        let actionFunc;
+
+        if (action === 'accept') {
+            actionFunc = exports.acceptOffer;
+        } else if (action === 'decline') {
+            actionFunc = exports.declineOffer;
+        }
+
+        if (!actionFunc) {
+            finishedProcessing(offer);
+            return;
+        }
+
+        actionFunc(offer, function (err) {
+            callback(err);
+
+            finishedProcessing(offer);
+        });
     });
 }
 
