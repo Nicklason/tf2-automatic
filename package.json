@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Nicklason/bot-framework.git"
+    "url": "git+https://github.com/Nicklason/tf2-automatic.git"
   },
   "author": "Nicklas Marc Pedersen",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Nicklason/bot-framework/issues"
+    "url": "https://github.com/Nicklason/tf2-automatic/issues"
   },
-  "homepage": "https://github.com/Nicklason/bot-framework#readme",
+  "homepage": "https://github.com/Nicklason/tf2-automatic#readme",
   "_moduleAliases": {
     "@root": ".",
     "app": "app",
