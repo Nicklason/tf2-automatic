@@ -2,11 +2,18 @@ const path = require('path');
 const isPathInside = require('is-path-inside');
 
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onLoginKey', 'onNewTradeOffer', 'onTradeOfferUpdated', 'onLoginAttempts'];
-const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onTradeFetchError', 'onTradeAcceptError', 'onTradeDeclineError', 'onInventoryUpdated', 'onCraftingCompleted', 'onCraftingQueueCompleted', 'onPollData', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
+const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onInventoryUpdated', 'onCraftingCompleted', 'onCraftingQueueCompleted', 'onPollData', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
 const EXPORTED_FUNCTIONS = {
     shutdown: function (err) {
+        const manager = require('lib/manager');
+
+        // Stop the polling of trade offers
+        manager.pollInterval = -1;
+
+        // TODO: Check if a poll is being made before stopping the bot
+
         handler.onShutdown(err, function () {
-            require('lib/manager').shutdown();
+            manager.shutdown();
             require('lib/bptf-listings').stop();
             require('lib/ptf-socket').disconnect();
             require('lib/client').logOff();
@@ -28,6 +35,9 @@ const EXPORTED_FUNCTIONS = {
     },
     sendOffer (offer, callback) {
         require('app/trade').sendOffer(offer, callback);
+    },
+    cancelOffer (offer, callback) {
+        require('app/trade').cancelOffer(offer, callback);
     },
     getInventory (steamid, callback) {
         require('app/inventory').getInventory(steamid, callback);

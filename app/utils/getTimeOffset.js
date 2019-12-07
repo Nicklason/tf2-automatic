@@ -4,10 +4,15 @@ let timeOffset = null;
 
 /**
  * Gets time offset from Steam API and saves result for future reference
- * @param {Function} callback
+ * @param {Function} [callback]
+ * @return {Number}
  */
 module.exports = function (callback) {
     if (timeOffset !== null) {
+        if (callback === undefined) {
+            return timeOffset;
+        }
+
         callback(null, timeOffset);
         return;
     }
