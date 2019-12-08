@@ -1,4 +1,6 @@
+const log = require('lib/logger');
 const client = require('lib/client');
+
 const loginAttempts = require('app/login-attempts');
 const handlerManager = require('app/handler-manager');
 
@@ -10,6 +12,8 @@ const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SEC
  * @param {Function} callback
  */
 module.exports = function (loginKey, callback) {
+    log.debug('Starting login attempt', { login_key: loginKey });
+
     REQUIRED_OPTS.forEach(function (optName) {
         if (!process.env[optName]) {
             throw new Error('Missing ' + optName.slice(6).toLowerCase().replace(/_/g, ' '));
@@ -19,6 +23,7 @@ module.exports = function (loginKey, callback) {
     const wait = loginAttempts.wait();
 
     if (wait !== 0) {
+        log.debug('Waiting ' + wait + ' ms before trying to sign in');
         handlerManager.getHandler().onLoginThrottle(wait);
     }
 
@@ -32,8 +37,10 @@ module.exports = function (loginKey, callback) {
         };
 
         if (loginKey !== null) {
+            log.debug('Signing in using login key');
             opts.loginKey = loginKey;
         } else {
+            log.debug('Signing in using password');
             opts.password = process.env.STEAM_PASSWORD;
             opts.rememberPassword = true;
         }
@@ -47,11 +54,17 @@ module.exports = function (loginKey, callback) {
 
         function loggedOnEvent () {
             client.off('error', errorEvent);
+
+            log.debug('Signed in to Steam');
+
             gotEvent();
         }
 
         function errorEvent (err) {
             client.off('loggedOn', loggedOnEvent);
+
+            log.debug('Failed to sign in to Steam', { error: err });
+
             gotEvent(err);
         }
 

@@ -1,10 +1,14 @@
 const path = require('path');
 const isPathInside = require('is-path-inside');
 
-const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginThrottle', 'onLoginSuccessful', 'onLoginFailure', 'onLoginKey', 'onNewTradeOffer', 'onTradeOfferUpdated', 'onLoginAttempts'];
-const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onInventoryUpdated', 'onCraftingCompleted', 'onCraftingQueueCompleted', 'onPollData', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
+const log = require('lib/logger');
+
+const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData'];
+const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onTradeOfferUpdated', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onLoginSuccessful', 'onLoginFailure', 'onLoginThrottle', 'onInventoryUpdated', 'onCraftingCompleted', 'onCraftingQueueCompleted', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
 const EXPORTED_FUNCTIONS = {
     shutdown: function (err) {
+        log.debug('Shutdown has been initialized', { err: err });
+
         const manager = require('lib/manager');
 
         // Stop the polling of trade offers
@@ -13,10 +17,14 @@ const EXPORTED_FUNCTIONS = {
         // TODO: Check if a poll is being made before stopping the bot
 
         handler.onShutdown(err, function () {
+            log.debug('Shutdown callback has been called, cleaning up');
+
             manager.shutdown();
             require('lib/bptf-listings').stop();
             require('lib/ptf-socket').disconnect();
             require('lib/client').logOff();
+
+            log.end();
 
             process.exit(err === null ? 0 : 1);
         });
@@ -67,6 +75,8 @@ exports.setup = function () {
     } else {
         handlerPath = path.join(__dirname, '../app/handler/index.js');
     }
+
+    log.debug('Setting up handler', { path: handlerPath });
 
     if (!isPathInside(handlerPath, path.join(__dirname, '../app/handler'))) {
         throw new Error('Handler file must be inside app/handler');

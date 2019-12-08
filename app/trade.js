@@ -1,5 +1,6 @@
 const TradeOfferManager = require('steam-tradeoffer-manager');
 
+const log = require('lib/logger');
 const community = require('lib/community');
 
 const handlerManager = require('app/handler-manager');
@@ -103,6 +104,8 @@ exports.setPollData = function (pollData) {
 exports.offerChanged = function (offer, oldState) {
     const inventoryManager = require('app/inventory');
 
+    log.verbose('Offer #' + offer.id + ' state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
+
     if (offer.state === TradeOfferManager.ETradeOfferState.Active || offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
         // Offer is active
 
@@ -123,6 +126,15 @@ exports.offerChanged = function (offer, oldState) {
 
         // Unset items
         offer.data('items', undefined);
+
+        const finishTimestamp = new Date().getTime();
+
+        // Time when the offer was not active anymore
+        offer.data('finishTimestamp', finishTimestamp);
+
+        const processTime = finishTimestamp - offer.data('actedOnConfirmationTimestamp');
+
+        log.debug('Took ' + processTime + ' ms to process offer', { offer_id: offer.id, state: offer.state, finish_time: processTime });
     }
 
     if (offer.state !== TradeOfferManager.ETradeOfferState.Accepted) {
@@ -151,8 +163,11 @@ exports.offerChanged = function (offer, oldState) {
 exports.newOffer = function (offer) {
     if (offer.isGlitched()) {
         // The offer is glitched, skip it
+        log.debug('Offer is glitched', { offer_id: offer.id });
         return;
     }
+
+    log.verbose('Received offer #' + offer.id + ' from ' + offer.partner.getSteamID64());
 
     // Offer is active, items are in trade
     offer.itemsToGive.forEach(function (item) {
@@ -232,20 +247,25 @@ exports.sendOffer = function (offer, callback) {
 
     offer.data('items', ourItems);
 
-    // FIXME: Fix problem with not accepting mobile confirmation for offers if steam returns an error
-
     const sendTime = new Date().getTime();
 
+    log.debug('Sending offer...', { partner: offer.partner.getSteamID64(), ourItems: offer.itemsToGive.length, theirItems: offer.itemsToReceive.length });
+
     sendOfferRetry(offer, function (err, status) {
-        offer.data('actionTime', new Date().getTime() - sendTime);
+        const actionTime = new Date().getTime() - sendTime;
+        offer.data('actionTime', actionTime);
 
         if (err) {
+            log.warn('Failed to send offer ', { partner: offer.partner.getSteamID64(), action_time: actionTime, error: err });
+
             // Failed to send the offer, the items are no longer in trade
             offer.itemsToGive.forEach(function (item) {
                 exports.unsetItemInTrade(item.id);
             });
             return callback(err);
         }
+
+        log.trade('Offer #' + offer.id + ' successfully created' + (status === 'pending' ? '; confirmation required' : ''));
 
         if (status === 'pending') {
             acceptConfirmation(offer);
@@ -432,12 +452,18 @@ exports.acceptOffer = function (offer, callback) {
 
     const acceptTime = new Date().getTime();
 
+    log.debug('Accepting offer...', { offer_id: offer.id });
+
     acceptOfferRetry(offer, function (err, status) {
-        offer.data('actionTime', new Date().getTime() - acceptTime);
+        const actionTime = new Date().getTime() - acceptTime;
+        offer.data('actionTime', actionTime);
 
         if (err) {
+            log.warn('Offer #' + offer.id + ' failed to accept offer', { error: err, action_time: actionTime });
             return callback(err);
         }
+
+        log.trade('Offer #' + offer.id + ' successfully accepted' + (status === 'pending' ? '; confirmation required' : ''));
 
         if (status === 'pending') {
             acceptConfirmation(offer);
@@ -459,18 +485,26 @@ function acceptConfirmation (offer, callback) {
 
     // TODO: Add retrying / error handling
 
-    const confirmationTime = new Date().getTime();
+    log.debug('Accepting mobile confirmation...', { offer_id: offer.id });
+
+    const confirmationStart = new Date().getTime();
 
     offer.data('actedOnConfirmation', true);
+    offer.data('actedOnConfirmationTimestamp', confirmationStart);
 
     community.acceptConfirmationForObject(process.env.STEAM_IDENTITY_SECRET, offer.id, function (err) {
-        offer.data('confirmationTime', new Date().getTime() - confirmationTime);
+        const acceptConfirmationTimestamp = new Date().getTime();
+
+        const confirmationTime = acceptConfirmationTimestamp - confirmationStart;
+        offer.data('confirmationTime', confirmationTime);
 
         const handler = handlerManager.getHandler();
 
         if (err) {
+            log.debug('Got an error while trying to accept mobile confirmation', { offer_id: offer.id, error: err, confirmation_time: confirmationTime });
             handler.onConfirmationError(offer.id, err);
         } else {
+            log.debug('Accepted mobile confirmation', { offer_id: offer.id, confirmation_time: confirmationTime });
             handler.onConfirmationAccepted(offer.id);
         }
 
@@ -543,8 +577,13 @@ function processNextOffer () {
 
     const offerId = receivedOffers[0];
 
+    log.verbose('Handling offer #' + offerId + '...');
+
     getOfferRetry(offerId, function (err, offer) {
         if (err) {
+            log.warn('Failed to get offer #' + offerId, { error: err });
+            // log.debug('Failed to get offer', { offer_id: offerId, error: err });
+
             // After many retries we could not get the offer data
 
             if (receivedOffers.length !== 1) {
@@ -564,7 +603,11 @@ function processNextOffer () {
 }
 
 function handlerProcessOffer (offer) {
+    log.debug('Giving offer to handler');
+
     handlerManager.getHandler().onNewTradeOffer(offer, function (action, callback) {
+        log.debug('Handler is done with offer', { offer_id: offer.id, action: action });
+
         if (typeof callback !== 'function') {
             callback = noop;
         }
@@ -583,6 +626,8 @@ function handlerProcessOffer (offer) {
         }
 
         actionFunc(offer, function (err) {
+            log.debug('Done doing action on offer', { offer_id: offer.id, action: action, error: err });
+
             callback(err);
 
             finishedProcessing(offer);

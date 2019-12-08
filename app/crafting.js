@@ -1,3 +1,4 @@
+const log = require('lib/logger');
 const client = require('lib/client');
 const tf2 = require('lib/tf2');
 
@@ -16,8 +17,11 @@ let startedProcessing = false;
  */
 exports.smeltMetal = function (defindex, amount) {
     if ([5001, 5002].indexOf(defindex) === -1) {
+        log.warn('Invalid defindex for smelt job `' + defindex + '`');
         return;
     }
+
+    log.debug('Enqueueing ' + amount + ' smelt job(s) for ' + defindex);
 
     for (let i = 0; i < amount; i++) {
         craftJobs.push({ smelt: true, defindex: defindex });
@@ -33,8 +37,11 @@ exports.smeltMetal = function (defindex, amount) {
  */
 exports.combineMetal = function (defindex, amount) {
     if ([5000, 5001].indexOf(defindex) === -1) {
+        log.warn('Invalid defindex for combine job `' + defindex + '`');
         return;
     }
+
+    log.debug('Enqueueing ' + amount + ' combine job(s) for ' + defindex);
 
     for (let i = 0; i < amount; i++) {
         craftJobs.push({ smelt: false, defindex: defindex });
@@ -52,10 +59,15 @@ function processJob (job) {
     const assetids = inventoryManager.findBySKU(job.defindex + ';6', false);
 
     if ((job.smelt && assetids.length === 0) || (!job.smelt && assetids.length < 3)) {
+        log.debug('Could not process job (missing items)', { job: job });
         return false;
     }
 
     const ids = assetids.slice(0, job.smelt ? 1 : 3);
+
+    log.debug('Starting job', { job: job, ids: ids });
+
+    // TODO: Add recipe
 
     tf2.craft(ids);
 
@@ -66,6 +78,8 @@ function processJob (job) {
  * Handles the job queue
  */
 function handleJobsQueue () {
+    log.debug('Checking jobs queue', { is_processing: processingQueue, has_started_processing: startedProcessing, jobs: craftJobs.length });
+
     if (processingQueue) {
         return;
     } else if (craftJobs.length === 0) {
@@ -82,6 +96,8 @@ function handleJobsQueue () {
 
     const job = craftJobs[0];
 
+    log.debug('Ensuring TF2 GC connection...');
+
     waitForGC(function (err) {
         if (err) {
             return done(false);
@@ -90,6 +106,7 @@ function handleJobsQueue () {
         const ids = processJob(job);
 
         if (ids === false) {
+            log.debug('Could not process');
             return done(true);
         }
 
@@ -126,6 +143,8 @@ function handleJobsQueue () {
             tf2.off('craftingComplete', craftingCompleteEvent);
             clearTimeout(timeout);
 
+            log.debug('Disconnected from GC while crafting', { job: job });
+
             done(true);
         }
 
@@ -133,6 +152,8 @@ function handleJobsQueue () {
             // We have waited for 10 seconds and the event did not fire, remove the job and move on
             tf2.off('craftingComplete', craftingCompleteEvent);
             tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
+
+            log.debug('Craft job timed out', { job: job });
 
             done(true);
         }
@@ -150,10 +171,13 @@ function handleJobsQueue () {
 function waitForGC (callback) {
     const isInTF2 = client._playingAppIds.some((game) => game == 440);
     if (!isInTF2) {
+        log.debug('We are not playing TF2');
         client.gamesPlayed([440]);
     }
 
     if (tf2.haveGCSession) {
+        log.debug('Already connected to TF2 GC');
+
         callback(null);
         return;
     }
@@ -171,6 +195,8 @@ function waitForGC (callback) {
 
     function timeoutFired () {
         tf2.off('connectedToGC', connectedToGCEvent);
+
+        log.debug('Failed to connect to TF2 GC');
 
         callback(new Error('Could not connect to GC'));
     }
