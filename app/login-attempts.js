@@ -2,6 +2,9 @@ const moment = require('moment');
 
 const handlerManager = require('app/handler-manager');
 
+const maxLoginAttemptsWithinPeriod = 5;
+const loginPeriodTime = 60 * 1000;
+
 let loginAttempts = [];
 
 exports.setAttempts = function (attempts) {
@@ -9,15 +12,13 @@ exports.setAttempts = function (attempts) {
 };
 
 exports.wait = function () {
-    const period = 1 * 60;
+    const attemptsWithinPeriod = getWithinPeriod(loginPeriodTime);
 
-    const attemptsWithinPeriod = getWithinPeriod(period);
-
-    if (attemptsWithinPeriod.length >= 5) {
+    if (attemptsWithinPeriod.length >= maxLoginAttemptsWithinPeriod) {
         // Wait till we have made 0 attempts in the period
 
         const oldest = attemptsWithinPeriod[0];
-        oldest.add(period, 'seconds');
+        oldest.add(loginPeriodTime, 'milliseconds');
 
         return oldest.diff(moment(), 'milliseconds');
     }
@@ -35,10 +36,10 @@ exports.newAttempt = function () {
     handlerManager.getHandler().onLoginAttempts(attempts);
 };
 
-function getWithinPeriod (seconds) {
-    return loginAttempts.filter((attempt) => moment().diff(attempt, 'seconds') < seconds);
+function getWithinPeriod (milliseconds) {
+    return loginAttempts.filter((attempt) => moment().diff(attempt, 'milliseconds') < milliseconds);
 }
 
 function cleanup () {
-    loginAttempts = loginAttempts.filter((attempt) => moment().diff(attempt, 'hours') < 24);
+    loginAttempts = loginAttempts.filter((attempt) => moment().diff(attempt, 'milliseconds') < loginPeriodTime);
 }
