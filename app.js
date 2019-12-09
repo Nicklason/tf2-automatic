@@ -150,6 +150,8 @@ handler.onRun(function (opts) {
 
                         log.info(package.name + ' v' + package.version + ' is ready!');
 
+                        handlerManager.setReady();
+
                         handler.onReady();
                     });
                 });

@@ -63,6 +63,8 @@ const EXPORTED_FUNCTIONS = {
 
 let handler;
 
+let isReady = false;
+
 /**
  * Prepares the handler
  * @throw Throws an error if missing handler or if there is a problem with the handler
@@ -96,6 +98,14 @@ exports.setup = function () {
     validate();
 
     bindThis();
+};
+
+exports.isReady = function () {
+    return isReady;
+};
+
+exports.setReady = function () {
+    isReady = true;
 };
 
 /**
