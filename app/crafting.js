@@ -80,11 +80,18 @@ function handleJobsQueue () {
     log.debug('Checking jobs queue', { is_processing: processingQueue, has_started_processing: startedProcessing, jobs: craftJobs.length });
 
     if (processingQueue) {
+        log.debug('Already processing queue');
         return;
     } else if (craftJobs.length === 0) {
+        log.debug('Queue is empty');
         if (startedProcessing) {
+            log.debug('Done processing the queue');
+
             // We finished processing the job queue
             startedProcessing = false;
+
+            client.gamesPlayed([]);
+
             handlerManager.getHandler().onCraftingQueueCompleted();
         }
         return;
@@ -167,9 +174,12 @@ function handleJobsQueue () {
     });
 }
 
+function isInTF2 () {
+    return client._playingAppIds.some((game) => game == 440);
+}
+
 function waitForGC (callback) {
-    const isInTF2 = client._playingAppIds.some((game) => game == 440);
-    if (!isInTF2) {
+    if (!isInTF2()) {
         log.debug('We are not playing TF2');
         client.gamesPlayed([440]);
     }
@@ -182,7 +192,7 @@ function waitForGC (callback) {
     }
 
     // Listen for connected event
-    tf2.on('connectedToGC', connectedToGCEvent);
+    tf2.once('connectedToGC', connectedToGCEvent);
 
     const timeout = setTimeout(timeoutFired, 10000);
 
