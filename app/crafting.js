@@ -59,13 +59,12 @@ function processJob (job) {
     const assetids = inventoryManager.findBySKU(job.defindex + ';6', false);
 
     if ((job.smelt && assetids.length === 0) || (!job.smelt && assetids.length < 3)) {
-        log.debug('Could not process job (missing items)', { job: job });
         return false;
     }
 
     const ids = assetids.slice(0, job.smelt ? 1 : 3);
 
-    log.debug('Starting job', { job: job, ids: ids });
+    log.debug('Sending craft request', { ids: ids });
 
     // TODO: Add recipe
 
