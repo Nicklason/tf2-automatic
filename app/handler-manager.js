@@ -4,7 +4,7 @@ const isPathInside = require('is-path-inside');
 const log = require('lib/logger');
 
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData'];
-const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onTradeOfferUpdated', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onLoginSuccessful', 'onLoginFailure', 'onLoginThrottle', 'onInventoryUpdated', 'onCraftingCompleted', 'onCraftingQueueCompleted', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
+const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onTradeOfferUpdated', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onLoginSuccessful', 'onLoginFailure', 'onLoginThrottle', 'onInventoryUpdated', 'onCraftingCompleted', 'onUseCompleted', 'onTF2QueueCompleted', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
 const EXPORTED_FUNCTIONS = {
     shutdown: function (err) {
         log.debug('Shutdown has been initialized', { err: err });
@@ -58,6 +58,9 @@ const EXPORTED_FUNCTIONS = {
     },
     combineMetal (defindex, amount) {
         require('app/crafting').combineMetal(defindex, amount);
+    },
+    useItem (assetid) {
+        require('app/crafting').useItem(assetid);
     }
 };
 

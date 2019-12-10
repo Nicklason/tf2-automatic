@@ -41,6 +41,28 @@ exports.getAmount = function (sku) {
 };
 
 /**
+ * Returns the sku of the item, null if no match found
+ * @param {String} assetid
+ * @param {Boolean} [includeInTrade=true]
+ * @return {Object}
+ */
+exports.findByAssetid = function (assetid) {
+    const inventory = exports.getOwnInventory();
+
+    for (const sku in inventory) {
+        if (!Object.prototype.hasOwnProperty.call(inventory, sku)) {
+            continue;
+        }
+
+        if (inventory[sku].indexOf(assetid) === -1) {
+            return null;
+        }
+
+        return sku;
+    }
+};
+
+/**
  * Returns all assetids with a matching sku
  * @param {String} sku
  * @param {Boolean} [includeInTrade=true]
