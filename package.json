@@ -23,18 +23,15 @@
     "@root": ".",
     "app": "app",
     "utils": "app/utils",
-    "resources": "app/resources",
     "handler": "app/handler",
     "lib": "lib",
     "classes": "classes"
   },
   "dependencies": {
     "@nicklason/request-retry": "^1.1.1",
-    "async": "^3.1.0",
     "bptf-listings": "^4.3.0",
     "death": "^1.1.0",
     "dotenv": "^8.2.0",
-    "graceful-fs": "^4.2.3",
     "is-path-inside": "^3.0.2",
     "isobject": "^4.0.0",
     "module-alias": "^2.2.2",

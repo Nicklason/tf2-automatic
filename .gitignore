@@ -72,3 +72,7 @@ ecosystem.json
 
 # file folder
 files/
+
+# ignore handler folder but keep examples
+app/handler/*
+!app/handler/examples/
