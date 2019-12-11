@@ -1,3 +1,4 @@
+const log = require('lib/logger');
 const manager = require('lib/manager');
 
 const handlerManager = require('app/handler-manager');
@@ -10,10 +11,15 @@ let dictionary = {};
  * @param {Function} callback
  */
 exports.getInventory = function (steamid, callback) {
+    log.debug('Getting inventory for ' + steamid + '...');
+
     manager.getUserInventoryContents(steamid, 440, 2, true, function (err, items) {
         if (err) {
+            log.debug('Error getting inventory for ' + steamid, { error: err });
             return callback(err);
         }
+
+        log.debug('Got inventory for ' + steamid);
 
         if (manager.steamID.getSteamID64() === (typeof steamid === 'string' ? steamid : steamid.getSteamID64())) {
             inventoryUpdated(items);
@@ -171,6 +177,7 @@ exports.createDictionary = function (items) {
  */
 function inventoryUpdated (items) {
     dictionary = exports.createDictionary(items);
+    log.debug('Our inventory updated');
 
     handlerManager.getHandler().onInventoryUpdated(dictionary);
 }
