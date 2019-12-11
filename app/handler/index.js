@@ -18,9 +18,17 @@ exports.onNewTradeOffer = function (done) {
     done('decline');
 };
 
-// TODO: Use objects and pair events with files
-
-const saveEventData = require('handler/save');
-['onLoginKey', 'onLoginAttempts', 'onPollData'].forEach(function (v) {
-    exports[v] = saveEventData[v];
+[{
+    event: 'onLoginKey',
+    json: false
+}, {
+    event: 'onLoginAttempts',
+    json: true
+}, {
+    event: 'onPollData',
+    json: true
+}].forEach(function (v) {
+    exports[v.event] = function (data) {
+        require('handler/save')(v, data);
+    };
 });
