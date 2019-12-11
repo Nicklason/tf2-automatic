@@ -3,26 +3,24 @@ const files = require('utils/files');
 
 const paths = require('resources/paths');
 
-exports.onLoginKey = function (loginKey) {
-    files.writeFile(paths.loginKey, loginKey, function (err) {
-        if (err) {
-            log.warn('Error saving login key', { error: err });
-        }
-    });
-};
+/**
+ * Saves data from events
+ * @param {Object} opts
+ * @param {String} opts.event Name of the event
+ * @param {Boolean} opts.json If the data should be stringified
+ * @param {*} data
+ */
+module.exports = function (opts, data) {
+    // onLoginKey -> loginKey
+    const pathKey = opts.event.charAt(2).toLowerCase() + opts.event.substring(3);
 
-exports.onLoginAttempts = function (attempts) {
-    files.writeFile(paths.loginAttempts, attempts, true, function (err) {
-        if (err) {
-            log.warn('Error saving login attempts', { error: err });
-        }
-    });
-};
+    if (!Object.prototype.hasOwnProperty.call(paths, pathKey)) {
+        throw new Error('Unknown path `' + pathKey + '`');
+    }
 
-exports.onPollData = function (pollData) {
-    files.writeFile(paths.pollData, pollData, true, function (err) {
+    files.writeFile(paths[pathKey], data, opts.json, function (err) {
         if (err) {
-            log.warn('Error saving poll data', { error: err });
+            log.warn('Error saving ' + pathKey, { error: err });
         }
     });
 };
