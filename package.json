@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@nicklason/request-retry": "^1.1.1",
-    "bptf-listings": "^4.2.2",
+    "bptf-listings": "^4.3.0",
     "death": "^1.1.0",
     "dotenv": "^8.2.0",
     "is-path-inside": "^3.0.2",
@@ -50,7 +50,7 @@
   "devDependencies": {
     "eslint": "^6.7.2",
     "eslint-config-google": "^0.14.0",
-    "nodemon": "^2.0.1"
+    "nodemon": "^2.0.2"
   },
   "private": true
 }

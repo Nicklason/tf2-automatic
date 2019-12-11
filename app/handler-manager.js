@@ -20,7 +20,7 @@ const EXPORTED_FUNCTIONS = {
             log.debug('Shutdown callback has been called, cleaning up');
 
             manager.shutdown();
-            require('lib/bptf-listings').stop();
+            require('lib/bptf-listings').shutdown();
             require('lib/ptf-socket').disconnect();
             require('lib/client').logOff();
 
