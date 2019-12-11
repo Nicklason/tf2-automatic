@@ -49,8 +49,8 @@ module.exports = function (loginKey, callback) {
 
         client.logOn(opts);
 
-        client.on('loggedOn', loggedOnEvent);
-        client.on('error', errorEvent);
+        client.once('loggedOn', loggedOnEvent);
+        client.once('error', errorEvent);
 
         function loggedOnEvent () {
             client.off('error', errorEvent);
