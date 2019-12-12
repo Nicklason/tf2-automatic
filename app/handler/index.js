@@ -27,6 +27,9 @@ exports.onNewTradeOffer = function (done) {
 }, {
     event: 'onPollData',
     json: true
+}, {
+    event: 'onActions',
+    json: true
 }].forEach(function (v) {
     exports[v.event] = function (data) {
         require('handler/save')(v, data);

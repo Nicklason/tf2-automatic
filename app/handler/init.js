@@ -16,6 +16,9 @@ module.exports = function (done) {
         },
         loginAttempts: function (callback) {
             files.readFile(paths.loginAttempts, true, callback);
+        },
+        actions: function (callback) {
+            files.readFile(paths.actions, true, callback);
         }
     }, function (err, data) {
         if (err) {
@@ -30,6 +33,10 @@ module.exports = function (done) {
 
         if (data.loginAttempts !== null) {
             handler.setLoginAttempts(data.loginAttempts);
+        }
+
+        if (data.actions !== null) {
+            handler.setActions(data.actions);
         }
 
         done({ loginKey: data.loginKey });

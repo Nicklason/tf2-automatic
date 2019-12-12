@@ -35,6 +35,9 @@ const EXPORTED_FUNCTIONS = {
     setPollData: function (pollData) {
         require('app/trade').setPollData(pollData);
     },
+    setActions: function (actions) {
+        require('lib/bptf-listings').setActions(actions);
+    },
     acceptOffer (offer, callback) {
         require('app/trade').acceptOffer(offer, callback);
     },
