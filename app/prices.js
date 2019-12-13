@@ -1,7 +1,11 @@
+const SKU = require('tf2-sku');
+const Currencies = require('tf2-currencies');
+
 const log = require('lib/logger');
 const api = require('lib/ptf-api');
 const socket = require('lib/ptf-socket');
 const validator = require('lib/validator');
+const schemaManager = require('lib/tf2-schema');
 
 const handlerManager = require('app/handler-manager');
 
@@ -21,7 +25,6 @@ exports.init = function (callback) {
             return callback(err);
         }
 
-
         const handler = handlerManager.getHandler();
 
         let pricesChanged = false;
@@ -38,8 +41,8 @@ exports.init = function (callback) {
                     // Found matching items
                     if (pricelist[i].autoprice === true && pricelist[i].time < prices[j].time) {
                         // Times don't match, update our price
-                        pricelist[i].buy = prices[j].buy;
-                        pricelist[i].sell = prices[j].sell;
+                        pricelist[i].buy = new Currencies(prices[j].buy);
+                        pricelist[i].sell = new Currencies(prices[j].sell);
                         pricelist[i].time = prices[j].time;
 
                         pricesChanged = true;
@@ -67,7 +70,27 @@ exports.init = function (callback) {
 };
 
 exports.setPricelist = function (v) {
+    if (!Array.isArray(v)) {
+        throw new Error('Pricelist is not an array');
+    }
+
+    for (let i = 0; i < v.length; i++) {
+        const entry = v[i];
+
+        const errors = validator(entry, 'pricelist');
+        if (errors !== null) {
+            throw new Error('Invalid pricelist item: ' + errors.join(', '));
+        }
+
+        entry.buy = new Currencies(entry.buy);
+        entry.sell = new Currencies(entry.sell);
+    }
+
     pricelist = v;
+};
+
+exports.getPricelist = function () {
+    return pricelist;
 };
 
 function handlePriceChange (data) {
@@ -85,13 +108,19 @@ function handlePriceChange (data) {
     }
 }
 
-exports.get = function (sku) {
-    const match = pricelist.find((v) => v.sku === sku);
+exports.get = function (identifier, isSKU = true) {
+    const key = isSKU ? 'sku' : 'name';
+    const match = pricelist.find((v) => v[key] === identifier);
 
     return match === undefined ? null : match;
 };
 
 exports.add = function (sku, data, callback) {
+    if (sku === undefined) {
+        callback(new Error('Missing sku'));
+        return;
+    }
+
     log.debug('Handling request to add item to pricelist', { sku: sku, data: data });
 
     const match = exports.get(sku);
@@ -104,21 +133,34 @@ exports.add = function (sku, data, callback) {
         return;
     }
 
-    const entry = Object.assign({
-        sku: sku
-    }, data);
+    const item = SKU.fromString(sku);
+
+    if (item.defindex === 0 || item.quality === 0) {
+        callback(new Error('Unknown item'));
+        return;
+    }
+
+    const entry = Object.assign(data, {
+        sku: sku,
+        name: schemaManager.schema.getName(SKU.fromString(sku))
+    });
 
     // Validate data object
     const errors = validator(entry, 'add');
-
     if (errors !== null) {
         return callback(new Error(errors.join(', ')));
     }
 
     if (entry.autoprice !== true) {
         entry.time = null;
+
+        const errors = validator(entry, 'pricelist');
+        if (errors !== null) {
+            return callback(new Error(errors.join(', ')));
+        }
+
         add(entry, true);
-        return callback(null);
+        return callback(null, entry);
     }
 
     handling.push(sku);
@@ -137,7 +179,7 @@ exports.add = function (sku, data, callback) {
         entry.time = prices.time;
 
         add(entry, true);
-        return callback(null);
+        return callback(null, entry);
     });
 };
 
@@ -150,6 +192,9 @@ function add (entry, emit) {
         throw new Error(errors.join(', '));
     }
 
+    entry.buy = new Currencies(entry.buy);
+    entry.sell = new Currencies(entry.sell);
+
     pricelist.push(entry);
 
     if (emit === true) {
@@ -161,18 +206,27 @@ function add (entry, emit) {
     }
 }
 
-exports.update = function (sku, data, callback) {
-    const match = exports.get(sku);
+exports.update = function (identifier, isSKU, data, callback) {
+    if (typeof isSKU === 'object') {
+        callback = data;
+        data = isSKU;
+        isSKU = true;
+    }
+
+    const match = exports.get(identifier, isSKU);
 
     if (match === null) {
         callback(new Error('Item is not in the pricelist'));
         return;
-    } else if (handling.indexOf(sku) !== -1) {
+    } else if (handling.indexOf(match.sku) !== -1) {
         callback(new Error('Item is already being changed'));
         return;
     }
 
     const copy = Object.assign({}, match);
+
+    copy.buy = copy.buy.toJSON();
+    copy.sell = copy.sell.toJSON();
 
     for (const property in data) {
         if (!Object.prototype.hasOwnProperty.call(data, property)) {
@@ -189,18 +243,22 @@ exports.update = function (sku, data, callback) {
         return callback(new Error(errors.join(', ')));
     }
 
+    if (copy.max !== -1 && copy.max <= match.copy) {
+        return callback(new Error('Max needs to be more than min'));
+    }
+
     if (match.autoprice === copy.autoprice || copy.autoprice === false) {
         copy.time = null;
         remove(copy, false);
         add(copy, true);
-        return callback(null);
+        return callback(null, copy);
     }
 
-    handling.push(sku);
+    handling.push(match.sku);
 
     // TODO: If the item is not in the pricestf pricelist then request a check
-    api.getPrice(sku, 'bptf', function (err, prices) {
-        handling.splice(handling.indexOf(sku), 1);
+    api.getPrice(match.sku, 'bptf', function (err, prices) {
+        handling.splice(handling.indexOf(match.sku), 1);
         if (err) {
             return callback(err);
         }
@@ -211,26 +269,33 @@ exports.update = function (sku, data, callback) {
 
         remove(copy, false);
         add(copy, true);
-        return callback(null);
+        return callback(null, copy);
     });
 };
 
-exports.remove = function (sku, callback) {
-    let found = false;
+exports.remove = function (identifier, isSKU, callback) {
+    if (typeof isSKU === 'function') {
+        callback = isSKU;
+        isSKU = true;
+    }
+
+    let match = null;
+
+    const key = isSKU ? 'sku' : 'name';
 
     for (let i = 0; i < pricelist.length; i++) {
-        if (pricelist[i].sku === sku) {
+        if (pricelist[i][key] === identifier) {
+            match = pricelist[i];
             remove(i, true);
-            found = true;
             break;
         }
     }
 
-    if (!found) {
+    if (match === null) {
         return callback(new Error('Item is not in the pricelist'));
     }
 
-    return callback(null);
+    return callback(null, match);
 };
 
 function remove (index, emit) {

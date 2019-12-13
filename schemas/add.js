@@ -6,6 +6,14 @@ module.exports = {
             // sku of the item
             type: 'string'
         },
+        name: {
+            // name of the item
+            type: 'string'
+        },
+        enabled: {
+            // if we are actually trading the item
+            type: 'boolean'
+        },
         intent: {
             // 0 = buy, 1 = sell, 2 = bank
             type: 'integer'
@@ -14,13 +22,13 @@ module.exports = {
             // if the item is autopriced or not
             type: 'boolean'
         },
-        max_stock: {
+        max: {
             // maximum stock
             type: 'integer',
             // -1 is infinite
             minimum: -1
         },
-        min_stock: {
+        min: {
             // minimum stock
             type: 'integer',
             minimum: 0
@@ -35,5 +43,5 @@ module.exports = {
         }
     },
     additionalProperties: false,
-    required: ['sku', 'autoprice', 'max_stock', 'min_stock']
+    required: ['sku', 'name', 'enabled', 'autoprice', 'max', 'min']
 };
