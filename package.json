@@ -26,7 +26,8 @@
     "resources": "app/resources",
     "handler": "app/handler",
     "lib": "lib",
-    "classes": "classes"
+    "classes": "classes",
+    "schemas": "schemas"
   },
   "dependencies": {
     "@nicklason/request-retry": "^1.1.1",
@@ -37,6 +38,7 @@
     "graceful-fs": "^4.2.3",
     "is-path-inside": "^3.0.2",
     "isobject": "^4.0.0",
+    "jsonschema": "^1.2.5",
     "module-alias": "^2.2.2",
     "path": "^0.12.7",
     "socket.io-client": "^2.3.0",

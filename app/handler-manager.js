@@ -3,8 +3,8 @@ const isPathInside = require('is-path-inside');
 
 const log = require('lib/logger');
 
-const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData'];
-const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onTradeOfferUpdated', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onLoginSuccessful', 'onLoginFailure', 'onLoginThrottle', 'onInventoryUpdated', 'onCraftingCompleted', 'onUseCompleted', 'onTF2QueueCompleted', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
+const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData', 'onPricelist'];
+const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onPriceChange', 'onTradeOfferUpdated', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onLoginSuccessful', 'onLoginFailure', 'onLoginThrottle', 'onInventoryUpdated', 'onCraftingCompleted', 'onUseCompleted', 'onTF2QueueCompleted', 'onSchema', 'onHeartbeat', 'onListings', 'onActions'];
 const EXPORTED_FUNCTIONS = {
     shutdown: function (err) {
         log.debug('Shutdown has been initialized', { err: err });
@@ -37,6 +37,9 @@ const EXPORTED_FUNCTIONS = {
     },
     setActions: function (actions) {
         require('lib/bptf-listings').setActions(actions);
+    },
+    setPricelist: function (pricelist) {
+        require('app/prices').setPricelist(pricelist);
     },
     acceptOffer (offer, callback) {
         require('app/trade').acceptOffer(offer, callback);
