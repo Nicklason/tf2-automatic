@@ -19,6 +19,9 @@ module.exports = function (done) {
         },
         actions: function (callback) {
             files.readFile(paths.actions, true, callback);
+        },
+        pricelist: function (callback) {
+            files.readFile(paths.pricelist, true, callback);
         }
     }, function (err, data) {
         if (err) {
@@ -37,6 +40,10 @@ module.exports = function (done) {
 
         if (data.actions !== null) {
             handler.setActions(data.actions);
+        }
+
+        if (data.pricelist !== null) {
+            handler.setPricelist(data.pricelist);
         }
 
         done({ loginKey: data.loginKey });

@@ -140,19 +140,27 @@ handler.onRun(function (opts) {
                         throw err;
                     }
 
-                    log.verbose('Getting API key...');
+                    log.debug('Setting up pricelist...');
 
-                    // Set cookies for the tradeoffer manager which will start the polling
-                    manager.setCookies(result.cookies, function (err) {
+                    require('app/prices').init(function (err) {
                         if (err) {
                             throw err;
                         }
 
-                        log.info(package.name + ' v' + package.version + ' is ready!');
+                        log.verbose('Getting API key...');
 
-                        handlerManager.setReady();
+                        // Set cookies for the tradeoffer manager which will start the polling
+                        manager.setCookies(result.cookies, function (err) {
+                            if (err) {
+                                throw err;
+                            }
 
-                        handler.onReady();
+                            log.info(package.name + ' v' + package.version + ' is ready!');
+
+                            handlerManager.setReady();
+
+                            handler.onReady();
+                        });
                     });
                 });
             });
