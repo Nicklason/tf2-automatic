@@ -29,6 +29,10 @@ exports.readFile = function (p, json, callback) {
             return callback(null, data);
         }
 
+        if (data.length === 0) {
+            return callback(null, null);
+        }
+
         let parsed;
         try {
             parsed = JSON.parse(data);

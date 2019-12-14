@@ -1,6 +1,7 @@
 const manager = require('lib/manager');
 
 const handlerManager = require('app/handler-manager');
+const prices = require('app/prices');
 
 let dictionary = {};
 
@@ -77,6 +78,19 @@ exports.findBySKU = function (sku, includeInTrade = true) {
 
     const itemsInTrade = require('app/trade').inTrade();
     return assetids.filter((assetid) => itemsInTrade.indexOf(assetid) === -1);
+};
+
+exports.isOverstocked = function (sku) {
+    const amount = exports.getAmount(sku);
+
+    const match = prices.get(sku);
+    if (match === null) {
+        // We don't know the limit of the item, using true just to be safe
+        return true;
+    }
+
+    // If max stock is not infinite and if we have more items than we can have
+    return match.max !== -1 && amount > match.max - match.min;
 };
 
 exports.getCurrencies = function (dict) {

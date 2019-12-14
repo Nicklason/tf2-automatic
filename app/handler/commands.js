@@ -144,6 +144,9 @@ exports.handleMessage = function (steamID, message) {
         if (params.min === undefined) {
             params.min = 0;
         }
+        if (params.intent === undefined) {
+            params.intent = 2;
+        }
 
         prices.add(params.sku, params, function (err, entry) {
             if (err) {

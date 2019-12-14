@@ -51,5 +51,5 @@ module.exports = {
         }
     },
     additionalProperties: false,
-    required: ['sku', 'name', 'enabled', 'autoprice', 'max', 'min', 'buy', 'sell', 'time']
+    required: ['sku', 'name', 'enabled', 'intent', 'autoprice', 'max', 'min', 'buy', 'sell', 'time']
 };
