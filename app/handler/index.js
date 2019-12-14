@@ -12,11 +12,16 @@ exports.onShutdown = require('handler/shutdown');
 // TODO: get price of item from item object, like item.getSKU()
 
 exports.onReady = function () {
-    this.setPersona(SteamUser.EPersonaState.Online);
     this.gamesPlayed(package.name);
+    this.setPersona(SteamUser.EPersonaState.Online);
+
+    // Go through all items
+    require('handler/listings').checkAll();
 };
 
 exports.onMessage = require('handler/commands').handleMessage;
+
+exports.onPriceChange = require('handler/listings').checkBySKU;
 
 exports.onTF2QueueCompleted = function () {
     this.gamesPlayed(package.name);
