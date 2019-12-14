@@ -80,7 +80,7 @@ exports.findBySKU = function (sku, includeInTrade = true) {
     return assetids.filter((assetid) => itemsInTrade.indexOf(assetid) === -1);
 };
 
-exports.isOverstocked = function (sku) {
+exports.isOverstocked = function (sku, difference = 0) {
     const amount = exports.getAmount(sku);
 
     const match = prices.get(sku);
@@ -90,7 +90,7 @@ exports.isOverstocked = function (sku) {
     }
 
     // If max stock is not infinite and if we have more items than we can have
-    return match.max !== -1 && amount > match.max - match.min;
+    return match.max !== -1 && amount + difference > match.max - match.min;
 };
 
 exports.getCurrencies = function (dict) {
