@@ -11,7 +11,7 @@ const handler = handlerManager.getHandler();
 const EconItem = require('steam-tradeoffer-manager/lib/classes/EconItem.js');
 const CEconItem = require('steamcommunity/classes/CEconItem.js');
 
-['hasDescription', 'getAction', 'getTag', 'getItem', 'getSKU', 'getName'].forEach(function (v) {
+['hasDescription', 'getAction', 'getTag', 'getItem', 'getSKU', 'getName', 'getPrice', 'isOverstocked'].forEach(function (v) {
     const func = require('utils/item/' + v);
     EconItem.prototype[v] = func;
     CEconItem.prototype[v] = func;
