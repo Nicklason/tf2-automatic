@@ -59,7 +59,7 @@ exports.writeFile = function (p, data, json, callback) {
 
     let write;
     if (json === true) {
-        write = JSON.stringify(data);
+        write = process.env.DEBUG === 'true' ? JSON.stringify(data, undefined, 4) : JSON.stringify(data);
     } else {
         write = data;
     }
