@@ -33,6 +33,8 @@ function getParams (string) {
 
             if (/^\d+$/.test(value)) {
                 value = parseInt(value);
+            } else if (/^\d+(\.\d+)?$/.test(value)) {
+                value = parseFloat(value);
             } else if (value === 'true') {
                 value = true;
             } else if (value === 'false') {
@@ -68,7 +70,7 @@ function getParams (string) {
 
         if (item.name !== null) {
             // Get defindex from name if name is supplied
-            const schemaItem = schemaManager.schema.getItemByItemName(item.name);
+            const schemaItem = getItemByName(item.name);
             if (schemaItem !== null) {
                 item.defindex = schemaItem.defindex;
             }
@@ -96,7 +98,7 @@ function getParams (string) {
         }
 
         if (item.output !== null) {
-            const schemaItem = schemaManager.schema.getItemByItemName(item.output);
+            const schemaItem = getItemByName(item.output);
             if (schemaItem !== null) {
                 item.output = schemaItem.defindex;
             }
@@ -123,6 +125,29 @@ function getParams (string) {
     }
 
     return parsed;
+}
+
+function getItemByName (name) {
+    // Search for name and item_name match
+
+    let schemaItemByName = null;
+    let schemaItemByItemName = null;
+
+    for (let i = 0; i < schemaManager.schema.raw.schema.items.length; i++) {
+        const schemaItem = schemaManager.schema.raw.schema.items[i];
+        if (schemaItem.name === name) {
+            schemaItemByName = schemaItem;
+        }
+        if (schemaItem.item_name === name) {
+            schemaItemByItemName = schemaItem;
+        }
+
+        if (schemaItemByItemName !== null && schemaItemByName !== null) {
+            break;
+        }
+    }
+
+    return schemaItemByName !== null ? schemaItemByName : schemaItemByItemName;
 }
 
 exports.handleMessage = function (steamID, message) {
