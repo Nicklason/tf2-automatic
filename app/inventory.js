@@ -80,20 +80,7 @@ exports.findBySKU = function (sku, includeInTrade = true) {
     return assetids.filter((assetid) => itemsInTrade.indexOf(assetid) === -1);
 };
 
-exports.isOverstocked = function (sku) {
-    const amount = exports.getAmount(sku);
-
-    const match = prices.get(sku);
-    if (match === null) {
-        // We don't know the limit of the item, using true just to be safe
-        return true;
-    }
-
-    // If max stock is not infinite and if we have more items than we can have
-    return match.max !== -1 && amount >= match.max - match.min;
-};
-
-exports.amountCanBuy = function (sku) {
+exports.amountCanTrade = function (sku, buy) {
     const amount = exports.getAmount(sku);
 
     const match = prices.get(sku);
@@ -101,13 +88,16 @@ exports.amountCanBuy = function (sku) {
         return 0;
     }
 
-    if (match.max === -1) {
+    if (buy && match.max === -1) {
         return Infinity;
     }
 
-    const canBuy = amount - match.max - match.min;
+    let canTrade = match[buy === true ? 'max' : 'min'] - amount;
+    if (!buy) {
+        canTrade *= -1;
+    }
 
-    return canBuy >= 0 ? canBuy : 0;
+    return canTrade > 0 ? canTrade : 0;
 };
 
 exports.getCurrencies = function (dict) {

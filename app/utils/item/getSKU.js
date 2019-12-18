@@ -4,7 +4,7 @@ module.exports = function () {
     const item = this.getItem();
 
     if (item === null) {
-        return null;
+        return 'unknown';
     }
 
     return SKU.fromObject(item);
