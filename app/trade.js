@@ -114,8 +114,8 @@ exports.offerChanged = function (offer, oldState) {
             exports.setItemInTrade(item.id);
         });
 
-        // No items saved, save them
-        if (offer.data('items') === null) {
+        // No items saved for sent offer, save them
+        if (offer.isOurOffer && offer.data('items') === null) {
             offer.data('items', offer.itemsToGive.map((item) => mapItem(item)));
         }
     } else {
@@ -134,11 +134,11 @@ exports.offerChanged = function (offer, oldState) {
 
         const processTime = finishTimestamp - offer.data('actedOnConfirmationTimestamp');
 
-        log.debug('Took ' + processTime + ' ms to process offer', { offer_id: offer.id, state: offer.state, finish_time: processTime });
+        log.debug('Took ' + (isNaN(processTime) ? 'unknown' : processTime) + ' ms to process offer', { offer_id: offer.id, state: offer.state, finish_time: processTime });
     }
 
     if (offer.state !== TradeOfferManager.ETradeOfferState.Accepted) {
-        handlerManager.getHandler().onTradeOfferUpdated(offer, oldState);
+        handlerManager.getHandler().onTradeOfferChanged(offer, oldState);
         return;
     }
 
@@ -152,7 +152,7 @@ exports.offerChanged = function (offer, oldState) {
 
     // Fetch inventory to get received items
     inventoryManager.getInventory(community.steamID, function () {
-        handlerManager.getHandler().onTradeOfferUpdated(offer, oldState);
+        handlerManager.getHandler().onTradeOfferChanged(offer, oldState);
     });
 };
 
@@ -247,7 +247,10 @@ exports.sendOffer = function (offer, callback) {
 
     offer.data('items', ourItems);
 
+    offer.data('handledByUs', true);
+
     const sendTime = new Date().getTime();
+    offer.data('actionTimestamp', sendTime);
 
     log.debug('Sending offer...', { partner: offer.partner.getSteamID64(), ourItems: offer.itemsToGive.length, theirItems: offer.itemsToReceive.length });
 
@@ -277,8 +280,6 @@ exports.sendOffer = function (offer, callback) {
 
 function sendOfferRetry (offer, callback, tries = 0) {
     offer.send(function (err, status) {
-        offer.data('handledByUs', true);
-
         tries++;
         if (err) {
             if (tries >= 5) {
@@ -450,7 +451,10 @@ exports.acceptOffer = function (offer, callback) {
         callback = noop;
     }
 
+    offer.data('handledByUs', true);
+
     const acceptTime = new Date().getTime();
+    offer.data('actionTimestamp', acceptTime);
 
     log.debug('Accepting offer...', { offer_id: offer.id });
 
@@ -515,8 +519,6 @@ function acceptConfirmation (offer, callback) {
 function acceptOfferRetry (offer, callback, tries = 0) {
     // true - skip state update used to check if a trade is being held
     offer.accept(true, function (err, status) {
-        offer.data('handledByUs', true);
-
         tries++;
         if (err) {
             if (tries >= 5) {
@@ -547,9 +549,16 @@ exports.declineOffer = function (offer, callback) {
         callback = noop;
     }
 
+    offer.data('handledByUs', true);
+
+    const acceptTime = new Date().getTime();
+    offer.data('actionTimestamp', acceptTime);
+
     // TODO: Add error handling
     offer.decline(function (err) {
-        offer.data('handledByUs', true);
+        const actionTime = new Date().getTime() - acceptTime;
+        offer.data('actionTime', actionTime);
+
         callback(err);
     });
 };
@@ -605,12 +614,23 @@ function processNextOffer () {
 function handlerProcessOffer (offer) {
     log.debug('Giving offer to handler');
 
-    handlerManager.getHandler().onNewTradeOffer(offer, function (action, callback) {
-        log.debug('Handler is done with offer', { offer_id: offer.id, action: action });
+    const start = new Date().getTime();
+
+    offer.data('handleTimestamp', start);
+
+    handlerManager.getHandler().onNewTradeOffer(offer, function (action, reason, callback) {
+        if (typeof reason === 'function') {
+            callback = reason;
+            reason = null;
+        }
 
         if (typeof callback !== 'function') {
             callback = noop;
         }
+
+        offer.data('handleTime', new Date().getTime() - start);
+
+        log.debug('Handler is done with offer', { offer_id: offer.id, action: action });
 
         let actionFunc;
 
@@ -623,6 +643,10 @@ function handlerProcessOffer (offer) {
         if (!actionFunc) {
             finishedProcessing(offer);
             return;
+        }
+
+        if (reason !== null) {
+            offer.data('action', { type: action, reason: reason });
         }
 
         actionFunc(offer, function (err) {
