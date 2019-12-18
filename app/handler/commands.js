@@ -163,6 +163,7 @@ exports.handleMessage = function (steamID, message) {
         }
     } else if (admin && command === 'add') {
         const params = getParams(message.substring(command.length + 1).trim());
+        delete params.item;
 
         if (params.enabled === undefined) {
             params.enabled = true;
@@ -189,11 +190,9 @@ exports.handleMessage = function (steamID, message) {
         });
     } else if (admin && command === 'update') {
         const params = getParams(message.substring(command.length + 1).trim());
+        delete params.item;
 
-        const hasSKU = params.sku !== undefined;
-        const identifier = hasSKU ? params.sku : params.name;
-
-        prices.update(identifier, hasSKU, params, function (err, entry) {
+        prices.update(params.sku, params, function (err, entry) {
             if (err) {
                 client.chatMessage(steamID, 'Failed to update the item in the pricelist: ' + err.message);
             } else {
@@ -203,7 +202,7 @@ exports.handleMessage = function (steamID, message) {
     } else if (admin && command === 'remove') {
         const params = getParams(message.substring(command.length + 1).trim());
 
-        prices.remove(params.name, function (err, entry) {
+        prices.remove(params.sku, function (err, entry) {
             if (err) {
                 client.chatMessage(steamID, 'Failed to remove the item from the pricelist: ' + err.message);
             } else {
