@@ -1,3 +1,4 @@
+const async = require('async');
 const SKU = require('tf2-sku');
 const Currencies = require('tf2-currencies');
 
@@ -10,20 +11,39 @@ const schemaManager = require('lib/tf2-schema');
 const handlerManager = require('app/handler-manager');
 
 let pricelist = [];
+let keyPrices = null;
 const handling = [];
 
 exports.init = function (callback) {
     socket.on('price', handlePriceChange);
 
-    if (pricelist.length === 0) {
-        callback(null);
-        return;
+    const funcs = {
+        keys: function (callback) {
+            api.getPrice('5021;6', 'bptf', callback);
+        }
+    };
+
+    if (pricelist.length !== 0) {
+        funcs.pricelist = function (callback) {
+            api.getPricelist('bptf', callback);
+        };
     }
 
-    api.getPricelist('bptf', function (err, prices) {
+    async.parallel(funcs, function (err, result) {
         if (err) {
             return callback(err);
         }
+
+        keyPrices = {
+            buy: new Currencies(result.keys.buy),
+            sell: new Currencies(result.keys.sell)
+        };
+
+        if (pricelist.length === 0) {
+            return callback(null);
+        }
+
+        const prices = result.pricelist;
 
         const handler = handlerManager.getHandler();
 
@@ -69,13 +89,13 @@ exports.init = function (callback) {
     });
 };
 
-exports.setPricelist = function (v) {
-    if (!Array.isArray(v)) {
+exports.setPricelist = function (prices) {
+    if (!Array.isArray(prices)) {
         throw new Error('Pricelist is not an array');
     }
 
-    for (let i = 0; i < v.length; i++) {
-        const entry = v[i];
+    for (let i = 0; i < prices.length; i++) {
+        const entry = prices[i];
 
         const errors = validator(entry, 'pricelist');
         if (errors !== null) {
@@ -86,20 +106,30 @@ exports.setPricelist = function (v) {
         entry.sell = new Currencies(entry.sell);
     }
 
-    pricelist = v;
+    pricelist = prices;
 };
 
 exports.getPricelist = function () {
     return pricelist;
 };
 
+exports.getKeyPrices = function () {
+    return keyPrices;
+};
+
 function handlePriceChange (data) {
     if (data.source === 'bptf') {
+        if (data.sku === '5021;6') {
+            // Update key prices
+            keyPrices.buy = new Currencies(data.buy);
+            keyPrices.sell = new Currencies(data.sell);
+        }
+
         const match = exports.get(data.sku);
         if (match !== null && match.autoprice === true) {
             // Update prices
-            match.buy = data.buy;
-            match.sell = data.sell;
+            match.buy = new Currencies(data.buy);
+            match.sell = new Currencies(data.sell);
             match.time = data.time;
 
             // Emit price change for sku (maybe include old price / new price?)
@@ -108,16 +138,18 @@ function handlePriceChange (data) {
     }
 }
 
-exports.get = function (identifier, isSKU = true) {
-    const key = isSKU ? 'sku' : 'name';
-    const match = pricelist.find((v) => v[key] === identifier);
+exports.get = function (sku, onlyEnabled = false) {
+    const match = pricelist.find((v) => v.sku === sku);
 
-    return match === undefined ? null : match;
+    return match === undefined || match.enabled !== true ? null : match;
 };
 
 exports.add = function (sku, data, callback) {
     if (sku === undefined) {
         callback(new Error('Missing sku'));
+        return;
+    } else if (sku === '0;0') {
+        callback(new Error('Invalid item'));
         return;
     }
 
@@ -206,14 +238,8 @@ function add (entry, emit) {
     }
 }
 
-exports.update = function (identifier, isSKU, data, callback) {
-    if (typeof isSKU === 'object') {
-        callback = data;
-        data = isSKU;
-        isSKU = true;
-    }
-
-    const match = exports.get(identifier, isSKU);
+exports.update = function (sku, data, callback) {
+    const match = exports.get(sku, false);
 
     if (match === null) {
         callback(new Error('Item is not in the pricelist'));
@@ -273,18 +299,11 @@ exports.update = function (identifier, isSKU, data, callback) {
     });
 };
 
-exports.remove = function (identifier, isSKU, callback) {
-    if (typeof isSKU === 'function') {
-        callback = isSKU;
-        isSKU = true;
-    }
-
+exports.remove = function (sku, callback) {
     let match = null;
 
-    const key = isSKU ? 'sku' : 'name';
-
     for (let i = 0; i < pricelist.length; i++) {
-        if (pricelist[i][key] === identifier) {
+        if (pricelist[i].sku === sku) {
             match = pricelist[i];
             remove(i, true);
             break;
