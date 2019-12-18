@@ -58,70 +58,66 @@ function getParams (string) {
                 continue;
             }
 
-            if (key === 'name') {
-                foundMatch = true;
-                item[key] = parsed[key];
-            } else if (Object.prototype.hasOwnProperty.call(item, key)) {
+            if (Object.prototype.hasOwnProperty.call(item, key)) {
                 foundMatch = true;
                 item[key] = parsed[key];
                 delete parsed[key];
             }
         }
 
-        if (item.name !== null) {
-            // Get defindex from name if name is supplied
-            const schemaItem = getItemByName(item.name);
-            if (schemaItem !== null) {
-                item.defindex = schemaItem.defindex;
-            }
-        }
-
-        if (item.quality !== null) {
-            const quality = schemaManager.schema.getQualityIdByName(item.quality);
-            if (quality !== null) {
-                item.quality = quality;
-            }
-        }
-
-        if (item.paintkit !== null) {
-            const paintkit = schemaManager.schema.getSkinByName(item.paintkit);
-            if (paintkit !== null) {
-                item.paintkit = paintkit;
-            }
-        }
-
-        if (item.effect !== null) {
-            const effect = schemaManager.schema.getEffectByName(item.effect);
-            if (effect !== null) {
-                item.effect = effect;
-            }
-        }
-
-        if (item.output !== null) {
-            const schemaItem = getItemByName(item.output);
-            if (schemaItem !== null) {
-                item.output = schemaItem.defindex;
-            }
-        }
-
-        if (item.outputQuality !== null) {
-            const quality = schemaManager.schema.getQualityIdByName(item.outputQuality);
-            if (quality !== null) {
-                item.outputQuality = quality;
-            }
-        }
-
         if (foundMatch) {
-            if (item.quality === 0) {
-                // Set default quality to unique
+            if (item.name !== null) {
+                // Get defindex from name if name is supplied
+                const schemaItem = getItemByName(item.name);
+                if (schemaItem !== null) {
+                    item.defindex = schemaItem.defindex;
+                }
+            }
+
+            if (item.quality !== null) {
+                const quality = schemaManager.schema.getQualityIdByName(item.quality);
+                if (quality !== null) {
+                    item.quality = quality;
+                }
+            }
+
+            if (item.paintkit !== null) {
+                const paintkit = schemaManager.schema.getSkinByName(item.paintkit);
+                if (paintkit !== null) {
+                    item.paintkit = paintkit;
+                }
+            }
+
+            if (item.effect !== null) {
+                const effect = schemaManager.schema.getEffectByName(item.effect);
+                if (effect !== null) {
+                    item.effect = effect;
+                }
+            }
+
+            if (item.output !== null) {
+                const schemaItem = getItemByName(item.output);
+                if (schemaItem !== null) {
+                    item.output = schemaItem.defindex;
+                }
+            }
+
+            if (item.outputQuality !== null) {
+                const quality = schemaManager.schema.getQualityIdByName(item.outputQuality);
+                if (quality !== null) {
+                    item.outputQuality = quality;
+                }
+            }
+
+            if (item.defindex !== 0 && item.quality === 0) {
+                // Default quality to 6
                 item.quality = 6;
             }
-
-            if (item.defindex !== 0) {
-                parsed.sku = SKU.fromObject(fixItem(item));
-                delete parsed.name;
-            }
         }
+
+        parsed.item = fixItem(foundMatch ? item : SKU.fromString(parsed.sku));
+        parsed.sku = SKU.fromObject(parsed.item);
+        parsed.name = schemaManager.schema.getName(parsed.item);
     }
 
     return parsed;
@@ -137,6 +133,7 @@ function getItemByName (name) {
         const schemaItem = schemaManager.schema.raw.schema.items[i];
         if (schemaItem.name === name) {
             schemaItemByName = schemaItem;
+            break;
         }
         if (schemaItem.item_name === name) {
             schemaItemByItemName = schemaItem;
@@ -154,7 +151,17 @@ exports.handleMessage = function (steamID, message) {
     const admin = isAdmin(steamID);
     const command = getCommand(message);
 
-    if (admin && command === 'add') {
+    if (admin && command === 'get') {
+        const params = getParams(message.substring(command.length + 1).trim());
+
+        const match = prices.get(params.sku);
+
+        if (match === null) {
+            client.chatMessage(steamID, 'Could not find item "' + params.name + '" in the pricelist');
+        } else {
+            client.chatMessage(steamID, '/code ' + JSON.stringify(match, null, 4));
+        }
+    } else if (admin && command === 'add') {
         const params = getParams(message.substring(command.length + 1).trim());
 
         if (params.enabled === undefined) {
@@ -196,28 +203,12 @@ exports.handleMessage = function (steamID, message) {
     } else if (admin && command === 'remove') {
         const params = getParams(message.substring(command.length + 1).trim());
 
-        const hasSKU = params.sku !== undefined;
-        const identifier = hasSKU ? params.sku : params.name;
-
-        prices.remove(identifier, hasSKU, function (err, entry) {
+        prices.remove(params.name, function (err, entry) {
             if (err) {
                 client.chatMessage(steamID, 'Failed to remove the item from the pricelist: ' + err.message);
             } else {
                 client.chatMessage(steamID, 'Removed "' + entry.name + '".');
             }
         });
-    } else if (admin && command === 'get') {
-        const params = getParams(message.substring(command.length + 1).trim());
-
-        const hasSKU = params.sku !== undefined;
-        const identifier = hasSKU ? params.sku : params.name;
-
-        const match = prices.get(identifier, hasSKU);
-
-        if (match === null) {
-            client.chatMessage(steamID, 'Could not find item "' + identifier + '" in the pricelist');
-        } else {
-            client.chatMessage(steamID, '/code ' + JSON.stringify(match, null, 4));
-        }
     }
 };
