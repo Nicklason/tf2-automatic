@@ -47,9 +47,6 @@ function getParams (string) {
         const item = SKU.fromString('');
         item.name = null;
 
-        delete item.paint;
-        delete item.craftnumber;
-
         let foundMatch = false;
 
         // Go through parsed object
@@ -68,7 +65,7 @@ function getParams (string) {
         if (foundMatch) {
             if (item.name !== null) {
                 // Get defindex from name if name is supplied
-                const schemaItem = getItemByName(item.name);
+                const schemaItem = schemaManager.schema.getItemByItemName(item.name);
                 if (schemaItem !== null) {
                     item.defindex = schemaItem.defindex;
                 }
@@ -96,7 +93,7 @@ function getParams (string) {
             }
 
             if (item.output !== null) {
-                const schemaItem = getItemByName(item.output);
+                const schemaItem = schemaManager.schema.getItemByItemName(item.output);
                 if (schemaItem !== null) {
                     item.output = schemaItem.defindex;
                 }
@@ -116,35 +113,15 @@ function getParams (string) {
         }
 
         parsed.item = fixItem(foundMatch ? item : SKU.fromString(parsed.sku));
+
+        delete parsed.item.paint;
+        delete parsed.item.craftnumber;
+
         parsed.sku = SKU.fromObject(parsed.item);
         parsed.name = schemaManager.schema.getName(parsed.item);
     }
 
     return parsed;
-}
-
-function getItemByName (name) {
-    // Search for name and item_name match
-
-    let schemaItemByName = null;
-    let schemaItemByItemName = null;
-
-    for (let i = 0; i < schemaManager.schema.raw.schema.items.length; i++) {
-        const schemaItem = schemaManager.schema.raw.schema.items[i];
-        if (schemaItem.name === name) {
-            schemaItemByName = schemaItem;
-            break;
-        }
-        if (schemaItem.item_name === name) {
-            schemaItemByItemName = schemaItem;
-        }
-
-        if (schemaItemByItemName !== null && schemaItemByName !== null) {
-            break;
-        }
-    }
-
-    return schemaItemByName !== null ? schemaItemByName : schemaItemByItemName;
 }
 
 exports.handleMessage = function (steamID, message) {

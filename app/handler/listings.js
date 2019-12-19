@@ -9,8 +9,8 @@ const templates = {
     sell: process.env.BPTF_DETAILS_SELL || 'I am selling my %name% for %price%, I have %current_stock%.'
 };
 
-exports.checkBySKU = function (sku) {
-    const match = prices.get(sku, true);
+exports.checkBySKU = function (sku, data) {
+    const match = data === null || data.enabled === false ? null : prices.get(sku, true);
 
     let hasBuyListing = false;
     let hasSellListing = false;
@@ -31,18 +31,15 @@ exports.checkBySKU = function (sku) {
             hasSellListing = true;
         }
 
-        if (match === null || (match.intent !== 2 && match.intent !== listing.intent) || match.enabled === false) {
+        if (match === null || (match.intent !== 2 && match.intent !== listing.intent)) {
             // We are not trading the item, remove the listing
-            log.debug('Removing listing because we are not trading the item', listing);
             listing.remove();
         } else if ((listing.intent === 0 && amountCanBuy <= 0) || (listing.intent === 1 && amountCanSell <= 0)) {
             // We are not buying / selling more, remove the listing
-            log.debug('Removing listing because we are not buying / selling more');
             listing.remove();
         } else {
             const newDetails = getDetails(listing.intent, match);
             if (listing.details !== newDetails) {
-                log.debug('Listing details are outdated, updating it');
                 // Listing details don't match, update listing with new details and price
                 const currencies = match[listing.intent === 0 ? 'buy' : 'sell'];
                 listing.update({
@@ -59,7 +56,6 @@ exports.checkBySKU = function (sku) {
         // TODO: Check if we are already making a listing for same type of item + intent
 
         if (!hasBuyListing && (match.intent === 0 || match.intent === 2) && amountCanBuy > 0) {
-            log.debug('We can buy items, create listing');
             listingManager.createListing({
                 sku: sku,
                 intent: 0,
@@ -69,7 +65,6 @@ exports.checkBySKU = function (sku) {
         }
 
         if (!hasSellListing && (match.intent === 1 || match.intent === 2) && amountCanSell > 0) {
-            log.debug('We can sell items, create listing');
             listingManager.createListing({
                 id: items[items.length - 1],
                 intent: 1,

@@ -139,7 +139,8 @@ function handlePriceChange (data) {
 }
 
 exports.get = function (sku, onlyEnabled = false) {
-    const match = pricelist.find((v) => v.sku === sku);
+    const name = schemaManager.schema.getName(SKU.fromString(sku));
+    const match = pricelist.find((v) => v.name === name);
 
     return match === undefined || match.enabled !== true ? null : match;
 };
