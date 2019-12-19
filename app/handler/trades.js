@@ -68,11 +68,11 @@ exports.newOffer = function (offer, done) {
     offer.data('diff', itemsDiff);
 
     // Check if the offer is from an admin
-    /* if (isAdmin(offer.partner)) {
+    if (isAdmin(offer.partner)) {
         log.info('Offer is from an admin, accepting...');
         done('accept', 'ADMIN');
         return;
-    } */
+    }
 
     for (let i = 0; i < states.length; i++) {
         const buying = states[i];
