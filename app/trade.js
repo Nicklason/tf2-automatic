@@ -6,6 +6,7 @@ const community = require('lib/community');
 const handlerManager = require('app/handler-manager');
 
 const communityLoginCallback = require('utils/communityLoginCallback');
+const backoff = require('utils/exponentialBackoff');
 
 const receivedOffers = [];
 const itemsInTrade = [];
@@ -259,7 +260,7 @@ exports.sendOffer = function (offer, callback) {
         offer.data('actionTime', actionTime);
 
         if (err) {
-            log.warn('Failed to send offer ', { partner: offer.partner.getSteamID64(), action_time: actionTime, error: err });
+            log.warn('Failed to send offer ', err);
 
             // Failed to send the offer, the items are no longer in trade
             offer.itemsToGive.forEach(function (item) {
@@ -339,7 +340,7 @@ function sendOfferRetry (offer, callback, tries = 0) {
 
                             callback(null, offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation ? 'pending' : 'sent');
                         });
-                    }, 10000 * tries);
+                    }, backoff(tries - 1));
                 } else {
                     return callback(err);
                 }
@@ -348,14 +349,14 @@ function sendOfferRetry (offer, callback, tries = 0) {
             if (err.message !== 'Not Logged In') {
                 setTimeout(function () {
                     sendOfferRetry(offer, callback, tries);
-                }, 5000 * tries);
+                }, backoff(tries - 1));
                 return;
             }
 
             communityLoginCallback(true, function (err) {
                 setTimeout(function () {
                     sendOfferRetry(offer, callback, tries);
-                }, err !== null ? 5000 * tries : 0);
+                }, err !== null ? backoff(tries - 1) : 0);
             });
             return;
         }
@@ -463,7 +464,7 @@ exports.acceptOffer = function (offer, callback) {
         offer.data('actionTime', actionTime);
 
         if (err) {
-            log.warn('Offer #' + offer.id + ' failed to accept offer', { error: err, action_time: actionTime });
+            log.warn('Offer #' + offer.id + ' failed to accept offer', err);
             return callback(err);
         }
 
@@ -505,7 +506,7 @@ function acceptConfirmation (offer, callback) {
         const handler = handlerManager.getHandler();
 
         if (err) {
-            log.debug('Got an error while trying to accept mobile confirmation', { offer_id: offer.id, error: err, confirmation_time: confirmationTime });
+            log.debug('Got an error while trying to accept mobile confirmation', err);
             handler.onConfirmationError(offer.id, err);
         } else {
             log.debug('Accepted mobile confirmation', { offer_id: offer.id, confirmation_time: confirmationTime });
@@ -528,14 +529,14 @@ function acceptOfferRetry (offer, callback, tries = 0) {
             if (err.message !== 'Not Logged In') {
                 setTimeout(function () {
                     acceptOfferRetry(offer, callback, tries);
-                }, 5000 * tries);
+                }, backoff(tries - 1));
                 return;
             }
 
             communityLoginCallback(true, function (err) {
                 setTimeout(function () {
                     acceptOfferRetry(offer, callback, tries);
-                }, err !== null ? 5000 * tries : 0);
+                }, err !== null ? backoff(tries - 1) : 0);
             });
             return;
         }
@@ -590,9 +591,7 @@ function processNextOffer () {
 
     getOfferRetry(offerId, function (err, offer) {
         if (err) {
-            log.warn('Failed to get offer #' + offerId, { error: err });
-            // log.debug('Failed to get offer', { offer_id: offerId, error: err });
-
+            log.warn('Failed to get offer #' + offerId, err);
             // After many retries we could not get the offer data
 
             if (receivedOffers.length !== 1) {
@@ -650,7 +649,7 @@ function handlerProcessOffer (offer) {
         }
 
         actionFunc(offer, function (err) {
-            log.debug('Done doing action on offer', { offer_id: offer.id, action: action, error: err });
+            log.debug('Done doing action on offer', { offer_id: offer.id, action: action });
 
             callback(err);
 
@@ -689,7 +688,7 @@ function getOfferRetry (offerId, callback, tries = 0) {
             if (err.message !== 'Not Logged In') {
                 setTimeout(function () {
                     getOfferRetry(offerId, callback, tries);
-                }, 5000 * tries);
+                }, backoff(tries - 1));
                 return;
             }
 
@@ -699,7 +698,7 @@ function getOfferRetry (offerId, callback, tries = 0) {
             communityLoginCallback(true, function (err) {
                 setTimeout(function () {
                     getOfferRetry(offerId, callback, tries);
-                }, err !== null ? 5000 * tries : 0);
+                }, err !== null ? backoff(tries - 1) : 0);
             });
             return;
         }
