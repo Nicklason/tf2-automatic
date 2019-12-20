@@ -10,7 +10,7 @@ const templates = {
 };
 
 exports.checkBySKU = function (sku, data) {
-    const match = data === null || data.enabled === false ? null : prices.get(sku, true);
+    const match = !data || data.enabled === false ? null : prices.get(sku, true);
 
     let hasBuyListing = false;
     let hasSellListing = false;
@@ -76,8 +76,12 @@ exports.checkBySKU = function (sku, data) {
 };
 
 exports.checkAll = function () {
+    // Remove all listings
+    listingManager.listings.forEach((listing) => listing.remove());
+
     const pricelist = prices.getPricelist();
 
+    // Create listings
     for (let i = 0; i < pricelist.length; i++) {
         exports.checkBySKU(pricelist[i].sku, pricelist[i]);
     }
