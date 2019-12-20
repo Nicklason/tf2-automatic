@@ -106,60 +106,75 @@ handler.onRun(function (opts) {
 
             log.verbose('Account limitation checks completed!');
 
-            log.info('Initializing tf2-schema...');
+            log.debug('Waiting for web session...');
 
-            schemaManager.init(function (err) {
+            // Wait for steamcommunity session
+            require('utils/communityLoginCallback')(false, function (err, cookies) {
                 if (err) {
                     throw err;
                 }
 
-                log.info('tf2-schema is ready!');
+                require('lib/bptf-login').setCookies(cookies);
 
-                // Set schema for bptf-listings
-                listingManager.schema = schemaManager.schema;
-
-                // Set steamid
-                listingManager.steamid = client.steamID;
-                manager.steamID = client.steamID;
-
-                async.parallel({
-                    inventory: function (callback) {
-                        // Load inventory
-                        require('app/inventory').getInventory(client.steamID, callback);
-                    },
-                    listings: function (callback) {
-                        // Initialize bptf-listings
-                        listingManager.init(callback);
-                    },
-                    cookies: function (callback) {
-                        // Wait for steamcommunity session
-                        require('utils/communityLoginCallback')(false, callback);
-                    }
-                }, function (err, result) {
+                require('utils/getBptfAuth')(function (err, bptfAuth) {
                     if (err) {
                         throw err;
                     }
 
-                    log.debug('Setting up pricelist...');
+                    log.info('Initializing tf2-schema...');
 
-                    require('app/prices').init(function (err) {
+                    schemaManager.init(function (err) {
                         if (err) {
                             throw err;
                         }
 
-                        log.verbose('Getting API key...');
+                        log.info('tf2-schema is ready!');
 
-                        // Set cookies for the tradeoffer manager which will start the polling
-                        manager.setCookies(result.cookies, function (err) {
+                        // Set access token
+                        listingManager.token = bptfAuth.accessToken;
+                        // Set schema for bptf-listings
+                        listingManager.schema = schemaManager.schema;
+
+                        // Set steamid
+                        listingManager.steamid = client.steamID;
+                        manager.steamID = client.steamID;
+
+                        async.parallel({
+                            inventory: function (callback) {
+                                // Load inventory
+                                require('app/inventory').getInventory(client.steamID, callback);
+                            },
+                            listings: function (callback) {
+                                // Initialize bptf-listings
+                                listingManager.init(callback);
+                            }
+                        }, function (err, result) {
                             if (err) {
                                 throw err;
                             }
 
-                            log.info(package.name + ' v' + package.version + ' is ready!');
+                            log.debug('Setting up pricelist...');
 
-                            handlerManager.setReady();
+                            require('app/prices').init(function (err) {
+                                if (err) {
+                                    throw err;
+                                }
 
-                            handler.onReady();
+                                log.verbose('Getting Steam API key...');
+
+                                // Set cookies for the tradeoffer manager which will start the polling
+                                manager.setCookies(cookies, function (err) {
+                                    if (err) {
+                                        throw err;
+                                    }
+
+                                    log.info(package.name + ' v' + package.version + ' is ready!');
+
+                                    handlerManager.setReady();
+
+                                    handler.onReady();
+                                });
+                            });
                         });
                     });
                 });

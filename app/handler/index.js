@@ -2,6 +2,8 @@ const SteamUser = require('steam-user');
 
 const package = require('@root/package.json');
 
+const log = require('lib/logger');
+
 exports.onRun = require('handler/init');
 exports.onShutdown = require('handler/shutdown');
 
@@ -21,6 +23,10 @@ exports.onMessage = require('handler/commands').handleMessage;
 exports.onPriceChange = require('handler/listings').checkBySKU;
 exports.onNewTradeOffer = require('handler/trades').newOffer;
 exports.onTradeOfferChanged = require('handler/trades').offerChanged;
+
+exports.onBptfAuth = function (bptfAuth) {
+    log.warn('Please add the backpack.tf API key and access token to the config!', bptfAuth);
+};
 
 [{
     event: 'onLoginKey',
