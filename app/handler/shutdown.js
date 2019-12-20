@@ -11,15 +11,13 @@ module.exports = function (err, done) {
         return;
     }
 
-    log.info('Removing listings before exiting...');
-
     listingManager.listings.forEach((listing) => listing.remove());
 
     listingManager.on('actions', onActions);
 
     function onActions (actions) {
         if (actions.remove.length === 0) {
-            log.info('Done removing listings');
+            log.verbose('Done removing listings');
             listingManager.removeListener('actions', onActions);
             checkFiles();
         } else {
@@ -32,14 +30,14 @@ module.exports = function (err, done) {
             // We are not writing to any files, stop the bot
 
             if (checks !== 0) {
-                log.info('Done writing files');
+                log.verbose('Done writing files');
             }
 
             return done();
         }
 
         if (checks === 0) {
-            log.warn('Still writing to files, waiting for them to finish...');
+            log.warn('Writing to files, waiting for them to finish...');
         }
 
         // Files are still being written to, wait for them to be done
