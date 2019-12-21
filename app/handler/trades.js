@@ -7,6 +7,7 @@ const prices = require('app/prices');
 const listings = require('handler/listings');
 
 const isAdmin = require('utils/isAdmin');
+const checkBanned = require('utils/isBanned');
 
 exports.newOffer = function (offer, done) {
     log.verbose('Handling offer #' + offer.id + '...');
@@ -180,10 +181,47 @@ exports.newOffer = function (offer, done) {
 
     // TODO: If we are receiving items, mark them as pending and use it to check overstock / understock for new offers
 
-    // TODO: Check if the user is banned on backpack.tf
+    checkEscrow(offer, function (err, hasEscrow) {
+        if (err) {
+            log.warn('Offer #' + offer.id + ' failed to check escrow', err);
+            return done();
+        }
 
-    return done('accept', 'VALID_OFFER');
+        if (hasEscrow) {
+            log.warn('Offer #' + offer.id + ' would be held if accepted', err);
+            return done('decline', 'ESCROW');
+        }
+
+        checkBanned(offer.partner.getSteamID64(), function (err, isBanned) {
+            if (err) {
+                log.warn('Offer #' + offer.id + ' failed to check banned', err);
+                return done();
+            }
+
+            if (isBanned) {
+                log.warn('Offer #' + offer.id + ' partner is banned in one or more communites');
+                return done('decline', 'BANNED');
+            }
+
+            return done('accept', 'VALID_OFFER');
+        });
+    });
 };
+
+// TODO: Add error handling
+function checkEscrow (offer, callback) {
+    if (process.env.ACCEPT_ESCROW === 'true') {
+        return callback(null, false);
+    }
+
+    offer.getUserDetails(function (err, me, them) {
+        if (err) {
+            return callback(err);
+        }
+
+        return callback(null, them.escrowDays !== 0);
+    });
+}
 
 exports.offerChanged = function (offer, oldState) {
     if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
