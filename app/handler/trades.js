@@ -68,10 +68,18 @@ exports.newOffer = function (offer, done) {
 
     offer.data('diff', itemsDiff);
 
+    // TODO: Add log method to offer class
+
     // Check if the offer is from an admin
     if (isAdmin(offer.partner)) {
         log.info('Offer is from an admin, accepting...');
         done('accept', 'ADMIN');
+        return;
+    }
+
+    if (process.env.ACCEPT_GIFT === 'true' && offer.itemsToGive.length === 0) {
+        log.info('Offer is a gift offer, accepting...');
+        done('accept', 'GIFT');
         return;
     }
 
