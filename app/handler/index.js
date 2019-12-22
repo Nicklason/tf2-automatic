@@ -38,9 +38,6 @@ exports.onBptfAuth = function (bptfAuth) {
     event: 'onPollData',
     json: true
 }, {
-    event: 'onActions',
-    json: true
-}, {
     event: 'onPricelist',
     json: true
 }].forEach(function (v) {
