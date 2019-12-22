@@ -17,6 +17,12 @@ const CEconItem = require('steamcommunity/classes/CEconItem.js');
     CEconItem.prototype[v] = func;
 });
 
+const TradeOffer = require('steam-tradeoffer-manager/lib/classes/TradeOffer');
+
+['log', 'summarize'].forEach(function (v) {
+    TradeOffer.prototype[v] = require('utils/offer/' + v);
+});
+
 const log = require('lib/logger');
 
 const package = require('@root/package.json');
@@ -160,7 +166,7 @@ handler.onRun(function (opts) {
                                     throw err;
                                 }
 
-                                log.verbose('Getting Steam API key...');
+                                log.info('Getting Steam API key...');
 
                                 // Set cookies for the tradeoffer manager which will start the polling
                                 manager.setCookies(cookies, function (err) {
