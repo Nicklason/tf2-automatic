@@ -159,7 +159,7 @@ handler.onRun(function (opts) {
                                 throw err;
                             }
 
-                            log.debug('Setting up pricelist...');
+                            log.info('Setting up pricelist...');
 
                             require('app/prices').init(function (err) {
                                 if (err) {

@@ -6,12 +6,12 @@ const schemaManager = require('lib/tf2-schema');
 module.exports = function () {
     const value = this.data('value');
 
-    const ourCurrencies = new Currencies(value.our);
-    const theirCurrencies = new Currencies(value.their);
+    const ourCurrencies = !value ? 'unknown currencies' : new Currencies(value.our).toString();
+    const theirCurrencies = !value ? 'unknown currencies' : new Currencies(value.their).toString();
 
     const items = this.data('items');
 
-    return 'Asked: ' + ourCurrencies.toString() + ' (' + summarizeItems(items.our) + ')\nOffered: ' + theirCurrencies.toString() + ' (' + summarizeItems(items.their) + ')';
+    return 'Asked: ' + ourCurrencies + ' (' + summarizeItems(items.our) + ')\nOffered: ' + theirCurrencies + ' (' + summarizeItems(items.their) + ')';
 };
 
 function summarizeItems (dict) {
