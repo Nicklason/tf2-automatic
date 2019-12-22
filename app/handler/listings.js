@@ -1,5 +1,3 @@
-
-const log = require('lib/logger');
 const prices = require('app/prices');
 const inventory = require('app/inventory');
 const listingManager = require('lib/bptf-listings');
