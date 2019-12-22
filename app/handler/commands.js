@@ -1,13 +1,13 @@
 const dotProp = require('dot-prop');
-const SKU = require('tf2-sku');
+const pluralize = require('pluralize');
+const moment = require('moment');
 
 const prices = require('app/prices');
 const client = require('lib/client');
-const schemaManager = require('lib/tf2-schema');
+const inventory = require('app/inventory');
 
 const parseJSON = require('utils/parseJSON');
 const isAdmin = require('utils/isAdmin');
-const fixItem = require('utils/item/fixItem');
 
 function getCommand (string) {
     if (string.startsWith('!')) {
@@ -43,82 +43,6 @@ function getParams (string) {
 
             dotProp.set(parsed, key.trim(), value);
         }
-
-        const item = SKU.fromString('');
-        item.name = null;
-
-        let foundMatch = false;
-
-        // Go through parsed object
-        for (const key in parsed) {
-            if (!Object.prototype.hasOwnProperty.call(parsed, key)) {
-                continue;
-            }
-
-            if (Object.prototype.hasOwnProperty.call(item, key)) {
-                foundMatch = true;
-                item[key] = parsed[key];
-                delete parsed[key];
-            }
-        }
-
-        if (foundMatch) {
-            if (item.name !== null) {
-                // Get defindex from name if name is supplied
-                const schemaItem = schemaManager.schema.getItemByItemName(item.name);
-                if (schemaItem !== null) {
-                    item.defindex = schemaItem.defindex;
-                }
-            }
-
-            if (item.quality !== null) {
-                const quality = schemaManager.schema.getQualityIdByName(item.quality);
-                if (quality !== null) {
-                    item.quality = quality;
-                }
-            }
-
-            if (item.paintkit !== null) {
-                const paintkit = schemaManager.schema.getSkinByName(item.paintkit);
-                if (paintkit !== null) {
-                    item.paintkit = paintkit;
-                }
-            }
-
-            if (item.effect !== null) {
-                const effect = schemaManager.schema.getEffectByName(item.effect);
-                if (effect !== null) {
-                    item.effect = effect;
-                }
-            }
-
-            if (item.output !== null) {
-                const schemaItem = schemaManager.schema.getItemByItemName(item.output);
-                if (schemaItem !== null) {
-                    item.output = schemaItem.defindex;
-                }
-            }
-
-            if (item.outputQuality !== null) {
-                const quality = schemaManager.schema.getQualityIdByName(item.outputQuality);
-                if (quality !== null) {
-                    item.outputQuality = quality;
-                }
-            }
-
-            if (item.defindex !== 0 && item.quality === 0) {
-                // Default quality to 6
-                item.quality = 6;
-            }
-        }
-
-        parsed.item = fixItem(foundMatch ? item : SKU.fromString(parsed.sku));
-
-        delete parsed.item.paint;
-        delete parsed.item.craftnumber;
-
-        parsed.sku = SKU.fromObject(parsed.item);
-        parsed.name = schemaManager.schema.getName(parsed.item);
     }
 
     return parsed;
@@ -128,13 +52,73 @@ exports.handleMessage = function (steamID, message) {
     const admin = isAdmin(steamID);
     const command = getCommand(message);
 
-    if (admin && command === 'get') {
+    if (command === 'price') {
+        const name = message.substring(command.length + 1).trim();
+        if (!name) {
+            client.chatMessage(steamID, 'You forgot to add a name. Here\'s an example: "!price Team Captain"');
+            return;
+        }
+
+        let match = prices.searchByName(name);
+        if (match === null) {
+            client.chatMessage(steamID, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
+            return;
+        } else if (Array.isArray(match)) {
+            const matchCount = match.length;
+            if (match.length > 20) {
+                match = match.splice(0, 20);
+            }
+
+            let reply = 'I\'ve found ' + match + ' items. Try with one of the items shown below:\n' + match.join(',\n');
+            if (matchCount > match.length) {
+                const other = matchCount - match.length;
+                reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
+            }
+
+            client.chatMessage(reply);
+            return;
+        }
+
+        let reply = '';
+
+        const isBuying = match.intent === 0 || match.intent === 2;
+        const isSelling = match.intent === 1 || match.intent === 2;
+
+        if (isBuying) {
+            reply = 'I am buying a ' + match.name + ' for ' + match.buy.toString();
+        }
+
+        if (isSelling) {
+            if (reply === '') {
+                reply = 'I am selling a ' + match.name + ' for ' + match.sell.toString();
+            } else {
+                reply += ' and selling for ' + match.sell.toString();
+            }
+        }
+
+        reply += '. I have ' + inventory.getAmount(match.sku);
+
+        if (match.max !== -1 && isBuying) {
+            reply += ' / ' + match.max;
+        }
+
+        if (isSelling && match.min !== 0) {
+            reply += ' and I can sell ' + inventory.amountCanTrade(match.sku, false);
+        }
+
+        if (match.autoprice && isAdmin(steamID)) {
+            reply += ' (price last updated ' + moment.unix(match.time).fromNow() + ')';
+        }
+
+        reply += '.';
+        client.chatMessage(steamID, reply);
+    } else if (admin && command === 'get') {
         const params = getParams(message.substring(command.length + 1).trim());
 
         const match = prices.get(params.sku);
 
         if (match === null) {
-            client.chatMessage(steamID, 'Could not find item "' + params.name + '" in the pricelist');
+            client.chatMessage(steamID, 'Could not find item "' + params.sku + '" in the pricelist');
         } else {
             client.chatMessage(steamID, '/code ' + JSON.stringify(match, null, 4));
         }
