@@ -138,11 +138,54 @@ function handlePriceChange (data) {
     }
 }
 
+/**
+ * Searches for names in the pricelist that match the search
+ * @param {String} search
+ * @return {null|Object|Array<String>}
+ */
+exports.searchByName = function (search) {
+    search = search.toLowerCase();
+
+    const match = [];
+
+    const pricelist = exports.getPricelist();
+
+    for (let i = 0; i < pricelist.length; i++) {
+        const entry = pricelist[i];
+
+        if (entry.enabled === false) {
+            continue;
+        }
+
+        const name = entry.name.toLowerCase();
+
+        if (search === name) {
+            // Found direct match
+            return entry;
+        }
+
+        if (name.indexOf(search) !== -1) {
+            match.push(entry);
+        }
+    }
+
+    if (match.length === 0) {
+        // No match
+        return null;
+    } else if (match.length === 1) {
+        // Found one that matched the search
+        return match[0];
+    }
+
+    // Found many that matched, return list of the names
+    return match.map((entry) => entry.name);
+};
+
 exports.get = function (sku, onlyEnabled = false) {
     const name = schemaManager.schema.getName(SKU.fromString(sku));
     const match = pricelist.find((v) => v.name === name);
 
-    return match === undefined || match.enabled !== true ? null : match;
+    return match === undefined || (onlyEnabled && match.enabled !== true) ? null : match;
 };
 
 exports.add = function (sku, data, callback) {
@@ -263,6 +306,7 @@ exports.update = function (sku, data, callback) {
         copy[property] = data[property];
     }
 
+    const time = copy.time;
     delete copy.time;
     const errors = validator(copy, 'add');
 
@@ -273,6 +317,8 @@ exports.update = function (sku, data, callback) {
     if (copy.max !== -1 && copy.max <= copy.min) {
         return callback(new Error('Max needs to be more than min'));
     }
+
+    copy.time = time;
 
     if (copy.autoprice === false) {
         copy.time = null;
