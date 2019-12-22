@@ -6,11 +6,11 @@ const listingManager = require('lib/bptf-listings');
 
 const templates = {
     buy: process.env.BPTF_DETAILS_BUY || 'I am buying your %name% for %price%, I have %current_stock% / %max_stock%.',
-    sell: process.env.BPTF_DETAILS_SELL || 'I am selling my %name% for %price%, I have %current_stock%.'
+    sell: process.env.BPTF_DETAILS_SELL || 'I am selling my %name% for %price%, I am selling %amount_trade%.'
 };
 
 exports.checkBySKU = function (sku, data) {
-    const match = !data || data.enabled === false ? null : prices.get(sku, true);
+    const match = data && data.enabled === false ? null : prices.get(sku, true);
 
     let hasBuyListing = false;
     let hasSellListing = false;
@@ -21,8 +21,8 @@ exports.checkBySKU = function (sku, data) {
     listingManager.findListings(sku).forEach((listing) => {
         if (listing.intent === 1 && hasSellListing) {
             // Already have a sell order
-            log.debug('Already have a sell order, removing duplicate');
             listing.remove();
+            return;
         }
 
         if (listing.intent === 0) {
@@ -88,12 +88,14 @@ exports.checkAll = function () {
 };
 
 function getDetails (intent, pricelistEntry) {
-    const key = intent === 0 ? 'buy' : 'sell';
-    const details = templates[intent === 0 ? 'buy' : 'sell']
+    const buying = intent === 0;
+    const key = buying ? 'buy' : 'sell';
+    const details = templates[key]
         .replace(/%price%/g, pricelistEntry[key].toString())
         .replace(/%name%/g, pricelistEntry.name)
-        .replace(/%max_stock%/g, pricelistEntry.max - pricelistEntry.min)
-        .replace(/%current_stock%/g, inventory.getAmount(pricelistEntry.sku));
+        .replace(/%max_stock%/g, pricelistEntry.max)
+        .replace(/%current_stock%/g, inventory.getAmount(pricelistEntry.sku))
+        .replace(/%amount_trade%/g, inventory.amountCanTrade(pricelistEntry.sku, buying));
 
     return details;
 }
