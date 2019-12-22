@@ -270,12 +270,16 @@ exports.update = function (sku, data, callback) {
         return callback(new Error(errors.join(', ')));
     }
 
-    if (copy.max !== -1 && copy.max <= match.copy) {
+    if (copy.max !== -1 && copy.max <= copy.min) {
         return callback(new Error('Max needs to be more than min'));
     }
 
-    if (match.autoprice === copy.autoprice || copy.autoprice === false) {
+    if (copy.autoprice === false) {
         copy.time = null;
+        remove(copy, false);
+        add(copy, true);
+        return callback(null, copy);
+    } else if (copy.autoprice === match.autoprice) {
         remove(copy, false);
         add(copy, true);
         return callback(null, copy);
