@@ -63,7 +63,7 @@ exports.handleMessage = function (steamID, message) {
         return;
     }
 
-    log.info('Message from ' + steamID.getSteamID64() + ': ' + message);
+    log.info('Message from ' + friend.player_name + ' (' + steamID.getSteamID64() + '): ' + message);
 
     if (command == 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !price [name], !stock';
