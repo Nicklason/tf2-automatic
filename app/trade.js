@@ -522,7 +522,9 @@ function acceptOfferRetry (offer, callback, tries = 0) {
     offer.accept(true, function (err, status) {
         tries++;
         if (err) {
-            if (tries >= 5) {
+            if (err.eresult !== undefined) {
+                return callback(err);
+            } else if (tries >= 5) {
                 return callback(err);
             }
 
