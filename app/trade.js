@@ -105,7 +105,7 @@ exports.setPollData = function (pollData) {
 exports.offerChanged = function (offer, oldState) {
     const inventoryManager = require('app/inventory');
 
-    log.verbose('Offer #' + offer.id + ' state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
+    offer.log('verbose', 'state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
 
     if (offer.state === TradeOfferManager.ETradeOfferState.Active || offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
         // Offer is active
@@ -116,8 +116,8 @@ exports.offerChanged = function (offer, oldState) {
         });
 
         // No items saved for sent offer, save them
-        if (offer.isOurOffer && offer.data('items') === null) {
-            offer.data('items', offer.itemsToGive.map((item) => mapItem(item)));
+        if (offer.isOurOffer && offer.data('_ourItems') === null) {
+            offer.data('_ourItems', offer.itemsToGive.map((item) => mapItem(item)));
         }
     } else {
         // Offer is not active and items are not in trade
@@ -126,7 +126,7 @@ exports.offerChanged = function (offer, oldState) {
         });
 
         // Unset items
-        offer.data('items', undefined);
+        offer.data('_ourItems', undefined);
 
         const finishTimestamp = new Date().getTime();
 
@@ -168,7 +168,7 @@ exports.newOffer = function (offer) {
         return;
     }
 
-    log.verbose('Received offer #' + offer.id + ' from ' + offer.partner.getSteamID64());
+    offer.log('info', 'received offer from ' + offer.partner.getSteamID64());
 
     // Offer is active, items are in trade
     offer.itemsToGive.forEach(function (item) {
@@ -246,7 +246,7 @@ exports.sendOffer = function (offer, callback) {
         ourItems.push(mapItem(item));
     });
 
-    offer.data('items', ourItems);
+    offer.data('_ourItems', ourItems);
 
     offer.data('handledByUs', true);
 
@@ -269,7 +269,7 @@ exports.sendOffer = function (offer, callback) {
             return callback(err);
         }
 
-        log.trade('Offer #' + offer.id + ' successfully created' + (status === 'pending' ? '; confirmation required' : ''));
+        offer.log('trade', 'successfully created' + (status === 'pending' ? '; confirmation required' : ''));
 
         if (status === 'pending') {
             acceptConfirmation(offer);
@@ -468,7 +468,7 @@ exports.acceptOffer = function (offer, callback) {
             return callback(err);
         }
 
-        log.trade('Offer #' + offer.id + ' successfully accepted' + (status === 'pending' ? '; confirmation required' : ''));
+        offer.log('trade', 'successfully accepted' + (status === 'pending' ? '; confirmation required' : ''));
 
         if (status === 'pending') {
             acceptConfirmation(offer);

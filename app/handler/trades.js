@@ -10,7 +10,7 @@ const isAdmin = require('utils/isAdmin');
 const checkBanned = require('utils/isBanned');
 
 exports.newOffer = function (offer, done) {
-    log.verbose('Handling offer #' + offer.id + '...');
+    offer.log('info', 'is being processed...');
 
     const keyPrices = prices.getKeyPrices();
 
@@ -18,6 +18,8 @@ exports.newOffer = function (offer, done) {
         our: inventory.createDictionary(offer.itemsToGive),
         their: inventory.createDictionary(offer.itemsToReceive)
     };
+
+    offer.data('items', items);
 
     // Use itemsDiff variable for checking stock limits
 
@@ -42,6 +44,7 @@ exports.newOffer = function (offer, done) {
 
             if (sku === 'unknown') {
                 // Offer contains an item that is not from TF2
+                offer.log('contains items not from TF2, declining...');
                 return done('decline', 'INVALID_ITEMS');
             }
 
@@ -68,18 +71,20 @@ exports.newOffer = function (offer, done) {
 
     offer.data('diff', itemsDiff);
 
-    // TODO: Add log method to offer class
-
     // Check if the offer is from an admin
     if (isAdmin(offer.partner)) {
-        log.info('Offer is from an admin, accepting...');
+        offer.log('info', 'is from an admin, accepting...');
         done('accept', 'ADMIN');
         return;
     }
 
     if (process.env.ACCEPT_GIFT === 'true' && offer.itemsToGive.length === 0) {
-        log.info('Offer is a gift offer, accepting...');
+        offer.log('info', 'is a gift offer, accepting...');
         done('accept', 'GIFT');
+        return;
+    } else if (offer.itemsToReceive.length === 0) {
+        offer.log('info', 'is a gift offer, declining...');
+        done('decline', 'GIFT');
         return;
     }
 
@@ -115,6 +120,8 @@ exports.newOffer = function (offer, done) {
                 if (match !== null) {
                     // Add value of items
                     exchange[which].value += match[intentString].toValue(keyPrices[intentString].metal) * amount;
+                    exchange[which].scrap += Currencies.toScrap(match[intentString].metal) * amount;
+                    exchange[which].keys += match[intentString].keys * amount;
                 }
 
                 if (sku === '5021;6') {
@@ -132,6 +139,7 @@ exports.newOffer = function (offer, done) {
                     const diff = itemsDiff[sku];
                     if (inventory.amountCanTrade(sku, buying) - diff < 0) {
                         // User is taking too many / offering too many
+                        offer.log('info', 'is taking / offering too many, declining...');
                         return done('decline', 'OVERSTOCKED');
                     }
                 }
@@ -156,18 +164,22 @@ exports.newOffer = function (offer, done) {
 
     if (exchange.contains.metal && !exchange.contains.keys && !exchange.contains.items) {
         // Offer only contains metal
+        offer.log('info', 'only contains metal, declining...');
         return done('decline', 'ONLY_METAL');
     } else if (exchange.contains.keys && !exchange.contains.items) {
         // Offer is for trading keys, check if we are trading them
         const priceEntry = prices.get('5021;6', true);
         if (priceEntry === null) {
             // We are not trading keys
+            offer.log('info', 'we are not trading keys, declining...');
             return done('decline', 'NOT_TRADING_KEYS');
         } else if (exchange.our.contains.keys && (priceEntry.intent !== 1 && priceEntry.intent !== 2)) {
             // We are not selling keys
+            offer.log('info', 'we are not selling keys, declining...');
             return done('decline', 'NOT_TRADING_KEYS');
         } else if (exchange.their.contains.keys && (priceEntry.intent !== 0 && priceEntry.intent !== 2)) {
             // We are not buying keys
+            offer.log('info', 'we are not buying keys, declining...');
             return done('decline', 'NOT_TRADING_KEYS');
         } else {
             // Check overstock / understock on keys
@@ -175,6 +187,7 @@ exports.newOffer = function (offer, done) {
             // If the diff is greater than 0 then we are buying, less than is selling
             if (diff !== 0 && inventory.amountCanTrade('5021;6', diff > 0) - diff < 0) {
                 // User is taking too many / offering too many
+                offer.log('info', 'is taking / offering too many keys, declining...');
                 return done('decline', 'OVERSTOCKED');
             }
         }
@@ -184,32 +197,39 @@ exports.newOffer = function (offer, done) {
 
     if (exchange.our.value > exchange.their.value) {
         // We are offering more than them, decline the offer
+        offer.log('info', 'is not offering enough, declining...');
         return done('decline', 'INVALID_VALUE');
     }
 
     // TODO: If we are receiving items, mark them as pending and use it to check overstock / understock for new offers
 
+    offer.log('info', 'checking escrow...');
+
     checkEscrow(offer, function (err, hasEscrow) {
         if (err) {
-            log.warn('Offer #' + offer.id + ' failed to check escrow', err);
+            log.warn('Failed to check escrow', err);
             return done();
         }
 
         if (hasEscrow) {
-            log.warn('Offer #' + offer.id + ' would be held if accepted', err);
+            offer.log('info', 'would be held if accepted, declining...');
             return done('decline', 'ESCROW');
         }
 
+        offer.log('info', 'checking bans...');
+
         checkBanned(offer.partner.getSteamID64(), function (err, isBanned) {
             if (err) {
-                log.warn('Offer #' + offer.id + ' failed to check banned', err);
+                log.warn('Failed to check banned', err);
                 return done();
             }
 
             if (isBanned) {
-                log.warn('Offer #' + offer.id + ' partner is banned in one or more communites');
+                offer.log('info', 'partner is banned in one or more communities, declining...');
                 return done('decline', 'BANNED');
             }
+
+            offer.log('trade', 'accepting... Summary:\n' + offer.summarize());
 
             return done('accept', 'VALID_OFFER');
         });
