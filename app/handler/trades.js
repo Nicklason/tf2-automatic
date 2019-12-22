@@ -73,13 +73,13 @@ exports.newOffer = function (offer, done) {
 
     // Check if the offer is from an admin
     if (isAdmin(offer.partner)) {
-        offer.log('info', 'is from an admin, accepting. Summary: ' + offer.summarize());
+        offer.log('info', 'is from an admin, accepting. Summary:\n' + offer.summarize());
         done('accept', 'ADMIN');
         return;
     }
 
     if (process.env.ACCEPT_GIFT === 'true' && offer.itemsToGive.length === 0 && ['donate', 'gift'].indexOf(offer.message.toLowerCase()) !== -1) {
-        offer.log('info', 'is a gift offer, accepting. Summary: ' + offer.summarize());
+        offer.log('info', 'is a gift offer, accepting. Summary:\n' + offer.summarize());
         done('accept', 'GIFT');
         return;
     } else if (offer.itemsToReceive.length === 0 || offer.itemsToGive.length === 0) {
