@@ -133,7 +133,7 @@ function handlePriceChange (data) {
             match.time = data.time;
 
             // Emit price change for sku (maybe include old price / new price?)
-            handlerManager.getHandler().onPriceChange(match.sku);
+            handlerManager.getHandler().onPriceChange(match.sku, match);
         }
     }
 }
