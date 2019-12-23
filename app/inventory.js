@@ -4,6 +4,7 @@ const handlerManager = require('app/handler-manager');
 const prices = require('app/prices');
 
 let dictionary = {};
+let nonTradableDictionary = {};
 
 /**
  * Fetches an inventory
@@ -11,25 +12,46 @@ let dictionary = {};
  * @param {Function} callback
  */
 exports.getInventory = function (steamid, callback) {
-    manager.getUserInventoryContents(steamid, 440, 2, true, function (err, items) {
+    const isOurInv = manager.steamID.getSteamID64() === (typeof steamid === 'string' ? steamid : steamid.getSteamID64());
+    manager.getUserInventoryContents(steamid, 440, 2, !isOurInv, function (err, items) {
         if (err) {
             return callback(err);
         }
 
-        if (manager.steamID.getSteamID64() === (typeof steamid === 'string' ? steamid : steamid.getSteamID64())) {
-            inventoryUpdated(items);
+        const tradable = items.filter((item) => item.tradable);
+
+        if (isOurInv) {
+            inventoryUpdated(tradable, items.filter((item) => !item.tradable));
         }
 
-        callback(null, items);
+        callback(null, tradable);
     });
 };
 
 /**
  * Returns own cached inventory
+ * @param {Boolean} [onlyTradable=true]
  * @return {Object}
  */
-exports.getOwnInventory = function () {
-    return dictionary;
+exports.getOwnInventory = function (onlyTradable = true) {
+    const inventory = Object.assign({}, dictionary);
+
+    if (onlyTradable) {
+        return inventory;
+    }
+
+    // Add non-tradable
+
+    for (const sku in nonTradableDictionary) {
+        if (!Object.prototype.hasOwnProperty.call(nonTradableDictionary, sku)) {
+            continue;
+        }
+
+        inventory[sku] = (inventory[sku] || []).concat(nonTradableDictionary[sku]);
+    }
+
+
+    return inventory;
 };
 
 /**
@@ -48,7 +70,7 @@ exports.getAmount = function (sku) {
  * @return {Object}
  */
 exports.findByAssetid = function (assetid) {
-    const inventory = exports.getOwnInventory();
+    const inventory = exports.getOwnInventory(false);
 
     for (const sku in inventory) {
         if (!Object.prototype.hasOwnProperty.call(inventory, sku)) {
@@ -56,11 +78,13 @@ exports.findByAssetid = function (assetid) {
         }
 
         if (inventory[sku].indexOf(assetid) === -1) {
-            return null;
+            continue;
         }
 
         return sku;
     }
+
+    return null;
 };
 
 /**
@@ -188,10 +212,12 @@ exports.createDictionary = function (items) {
 
 /**
  * Function is called when our inventory is fetched
- * @param {Array<Object>} items
+ * @param {Array<Object>} tradable
+ * @param {Array<Object>} nonTradable
  */
-function inventoryUpdated (items) {
-    dictionary = exports.createDictionary(items);
+function inventoryUpdated (tradable, nonTradable) {
+    dictionary = exports.createDictionary(tradable);
+    nonTradableDictionary = exports.createDictionary(nonTradable);
 
     handlerManager.getHandler().onInventoryUpdated(dictionary);
 }
