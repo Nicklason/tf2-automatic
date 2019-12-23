@@ -11,6 +11,9 @@ exports.onReady = function () {
     this.gamesPlayed(package.name);
     this.setPersona(SteamUser.EPersonaState.Online);
 
+    // Check friend requests that we got while offline
+    require('handler/friends').checkFriendRequests();
+
     // Go through all items in the pricelist and check the listings
     require('handler/listings').checkAll();
 };
