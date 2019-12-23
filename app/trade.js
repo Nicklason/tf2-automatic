@@ -133,7 +133,7 @@ exports.offerChanged = function (offer, oldState) {
         // Time when the offer was not active anymore
         offer.data('finishTimestamp', finishTimestamp);
 
-        const processTime = finishTimestamp - offer.data('actedOnConfirmationTimestamp');
+        const processTime = finishTimestamp - offer.data('handleTimestamp');
 
         log.debug('Took ' + (isNaN(processTime) ? 'unknown' : processTime) + ' ms to process offer', { offer_id: offer.id, state: offer.state, finish_time: processTime });
     }
