@@ -82,7 +82,7 @@ exports.newOffer = function (offer, done) {
         return;
     }
 
-    if (process.env.ACCEPT_GIFT === 'true' && offer.itemsToGive.length === 0 && ['donate', 'gift'].indexOf(offer.message.toLowerCase()) !== -1) {
+    if (offer.itemsToGive.length === 0 && ['donate', 'gift'].indexOf(offer.message.toLowerCase()) !== -1) {
         offer.log('info', 'is a gift offer, accepting. Summary:\n' + offer.summarize());
         done('accept', 'GIFT');
         return;
@@ -260,7 +260,10 @@ function checkEscrow (offer, callback) {
 
 exports.offerChanged = function (offer, oldState) {
     if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
-        // Offer is accepted, go through items diff and check listings for all of them
+        // Offer is accepted,
+        require('handler/crafting').keepMetalSupply();
+
+        // Go through items diff and check listings for all of them
 
         const diff = offer.data('diff') || {};
 
