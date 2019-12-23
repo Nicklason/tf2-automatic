@@ -1,3 +1,3 @@
-module.exports = function (n) {
-    return (Math.pow(2, n) * 1000) + Math.floor(Math.random() * 1000);
+module.exports = function (n, base = 1000) {
+    return (Math.pow(2, n) * base) + Math.floor(Math.random() * base);
 };
