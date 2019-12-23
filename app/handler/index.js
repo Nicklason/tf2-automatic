@@ -23,6 +23,7 @@ exports.onMessage = require('handler/commands').handleMessage;
 exports.onPriceChange = require('handler/listings').checkBySKU;
 exports.onNewTradeOffer = require('handler/trades').newOffer;
 exports.onTradeOfferChanged = require('handler/trades').offerChanged;
+exports.onFriendRelationship = require('handler/friends').friendRelationChanged;
 
 exports.onBptfAuth = function (bptfAuth) {
     log.warn('Please add the backpack.tf API key and access token to the config!', bptfAuth);

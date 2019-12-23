@@ -8,7 +8,7 @@ const client = require('lib/client');
 const inventory = require('app/inventory');
 const schemaManager = require('lib/tf2-schema');
 const log = require('lib/logger');
-const friends = require('app/friends');
+const friends = require('handler/friends');
 
 const parseJSON = require('utils/parseJSON');
 const isAdmin = require('utils/isAdmin');
