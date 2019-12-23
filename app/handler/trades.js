@@ -19,7 +19,6 @@ exports.newOffer = function (offer, done) {
         their: inventory.createDictionary(offer.itemsToReceive)
     };
 
-    offer.data('items', items);
 
     // Use itemsDiff variable for checking stock limits
 
@@ -30,6 +29,7 @@ exports.newOffer = function (offer, done) {
     };
 
     const itemsDiff = {};
+    const itemsDict = { our: {}, their: {} };
 
     const states = [false, true];
 
@@ -65,11 +65,15 @@ exports.newOffer = function (offer, done) {
                 exchange[which].contains.items = true;
             }
 
-            itemsDiff[sku] = (itemsDiff[sku] || 0) + items[which][sku].length * (buying ? 1 : -1);
+            const amount = items[which][sku].length;
+
+            itemsDiff[sku] = (itemsDiff[sku] || 0) + amount * (buying ? 1 : -1);
+            itemsDict[which][sku] = amount;
         }
     }
 
     offer.data('diff', itemsDiff);
+    offer.data('dict', itemsDict);
 
     // Check if the offer is from an admin
     if (isAdmin(offer.partner)) {
@@ -121,15 +125,18 @@ exports.newOffer = function (offer, done) {
                     // Add value of items
                     exchange[which].value += match[intentString].toValue(keyPrices[intentString].metal) * amount;
                     exchange[which].scrap += Currencies.toScrap(match[intentString].metal) * amount;
-                    exchange[which].keys += match[intentString].keys * amount;
+
+                    if (sku !== '5021;6') {
+                        exchange[which].keys += match[intentString].keys * amount;
+                    }
                 }
 
                 if (sku === '5021;6') {
-                    exchange[which].keys += amount;
                     // Offer contains keys
                     if (match === null) {
                         // We are not trading keys, add value anyway
                         exchange[which].value += keyPrices[intentString].toValue() * amount;
+                        exchange[which].keys += amount;
                     }
                 } else if (match === null || match.intent === buying ? 1 : 0) {
                     // Offer contains an item that we are not trading
