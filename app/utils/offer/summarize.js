@@ -9,7 +9,7 @@ module.exports = function () {
     const ourCurrencies = !value ? 'unknown currencies' : new Currencies(value.our).toString();
     const theirCurrencies = !value ? 'unknown currencies' : new Currencies(value.their).toString();
 
-    const items = this.data('items');
+    const items = this.data('dict');
 
     return 'Asked: ' + ourCurrencies + ' (' + summarizeItems(items.our) + ')\nOffered: ' + theirCurrencies + ' (' + summarizeItems(items.their) + ')';
 };
@@ -22,7 +22,7 @@ function summarizeItems (dict) {
             continue;
         }
 
-        const amount = dict[sku].length;
+        const amount = dict[sku];
         const name = schemaManager.schema.getName(SKU.fromString(sku));
 
         summary.push(name + (amount > 1 ? ' x' + amount : ''));
