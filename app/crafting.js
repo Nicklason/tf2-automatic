@@ -63,6 +63,16 @@ exports.useItem = function (assetid) {
 };
 
 /**
+ * Enqueues a delete job
+ * @param {String} assetid Assetid of the item to delete
+ */
+exports.deleteItem = function (assetid) {
+    jobs.push({ type: 'delete', assetid: assetid });
+
+    handleJobsQueue();
+};
+
+/**
  * Connects to the TF2 Game Coordinator
  * @param {Function} callback
  */
@@ -148,6 +158,8 @@ function handleJobsQueue () {
             processCraftingJob(job, doneProcessingJob);
         } else if (job.type === 'use') {
             processUseJob(job, doneProcessingJob);
+        } else if (job.type === 'delete') {
+            processDeleteJob(job, doneProcessingJob);
         } else {
             log.debug('Unknown job type', { job: job });
             doneProcessingJob();
@@ -165,7 +177,7 @@ function canProcessJob (job) {
         const assetids = inventoryManager.findBySKU(job.defindex + ';6', false);
         // Checks if we have enough of the item
         return (job.smelt && assetids.length > 0) || (!job.smelt && assetids.length >= 3);
-    } else if (job.type === 'use') {
+    } else if (job.type === 'use' || job.type === 'delete') {
         // Checks if we have the item
         return inventoryManager.findByAssetid(job.assetid) !== null;
     }
@@ -299,7 +311,7 @@ function processUseJob (job, callback) {
         tf2.off('itemRemoved', itemRemovedEvent);
         clearTimeout(timeout);
 
-        log.debug('Disconnected from GC while crafting', { job: job });
+        log.debug('Disconnected from GC while using item', { job: job });
 
         return callback();
     }
@@ -309,7 +321,57 @@ function processUseJob (job, callback) {
         tf2.off('itemRemoved', itemRemovedEvent);
         tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
 
-        log.debug('Craft job timed out', { job: job });
+        log.debug('Use job timed out', { job: job });
+
+        return callback();
+    }
+}
+
+function processDeleteJob (job, callback) {
+    log.debug('Sending delete request', { assetid: job.assetid });
+
+    tf2.deleteItem(job.assetid);
+
+    // Listen for the item to be removed
+    tf2.on('itemRemoved', itemRemovedEvent);
+    // Listen for GC disconnect
+    tf2.once('disconnectedFromGC', disconnectedFromGCEvent);
+    // Time out after 10 seconds
+    const timeout = setTimeout(timeoutFired, 10000);
+
+    function itemRemovedEvent (item) {
+        // The crafting was complete, remove used item and add the new items to the inventory
+        if (item.id != job.assetid) {
+            return;
+        }
+
+        tf2.off('itemRemoved', itemRemovedEvent);
+        tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
+        clearTimeout(timeout);
+
+        inventoryManager.removeItem(job.assetid);
+
+        handlerManager.getHandler().onDeleteCompleted(job.assetid);
+
+        return callback();
+    }
+
+    function disconnectedFromGCEvent () {
+        // We disconnected from the GC, don't listen for the crafting to complete or not
+        tf2.off('itemRemoved', itemRemovedEvent);
+        clearTimeout(timeout);
+
+        log.debug('Disconnected from GC while deleting item', { job: job });
+
+        return callback();
+    }
+
+    function timeoutFired () {
+        // We have waited for 10 seconds and the event did not fire, remove the job and move on
+        tf2.off('itemRemoved', itemRemovedEvent);
+        tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
+
+        log.debug('Delete job timed out', { job: job });
 
         return callback();
     }
