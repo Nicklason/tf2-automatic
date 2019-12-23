@@ -2,6 +2,7 @@ const dotProp = require('dot-prop');
 const pluralize = require('pluralize');
 const moment = require('moment');
 const SKU = require('tf2-sku');
+const Currencies = require('tf2-currencies');
 
 const prices = require('app/prices');
 const client = require('lib/client');
@@ -90,46 +91,54 @@ exports.handleMessage = function (steamID, message) {
     } else if (command === 'how2trade') {
         client.chatMessage(steamID, 'Send me a trade offer with the items you want to buy / sell.');
     } else if (command === 'price') {
-        const name = message.substring(command.length + 1).trim();
-        if (!name) {
-            client.chatMessage(steamID, 'You forgot to add a name. Here\'s an example: "!price Team Captain"');
+        const info = getItemAndAmount(steamID, message.substring(command.length + 1).trim());
+
+        if (info === null) {
             return;
         }
 
-        let match = prices.searchByName(name);
-        if (match === null) {
-            client.chatMessage(steamID, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
-            return;
-        } else if (Array.isArray(match)) {
-            const matchCount = match.length;
-            if (match.length > 20) {
-                match = match.splice(0, 20);
-            }
-
-            let reply = 'I\'ve found ' + match + ' items. Try with one of the items shown below:\n' + match.join(',\n');
-            if (matchCount > match.length) {
-                const other = matchCount - match.length;
-                reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
-            }
-
-            client.chatMessage(reply);
-            return;
-        }
+        const match = info.match;
+        const amount = info.amount;
 
         let reply = '';
 
         const isBuying = match.intent === 0 || match.intent === 2;
         const isSelling = match.intent === 1 || match.intent === 2;
 
+        const keyPrices = prices.getKeyPrices();
+
+        const isKey = match.sku === '5021;6';
+
         if (isBuying) {
-            reply = 'I am buying a ' + match.name + ' for ' + match.buy.toString();
+            reply = 'I am buying ';
+
+            if (amount !== 1) {
+                reply += amount + ' ';
+            } else {
+                reply += 'a ';
+            }
+
+            // If the amount is 1, then don't convert to value and then to currencies. If it is for keys, then don't use conversion rate
+            const currencies = amount === 1 ? match.buy : Currencies.toCurrencies(match.buy.toValue(keyPrices.buy.metal) * amount, isKey ? undefined : keyPrices.buy.metal);
+
+            reply += pluralize(match.name, amount) + ' for ' + currencies.toString();
         }
 
         if (isSelling) {
+            const currencies = amount === 1 ? match.sell : Currencies.toCurrencies(match.sell.toValue(keyPrices.sell.metal) * amount, isKey ? undefined : keyPrices.sell.metal);
+
             if (reply === '') {
-                reply = 'I am selling a ' + match.name + ' for ' + match.sell.toString();
+                reply = 'I am selling ';
+
+                if (amount !== 1) {
+                    reply += amount + ' ';
+                } else {
+                    reply += 'a ';
+                }
+
+                reply += pluralize(match.name, amount) + ' for ' + currencies.toString();
             } else {
-                reply += ' and selling for ' + match.sell.toString();
+                reply += ' and selling for ' + currencies.toString();
             }
         }
 
@@ -278,3 +287,48 @@ exports.handleMessage = function (steamID, message) {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
     }
 };
+
+function getItemAndAmount (steamID, message) {
+    let name = message;
+    let amount = 1;
+
+    if (/^[-]?\d+$/.test(name.split(' ')[0])) {
+        // Check if the first part of the name is a number, if so, then that is the amount the user wants to trade
+        amount = parseInt(name.split(' ')[0]);
+        name = name.replace(amount, '').trim();
+    }
+
+    if (1 > amount) {
+        amount = 1;
+    }
+
+    if (!name) {
+        client.chatMessage(steamID, 'You forgot to add a name. Here\'s an example: "!price Team Captain"');
+        return null;
+    }
+
+    let match = prices.searchByName(name);
+    if (match === null) {
+        client.chatMessage(steamID, 'I could not find any items in my pricelist that contains "' + name + '", I might not be trading the item you are looking for.');
+        return null;
+    } else if (Array.isArray(match)) {
+        const matchCount = match.length;
+        if (match.length > 20) {
+            match = match.splice(0, 20);
+        }
+
+        let reply = 'I\'ve found ' + match + ' items. Try with one of the items shown below:\n' + match.join(',\n');
+        if (matchCount > match.length) {
+            const other = matchCount - match.length;
+            reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
+        }
+
+        client.chatMessage(reply);
+        return null;
+    }
+
+    return {
+        amount: amount,
+        match: match
+    };
+}
