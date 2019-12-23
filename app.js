@@ -93,24 +93,10 @@ handler.onRun(function (opts) {
 
         handler.onLoginSuccessful();
 
-        // TODO: Detect when steam is down using the limitations callback function
-
-        log.verbose('Checking account limitations...');
-
-        require('utils/limitationsCallback')(function (err, limitations) {
+        checkAccountLimitations(function (err) {
             if (err) {
                 throw err;
             }
-
-            if (limitations.limited) {
-                throw new Error('The account is limited');
-            } else if (limitations.communityBanned) {
-                throw new Error('The account is community banned');
-            } else if (limitations.locked) {
-                throw new Error('The account is locked');
-            }
-
-            log.verbose('Account limitation checks completed!');
 
             log.debug('Waiting for web session...');
 
@@ -188,3 +174,29 @@ handler.onRun(function (opts) {
         });
     }
 });
+
+function checkAccountLimitations (callback) {
+    if (process.env.SKIP_ACCOUNT_LIMITATIONS === 'true') {
+        return callback(null);
+    }
+
+    log.verbose('Checking account limitations...');
+
+    require('utils/limitationsCallback')(function (err, limitations) {
+        if (err) {
+            return callback(err);
+        }
+
+        if (limitations.limited) {
+            return callback(new Error('The account is limited'));
+        } else if (limitations.communityBanned) {
+            return callback(new Error('The account is community banned'));
+        } else if (limitations.locked) {
+            return callback(new Error('The account is locked'));
+        }
+
+        log.verbose('Account limitation checks completed!');
+
+        return callback(null);
+    });
+}
