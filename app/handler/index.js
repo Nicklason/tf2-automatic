@@ -11,6 +11,9 @@ exports.onReady = function () {
     this.gamesPlayed(package.name);
     this.setPersona(SteamUser.EPersonaState.Online);
 
+    // Smelt metal if needed
+    require('handler/crafting').keepMetalSupply();
+
     // Check friend requests that we got while offline
     require('handler/friends').checkFriendRequests();
 
