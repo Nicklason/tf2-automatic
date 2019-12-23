@@ -13,6 +13,12 @@ const friends = require('handler/friends');
 const parseJSON = require('utils/parseJSON');
 const isAdmin = require('utils/isAdmin');
 
+let messages = [];
+
+setInterval(function () {
+    messages = [];
+}, 1000);
+
 function getCommand (string) {
     if (string.startsWith('!')) {
         const command = string.toLowerCase().split(' ')[0].substr(1);
@@ -63,7 +69,17 @@ exports.handleMessage = function (steamID, message) {
         return;
     }
 
-    log.info('Message from ' + friend.player_name + ' (' + steamID.getSteamID64() + '): ' + message);
+    const steamID64 = steamID.getSteamID64();
+
+    if (messages.indexOf(steamID64) !== -1) {
+        return;
+    }
+
+    if (!admin) {
+        messages.push(steamID64);
+    }
+
+    log.info('Message from ' + friend.player_name + ' (' + steamID64 + '): ' + message);
 
     if (command == 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !price [name], !stock';
