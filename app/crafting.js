@@ -107,8 +107,6 @@ exports.connectToGC = function (callback) {
     }
 
     function timeoutFired () {
-        tf2.off('connectedToGC', connectedToGCEvent);
-
         log.debug('Failed to connect to TF2 GC');
 
         callback(new Error('Could not connect to GC'));
@@ -242,7 +240,6 @@ function processCraftingJob (job, callback) {
 
     function craftingCompleteEvent (recipe, itemsGained) {
         // The crafting was complete, remove used item and add the new items to the inventory
-        tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
         clearTimeout(timeout);
 
         for (let i = 0; i < ids.length; i++) {
@@ -263,7 +260,6 @@ function processCraftingJob (job, callback) {
 
     function disconnectedFromGCEvent () {
         // We disconnected from the GC, don't listen for the crafting to complete or not
-        tf2.off('craftingComplete', craftingCompleteEvent);
         clearTimeout(timeout);
 
         log.debug('Disconnected from GC while crafting', { job: job });
@@ -273,9 +269,6 @@ function processCraftingJob (job, callback) {
 
     function timeoutFired () {
         // We have waited for 10 seconds and the event did not fire, remove the job and move on
-        tf2.off('craftingComplete', craftingCompleteEvent);
-        tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
-
         log.debug('Craft job timed out', { job: job });
 
         return callback();
@@ -305,8 +298,6 @@ function processUseJob (job, callback) {
             return;
         }
 
-        tf2.off('itemRemoved', itemRemovedEvent);
-        tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
         clearTimeout(timeout);
 
         inventoryManager.removeItem(job.assetid);
@@ -318,7 +309,6 @@ function processUseJob (job, callback) {
 
     function disconnectedFromGCEvent () {
         // We disconnected from the GC, don't listen for the crafting to complete or not
-        tf2.off('itemRemoved', itemRemovedEvent);
         clearTimeout(timeout);
 
         log.debug('Disconnected from GC while using item', { job: job });
@@ -328,9 +318,6 @@ function processUseJob (job, callback) {
 
     function timeoutFired () {
         // We have waited for 10 seconds and the event did not fire, remove the job and move on
-        tf2.off('itemRemoved', itemRemovedEvent);
-        tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
-
         log.debug('Use job timed out', { job: job });
 
         return callback();
@@ -355,8 +342,6 @@ function processDeleteJob (job, callback) {
             return;
         }
 
-        tf2.off('itemRemoved', itemRemovedEvent);
-        tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
         clearTimeout(timeout);
 
         inventoryManager.removeItem(job.assetid);
@@ -368,7 +353,6 @@ function processDeleteJob (job, callback) {
 
     function disconnectedFromGCEvent () {
         // We disconnected from the GC, don't listen for the crafting to complete or not
-        tf2.off('itemRemoved', itemRemovedEvent);
         clearTimeout(timeout);
 
         log.debug('Disconnected from GC while deleting item', { job: job });
@@ -378,9 +362,6 @@ function processDeleteJob (job, callback) {
 
     function timeoutFired () {
         // We have waited for 10 seconds and the event did not fire, remove the job and move on
-        tf2.off('itemRemoved', itemRemovedEvent);
-        tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
-
         log.debug('Delete job timed out', { job: job });
 
         return callback();
@@ -407,15 +388,12 @@ function processSortJob (job, callback) {
         clearTimeout(timeout);
 
         timeout = setTimeout(function () {
-            tf2.off('itemChanged', itemChangedEvent);
-            tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
             callback();
         }, 1000);
     }
 
     function disconnectedFromGCEvent () {
         // We disconnected from the GC, don't listen for the crafting to complete or not
-        tf2.off('itemChanged', itemChangedEvent);
         clearTimeout(failTimeout);
         clearTimeout(timeout);
 
@@ -426,8 +404,6 @@ function processSortJob (job, callback) {
 
     function timeoutFired () {
         // We have waited for 10 seconds and the event did not fire, remove the job and move on
-        tf2.off('itemRemoved', itemChangedEvent);
-        tf2.off('disconnectedFromGC', disconnectedFromGCEvent);
         clearTimeout(timeout);
 
         log.debug('Sort job timed out', { job: job });
