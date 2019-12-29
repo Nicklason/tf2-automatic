@@ -49,26 +49,25 @@ module.exports = function (loginKey, callback) {
 
         client.logOn(opts);
 
-        client.once('loggedOn', loggedOnEvent);
-        client.once('error', errorEvent);
+        client.on('loggedOn', loggedOnEvent);
+        client.on('error', errorEvent);
 
         function loggedOnEvent () {
-            client.off('error', errorEvent);
-
             log.debug('Signed in to Steam');
 
             gotEvent();
         }
 
         function errorEvent (err) {
-            client.off('loggedOn', loggedOnEvent);
-
             log.debug('Failed to sign in to Steam', err);
 
             gotEvent(err);
         }
 
         function gotEvent (err) {
+            client.removeListener('loggedOn', loggedOnEvent);
+	    client.removeListener('error', errorEvent);            
+
             listeners.forEach(function (listener) {
                 client.on('error', listener);
             });
