@@ -65,7 +65,7 @@ module.exports = function (loginKey, callback) {
         }
 
         function gotEvent (err) {
-          client.removeListener('loggedOn', loggedOnEvent);
+            client.removeListener('loggedOn', loggedOnEvent);
 	    client.removeListener('error', errorEvent);            
 
             listeners.forEach(function (listener) {
