@@ -396,8 +396,8 @@ function processSortJob (job, callback) {
     tf2.on('itemChanged', itemChangedEvent);
     // Listen for GC disconnect
     tf2.once('disconnectedFromGC', disconnectedFromGCEvent);
-    // Time out after 10 seconds
-    const failTimeout = setTimeout(timeoutFired, 10000);
+    // Time out after 3 seconds
+    const failTimeout = setTimeout(timeoutFired, 3000);
 
     let timeout;
 
