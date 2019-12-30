@@ -571,6 +571,8 @@ exports.newOffer = function (offer, done) {
         return;
     }
 
+    const itemPrices = {};
+
     for (let i = 0; i < states.length; i++) {
         const buying = states[i];
         const which = buying ? 'their' : 'our';
@@ -608,6 +610,11 @@ exports.newOffer = function (offer, done) {
                     if (sku !== '5021;6') {
                         exchange[which].keys += match[intentString].keys * amount;
                     }
+
+                    itemPrices[match.sku] = {
+                        buy: match.buy,
+                        sell: match.sell
+                    };
                 }
 
                 if (sku === '5021;6') {
@@ -647,6 +654,8 @@ exports.newOffer = function (offer, done) {
             sell: keyPrices.sell.metal
         }
     });
+
+    offer.data('prices', itemPrices);
 
     if (exchange.contains.metal && !exchange.contains.keys && !exchange.contains.items) {
         // Offer only contains metal
