@@ -175,6 +175,8 @@ exports.newOffer = function (offer) {
         exports.setItemInTrade(item.id);
     });
 
+    offer.data('partner', offer.partner.getSteamID64());
+
     // Enqueue the offer
     enqueueOffer(offer);
 };
