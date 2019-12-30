@@ -1,13 +1,474 @@
 const TradeOfferManager = require('steam-tradeoffer-manager');
 const Currencies = require('tf2-currencies');
+const pluralize = require('pluralize');
 
 const log = require('lib/logger');
 const inventory = require('app/inventory');
 const prices = require('app/prices');
 const listings = require('handler/listings');
+const client = require('lib/client');
+const manager = require('lib/manager');
 
 const isAdmin = require('utils/isAdmin');
 const checkBanned = require('utils/isBanned');
+
+exports.getActiveOffer = function (steamID) {
+    const pollData = require('lib/manager').pollData;
+
+    if (!pollData.offerData) {
+        return null;
+    }
+
+    const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
+
+    for (const id in pollData.sent) {
+        if (!Object.prototype.hasOwnProperty.call(pollData.sent, id)) {
+            continue;
+        }
+
+        if (pollData.sent[id] !== TradeOfferManager.ETradeOfferState.Active) {
+            continue;
+        }
+
+        const data = pollData.offerData[id] || null;
+        if (data === null) {
+            continue;
+        }
+
+        if (data.partner === steamID64) {
+            return id;
+        }
+    }
+
+    return null;
+};
+
+exports.createOffer = function (details, callback) {
+    const partner = details.steamid;
+    const match = prices.get(details.sku, true);
+
+    const start = new Date().getTime();
+
+    if (match === null) {
+        callback(null, 'The item is no longer in the pricelist');
+        return;
+    }
+
+    const intent = details.buying ? 0 : 1;
+
+    if (match.intent !== 2 && match.intent !== intent) {
+        callback(null, 'I am only ' + (details.buying ? 'selling' : 'buying') + ' ' + pluralize(match.name));
+        return;
+    }
+
+    const amountCanTrade = inventory.amountCanTrade(details.sku, details.buying);
+
+    if (amountCanTrade === 0) {
+        // Can't trade the item at all
+        callback(null, 'I can\'t ' + (details.buying ? 'buy' : 'sell') + ' any ' + pluralize(match.name));
+        return;
+    }
+
+    const buyer = details.buying ? client.steamID.getSteamID64() : details.steamid;
+    const seller = details.buying ? details.steamid : client.steamID.getSteamID64();
+
+    inventory.getDictionary(seller, function (err, sellerDict) {
+        if (err) {
+            return callback(err);
+        }
+
+        // TODO: Filter items that are already being traded
+
+        const sellerItems = (sellerDict[match.sku] || []);
+
+        // TODO: Return inventory class instead of object
+
+        let amount = details.amount;
+
+        let alteredMessage;
+
+        if (sellerItems.length === 0) {
+            // Seller does not have the item
+            return callback(null, (details.buying ? 'You' : 'I') + ' don\'t have any ' + pluralize(match.name, 2));
+        } else if (sellerItems.length < amount) {
+            // Seller has the item, but not enough
+            alteredMessage = (details.buying ? 'You' : 'I') + ' don\'t have any ' + pluralize(match.name, 2);
+            amount = sellerItems.length;
+        }
+
+        // Check if we can buy / sell that many
+        if (amountCanTrade < amount) {
+            // We can trade the item, but not the asked amount
+            alteredMessage = 'I can only ' + (details.buying ? 'buy' : 'sell') + ' ' + pluralize(match.name, amountCanTrade, true);
+            amount = amountCanTrade;
+        }
+
+        inventory.getDictionary(buyer, function (err, buyerDict) {
+            if (err) {
+                return callback(err);
+            }
+
+            // TODO: Filter items that are already being traded
+
+            const buyerCurrenciesWithAssetids = inventory.getCurrencies(buyerDict);
+            const buyerCurrencies = inventory.getCurrencies(buyerDict, true);
+
+            // Check if the buyer can afford the items
+
+            const isKey = match.sku === '5021;6';
+
+            const canAfford = prices.amountCanAfford(details.buying, !isKey, match[details.buying ? 'buy' : 'sell'], buyerCurrencies);
+
+            if (canAfford === 0) {
+                return callback(null, (details.buying ? 'I' : 'You') + ' don\'t have enough pure to buy any ' + pluralize(match.name, 2));
+            } else if (canAfford < amount) {
+                alteredMessage = (details.buying ? 'I' : 'You') + ' can only afford ' + pluralize(match.name, canAfford, true);
+                amount = canAfford;
+            }
+
+            if (alteredMessage) {
+                client.chatMessage(partner, 'Your offer has been altered! Reason: ' + alteredMessage + '.');
+            }
+
+            const keyPrices = prices.getKeyPrices();
+            const keyPrice = keyPrices[details.buying ? 'buy' : 'sell'].metal;
+
+            const price = Currencies.toCurrencies(match[details.buying ? 'buy' : 'sell'].toValue(isKey ? undefined : keyPrice) * amount, isKey ? undefined : keyPrice);
+
+            // Figurated out what items to add to the offer
+            const required = constructOffer(buyerCurrencies, price, details.buying, !isKey);
+
+            if (required.change > 0) {
+                log.warn('Failed to create offer because change is postive');
+                return callback(null, 'Something went wrong constructing the offer, try again later');
+            }
+
+            const buyerCurrenciesPay = new Currencies({
+                keys: required.currencies['5021;6'],
+                metal: Currencies.toRefined((required.currencies['5002;6'] || 0) * 9 + (required.currencies['5001;6'] || 0) * 3 + (required.currencies['5000;6'] || 0))
+            });
+
+            const buyerStr = buyerCurrenciesPay.toString();
+
+            const sellerStr = pluralize(match.name, amount, true) + (required.change === 0 ? '' : ' and ' + Currencies.toRefined(Math.abs(required.change)) + ' ref');
+
+            client.chatMessage(partner, 'Please wait while I process your offer! You will be offered ' + (details.buying ? buyerStr : sellerStr) + ' for your ' + (details.buying ? sellerStr : buyerStr));
+
+            const offer = manager.createOffer(partner);
+
+            offer.data('partner', partner);
+
+            // Add items to offer
+
+            const exchange = {
+                our: { value: 0, keys: 0, scrap: 0 },
+                their: { value: 0, keys: 0, scrap: 0 }
+            };
+
+            exchange[details.buying ? 'our' : 'their'].value = buyerCurrenciesPay.toValue(keyPrice);
+            exchange[details.buying ? 'our' : 'their'].keys = buyerCurrenciesPay.keys;
+            exchange[details.buying ? 'our' : 'their'].scrap = Currencies.toScrap(buyerCurrenciesPay.metal);
+
+            const itemsDict = { our: {}, their: {} };
+
+            let remainingItems = amount;
+
+            for (let i = 0; i < sellerItems[i]; i++) {
+                if (offer[details.buying ? 'addTheirItem' : 'addMyItem']({
+                    assetid: sellerItems[i],
+                    appid: 440,
+                    contextid: 2,
+                    amount: 1
+                })) {
+                    remainingItems--;
+                    if (remainingItems === 0) {
+                        break;
+                    }
+                }
+            }
+
+            if (remainingItems !== 0) {
+                log.warn('Failed to create offer because seller items');
+                return callback(null, 'Something went wrong constructing the offer, try again later');
+            }
+
+            itemsDict[details.buying ? 'their' : 'our'][match.sku] = amount;
+            exchange[details.buying ? 'their' : 'our'].value = price.toValue(isKey ? undefined : keyPrice);
+            exchange[details.buying ? 'their' : 'our'].scrap = exchange[details.buying ? 'their' : 'our'].value;
+
+            if (required.change !== 0) {
+                let change = Math.abs(required.change);
+
+                exchange[details.buying ? 'their' : 'our'].value += change;
+                exchange[details.buying ? 'their' : 'our'].scrap += change;
+
+                const currencies = inventory.getCurrencies(sellerDict);
+                // We won't use keys when giving change
+                delete currencies['5021;6'];
+
+                for (const sku in currencies) {
+                    if (!Object.prototype.hasOwnProperty.call(currencies, sku)) {
+                        continue;
+                    }
+
+                    const whose = details.buying ? 'their' : 'our';
+
+                    let value = 0;
+
+                    if (sku === '5002;6') {
+                        value = 9;
+                    } else if (sku === '5001;6') {
+                        value = 3;
+                    } else if (sku === '5000;6') {
+                        value = 1;
+                    }
+
+                    if (change / value >= 1) {
+                        for (let i = 0; i < currencies[sku].length; i++) {
+                            if (offer[details.buying ? 'addTheirItem' : 'addMyItem']({
+                                assetid: currencies[sku][i],
+                                appid: 440,
+                                contextid: 2,
+                                amount: 1
+                            })) {
+                                itemsDict[whose][sku] = (itemsDict[whose][sku] || 0) + 1;
+                                change -= value;
+                                if (change < value) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (change !== 0) {
+                    return callback(null, 'I am missing ' + Currencies.toRefined(change) + ' ref as change');
+                }
+            }
+
+            const requiredCurrencies = required.currencies;
+
+            for (const sku in requiredCurrencies) {
+                if (!Object.prototype.hasOwnProperty.call(requiredCurrencies, sku)) {
+                    continue;
+                }
+
+                itemsDict[details.buying ? 'our' : 'their'][sku] = requiredCurrencies[sku];
+
+                for (let i = 0; i < buyerCurrenciesWithAssetids[sku].length; i++) {
+                    if (offer[details.buying ? 'addMyItem' : 'addTheirItem']({
+                        assetid: buyerCurrenciesWithAssetids[sku][i],
+                        appid: 440,
+                        contextid: 2,
+                        amount: 1
+                    })) {
+                        requiredCurrencies[sku]--;
+                        if (requiredCurrencies[sku] === 0) {
+                            break;
+                        }
+                    }
+                }
+
+                if (requiredCurrencies[sku] !== 0) {
+                    log.warn('Failed to create offer because missing buyer pure');
+                    return callback(null, 'Something went wrong constructing the offer, try again later');
+                }
+            }
+
+            const itemsDiff = {};
+
+            ['our', 'their'].forEach(function (whose) {
+                for (const sku in itemsDict[whose]) {
+                    if (!Object.prototype.hasOwnProperty.call(itemsDict[whose], sku)) {
+                        continue;
+                    }
+
+                    itemsDiff[sku] = (itemsDiff[sku] || 0) + itemsDict[whose][sku] * (whose === 'our' ? -1 : 1);
+                }
+            });
+
+            offer.data('diff', itemsDiff);
+            offer.data('dict', itemsDict);
+            offer.data('value', {
+                our: {
+                    keys: exchange.our.keys,
+                    metal: Currencies.toRefined(exchange.our.scrap)
+                },
+                their: {
+                    keys: exchange.their.keys,
+                    metal: Currencies.toRefined(exchange.their.scrap)
+                },
+                rates: {
+                    buy: keyPrices.buy.metal,
+                    sell: keyPrices.sell.metal
+                }
+            });
+
+            const itemPrices = {};
+
+            itemPrices[match.sku] = {
+                buy: match.buy,
+                sell: match.sell
+            };
+
+            offer.data('prices', itemPrices);
+
+            offer.log('info', 'checking escrow...');
+
+            checkEscrow(offer, function (err, hasEscrow) {
+                if (err) {
+                    log.warn('Failed to check escrow', err);
+                    return callback(err);
+                }
+
+                if (hasEscrow) {
+                    offer.log('info', 'would be held if accepted, declining...');
+                    return callback(null, 'The offer would be held by escrow');
+                }
+
+                offer.log('info', 'checking bans...');
+
+                checkBanned(partner, function (err, isBanned) {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    if (isBanned) {
+                        offer.log('info', 'partner is banned in one or more communities, declining...');
+                        return callback(null, 'You are banned in one or more communities');
+                    }
+
+                    offer.data('handleTimestamp', start);
+
+                    // offer.log('trade', 'sending. Summary:\n' + offer.summarize());
+
+                    require('app/trade').sendOffer(offer, function (err) {
+                        return callback(err);
+                    });
+                });
+            });
+        });
+    });
+};
+
+/**
+ * Figurates out what currencies the buyer needs to offer
+ * @param {Object} buyerCurrencies
+ * @param {Object} price
+ * @param {*} buying
+ * @param {*} useKeys
+ * @return {Object} An object containing the picked currencies and the amount of change that the seller needs to provide
+ */
+function constructOffer (buyerCurrencies, price, buying, useKeys) {
+    const keyPrice = prices.getKeyPrices()[buying ? 'buy' : 'sell'];
+
+    const value = price.toValue(useKeys ? keyPrice : undefined);
+
+    const currencyValues = {
+        '5021;6': useKeys ? keyPrice.toValue() : -1,
+        '5002;6': 9,
+        '5001;6': 3,
+        '5000;6': 1
+    };
+
+    const skus = Object.keys(currencyValues);
+
+    let remaining = value;
+
+    let hasReversed = false;
+    let reverse = false;
+    let index = 0;
+
+    const pickedCurrencies = {};
+
+    /* eslint-disable-next-line no-constant-condition */
+    while (true) {
+        const key = skus[index];
+        // Start at highest currency and check if we should pick that
+
+        // Amount to pick of the currency
+        let amount = remaining / currencyValues[key];
+        if (amount > buyerCurrencies[key]) {
+            // We need more than we have, choose what we have
+            amount = buyerCurrencies[key];
+        }
+
+        if (index === skus.length - 1) {
+            // If we are at the end of the list and have a postive remaining amount,
+            // then we need to loop the other way and pick the value that will make the remaining 0 or negative
+
+            if (hasReversed) {
+                // We hit the end the second time, break out of the loop
+                break;
+            }
+
+            reverse = true;
+        }
+
+        const currAmount = pickedCurrencies[key] || 0;
+
+        if (reverse && amount > 0) {
+            // We are reversing the array and found an item that we need
+            if (currAmount + Math.ceil(amount) > buyerCurrencies[key]) {
+                // Amount is more than the limit, set amount to the limit
+                amount = buyerCurrencies[key] - currAmount;
+            } else {
+                amount = Math.ceil(amount);
+            }
+        }
+
+        if (amount >= 1 && pickedCurrencies[key] !== Math.floor(amount)) {
+            // If the amount is greater than or equal to 1, then I need to pick it
+            pickedCurrencies[key] = currAmount + Math.floor(amount);
+            // Remove value from remaining
+            remaining -= Math.floor(amount) * currencyValues[key];
+        }
+
+        if (remaining === 0) {
+            // Picked the exact amount, stop
+            break;
+        }
+
+        if (remaining < 0) {
+            // We owe them money, break out of the loop
+            break;
+        }
+
+        if (index === 0 && reverse) {
+            // We were reversing and then reached start of the list, say that we have reversed and go back the other way
+            hasReversed = true;
+            reverse = false;
+        }
+
+        index += reverse ? -1 : 1;
+    }
+
+    if (remaining < 0) {
+        // Removes unnessesary items
+        for (let i = 0; i < skus.length; i++) {
+            const sku = skus[i];
+
+            let amount = Math.floor(Math.abs(remaining) / currencyValues[sku]);
+            if (pickedCurrencies[sku] && pickedCurrencies[sku] < amount) {
+                amount = pickedCurrencies[sku];
+            }
+
+            if (amount >= 1) {
+                remaining += amount * currencyValues[sku];
+                pickedCurrencies[sku] -= amount;
+
+                if (pickedCurrencies[sku] === 0) {
+                    delete pickedCurrencies[sku];
+                }
+            }
+        }
+    }
+
+    return {
+        currencies: pickedCurrencies,
+        change: remaining
+    };
+}
 
 exports.newOffer = function (offer, done) {
     offer.log('info', 'is being processed...');
@@ -18,7 +479,6 @@ exports.newOffer = function (offer, done) {
         our: inventory.createDictionary(offer.itemsToGive),
         their: inventory.createDictionary(offer.itemsToReceive)
     };
-
 
     // Use itemsDiff variable for checking stock limits
 
@@ -259,12 +719,18 @@ function checkEscrow (offer, callback) {
 }
 
 exports.offerChanged = function (offer, oldState) {
+    const handledByUs = offer.data('handledByUs') === true;
+
     if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
-        // Offer is accepted,
+        // Offer is accepted
+
+        // Smelt metal
         require('handler/crafting').keepMetalSupply();
 
-        // Go through items diff and check listings for all of them
+        // Sort inventory
+        require('app/crafting').sortInventory(3);
 
+        // Update listings
         const diff = offer.data('diff') || {};
 
         for (const sku in diff) {
@@ -273,6 +739,24 @@ exports.offerChanged = function (offer, oldState) {
             }
 
             listings.checkBySKU(sku);
+        }
+    }
+
+    if (handledByUs) {
+        if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
+            client.chatMessage(offer.partner, 'Success! The offer went through successfully.');
+        } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
+            client.chatMessage(offer.partner, 'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).');
+        } else if (offer.isOurOffer) {
+            if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
+                client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.');
+            } else if (offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
+                if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+                    client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: Failed to accept mobile confirmation.');
+                } else {
+                    client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been active for a while.');
+                }
+            }
         }
     }
 };
