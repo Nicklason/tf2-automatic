@@ -8,12 +8,14 @@ let nonTradableDictionary = {};
 
 /**
  * Fetches an inventory
- * @param {Object|String} steamid SteamID object or steamid64
+ * @param {Object|String} steamID SteamID object or steamid64
  * @param {Function} callback
  */
-exports.getInventory = function (steamid, callback) {
-    const isOurInv = manager.steamID.getSteamID64() === (typeof steamid === 'string' ? steamid : steamid.getSteamID64());
-    manager.getUserInventoryContents(steamid, 440, 2, !isOurInv, function (err, items) {
+exports.getInventory = function (steamID, callback) {
+    const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
+    const isOurInv = manager.steamID.getSteamID64() === steamID64;
+
+    manager.getUserInventoryContents(steamID, 440, 2, !isOurInv, function (err, items) {
         if (err) {
             return callback(err);
         }
@@ -25,6 +27,29 @@ exports.getInventory = function (steamid, callback) {
         }
 
         callback(null, tradable);
+    });
+};
+
+/**
+ * Gets items dictionary
+ * @param {Object|String} steamID
+ * @param {Function} callback
+ */
+exports.getDictionary = function (steamID, callback) {
+    const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
+    const isOurInv = manager.steamID.getSteamID64() === steamID64;
+
+    if (isOurInv) {
+        callback(null, dictionary);
+        return;
+    }
+
+    exports.getInventory(steamID, function (err, items) {
+        if (err) {
+            return callback(err);
+        }
+
+        return callback(null, exports.createDictionary(items));
     });
 };
 
@@ -124,43 +149,31 @@ exports.amountCanTrade = function (sku, buy) {
     return canTrade > 0 ? canTrade : 0;
 };
 
-exports.getCurrencies = function (dict) {
-    let keys = 0;
-    let refined = 0;
-    let reclaimed = 0;
-    let scrap = 0;
+/**
+ * Gets an object with keys, refined, reclaimed and scrap
+ * @param {Object} dict Items dictionary
+ * @param {Boolean} [amount=false] If you want assetids or counts
+ * @return {Object}
+ */
+exports.getCurrencies = function (dict, amount = false) {
+    const currencies = {
+        '5021;6': dict['5021;6'] || [],
+        '5002;6': dict['5002;6'] || [],
+        '5001;6': dict['5001;6'] || [],
+        '5000;6': dict['5000;6'] || []
+    };
 
-    for (const sku in dict) {
-        if (!Object.prototype.hasOwnProperty.call(dict, sku)) {
-            continue;
-        }
+    if (amount === true) {
+        for (const sku in currencies) {
+            if (!Object.prototype.hasOwnProperty.call(currencies, sku)) {
+                continue;
+            }
 
-        const amount = dict[sku].length;
-
-        switch (sku) {
-            case '5021;6':
-                keys += amount;
-                break;
-            case '5002;6':
-                refined += amount;
-                break;
-            case '5001;6':
-                reclaimed += amount;
-                break;
-            case '5000;6':
-                scrap += amount;
-                break;
-            default:
-                break;
+            currencies[sku] = currencies[sku].length;
         }
     }
 
-    return {
-        keys,
-        refined,
-        reclaimed,
-        scrap
-    };
+    return currencies;
 };
 
 /**
