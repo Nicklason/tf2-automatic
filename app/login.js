@@ -53,7 +53,7 @@ module.exports = function (loginKey, callback) {
         client.once('error', errorEvent);
 
         function loggedOnEvent () {
-            client.off('error', errorEvent);
+            client.removeListener('error', errorEvent);
 
             log.debug('Signed in to Steam');
 
@@ -61,7 +61,7 @@ module.exports = function (loginKey, callback) {
         }
 
         function errorEvent (err) {
-            client.off('loggedOn', loggedOnEvent);
+            client.removeListener('loggedOn', loggedOnEvent);
 
             log.debug('Failed to sign in to Steam', err);
 

@@ -16,7 +16,7 @@ module.exports = function (callback) {
     // Start timeout that will return an error if we have not gotten the websession within 10 seconds
     const timeout = setTimeout(function () {
         // We are not signed in, return error
-        client.off('accountLimitations', accountLimitationsEvent);
+        client.removeListener('accountLimitations', accountLimitationsEvent);
         return callback(new Error('Could not get account limitations'));
     }, 10000);
 

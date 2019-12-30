@@ -22,7 +22,7 @@ module.exports = function (eventOnly, callback) {
     // Start timeout that will return an error if we have not gotten the websession within 10 seconds
     const timeout = setTimeout(function () {
         // We are not signed in, return error
-        client.off('webSession', webSessionEvent);
+        client.removeListener('webSession', webSessionEvent);
         return callback(new Error('Could not sign in to steamcommunity'));
     }, 10000);
 
