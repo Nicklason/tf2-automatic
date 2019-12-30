@@ -33,14 +33,24 @@ exports.getInventory = function (steamID, callback) {
 /**
  * Gets items dictionary
  * @param {Object|String} steamID
+ * @param {Boolean} [includeInTrade=true]
  * @param {Function} callback
  */
-exports.getDictionary = function (steamID, callback) {
+exports.getDictionary = function (steamID, includeInTrade, callback) {
+    if (typeof includeInTrade === 'function') {
+        callback = includeInTrade;
+        includeInTrade = true;
+    }
+
     const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
     const isOurInv = manager.steamID.getSteamID64() === steamID64;
 
     if (isOurInv) {
-        callback(null, dictionary);
+        if (includeInTrade) {
+            callback(null, Object.assign({}, dictionary));
+        } else {
+            callback(null, exports.filterInTrade(Object.assign({}, dictionary)));
+        }
         return;
     }
 
@@ -75,8 +85,24 @@ exports.getOwnInventory = function (onlyTradable = true) {
         inventory[sku] = (inventory[sku] || []).concat(nonTradableDictionary[sku]);
     }
 
-
     return inventory;
+};
+
+exports.filterInTrade = function (dict) {
+    const filtered = {};
+
+    const itemsInTrade = require('app/trade').inTrade();
+
+    for (const sku in dict) {
+        if (!Object.prototype.hasOwnProperty.call(dict, sku)) {
+            continue;
+        }
+
+        const ids = dict[sku].filter((assetid) => itemsInTrade.indexOf(assetid) === -1);
+        filtered[sku] = ids;
+    }
+
+    return filtered;
 };
 
 /**

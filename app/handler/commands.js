@@ -14,7 +14,7 @@ const trades = require('handler/trades');
 const queue = require('handler/queue');
 
 const parseJSON = require('utils/parseJSON');
-const isAdmin = require('utils/isAdmin');
+const isAdmin = require('app/admins').isAdmin;
 
 let messages = [];
 

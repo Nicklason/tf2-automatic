@@ -8,8 +8,9 @@ const prices = require('app/prices');
 const listings = require('handler/listings');
 const client = require('lib/client');
 const manager = require('lib/manager');
+const admin = require('app/admins');
 
-const isAdmin = require('utils/isAdmin');
+const isAdmin = admin.isAdmin;
 const checkBanned = require('utils/isBanned');
 
 exports.getActiveOffer = function (steamID) {
@@ -72,12 +73,10 @@ exports.createOffer = function (details, callback) {
     const buyer = details.buying ? client.steamID.getSteamID64() : details.steamid;
     const seller = details.buying ? details.steamid : client.steamID.getSteamID64();
 
-    inventory.getDictionary(seller, function (err, sellerDict) {
+    inventory.getDictionary(seller, false, function (err, sellerDict) {
         if (err) {
             return callback(err);
         }
-
-        // TODO: Filter items that are already being traded
 
         const sellerItems = (sellerDict[match.sku] || []);
 
@@ -92,7 +91,7 @@ exports.createOffer = function (details, callback) {
             return callback(null, (details.buying ? 'You' : 'I') + ' don\'t have any ' + pluralize(match.name, 2));
         } else if (sellerItems.length < amount) {
             // Seller has the item, but not enough
-            alteredMessage = (details.buying ? 'You' : 'I') + ' don\'t have any ' + pluralize(match.name, 2);
+            alteredMessage = (details.buying ? 'You' : 'I') + ' only have ' + pluralize(match.name, sellerItems.length, true);
             amount = sellerItems.length;
         }
 
@@ -103,12 +102,10 @@ exports.createOffer = function (details, callback) {
             amount = amountCanTrade;
         }
 
-        inventory.getDictionary(buyer, function (err, buyerDict) {
+        inventory.getDictionary(buyer, false, function (err, buyerDict) {
             if (err) {
                 return callback(err);
             }
-
-            // TODO: Filter items that are already being traded
 
             const buyerCurrenciesWithAssetids = inventory.getCurrencies(buyerDict);
             const buyerCurrencies = inventory.getCurrencies(buyerDict, true);
@@ -340,9 +337,31 @@ exports.createOffer = function (details, callback) {
 
                     offer.data('handleTimestamp', start);
 
-                    // offer.log('trade', 'sending. Summary:\n' + offer.summarize());
-
                     require('app/trade').sendOffer(offer, function (err) {
+                        if (err) {
+                            if (err.message.indexOf('We were unable to contact the game\'s item server') !== -1) {
+                                return callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
+                            } else if (err.message.indexOf('can only be sent to friends') != -1) {
+                                return callback(err);
+                            } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') > -1) {
+                                return callback(null, 'I don\'t have space for more items in my inventory');
+                            } else if (err.eresult !== undefined) {
+                                if (err.eresult == 10) {
+                                    callback(null, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
+                                } else if (err.eresult == 15) {
+                                    callback(null, 'I don\'t, or you don\'t, have space for more items');
+                                } else if (err.eresult == 16) {
+                                    // This happens when Steam is already handling an offer (usually big offers), the offer should be made
+                                    callback(null, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
+                                } else if (err.eresult == 20) {
+                                    callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
+                                } else {
+                                    callback(null, 'An error occurred while sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')');
+                                }
+                                return;
+                            }
+                        }
+
                         return callback(err);
                     });
                 });
@@ -740,15 +759,15 @@ exports.offerChanged = function (offer, oldState) {
 
             listings.checkBySKU(sku);
         }
+
+        admin.message('Trade #' + offer.id + ' with ' + offer.partner.getSteamID64() + ' is accepted. Summary:\n' + offer.summarize());
     }
 
     if (handledByUs) {
-        if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
-            client.chatMessage(offer.partner, 'Success! The offer went through successfully.');
-        } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
-            client.chatMessage(offer.partner, 'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).');
-        } else if (offer.isOurOffer) {
-            if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
+        if (offer.isOurOffer) {
+            if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
+                offer.log('trade', 'has been accepted. Summary:\n' + offer.summarize());
+            } else if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
                 client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.');
             } else if (offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
                 if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
@@ -757,6 +776,12 @@ exports.offerChanged = function (offer, oldState) {
                     client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been active for a while.');
                 }
             }
+        }
+
+        if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
+            client.chatMessage(offer.partner, 'Success! The offer went through successfully.');
+        } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
+            client.chatMessage(offer.partner, 'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).');
         }
     }
 };
