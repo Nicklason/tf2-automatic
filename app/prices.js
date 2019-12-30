@@ -260,6 +260,15 @@ exports.add = function (sku, data, callback) {
         return callback(new Error(errors.join(', ')));
     }
 
+    const keyPrice = exports.getKeyPrices()['sell'].metal;
+
+    const buy = new Currencies(entry.buy);
+    const sell = new Currencies(entry.sell);
+
+    if (buy.toValue(keyPrice) >= sell.toValue(keyPrice)) {
+        return callback(new Error('Sell must be higher than buy'));
+    }
+
     if (entry.autoprice !== true) {
         entry.time = null;
 
@@ -349,6 +358,15 @@ exports.update = function (sku, data, callback) {
 
     if (copy.max !== -1 && copy.max <= copy.min) {
         return callback(new Error('Max needs to be more than min'));
+    }
+
+    const keyPrice = exports.getKeyPrices()['sell'].metal;
+
+    const buy = new Currencies(copy.buy);
+    const sell = new Currencies(copy.sell);
+
+    if (buy.toValue(keyPrice) >= sell.toValue(keyPrice)) {
+        return callback(new Error('Sell must be higher than buy'));
     }
 
     copy.time = time;
