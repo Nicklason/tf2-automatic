@@ -6,10 +6,10 @@ const minimumReclaimed = process.env.MINIMUM_RECLAIMED ? parseInt(process.env.MI
 
 exports.keepMetalSupply = function () {
     const dict = inventory.getOwnInventory();
-    const currencies = inventory.getCurrencies(dict);
+    const currencies = inventory.getCurrencies(dict, true);
 
-    const smeltReclaimed = currencies.scrap >= minimumScrap ? 0 : Math.ceil((minimumScrap - currencies.scrap) / 3);
-    let smeltRefined = currencies.reclaimed >= minimumReclaimed ? 0 : Math.ceil((minimumReclaimed - currencies.reclaimed) / 3);
+    const smeltReclaimed = currencies['5000;6'] >= minimumScrap ? 0 : Math.ceil((minimumScrap - currencies['5000;6']) / 3);
+    let smeltRefined = currencies['5001;6'] >= minimumReclaimed ? 0 : Math.ceil((minimumReclaimed - currencies['5001;6']) / 3);
 
     if (smeltReclaimed > 0) {
         smeltRefined += Math.ceil(smeltReclaimed / 3);
