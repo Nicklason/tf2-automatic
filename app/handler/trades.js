@@ -743,6 +743,8 @@ exports.offerChanged = function (offer, oldState) {
     if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
         // Offer is accepted
 
+        offer.data('isAccepted', true);
+
         // Smelt metal
         require('handler/crafting').keepMetalSupply();
 
