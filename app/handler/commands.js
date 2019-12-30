@@ -290,6 +290,14 @@ exports.handleMessage = function (steamID, message) {
         if (params.intent === undefined) {
             params.intent = 2;
         }
+        if (typeof params.buy === 'object') {
+            params.buy.keys = params.buy.keys || 0;
+            params.buy.metal = params.buy.metal || 0;
+        }
+        if (typeof params.sell === 'object') {
+            params.sell.keys = params.sell.keys || 0;
+            params.sell.metal = params.sell.metal || 0;
+        }
 
         prices.add(params.sku, params, function (err, entry) {
             if (err) {
@@ -301,6 +309,15 @@ exports.handleMessage = function (steamID, message) {
     } else if (admin && command === 'update') {
         const params = getParams(message.substring(command.length + 1).trim());
         delete params.item;
+
+        if (typeof params.buy === 'object') {
+            params.buy.keys = params.buy.keys || 0;
+            params.buy.metal = params.buy.metal || 0;
+        }
+        if (typeof params.sell === 'object') {
+            params.sell.keys = params.sell.keys || 0;
+            params.sell.metal = params.sell.metal || 0;
+        }
 
         prices.update(params.sku, params, function (err, entry) {
             if (err) {
