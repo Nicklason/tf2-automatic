@@ -43,7 +43,7 @@ exports.init = function (callback) {
             return callback(null);
         }
 
-        const prices = result.pricelist;
+        const prices = result.pricelist.items;
 
         const handler = handlerManager.getHandler();
 
@@ -57,9 +57,9 @@ exports.init = function (callback) {
 
             // Go through pricestf prices
             for (let j = 0; j < prices.length; j++) {
-                if (pricelist[i].sku === prices[j].sku) {
+                if (pricelist[i].name === prices[j].name) {
                     // Found matching items
-                    if (pricelist[i].autoprice === true && pricelist[i].time < prices[j].time) {
+                    if (pricelist[i].time < prices[j].time) {
                         // Times don't match, update our price
                         pricelist[i].buy = new Currencies(prices[j].buy);
                         pricelist[i].sell = new Currencies(prices[j].sell);
@@ -69,9 +69,6 @@ exports.init = function (callback) {
 
                         handler.onPriceChange(pricelist[i].sku);
                     }
-
-                    // Remove item because it was checked
-                    prices.splice(j, 1);
 
                     break;
                 }
@@ -87,6 +84,42 @@ exports.init = function (callback) {
 
         callback(null);
     });
+};
+
+/**
+ * Returns how many of an item you can afford
+ * @param {Boolean} buying If we are buying or not (used for key prices)
+ * @param {Boolean} useKeys
+ * @param {Object} currencies Currencies object containing keys and metal value
+ * @param {Object} currenciesDict Object containing all pure available
+ * @return {Number}
+ */
+exports.amountCanAfford = function (buying, useKeys, currencies, currenciesDict) {
+    const keyPrice = exports.getKeyPrices()[buying ? 'buy' : 'sell'];
+
+    const value = currencies.toValue(keyPrice.metal);
+
+    let totalValue = 0;
+
+    for (const sku in currenciesDict) {
+        if (!Object.prototype.hasOwnProperty.call(currenciesDict, sku)) {
+            continue;
+        }
+
+        const amount = Array.isArray(currenciesDict[sku]) ? currenciesDict[sku].length : currenciesDict[sku];
+
+        if (useKeys && sku === '5021;6') {
+            totalValue += keyPrice.toValue() * amount;
+        } else if (sku === '5002;6') {
+            totalValue += 9 * amount;
+        } else if (sku === '5001;6') {
+            totalValue += 3 * amount;
+        } else if (sku === '5000;6') {
+            totalValue += amount;
+        }
+    }
+
+    return Math.floor(totalValue / value);
 };
 
 exports.setPricelist = function (prices) {
@@ -322,11 +355,11 @@ exports.update = function (sku, data, callback) {
 
     if (copy.autoprice === false) {
         copy.time = null;
-        remove(copy, false);
+        remove(copy.sku, false);
         add(copy, true);
         return callback(null, copy);
     } else if (copy.autoprice === match.autoprice) {
-        remove(copy, false);
+        remove(copy.sku, false);
         add(copy, true);
         return callback(null, copy);
     }
@@ -344,22 +377,14 @@ exports.update = function (sku, data, callback) {
         copy.sell = prices.sell;
         copy.time = prices.time;
 
-        remove(copy, false);
+        remove(copy.sku, false);
         add(copy, true);
         return callback(null, copy);
     });
 };
 
 exports.remove = function (sku, callback) {
-    let match = null;
-
-    for (let i = 0; i < pricelist.length; i++) {
-        if (pricelist[i].sku === sku) {
-            match = pricelist[i];
-            remove(i, true);
-            break;
-        }
-    }
+    const match = remove(sku, true);
 
     if (match === null) {
         return callback(new Error('Item is not in the pricelist'));
@@ -368,15 +393,27 @@ exports.remove = function (sku, callback) {
     return callback(null, match);
 };
 
-function remove (index, emit) {
-    const match = pricelist[index];
-    pricelist.splice(index, 1);
+function remove (sku, emit) {
+    let index = -1;
+    for (let i = 0; i < pricelist.length; i++) {
+        if (pricelist[i].sku === sku) {
+            index = i;
+            break;
+        }
+    }
 
-    if (emit === true) {
-        const handler = handlerManager.getHandler();
-        // Price of item changed
-        handler.onPriceChange(match.sku, null);
-        // Pricelist updated
-        handler.onPricelist(pricelist);
+    if (index !== -1) {
+        const match = pricelist[index];
+        pricelist.splice(index, 1);
+
+        if (emit === true) {
+            const handler = handlerManager.getHandler();
+            // Price of item changed
+            handler.onPriceChange(sku, null);
+            // Pricelist updated
+            handler.onPricelist(pricelist);
+        }
+
+        return match;
     }
 }

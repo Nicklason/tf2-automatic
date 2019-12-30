@@ -10,6 +10,8 @@ const inventory = require('app/inventory');
 const schemaManager = require('lib/tf2-schema');
 const log = require('lib/logger');
 const friends = require('handler/friends');
+const trades = require('handler/trades');
+const queue = require('handler/queue');
 
 const parseJSON = require('utils/parseJSON');
 const isAdmin = require('utils/isAdmin');
@@ -82,8 +84,8 @@ exports.handleMessage = function (steamID, message) {
 
     log.info('Message from ' + friend.player_name + ' (' + steamID64 + '): ' + message);
 
-    if (command == 'help') {
-        let reply = 'Here\'s a list of all my commands: !help, !how2trade, !price [name], !stock';
+    if (command === 'help') {
+        let reply = 'Here\'s a list of all my commands: !help, !how2trade, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin(steamID)) {
             reply += ', !get, !add, !remove, !update';
         }
@@ -225,6 +227,40 @@ exports.handleMessage = function (steamID, message) {
         // reply += '\nYou can see my inventory and prices here: https://backpack.tf/profiles/' + client.steamID.getSteamID64();
 
         client.chatMessage(steamID, reply);
+    } else if (command === 'buy' || command === 'sell') {
+        const info = getItemAndAmount(steamID, message.substring(command.length + 1).trim());
+
+        if (info === null) {
+            return;
+        }
+
+        const buying = command === 'sell';
+
+        const activeOfferID = trades.getActiveOffer(steamID);
+
+        if (activeOfferID !== null) {
+            client.chatMessage(steamID, 'You already have an active offer! Please finish it before requesting a new one:  https://steamcommunity.com/tradeoffer/' + activeOfferID + '/');
+            return;
+        }
+
+        const position = queue.getPosition(steamID);
+
+        if (position !== -1) {
+            if (position === 0) {
+                client.chatMessage(steamID, 'You are already in the queue! Please wait while I process your offer.');
+            } else {
+                client.chatMessage(steamID, 'You are already in the queue! Please wait your turn, there ' + (position !== 1 ? 'are' : 'is') + ' ' + position + ' infront of you.');
+            }
+            return;
+        }
+
+        const newPosition = queue.addRequestedTrade(steamID, info.match.sku, info.amount, buying);
+
+        if (newPosition !== 0) {
+            client.chatMessage(steamID, 'You have been added to the queue! Please wait your turn, there ' + (newPosition !== 1 ? 'are' : 'is') + ' ' + newPosition + ' infront of you.');
+        }
+
+        queue.handleQueue();
     } else if (admin && command === 'get') {
         const params = getParams(message.substring(command.length + 1).trim());
 
@@ -317,13 +353,13 @@ function getItemAndAmount (steamID, message) {
             match = match.splice(0, 20);
         }
 
-        let reply = 'I\'ve found ' + match + ' items. Try with one of the items shown below:\n' + match.join(',\n');
+        let reply = 'I\'ve found ' + match.length + ' items. Try with one of the items shown below:\n' + match.join(',\n');
         if (matchCount > match.length) {
             const other = matchCount - match.length;
             reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
         }
 
-        client.chatMessage(reply);
+        client.chatMessage(steamID, reply);
         return null;
     }
 

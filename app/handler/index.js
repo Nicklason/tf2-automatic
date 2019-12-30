@@ -14,6 +14,9 @@ exports.onReady = function () {
     // Smelt metal if needed
     require('handler/crafting').keepMetalSupply();
 
+    // Sort the inventory after crafting metal
+    require('app/crafting').sortInventory(3);
+
     // Check friend requests that we got while offline
     require('handler/friends').checkFriendRequests();
 
