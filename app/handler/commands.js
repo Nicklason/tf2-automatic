@@ -68,7 +68,10 @@ function getItemFromParams (steamID, params) {
     delete item.paint;
     delete item.craftnumber;
 
+    let foundSomething = false;
+
     if (params.name !== undefined) {
+        foundSomething = true;
         // Look for all items that have the same name
 
         const match = [];
@@ -102,8 +105,6 @@ function getItemFromParams (steamID, params) {
         item.quality = match[0].item_quality;
     }
 
-    let foundSomething = false;
-
     for (const key in params) {
         if (!Object.prototype.hasOwnProperty.call(params, key)) {
             continue;
@@ -117,7 +118,7 @@ function getItemFromParams (steamID, params) {
     }
 
     if (!foundSomething) {
-        client.chatMessage('Missing item properties');
+        client.chatMessage(steamID, 'Missing item properties');
         return null;
     }
 
@@ -134,7 +135,7 @@ function getItemFromParams (steamID, params) {
         }
     }
 
-    if (item.quality !== 0) {
+    if (typeof item.quality !== 'number') {
         const quality = schemaManager.schema.getQualityIdByName(item.quality);
         if (quality === null) {
             client.chatMessage(steamID, 'Could not find a quality in the schema with the name "' + item.quality + '"');
