@@ -15,6 +15,7 @@ const queue = require('handler/queue');
 
 const parseJSON = require('utils/parseJSON');
 const isAdmin = require('app/admins').isAdmin;
+const fixItem = require('utils/item/fixItem');
 
 let messages = [];
 
@@ -101,15 +102,23 @@ function getItemFromParams (steamID, params) {
         item.quality = match[0].item_quality;
     }
 
+    let foundSomething = false;
+
     for (const key in params) {
         if (!Object.prototype.hasOwnProperty.call(params, key)) {
             continue;
         }
 
         if (item[key] !== undefined) {
+            foundSomething = true;
             item[key] = params[key];
             delete params[key];
         }
+    }
+
+    if (!foundSomething) {
+        client.chatMessage('Missing item properties');
+        return null;
     }
 
     if (item.defindex !== 0) {
@@ -217,7 +226,7 @@ function getItemFromParams (steamID, params) {
         item.outputQuality = quality;
     }
 
-    return item;
+    return fixItem(item);
 }
 
 exports.handleMessage = function (steamID, message) {
@@ -455,11 +464,11 @@ exports.handleMessage = function (steamID, message) {
                 return;
             }
 
-            params.sku = SKU.fromObject(item);
+            params.sku = SKU.fromObject(fixItem(item));
         }
 
         if (params.sku === undefined) {
-            client.chatMessage(steamID, 'Missing item / name / sku');
+            client.chatMessage(steamID, 'Missing item');
             return;
         }
 
@@ -506,6 +515,8 @@ exports.handleMessage = function (steamID, message) {
 
             params.sku = SKU.fromObject(item);
         }
+
+        params.sku = SKU.fromObject(fixItem(SKU.fromString(params.sku)));
 
         prices.add(params.sku, params, function (err, entry) {
             if (err) {

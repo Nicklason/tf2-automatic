@@ -421,18 +421,20 @@ function remove (sku, emit) {
         }
     }
 
-    if (index !== -1) {
-        const match = pricelist[index];
-        pricelist.splice(index, 1);
-
-        if (emit === true) {
-            const handler = handlerManager.getHandler();
-            // Price of item changed
-            handler.onPriceChange(sku, null);
-            // Pricelist updated
-            handler.onPricelist(pricelist);
-        }
-
-        return match;
+    if (index === -1) {
+        return null;
     }
+
+    const match = pricelist[index];
+    pricelist.splice(index, 1);
+
+    if (emit === true) {
+        const handler = handlerManager.getHandler();
+        // Price of item changed
+        handler.onPriceChange(sku, null);
+        // Pricelist updated
+        handler.onPricelist(pricelist);
+    }
+
+    return match;
 }
