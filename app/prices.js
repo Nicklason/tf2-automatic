@@ -174,9 +174,10 @@ function handlePriceChange (data) {
 /**
  * Searches for names in the pricelist that match the search
  * @param {String} search
+ * @param {Boolean} [enabledOnly=true]
  * @return {null|Object|Array<String>}
  */
-exports.searchByName = function (search) {
+exports.searchByName = function (search, enabledOnly = true) {
     search = search.toLowerCase();
 
     const match = [];
@@ -186,7 +187,7 @@ exports.searchByName = function (search) {
     for (let i = 0; i < pricelist.length; i++) {
         const entry = pricelist[i];
 
-        if (entry.enabled === false) {
+        if (enabledOnly && entry.enabled === false) {
             continue;
         }
 

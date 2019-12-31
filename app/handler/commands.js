@@ -61,6 +61,165 @@ function getParams (string) {
     return parsed;
 }
 
+function getItemFromParams (steamID, params) {
+    const item = SKU.fromString('');
+
+    delete item.paint;
+    delete item.craftnumber;
+
+    if (params.name !== undefined) {
+        // Look for all items that have the same name
+
+        const match = [];
+
+        for (let i = 0; i < schemaManager.schema.raw.schema.items.length; i++) {
+            const schemaItem = schemaManager.schema.raw.schema.items[i];
+            if (schemaItem.item_name === params.name) {
+                match.push(schemaItem);
+            }
+        }
+
+        if (match.length === 0) {
+            client.chatMessage(steamID, 'Could not find an item in the schema with the name "' + params.name + '"');
+            return null;
+        } else if (match.length !== 1) {
+            const matchCount = match.length;
+
+            const parsed = match.splice(0, 20).map((schemaItem) => schemaItem.defindex + ' (' + schemaItem.name + ')');
+
+            let reply = 'I\'ve found ' + matchCount + ' items with a matching name. Please use one of the defindexes below as "defindex":\n' + parsed.join(',\n');
+            if (matchCount > parsed.length) {
+                const other = matchCount - parsed.length;
+                reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
+            }
+
+            client.chatMessage(steamID, reply);
+            return null;
+        }
+
+        item.defindex = match[0].defindex;
+        item.quality = match[0].item_quality;
+    }
+
+    for (const key in params) {
+        if (!Object.prototype.hasOwnProperty.call(params, key)) {
+            continue;
+        }
+
+        if (item[key] !== undefined) {
+            item[key] = params[key];
+            delete params[key];
+        }
+    }
+
+    if (item.defindex !== 0) {
+        const schemaItem = schemaManager.schema.getItemByDefindex(item.defindex);
+
+        if (schemaItem === null) {
+            client.chatMessage(steamID, 'Could not find an item in the schema with the defindex "' + item.defindex + '"');
+            return null;
+        }
+
+        if (item.quality === 0) {
+            item.quality = schemaItem.item_quality;
+        }
+    }
+
+    if (item.quality !== 0) {
+        const quality = schemaManager.schema.getQualityIdByName(item.quality);
+        if (quality === null) {
+            client.chatMessage(steamID, 'Could not find a quality in the schema with the name "' + item.quality + '"');
+            return null;
+        }
+
+        item.quality = quality;
+    }
+
+    if (item.paintkit !== null) {
+        const paintkit = schemaManager.schema.getSkinByName(item.paintkit);
+        if (paintkit === null) {
+            client.chatMessage(steamID, 'Could not find a skin in the schema with the name "' + item.paintkit + '"');
+            return null;
+        }
+
+        item.paintkit = paintkit;
+    }
+
+    if (item.effect !== null) {
+        const effect = schemaManager.schema.getEffectByName(item.effect);
+
+        if (effect === null) {
+            client.chatMessage(steamID, 'Could not find an unusual effect in the schema with the name "' + item.paintkit + '"');
+            return null;
+        }
+
+        item.effect = effect;
+    }
+
+    if (typeof item.output === 'number') {
+        // User gave defindex
+
+        const schemaItem = schemaManager.schema.getItemByDefindex(item.output);
+
+        if (schemaItem === null) {
+            client.chatMessage(steamID, 'Could not find an item in the schema with the defindex "' + item.defindex + '"');
+            return null;
+        }
+
+        if (item.quality === 0) {
+            item.quality = schemaItem.item_quality;
+        }
+    } else if (item.output !== null) {
+        // Look for all items that have the same name
+
+        const match = [];
+
+        for (let i = 0; i < schemaManager.schema.raw.schema.items.length; i++) {
+            const schemaItem = schemaManager.schema.raw.schema.items[i];
+            if (schemaItem.item_name === params.name) {
+                match.push(schemaItem);
+            }
+        }
+
+        if (match.length === 0) {
+            client.chatMessage(steamID, 'Could not find an item in the schema with the name "' + params.name + '"');
+            return null;
+        } else if (match.length !== 1) {
+            const matchCount = match.length;
+
+            const parsed = match.splice(0, 20).map((schemaItem) => schemaItem.defindex + ' (' + schemaItem.name + ')');
+
+            let reply = 'I\'ve found ' + matchCount + ' items with a matching name. Please use one of the defindexes below as "output":\n' + parsed.join(',\n');
+            if (matchCount > parsed.length) {
+                const other = matchCount - parsed.length;
+                reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
+            }
+
+            client.chatMessage(steamID, reply);
+            return null;
+        }
+
+        item.output = match[0].defindex;
+
+        if (item.outputQuality === null) {
+            item.quality = match[0].item_quality;
+        }
+    }
+
+    if (item.outputQuality !== null) {
+        const quality = schemaManager.schema.getQualityIdByName(item.outputQuality);
+
+        if (quality === null) {
+            client.chatMessage(steamID, 'Could not find a quality in the schema with the name "' + item.outputQuality + '"');
+            return null;
+        }
+
+        item.outputQuality = quality;
+    }
+
+    return item;
+}
+
 exports.handleMessage = function (steamID, message) {
     const admin = isAdmin(steamID);
     const command = getCommand(message);
@@ -264,6 +423,46 @@ exports.handleMessage = function (steamID, message) {
     } else if (admin && command === 'get') {
         const params = getParams(message.substring(command.length + 1).trim());
 
+        if (params.item !== undefined) {
+            // Remove by full name
+            let match = prices.searchByName(params.item, false);
+
+            if (match === null) {
+                client.chatMessage(steamID, 'I could not find any items in my pricelist that contains "' + params.item + '"');
+                return;
+            } else if (Array.isArray(match)) {
+                const matchCount = match.length;
+                if (match.length > 20) {
+                    match = match.splice(0, 20);
+                }
+
+                let reply = 'I\'ve found ' + match.length + ' items. Try with one of the items shown below:\n' + match.join(',\n');
+                if (matchCount > match.length) {
+                    const other = matchCount - match.length;
+                    reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
+                }
+
+                client.chatMessage(steamID, reply);
+                return;
+            }
+
+            delete params.item;
+            params.sku = match.sku;
+        } else if (params.sku === undefined) {
+            const item = getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
+        if (params.sku === undefined) {
+            client.chatMessage(steamID, 'Missing item / name / sku');
+            return;
+        }
+
         const match = prices.get(params.sku);
 
         if (match === null) {
@@ -273,7 +472,6 @@ exports.handleMessage = function (steamID, message) {
         }
     } else if (admin && command === 'add') {
         const params = getParams(message.substring(command.length + 1).trim());
-        delete params.item;
 
         if (params.enabled === undefined) {
             params.enabled = true;
@@ -299,6 +497,16 @@ exports.handleMessage = function (steamID, message) {
             params.sell.metal = params.sell.metal || 0;
         }
 
+        if (params.sku === undefined) {
+            const item = getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
         prices.add(params.sku, params, function (err, entry) {
             if (err) {
                 client.chatMessage(steamID, 'Failed to add the item to the pricelist: ' + err.message);
@@ -308,7 +516,6 @@ exports.handleMessage = function (steamID, message) {
         });
     } else if (admin && command === 'update') {
         const params = getParams(message.substring(command.length + 1).trim());
-        delete params.item;
 
         if (typeof params.buy === 'object') {
             params.buy.keys = params.buy.keys || 0;
@@ -317,6 +524,41 @@ exports.handleMessage = function (steamID, message) {
         if (typeof params.sell === 'object') {
             params.sell.keys = params.sell.keys || 0;
             params.sell.metal = params.sell.metal || 0;
+        }
+
+        if (params.item !== undefined) {
+            // Remove by full name
+            let match = prices.searchByName(params.item, false);
+
+            if (match === null) {
+                client.chatMessage(steamID, 'I could not find any items in my pricelist that contains "' + params.item + '"');
+                return;
+            } else if (Array.isArray(match)) {
+                const matchCount = match.length;
+                if (match.length > 20) {
+                    match = match.splice(0, 20);
+                }
+
+                let reply = 'I\'ve found ' + match.length + ' items. Try with one of the items shown below:\n' + match.join(',\n');
+                if (matchCount > match.length) {
+                    const other = matchCount - match.length;
+                    reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
+                }
+
+                client.chatMessage(steamID, reply);
+                return;
+            }
+
+            delete params.item;
+            params.sku = match.sku;
+        } else if (params.sku === undefined) {
+            const item = getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
         }
 
         prices.update(params.sku, params, function (err, entry) {
@@ -328,6 +570,41 @@ exports.handleMessage = function (steamID, message) {
         });
     } else if (admin && command === 'remove') {
         const params = getParams(message.substring(command.length + 1).trim());
+
+        if (params.item !== undefined) {
+            // Remove by full name
+            let match = prices.searchByName(params.item, false);
+
+            if (match === null) {
+                client.chatMessage(steamID, 'I could not find any items in my pricelist that contains "' + params.item + '"');
+                return;
+            } else if (Array.isArray(match)) {
+                const matchCount = match.length;
+                if (match.length > 20) {
+                    match = match.splice(0, 20);
+                }
+
+                let reply = 'I\'ve found ' + match.length + ' items. Try with one of the items shown below:\n' + match.join(',\n');
+                if (matchCount > match.length) {
+                    const other = matchCount - match.length;
+                    reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
+                }
+
+                client.chatMessage(steamID, reply);
+                return;
+            }
+
+            delete params.item;
+            params.sku = match.sku;
+        } else if (params.sku === undefined) {
+            const item = getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
 
         prices.remove(params.sku, function (err, entry) {
             if (err) {
