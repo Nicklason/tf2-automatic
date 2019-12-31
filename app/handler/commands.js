@@ -520,7 +520,7 @@ exports.handleMessage = function (steamID, message) {
 
         prices.add(params.sku, params, function (err, entry) {
             if (err) {
-                client.chatMessage(steamID, 'Failed to add the item to the pricelist: ' + err.message);
+                client.chatMessage(steamID, 'Failed to add the item to the pricelist: ' + (err.body && err.body.message ? err.body.message : err.message));
             } else {
                 client.chatMessage(steamID, 'Added "' + entry.name + '".');
             }
@@ -574,7 +574,7 @@ exports.handleMessage = function (steamID, message) {
 
         prices.update(params.sku, params, function (err, entry) {
             if (err) {
-                client.chatMessage(steamID, 'Failed to update the item in the pricelist: ' + err.message);
+                client.chatMessage(steamID, 'Failed to update the item in the pricelist: ' + (err.body && err.body.message ? err.body.message : err.message));
             } else {
                 client.chatMessage(steamID, 'Updated "' + entry.name + '".');
             }
