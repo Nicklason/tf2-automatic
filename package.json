@@ -1,7 +1,7 @@
 {
-  "name": "bot-framework",
-  "version": "1.0.0",
-  "description": "A framework that makes it easier to make a trading bot for Team Fortress 2",
+  "name": "tf2-automatic",
+  "version": "2.0.0",
+  "description": "Fully automated TF2 trading bot advertising on www.backpack.tf using prices from www.prices.tf",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
