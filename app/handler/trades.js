@@ -381,7 +381,7 @@ exports.createOffer = function (details, callback) {
 function constructOffer (buyerCurrencies, price, buying, useKeys) {
     const keyPrice = prices.getKeyPrices()[buying ? 'buy' : 'sell'];
 
-    const value = price.toValue(useKeys ? keyPrice : undefined);
+    const value = price.toValue(useKeys ? keyPrice.metal : undefined);
 
     const currencyValues = {
         '5021;6': useKeys ? keyPrice.toValue() : -1,
@@ -436,7 +436,7 @@ function constructOffer (buyerCurrencies, price, buying, useKeys) {
             }
         }
 
-        if (amount >= 1 && pickedCurrencies[key] !== Math.floor(amount)) {
+        if (amount >= 1) {
             // If the amount is greater than or equal to 1, then I need to pick it
             pickedCurrencies[key] = currAmount + Math.floor(amount);
             // Remove value from remaining
