@@ -48,7 +48,7 @@ exports.onLoginFailure = function (err) {
 };
 
 exports.onHeartbeat = function (bumped) {
-    log.info('Heartbeat sent to www.backpack.tf' + (bumped > 0 ? '; Bumped ' + pluralize('listing', bumped, true) : '') + '.');
+    log.debug('Heartbeat sent to www.backpack.tf' + (bumped > 0 ? '; Bumped ' + pluralize('listing', bumped, true) : '') + '.');
 };
 
 exports.onMessage = require('handler/commands').handleMessage;
