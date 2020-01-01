@@ -89,8 +89,6 @@ handler.onRun(function (opts) {
             return;
         }
 
-        log.info('Signed in to Steam!');
-
         handler.onLoginSuccessful();
 
         checkAccountLimitations(function (err) {
