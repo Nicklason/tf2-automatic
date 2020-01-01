@@ -45,14 +45,16 @@ function getParams (string) {
 
             let value = params[key];
 
-            if (/^\d+$/.test(value)) {
-                value = parseInt(value);
-            } else if (/^\d+(\.\d+)?$/.test(value)) {
-                value = parseFloat(value);
-            } else if (value === 'true') {
-                value = true;
-            } else if (value === 'false') {
-                value = false;
+            if (key !== 'sku') {
+                if (/^\d+$/.test(value)) {
+                    value = parseInt(value);
+                } else if (/^\d+(\.\d+)?$/.test(value)) {
+                    value = parseFloat(value);
+                } else if (value === 'true') {
+                    value = true;
+                } else if (value === 'false') {
+                    value = false;
+                }
             }
 
             dotProp.set(parsed, key.trim(), value);
