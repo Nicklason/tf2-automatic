@@ -2,7 +2,7 @@ const moment = require('moment');
 
 const handlerManager = require('app/handler-manager');
 
-const maxLoginAttemptsWithinPeriod = 5;
+const maxLoginAttemptsWithinPeriod = 3;
 const loginPeriodTime = 60 * 1000;
 
 let loginAttempts = [];
