@@ -3,12 +3,16 @@ const pluralize = require('pluralize');
 
 const package = require('@root/package.json');
 
+const prices = require('app/prices');
+const listingManager = require('lib/bptf-listings');
 const log = require('lib/logger');
 
 exports.onRun = require('handler/init');
 exports.onShutdown = require('handler/shutdown');
 
 exports.onReady = function () {
+    log.info(package.name + ' v' + package.version + ' is ready! ' + pluralize('item', prices.getPricelist().length, true) + ' in pricelist, ' + pluralize('listing', listingManager.listings.length, true) + ' on www.backpack.tf (cap: ' + listingManager.cap + ')');
+
     this.gamesPlayed(package.name);
     this.setPersona(SteamUser.EPersonaState.Online);
 
@@ -39,6 +43,10 @@ exports.onLogin = function () {
 
 exports.onLoginFailure = function (err) {
     exports.shutdown(err);
+};
+
+exports.onHeartbeat = function (bumped) {
+    log.info('Heartbeat sent to www.backpack.tf' + (bumped > 0 ? '; Bumped ' + pluralize('listing', bumped, true) : '') + '.');
 };
 
 exports.onMessage = require('handler/commands').handleMessage;
