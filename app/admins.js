@@ -11,6 +11,10 @@ admins.forEach(function (steamid64) {
 });
 
 exports.message = function (message) {
+    if (process.env.ALERTS === 'none') {
+        return;
+    }
+
     admins.forEach(function (steamID) {
         client.chatMessage(steamID, message);
     });
