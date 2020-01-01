@@ -156,8 +156,6 @@ handler.onRun(function (opts) {
                                         throw err;
                                     }
 
-                                    log.info(package.name + ' v' + package.version + ' is ready!');
-
                                     handlerManager.setReady();
 
                                     handler.onReady();
