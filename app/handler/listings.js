@@ -95,14 +95,26 @@ exports.checkAll = function (callback) {
         index += 50;
     }, 100);
 
+    const timeout = setTimeout(function () {
+        doneCheckingAll();
+    }, 1000);
+
     listingManager.on('actions', onActionsEvent);
 
     function onActionsEvent (actions) {
+        // Got actions event, stop the timeout
+        clearTimeout(timeout);
         if (actions.create.length + listingManager.listings.length >= listingManager.cap || (actions.create.length === 0 && actions.remove.length === 0)) {
-            clearInterval(interval);
-            listingManager.removeListener('actions', onActionsEvent);
-            callback();
+            // Reached listing cap / finished adding listings, stop
+            doneCheckingAll();
         }
+    }
+
+    function doneCheckingAll () {
+        clearTimeout(timeout);
+        clearInterval(interval);
+        listingManager.removeListener('actions', onActionsEvent);
+        callback();
     }
 };
 
