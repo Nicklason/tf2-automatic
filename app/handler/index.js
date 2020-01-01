@@ -1,4 +1,5 @@
 const SteamUser = require('steam-user');
+const pluralize = require('pluralize');
 
 const package = require('@root/package.json');
 
@@ -26,6 +27,18 @@ exports.onReady = function () {
 
 exports.onTF2QueueCompleted = function () {
     this.gamesPlayed(package.name);
+};
+
+exports.onLogin = function () {
+    if (exports.isReady()) {
+        // We have relogged, set game and online
+        this.gamesPlayed(package.name);
+        this.setPersona(SteamUser.EPersonaState.Online);
+    }
+};
+
+exports.onLoginFailure = function (err) {
+    exports.shutdown(err);
 };
 
 exports.onMessage = require('handler/commands').handleMessage;
