@@ -104,7 +104,7 @@ exports.checkAll = function (callback) {
     function onActionsEvent (actions) {
         // Got actions event, stop the timeout
         clearTimeout(timeout);
-        if (actions.create.length + listingManager.listings.length >= listingManager.cap || (actions.create.length === 0 && actions.remove.length === 0)) {
+        if (actions.create.length + listingManager.listings.length >= listingManager.cap || (listingManager._listingsWaitingForRetry() + listingManager._listingsWaitingForInventoryCount() - actions.create.length === 0 && actions.remove.length === 0)) {
             // Reached listing cap / finished adding listings, stop
             doneCheckingAll();
         }
