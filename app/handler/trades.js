@@ -694,6 +694,9 @@ exports.newOffer = function (offer, done) {
         // We are offering more than them, decline the offer
         offer.log('info', 'is not offering enough, declining...');
         return done('decline', 'INVALID_VALUE');
+    } else if (exchange.our.value < exchange.their.value && process.env.ACCEPT_OVERPAY == 'false') {
+        offer.log('info', 'is offering more than needed, declining...');
+        return done('decline', 'OVERPAY');
     }
 
     // TODO: If we are receiving items, mark them as pending and use it to check overstock / understock for new offers
@@ -733,7 +736,7 @@ exports.newOffer = function (offer, done) {
 
 // TODO: Add error handling
 function checkEscrow (offer, callback) {
-    if (process.env.ACCEPT_ESCROW === 'true') {
+    if (process.env.ACCEPT_ESCROW == 'true') {
         return callback(null, false);
     }
 
