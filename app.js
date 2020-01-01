@@ -148,17 +148,21 @@ handler.onRun(function (opts) {
                                     throw err;
                                 }
 
-                                log.info('Getting Steam API key...');
+                                log.info('Creating listings...');
 
-                                // Set cookies for the tradeoffer manager which will start the polling
-                                manager.setCookies(cookies, function (err) {
-                                    if (err) {
-                                        throw err;
-                                    }
+                                require('handler/listings').checkAll(function () {
+                                    log.info('Getting Steam API key...');
 
-                                    handlerManager.setReady();
+                                    // Set cookies for the tradeoffer manager which will start the polling
+                                    manager.setCookies(cookies, function (err) {
+                                        if (err) {
+                                            throw err;
+                                        }
 
-                                    handler.onReady();
+                                        handlerManager.setReady();
+
+                                        handler.onReady();
+                                    });
                                 });
                             });
                         });
