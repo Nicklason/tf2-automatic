@@ -23,7 +23,7 @@ module.exports = function (loginKey, callback) {
     const wait = loginAttempts.wait();
 
     if (wait !== 0) {
-        log.debug('Waiting ' + wait + ' ms before trying to sign in');
+        log.warn('Waiting ' + wait + ' ms before trying to sign in...');
         handlerManager.getHandler().onLoginThrottle(wait);
     }
 
