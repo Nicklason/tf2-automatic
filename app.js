@@ -89,8 +89,6 @@ handler.onRun(function (opts) {
             return;
         }
 
-        handler.onLoginSuccessful();
-
         checkAccountLimitations(function (err) {
             if (err) {
                 throw err;
