@@ -11,22 +11,24 @@ exports.onRun = require('handler/init');
 exports.onShutdown = require('handler/shutdown');
 
 exports.onReady = function () {
-    log.info(package.name + ' v' + package.version + ' is ready! ' + pluralize('item', prices.getPricelist().length, true) + ' in pricelist, ' + pluralize('listing', listingManager.listings.length, true) + ' on www.backpack.tf (cap: ' + listingManager.cap + ')');
-
-    this.gamesPlayed(package.name);
-    this.setPersona(SteamUser.EPersonaState.Online);
-
-    // Smelt metal if needed
-    require('handler/crafting').keepMetalSupply();
-
-    // Sort the inventory after crafting metal
-    require('app/crafting').sortInventory(3);
-
-    // Check friend requests that we got while offline
-    require('handler/friends').checkFriendRequests();
+    log.info('Please wait while the bot creates listings...');
 
     // Go through all items in the pricelist and check the listings
-    require('handler/listings').checkAll();
+    require('handler/listings').checkAll(() => {
+        log.info(package.name + ' v' + package.version + ' is ready! ' + pluralize('item', prices.getPricelist().length, true) + ' in pricelist, ' + pluralize('listing', listingManager.listings.length, true) + ' on www.backpack.tf (cap: ' + listingManager.cap + ')');
+
+        this.gamesPlayed(package.name);
+        this.setPersona(SteamUser.EPersonaState.Online);
+
+        // Smelt metal if needed
+        require('handler/crafting').keepMetalSupply();
+
+        // Sort the inventory after crafting metal
+        require('app/crafting').sortInventory(3);
+
+        // Check friend requests that we got while offline
+        require('handler/friends').checkFriendRequests();
+    });
 };
 
 exports.onTF2QueueCompleted = function () {

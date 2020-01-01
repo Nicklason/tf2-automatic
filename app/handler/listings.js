@@ -73,15 +73,36 @@ exports.checkBySKU = function (sku, data) {
     }
 };
 
-exports.checkAll = function () {
+exports.checkAll = function (callback) {
     // Remove all listings
     listingManager.listings.forEach((listing) => listing.remove());
 
     const pricelist = prices.getPricelist();
 
-    // Create listings
-    for (let i = 0; i < pricelist.length; i++) {
-        exports.checkBySKU(pricelist[i].sku, pricelist[i]);
+    let index = 0;
+
+    const interval = setInterval(function () {
+        const chunk = pricelist.slice(index, index + 50);
+
+        if (chunk.length === 0) {
+            return clearInterval(interval);
+        }
+
+        for (let i = 0; i < chunk.length; i++) {
+            exports.checkBySKU(chunk[i].sku, pricelist[i]);
+        }
+
+        index += 50;
+    }, 100);
+
+    listingManager.on('actions', onActionsEvent);
+
+    function onActionsEvent (actions) {
+        if (actions.create.length + listingManager.listings.length >= listingManager.cap || (actions.create.length === 0 && actions.remove.length === 0)) {
+            clearInterval(interval);
+            listingManager.removeListener('actions', onActionsEvent);
+            callback();
+        }
     }
 };
 
