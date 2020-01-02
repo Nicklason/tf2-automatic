@@ -17,7 +17,7 @@ module.exports = function (err, done) {
 
     function onActions (actions) {
         if (actions.remove.length === 0) {
-            log.verbose('Done removing listings');
+            log.debug('Done removing listings');
             listingManager.removeListener('actions', onActions);
             checkFiles();
         } else {
@@ -30,7 +30,7 @@ module.exports = function (err, done) {
             // We are not writing to any files, stop the bot
 
             if (checks !== 0) {
-                log.verbose('Done writing files');
+                log.debug('Done writing files');
             }
 
             return done();
