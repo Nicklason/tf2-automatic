@@ -9,6 +9,15 @@ const EXPORTED_FUNCTIONS = {
     shutdown: function (err) {
         log.debug('Shutdown has been initialized', { err: err });
 
+        shutdownCount++;
+
+        if (shutdownCount >= 10) {
+            log.warn('Forcing exit...');
+            process.exit(1);
+        } else if (shutdownCount > 1) {
+            return false;
+        }
+
         const manager = require('lib/manager');
 
         // Stop the polling of trade offers
@@ -67,12 +76,16 @@ const EXPORTED_FUNCTIONS = {
     },
     isReady () {
         return isReady;
+    },
+    isShuttingDown () {
+        return shutdownCount > 0;
     }
 };
 
 let handler;
 
 let isReady = false;
+let shutdownCount = 0;
 
 /**
  * Prepares the handler
