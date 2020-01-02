@@ -36,7 +36,7 @@ require('death')({ uncaughtException: true })(function (signal, err) {
         }
 
         log.error([
-            package.name + ' crashed! If you think this is a problem with the framework (and not your code), then please create an issue with the following log:',
+            package.name + ' crashed! Please create an issue with the following log:',
             `package.version: ${package.version || undefined}; node: ${process.version} ${process.platform} ${process.arch}}`,
             'Stack trace:',
             require('util').inspect(err)
