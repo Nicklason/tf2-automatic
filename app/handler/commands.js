@@ -488,9 +488,6 @@ exports.handleMessage = function (steamID, message) {
         if (params.enabled === undefined) {
             params.enabled = true;
         }
-        if (params.autoprice === undefined) {
-            params.autoprice = true;
-        }
         if (params.max === undefined) {
             params.max = 1;
         }
@@ -503,10 +500,22 @@ exports.handleMessage = function (steamID, message) {
         if (typeof params.buy === 'object') {
             params.buy.keys = params.buy.keys || 0;
             params.buy.metal = params.buy.metal || 0;
+
+            if (params.autoprice === undefined) {
+                params.autoprice = false;
+            }
         }
         if (typeof params.sell === 'object') {
             params.sell.keys = params.sell.keys || 0;
             params.sell.metal = params.sell.metal || 0;
+
+            if (params.autoprice === undefined) {
+                params.autoprice = false;
+            }
+        }
+
+        if (params.autoprice === undefined) {
+            params.autoprice = true;
         }
 
         if (params.sku === undefined) {
@@ -534,10 +543,18 @@ exports.handleMessage = function (steamID, message) {
         if (typeof params.buy === 'object') {
             params.buy.keys = params.buy.keys || 0;
             params.buy.metal = params.buy.metal || 0;
+
+            if (params.autoprice === undefined) {
+                params.autoprice = false;
+            }
         }
         if (typeof params.sell === 'object') {
             params.sell.keys = params.sell.keys || 0;
             params.sell.metal = params.sell.metal || 0;
+
+            if (params.autoprice === undefined) {
+                params.autoprice = false;
+            }
         }
 
         if (params.item !== undefined) {
