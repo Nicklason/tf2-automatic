@@ -1,3 +1,3 @@
-# bot-framework
+# tf2-automatic
 
-A framework that makes it easier to make a trading bot for Team Fortress 2
+Fully automated TF2 trading bot advertising on www.backpack.tf using prices from www.prices.tf
