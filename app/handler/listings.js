@@ -1,3 +1,6 @@
+const pluralize = require('pluralize');
+
+const log = require('lib/logger');
 const prices = require('app/prices');
 const inventory = require('app/inventory');
 const listingManager = require('lib/bptf-listings');
@@ -88,6 +91,8 @@ exports.checkAll = function (callback) {
             return clearInterval(interval);
         }
 
+        log.debug('Enqueueing ' + pluralize('listing', chunk.length, true) + '...');
+
         for (let i = 0; i < chunk.length; i++) {
             exports.checkBySKU(chunk[i].sku, pricelist[i]);
         }
@@ -96,6 +101,7 @@ exports.checkAll = function (callback) {
     }, 100);
 
     const timeout = setTimeout(function () {
+        log.debug('Did not create any listings');
         doneCheckingAll();
     }, 1000);
 
@@ -106,6 +112,7 @@ exports.checkAll = function (callback) {
         clearTimeout(timeout);
         if (actions.create.length + listingManager.listings.length >= listingManager.cap || (listingManager._listingsWaitingForRetry() + listingManager._listingsWaitingForInventoryCount() - actions.create.length === 0 && actions.remove.length === 0)) {
             // Reached listing cap / finished adding listings, stop
+            log.debug('Done creating listings');
             doneCheckingAll();
         }
     }
