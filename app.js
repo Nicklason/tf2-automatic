@@ -31,6 +31,10 @@ require('death')({ uncaughtException: true })(function (signal, err) {
     const crashed = typeof err !== 'string';
 
     if (crashed) {
+        if (err.statusCode >= 500) {
+            delete err.body;
+        }
+
         log.error([
             package.name + ' crashed! If you think this is a problem with the framework (and not your code), then please create an issue with the following log:',
             `package.version: ${package.version || undefined}; node: ${process.version} ${process.platform} ${process.arch}}`,
@@ -39,12 +43,14 @@ require('death')({ uncaughtException: true })(function (signal, err) {
         ].join('\r\n'));
 
         log.error('Create an issue here: https://github.com/Nicklason/bot-framework/issues/new');
-    } else {
-        log.warn('Received kill signal `' + signal + '`, stopping...');
     }
 
     // Check if it is an error (error object) or a signal (string)
-    handler.shutdown(crashed ? err : null);
+    const first = handler.shutdown(crashed ? err : null) !== false;
+
+    if (first && !crashed) {
+        log.warn('Received kill signal `' + signal + '`, stopping...');
+    }
 });
 
 const SteamUser = require('steam-user');
