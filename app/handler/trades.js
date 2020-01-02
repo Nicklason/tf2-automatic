@@ -75,7 +75,7 @@ exports.createOffer = function (details, callback) {
 
     inventory.getDictionary(seller, false, function (err, sellerDict) {
         if (err) {
-            return callback(err);
+            return callback(null, 'Failed to load inventories, Steam might be down');
         }
 
         const sellerItems = (sellerDict[match.sku] || []);
@@ -104,7 +104,7 @@ exports.createOffer = function (details, callback) {
 
         inventory.getDictionary(buyer, false, function (err, buyerDict) {
             if (err) {
-                return callback(err);
+                return callback(null, 'Failed to load inventories, Steam might be down');
             }
 
             const buyerCurrenciesWithAssetids = inventory.getCurrencies(buyerDict);
