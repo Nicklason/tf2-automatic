@@ -33,6 +33,8 @@ const EXPORTED_FUNCTIONS = {
             require('lib/ptf-socket').disconnect();
             require('lib/client').logOff();
 
+            log.warn('Exiting...');
+
             log.end();
 
             process.exit(err === null ? 0 : 1);
