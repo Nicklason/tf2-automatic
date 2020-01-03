@@ -249,10 +249,6 @@ exports.handleMessage = function (steamID, message) {
         return;
     }
 
-    if (!admin) {
-        messages.push(steamID64);
-    }
-
     log.info('Message from ' + friend.player_name + ' (' + steamID64 + '): ' + message);
 
     if (command === 'help') {
