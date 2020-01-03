@@ -160,6 +160,8 @@ function handlePriceChange (data) {
 
         const match = exports.get(data.sku);
         if (match !== null && match.autoprice === true) {
+            log.debug('Price of ' + match.name + ' (' + match.sku + ') changed');
+
             // Update prices
             match.buy = new Currencies(data.buy);
             match.sell = new Currencies(data.sell);
