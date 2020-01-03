@@ -174,7 +174,11 @@ handler.onRun(function (opts) {
 
                                 log.info('Creating listings...');
 
-                                require('handler/listings').checkAll(function () {
+                                require('handler/listings').checkAll(function (err) {
+                                    if (err) {
+                                        throw err;
+                                    }
+
                                     log.info('Getting Steam API key...');
 
                                     // Set cookies for the tradeoffer manager which will start the polling

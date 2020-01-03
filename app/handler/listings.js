@@ -5,6 +5,8 @@ const prices = require('app/prices');
 const inventory = require('app/inventory');
 const listingManager = require('lib/bptf-listings');
 
+const backoff = require('utils/exponentialBackoff');
+
 const templates = {
     buy: process.env.BPTF_DETAILS_BUY || 'I am buying your %name% for %price%, I have %current_stock% / %max_stock%.',
     sell: process.env.BPTF_DETAILS_SELL || 'I am selling my %name% for %price%, I am selling %amount_trade%.'
@@ -77,53 +79,89 @@ exports.checkBySKU = function (sku, data) {
 };
 
 exports.checkAll = function (callback) {
-    // Remove all listings
-    listingManager.listings.forEach((listing) => listing.remove());
-
-    const pricelist = prices.getPricelist();
-
-    let index = 0;
-
-    const interval = setInterval(function () {
-        const chunk = pricelist.slice(index, index + 50);
-
-        if (chunk.length === 0) {
-            return clearInterval(interval);
+    // Wait for listings to be made / removed
+    waitForListings(function (err) {
+        if (err) {
+            return callback(err);
         }
 
-        log.debug('Enqueueing ' + pluralize('listing', chunk.length, true) + '...');
+        // Remove all listings
+        listingManager.listings.forEach((listing) => listing.remove());
 
-        for (let i = 0; i < chunk.length; i++) {
-            exports.checkBySKU(chunk[i].sku, pricelist[i]);
-        }
+        const pricelist = prices.getPricelist();
 
-        index += 50;
-    }, 100);
+        let index = 0;
+        const chunkSize = 50;
 
-    const timeout = setTimeout(function () {
-        log.debug('Did not create any listings');
-        doneCheckingAll();
-    }, 1000);
+        const interval = setInterval(function () {
+            const chunk = pricelist.slice(index, index + chunkSize);
 
-    listingManager.on('actions', onActionsEvent);
+            if (chunk.length === 0) {
+                return clearInterval(interval);
+            }
 
-    function onActionsEvent (actions) {
-        // Got actions event, stop the timeout
-        clearTimeout(timeout);
-        if (actions.create.length + listingManager.listings.length >= listingManager.cap || (listingManager._listingsWaitingForRetry() + listingManager._listingsWaitingForInventoryCount() - actions.create.length === 0 && actions.remove.length === 0)) {
-            // Reached listing cap / finished adding listings, stop
-            log.debug('Done creating listings');
+            log.debug('Enqueueing ' + pluralize('listing', chunk.length, true) + '...');
+
+            for (let i = 0; i < chunk.length; i++) {
+                exports.checkBySKU(chunk[i].sku, pricelist[i]);
+            }
+
+            index += chunkSize;
+        }, 100);
+
+        const timeout = setTimeout(function () {
+            log.debug('Did not create any listings');
             doneCheckingAll();
-        }
-    }
+        }, 1000);
 
-    function doneCheckingAll () {
-        clearTimeout(timeout);
-        clearInterval(interval);
-        listingManager.removeListener('actions', onActionsEvent);
-        callback();
-    }
+        listingManager.on('actions', onActionsEvent);
+
+        function onActionsEvent (actions) {
+            // Got actions event, stop the timeout
+            clearTimeout(timeout);
+            // Don't need to check for listings we already have because they will be deleted
+            if (actions.create.length >= listingManager.cap || (listingManager._listingsWaitingForRetry() + listingManager._listingsWaitingForInventoryCount() - actions.create.length === 0 && actions.remove.length === 0)) {
+                // Reached listing cap / finished adding listings, stop
+                log.debug('Done creating listings');
+                doneCheckingAll();
+            }
+        }
+
+        function doneCheckingAll () {
+            clearTimeout(timeout);
+            clearInterval(interval);
+            listingManager.removeListener('actions', onActionsEvent);
+            callback(null);
+        }
+    });
 };
+
+function waitForListings (callback) {
+    let checks = 0;
+    check();
+
+    function check () {
+        log.debug('Checking listings...');
+        checks++;
+        const currentCount = listingManager.listings.length;
+
+        listingManager.getListings(function (err) {
+            if (err) {
+                return callback(err);
+            }
+
+            if (listingManager.listings.length !== currentCount) {
+                log.debug('Count changed: ' + listingManager.listings.length + ' listed, ' + currentCount + ' previously');
+                setTimeout(function () {
+                    check();
+                }, backoff(checks));
+            } else {
+                log.debug('Count didn\'t change');
+                return callback(null);
+            }
+        });
+    }
+}
 
 function getDetails (intent, pricelistEntry) {
     const buying = intent === 0;
