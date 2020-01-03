@@ -57,6 +57,11 @@ exports.init = function (callback) {
 
             // Go through pricestf prices
             for (let j = 0; j < prices.length; j++) {
+                if (prices[j].buy === null) {
+                    prices.splice(j, 1);
+                    break;
+                }
+
                 if (pricelist[i].name === prices[j].name) {
                     // Found matching items
                     if (pricelist[i].time < prices[j].time) {
@@ -69,7 +74,6 @@ exports.init = function (callback) {
 
                         handler.onPriceChange(pricelist[i].sku);
                     }
-
 
                     // When a match is found remove it from the ptf pricelist
                     prices.splice(j, 1);
@@ -298,6 +302,10 @@ exports.add = function (sku, data, callback) {
             return callback(err);
         }
 
+        if (prices.buy === null) {
+            return callback(new Error('Item has no buy price on pricestf'));
+        }
+
         entry.buy = prices.buy;
         entry.sell = prices.sell;
         entry.time = prices.time;
@@ -395,6 +403,10 @@ exports.update = function (sku, data, callback) {
         handling.splice(handling.indexOf(match.sku), 1);
         if (err) {
             return callback(err);
+        }
+
+        if (prices.buy === null) {
+            return callback(new Error('Item has no buy price on pricestf'));
         }
 
         copy.buy = prices.buy;
