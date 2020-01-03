@@ -6,14 +6,14 @@ const log = require('lib/logger');
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData', 'onPricelist'];
 const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onPriceChange', 'onTradeOfferChanged', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onLogin', 'onLoginFailure', 'onLoginThrottle', 'onInventoryUpdated', 'onCraftingCompleted', 'onUseCompleted', 'onDeleteCompleted', 'onTF2QueueCompleted', 'onQueue', 'onBptfAuth', 'onSchema', 'onHeartbeat', 'onListings'];
 const EXPORTED_FUNCTIONS = {
-    shutdown: function (err) {
+    shutdown: function (err, rudely = false) {
         log.debug('Shutdown has been initialized', { err: err });
 
         shutdownCount++;
 
         if (shutdownCount >= 10) {
             log.warn('Forcing exit...');
-            process.exit(1);
+            stop();
         } else if (shutdownCount > 1) {
             return false;
         }
@@ -23,11 +23,19 @@ const EXPORTED_FUNCTIONS = {
         // Stop the polling of trade offers
         manager.pollInterval = -1;
 
+        if (rudely) {
+            stop();
+        }
+
         // TODO: Check if a poll is being made before stopping the bot
 
         handler.onShutdown(err, function () {
             log.debug('Shutdown callback has been called, cleaning up');
 
+            stop();
+        });
+
+        function stop () {
             manager.shutdown();
             require('lib/bptf-listings').shutdown();
             require('lib/ptf-socket').disconnect();
@@ -38,7 +46,7 @@ const EXPORTED_FUNCTIONS = {
             log.end();
 
             process.exit(err === null ? 0 : 1);
-        });
+        }
     },
     setLoginAttempts (attempts) {
         require('app/login-attempts').setAttempts(attempts);

@@ -31,7 +31,7 @@ require('death')({ uncaughtException: true })(function (signal, err) {
     const crashed = typeof err !== 'string';
 
     if (crashed) {
-        if (err.statusCode >= 500) {
+        if (err.statusCode >= 500 || err.statusCode === 429) {
             delete err.body;
         }
 
@@ -45,11 +45,28 @@ require('death')({ uncaughtException: true })(function (signal, err) {
         log.error('Create an issue here: https://github.com/Nicklason/bot-framework/issues/new');
     }
 
+    if (signal === 'SIGKILL') {
+        handler.shutdown(null, true);
+    }
+
     // Check if it is an error (error object) or a signal (string)
     const first = handler.shutdown(crashed ? err : null) !== false;
 
     if (first && !crashed) {
         log.warn('Received kill signal `' + signal + '`, stopping...');
+    }
+});
+
+process.on('message', function (message) {
+    if (message === 'shutdown') {
+        // For using PM2 on Windows
+        const first = handler.shutdown(null) !== false;
+
+        if (first) {
+            log.warn('Received shutdown message, stopping...');
+        }
+    } else {
+        log.warn('Received message `' + message + '`');
     }
 });
 

@@ -21,7 +21,9 @@ module.exports = function (err, done) {
             listingManager.removeListener('actions', onActions);
             checkFiles();
         } else {
+            listingManager.removeListener('actions', onActions);
             listingManager.listings.forEach((listing) => listing.remove());
+            listingManager.on('actions', onActions);
         }
     }
 
