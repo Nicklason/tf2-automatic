@@ -70,6 +70,9 @@ exports.init = function (callback) {
                         handler.onPriceChange(pricelist[i].sku);
                     }
 
+
+                    // When a match is found remove it from the ptf pricelist
+                    prices.splice(j, 1);
                     break;
                 }
             }
