@@ -44,7 +44,7 @@ module.exports = function (loginKey, callback) {
             opts.password = process.env.STEAM_PASSWORD;
         }
 
-        opts.logonID = Math.round(Math.random() * 69420);
+        opts.logonID = 69420;
         opts.rememberPassword = true;
 
         loginAttempts.newAttempt();
