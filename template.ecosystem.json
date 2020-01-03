@@ -1,0 +1,35 @@
+{
+    "apps" : [{
+        "name": "tf2-automatic",
+        "script": "app.js",
+        "shutdown_with_message": true,
+        "kill_timeout": 60000,
+        "env": {
+            "NODE_ENV": "production",
+
+            "STEAM_ACCOUNT_NAME": "",
+            "STEAM_PASSWORD": "",
+            "STEAM_SHARED_SECRET": "",
+            "STEAM_IDENTITY_SECRET": "",
+
+            "PRICESTF_API_TOKEN": "",
+            "BPTF_ACCESS_TOKEN": "",
+            "BPTF_API_KEY": "",
+
+            "BPTF_DETAILS_BUY": "I am buying your %name% for %price%, I have %current_stock% / %max_stock%.",
+            "BPTF_DETAILS_SELL": "I am selling my %name% for %price%, I am selling %amount_trade%.",
+
+            "MINIMUM_SCRAP": 9,
+            "MINIMUM_RECLAIMED": 9,
+
+            "SKIP_ACCOUNT_LIMITATIONS": false,
+            "ALLOW_ESCROW": false,
+            "ALLOW_OVERPAY": true,
+
+            "ADMINS": ["76561198120070906"],
+            "ALERTS": "none",
+
+            "DEBUG": false
+        }
+    }]
+}
