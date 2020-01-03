@@ -9,11 +9,13 @@ const EXPORTED_FUNCTIONS = {
     shutdown: function (err, rudely = false) {
         log.debug('Shutdown has been initialized', { err: err });
 
+        shutdownCount++;
+
+        const manager = require('lib/manager');
+
         if (rudely) {
             stop();
         }
-
-        shutdownCount++;
 
         if (shutdownCount >= 10) {
             log.warn('Forcing exit...');
@@ -24,8 +26,6 @@ const EXPORTED_FUNCTIONS = {
 
         // Stop price updates
         require('lib/ptf-socket').disconnect();
-
-        const manager = require('lib/manager');
 
         // Stop the polling of trade offers
         manager.pollInterval = -1;
@@ -45,9 +45,7 @@ const EXPORTED_FUNCTIONS = {
 
             log.warn('Exiting...');
 
-            log.end();
-
-            process.exit(err === null ? 0 : 1);
+            process.exit(0);
         }
     },
     setLoginAttempts (attempts) {
