@@ -16,7 +16,9 @@ module.exports = {
         },
         intent: {
             // 0 = buy, 1 = sell, 2 = bank
-            type: 'integer'
+            type: 'integer',
+            minimum: 0,
+            maximum: 2
         },
         autoprice: {
             // if the item is autopriced or not
