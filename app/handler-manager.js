@@ -9,6 +9,10 @@ const EXPORTED_FUNCTIONS = {
     shutdown: function (err, rudely = false) {
         log.debug('Shutdown has been initialized', { err: err });
 
+        if (rudely) {
+            stop();
+        }
+
         shutdownCount++;
 
         if (shutdownCount >= 10) {
@@ -18,14 +22,13 @@ const EXPORTED_FUNCTIONS = {
             return false;
         }
 
+        // Stop price updates
+        require('lib/ptf-socket').disconnect();
+
         const manager = require('lib/manager');
 
         // Stop the polling of trade offers
         manager.pollInterval = -1;
-
-        if (rudely) {
-            stop();
-        }
 
         // TODO: Check if a poll is being made before stopping the bot
 
@@ -38,7 +41,6 @@ const EXPORTED_FUNCTIONS = {
         function stop () {
             manager.shutdown();
             require('lib/bptf-listings').shutdown();
-            require('lib/ptf-socket').disconnect();
             require('lib/client').logOff();
 
             log.warn('Exiting...');
