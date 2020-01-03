@@ -1,9 +1,15 @@
+const SteamUser = require('steam-user');
+
 const log = require('lib/logger');
+const client = require('lib/client');
 const listingManager = require('lib/bptf-listings');
+const handlerManager = require('app/handler-manager');
 
 const files = require('utils/files');
 
 module.exports = function (err, done) {
+    client.setPersona(SteamUser.EPersonaState.Snooze);
+
     listingManager.actions.create = [];
 
     if (listingManager.ready !== true || (listingManager.listings.length === 0 && listingManager._processingActions !== true)) {
