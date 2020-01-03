@@ -4,6 +4,8 @@
         "script": "app.js",
         "shutdown_with_message": true,
         "kill_timeout": 60000,
+        "out_file": "/dev/null",
+        "error_file": "/dev/null",
         "env": {
             "NODE_ENV": "production",
 

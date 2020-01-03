@@ -12,7 +12,7 @@ const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SEC
  * @param {Function} callback
  */
 module.exports = function (loginKey, callback) {
-    log.debug('Starting login attempt', { login_key: loginKey });
+    log.debug('Starting login attempt', { login_key: loginKey, private: true });
 
     REQUIRED_OPTS.forEach(function (optName) {
         if (!process.env[optName]) {

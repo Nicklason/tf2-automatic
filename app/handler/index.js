@@ -53,6 +53,7 @@ exports.onTradeOfferChanged = require('handler/trades').offerChanged;
 exports.onFriendRelationship = require('handler/friends').friendRelationChanged;
 
 exports.onBptfAuth = function (bptfAuth) {
+    bptfAuth.private = true;
     log.warn('Please add the backpack.tf API key and access token to the config!', bptfAuth);
 };
 
