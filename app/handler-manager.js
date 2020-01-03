@@ -85,10 +85,10 @@ const EXPORTED_FUNCTIONS = {
         require('app/crafting').useItem(assetid);
     },
     isReady () {
-        return isReady;
+        return exports.isReady();
     },
     isShuttingDown () {
-        return shutdownCount > 0;
+        return exports.isShuttingDown();
     }
 };
 
@@ -134,6 +134,10 @@ exports.setup = function () {
 
 exports.isReady = function () {
     return isReady;
+};
+
+exports.isShuttingDown = function () {
+    return shutdownCount > 0;
 };
 
 exports.setReady = function () {
