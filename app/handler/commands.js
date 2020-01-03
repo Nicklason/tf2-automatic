@@ -492,7 +492,13 @@ exports.handleMessage = function (steamID, message) {
         }
         if (params.intent === undefined) {
             params.intent = 2;
+        } else if (typeof params.intent === 'string') {
+            const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
+            if (intent !== -1) {
+                params.intent = intent;
+            }
         }
+
         if (typeof params.buy === 'object') {
             params.buy.keys = params.buy.keys || 0;
             params.buy.metal = params.buy.metal || 0;
@@ -550,6 +556,13 @@ exports.handleMessage = function (steamID, message) {
 
             if (params.autoprice === undefined) {
                 params.autoprice = false;
+            }
+        }
+
+        if (typeof params.intent === 'string') {
+            const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
+            if (intent !== -1) {
+                params.intent = intent;
             }
         }
 
