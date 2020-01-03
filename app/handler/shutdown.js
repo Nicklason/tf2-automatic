@@ -3,7 +3,6 @@ const SteamUser = require('steam-user');
 const log = require('lib/logger');
 const client = require('lib/client');
 const listingManager = require('lib/bptf-listings');
-const handlerManager = require('app/handler-manager');
 
 const files = require('utils/files');
 
