@@ -46,6 +46,7 @@ require('death')({ uncaughtException: true })(function (signal, err) {
     }
 
     if (signal === 'SIGKILL') {
+        log.warn('Received kill signal `' + signal + '`, stopping...');
         handler.shutdown(null, true);
     }
 
