@@ -29,6 +29,7 @@
             "ALLOW_OVERPAY": true,
 
             "ADMINS": ["76561198120070906"],
+            "GROUPS": ["103582791462300957"],
             "ALERTS": "none",
 
             "DEBUG": false
