@@ -134,11 +134,10 @@ handler.onRun(function (opts) {
 
                 require('lib/bptf-login').setCookies(cookies);
 
-                require('utils/getBptfAuth')(function (err, bptfAuth) {
+                require('app/bptf').setup(function (err) {
                     if (err) {
                         throw err;
                     }
-
                     log.info('Initializing tf2-schema...');
 
                     schemaManager.init(function (err) {
@@ -149,7 +148,7 @@ handler.onRun(function (opts) {
                         log.info('tf2-schema is ready!');
 
                         // Set access token
-                        listingManager.token = bptfAuth.accessToken;
+                        listingManager.token = process.env.BPTF_ACCESS_TOKEN;
                         // Set schema for bptf-listings
                         listingManager.schema = schemaManager.schema;
 
