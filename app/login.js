@@ -4,8 +4,6 @@ const client = require('lib/client');
 const loginAttempts = require('app/login-attempts');
 const handlerManager = require('app/handler-manager');
 
-const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SECRET', 'STEAM_IDENTITY_SECRET'];
-
 /**
  * Signs in to Steam and catches login error
  * @param {String} loginKey
@@ -13,12 +11,6 @@ const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SEC
  */
 module.exports = function (loginKey, callback) {
     log.debug('Starting login attempt', { login_key: loginKey, private: true });
-
-    REQUIRED_OPTS.forEach(function (optName) {
-        if (!process.env[optName]) {
-            throw new Error('Missing ' + optName.slice(6).toLowerCase().replace(/_/g, ' '));
-        }
-    });
 
     const wait = loginAttempts.wait();
 
