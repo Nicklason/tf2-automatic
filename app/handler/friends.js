@@ -53,7 +53,7 @@ function onNewFriend (steamID, tries = 0) {
 
         // Wait for friend info to be available
         setTimeout(function () {
-            onNewFriend(steamID);
+            onNewFriend(steamID, tries);
         }, backoff(tries - 1, 100));
         return;
     }
