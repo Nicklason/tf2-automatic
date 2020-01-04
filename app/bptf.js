@@ -101,7 +101,7 @@ function setTradeOfferUrl (callback) {
                     return callback(err);
                 }
 
-                log.warn('Updated trade offer url on backpack.tf (' + newSettings.tradeoffers_url + ') - please disable this in the config (SKIP_BPTF_TRADEOFFERURL=false)');
+                log.warn('Updated trade offer url on backpack.tf (' + newSettings.tradeoffers_url + ') - please disable this in the config');
 
                 return callback(null);
             });
