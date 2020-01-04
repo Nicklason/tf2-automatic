@@ -1,4 +1,10 @@
-require('module-alias/register');
+try {
+    require('module-alias/register');
+} catch (err) {
+    /* eslint-disable-next-line no-console */
+    console.error('Missing dependencies! Install them with `npm install`');
+    process.exit(1);
+}
 
 const dotenv = require('dotenv');
 dotenv.config();
