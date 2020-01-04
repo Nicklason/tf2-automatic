@@ -24,6 +24,9 @@ exports.onReady = function () {
 
     // Check friend requests that we got while offline
     require('handler/friends').checkFriendRequests();
+
+    // Check group invites that we got while offline
+    require('handler/groups').checkGroupInvites();
 };
 
 exports.onTF2QueueCompleted = function () {
@@ -51,6 +54,7 @@ exports.onPriceChange = require('handler/listings').checkBySKU;
 exports.onNewTradeOffer = require('handler/trades').newOffer;
 exports.onTradeOfferChanged = require('handler/trades').offerChanged;
 exports.onFriendRelationship = require('handler/friends').friendRelationChanged;
+exports.onGroupRelationship = require('handler/groups').groupRelationChanged;
 
 exports.onBptfAuth = function (bptfAuth) {
     bptfAuth.private = true;
