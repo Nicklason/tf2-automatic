@@ -192,9 +192,15 @@ handler.onRun(function (opts) {
                                             throw err;
                                         }
 
-                                        handlerManager.setReady();
+                                        require('handler/friends').getMaxFriends(function (err) {
+                                            if (err) {
+                                                throw err;
+                                            }
 
-                                        handler.onReady();
+                                            handlerManager.setReady();
+
+                                            handler.onReady();
+                                        });
                                     });
                                 });
                             });
