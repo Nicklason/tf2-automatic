@@ -20,7 +20,7 @@ module.exports = function (opts, data) {
 
     files.writeFile(paths[pathKey], data, opts.json, function (err) {
         if (err) {
-            log.warn('Error saving ' + pathKey, err);
+            log.warn('Error saving ' + pathKey + ': ', err);
         }
     });
 };

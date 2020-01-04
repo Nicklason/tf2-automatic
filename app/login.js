@@ -65,7 +65,7 @@ module.exports = function (loginKey, callback) {
         function errorEvent (err) {
             client.removeListener('loggedOn', loggedOnEvent);
 
-            log.debug('Failed to sign in to Steam', err);
+            log.debug('Failed to sign in to Steam: ', err);
 
             gotEvent(err);
         }

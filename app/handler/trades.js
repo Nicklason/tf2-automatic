@@ -269,7 +269,7 @@ exports.createOffer = function (details, callback) {
                 }
 
                 if (requiredCurrencies[sku] !== 0) {
-                    log.warn('Failed to create offer because missing buyer pure');
+                    log.warn('Failed to create offer because missing buyer pure', { requiredCurrencies: requiredCurrencies, sku: sku });
                     return callback(null, 'Something went wrong constructing the offer, try again later');
                 }
             }
@@ -316,7 +316,7 @@ exports.createOffer = function (details, callback) {
 
             checkEscrow(offer, function (err, hasEscrow) {
                 if (err) {
-                    log.warn('Failed to check escrow', err);
+                    log.warn('Failed to check escrow: ', err);
                     return callback(err);
                 }
 
@@ -558,13 +558,13 @@ exports.newOffer = function (offer, done) {
 
     // Check if the offer is from an admin
     if (isAdmin(offer.partner)) {
-        offer.log('info', 'is from an admin, accepting. Summary:\n' + offer.summarize());
+        offer.log('trade', 'is from an admin, accepting. Summary:\n' + offer.summarize());
         done('accept', 'ADMIN');
         return;
     }
 
     if (offer.itemsToGive.length === 0 && ['donate', 'gift'].indexOf(offer.message.toLowerCase()) !== -1) {
-        offer.log('info', 'is a gift offer, accepting. Summary:\n' + offer.summarize());
+        offer.log('trade', 'is a gift offer, accepting. Summary:\n' + offer.summarize());
         done('accept', 'GIFT');
         return;
     } else if (offer.itemsToReceive.length === 0 || offer.itemsToGive.length === 0) {
@@ -707,7 +707,7 @@ exports.newOffer = function (offer, done) {
 
     checkEscrow(offer, function (err, hasEscrow) {
         if (err) {
-            log.warn('Failed to check escrow', err);
+            log.warn('Failed to check escrow: ', err);
             return done();
         }
 
@@ -720,7 +720,7 @@ exports.newOffer = function (offer, done) {
 
         checkBanned(offer.partner.getSteamID64(), function (err, isBanned) {
             if (err) {
-                log.warn('Failed to check banned', err);
+                log.warn('Failed to check banned: ', err);
                 return done();
             }
 
