@@ -10,6 +10,7 @@ const listings = require('handler/listings');
 const client = require('lib/client');
 const manager = require('lib/manager');
 const admin = require('app/admins');
+const groups = require('handler/groups');
 
 const isAdmin = admin.isAdmin;
 const checkBanned = require('utils/isBanned');
@@ -802,6 +803,8 @@ exports.offerChanged = function (offer, oldState) {
 
             listings.checkBySKU(sku);
         }
+
+        groups.inviteToGroups(offer.partner);
     }
 
     if (handledByUs) {
