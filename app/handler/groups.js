@@ -47,7 +47,7 @@ exports.checkGroupInvites = function () {
                     return;
                 }
 
-                log.info('Not member of group "' + group.name + '", joining...');
+                log.info('Not member of group "' + group.name + ' ("' + steamID + '"), joining...');
                 group.join(function (err) {
                     if (err) {
                         log.warn('Failed to join group: ', err);
