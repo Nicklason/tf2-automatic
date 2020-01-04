@@ -3,6 +3,7 @@ const isPathInside = require('is-path-inside');
 
 const log = require('lib/logger');
 
+const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SECRET', 'STEAM_IDENTITY_SECRET'];
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData', 'onPricelist'];
 const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onGroupRelationship', 'onPriceChange', 'onTradeOfferChanged', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onLogin', 'onLoginFailure', 'onLoginThrottle', 'onInventoryUpdated', 'onCraftingCompleted', 'onUseCompleted', 'onDeleteCompleted', 'onTF2QueueCompleted', 'onQueue', 'onBptfAuth', 'onSchema', 'onHeartbeat', 'onListings'];
 const EXPORTED_FUNCTIONS = {
@@ -127,6 +128,8 @@ exports.setup = function () {
         throw err;
     }
 
+    checkEnv();
+
     validate();
 
     bindThis();
@@ -143,6 +146,17 @@ exports.isShuttingDown = function () {
 exports.setReady = function () {
     isReady = true;
 };
+
+/**
+ * Makes sure that every required environment variable is there
+ */
+function checkEnv () {
+    REQUIRED_OPTS.forEach(function (optName) {
+        if (!process.env[optName]) {
+            throw new Error('Missing required environment variable "' + optName.slice(6).toLowerCase().replace(/_/g, '"'));
+        }
+    });
+}
 
 /**
  * Makes sure every required event is added to the handler and adds exported functions
