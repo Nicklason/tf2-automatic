@@ -3,6 +3,7 @@ const SteamUser = require('steam-user');
 const client = require('lib/client');
 const log = require('lib/logger');
 
+const admins = require('app/admins');
 const backoff = require('utils/exponentialBackoff');
 
 exports.checkFriendRequests = function () {
@@ -20,6 +21,18 @@ exports.checkFriendRequests = function () {
             respondToFriendRequest(steamID64);
         }
     }
+
+    admins.getAdmins().forEach(function (steamID) {
+        if (!exports.isFriend(steamID)) {
+            log.info('Not friends with admin ' + steamID + ', sending friend request...');
+            client.addFriend(steamID, function (err) {
+                if (err) {
+                    log.warn('Failed to send friend request: ', err);
+                    return;
+                }
+            });
+        }
+    });
 };
 
 exports.friendRelationChanged = function (steamID, relationship) {
@@ -35,34 +48,38 @@ function onNewFriend (steamID, tries = 0) {
         log.debug('Now friends with ' + steamID.getSteamID64());
     }
 
-    if (!exports.isFriend(steamID) && client.myFriends[steamID.getSteamID64()] !== SteamUser.EFriendRelationship.RequestRecipient) {
-        return;
-    }
-
-    const friend = exports.getFriend(steamID);
-
-    if (friend === null || friend.player_name === undefined) {
-        tries++;
-
-        if (tries >= 5) {
-            log.info('I am now friends with ' + steamID.getSteamID64());
-
-            client.chatMessage(steamID, 'Hi! If you don\'t know how things work, please type "!help" :)');
+    setImmediate(function () {
+        if (!exports.isFriend(steamID)) {
             return;
         }
 
-        // Wait for friend info to be available
-        setTimeout(function () {
-            onNewFriend(steamID, tries);
-        }, backoff(tries - 1, 100));
-        return;
-    }
+        const friend = exports.getFriend(steamID);
 
-    log.info('I am now friends with ' + friend.player_name + ' (' + steamID.getSteamID64() + ')');
+        if (friend === null || friend.player_name === undefined) {
+            tries++;
 
-    client.chatMessage(steamID, 'Hi ' + friend.player_name + '! If you don\'t know how things work, please type "!help" :)');
+            if (tries >= 5) {
+                log.info('I am now friends with ' + steamID.getSteamID64());
 
-    // TODO: Check max friends
+                client.chatMessage(steamID, 'Hi! If you don\'t know how things work, please type "!help" :)');
+                return;
+            }
+
+            log.debug('Waiting for name');
+
+            // Wait for friend info to be available
+            setTimeout(function () {
+                onNewFriend(steamID, tries);
+            }, backoff(tries - 1, 100));
+            return;
+        }
+
+        log.info('I am now friends with ' + friend.player_name + ' (' + steamID.getSteamID64() + ')');
+
+        client.chatMessage(steamID, 'Hi ' + friend.player_name + '! If you don\'t know how things work, please type "!help" :)');
+
+        // TODO: Check max friends
+    });
 }
 
 function respondToFriendRequest (steamID) {

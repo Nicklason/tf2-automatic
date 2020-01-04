@@ -24,3 +24,7 @@ exports.isAdmin = function (steamID) {
     const steamid64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
     return admins.indexOf(steamid64) !== -1;
 };
+
+exports.getAdmins = function () {
+    return admins;
+};
