@@ -1,6 +1,7 @@
 const TradeOfferManager = require('steam-tradeoffer-manager');
 const Currencies = require('tf2-currencies');
 const pluralize = require('pluralize');
+const retry = require('retry');
 
 const log = require('lib/logger');
 const inventory = require('app/inventory');
@@ -12,6 +13,7 @@ const admin = require('app/admins');
 
 const isAdmin = admin.isAdmin;
 const checkBanned = require('utils/isBanned');
+const communityLoginCallback = require('utils/communityLoginCallback');
 
 exports.getActiveOffer = function (steamID) {
     const pollData = require('lib/manager').pollData;
@@ -740,12 +742,39 @@ function checkEscrow (offer, callback) {
         return callback(null, false);
     }
 
-    offer.getUserDetails(function (err, me, them) {
-        if (err) {
-            return callback(err);
-        }
+    const operation = retry.operation({
+        retries: 5,
+        factor: 2,
+        minTimeout: 1000,
+        randomize: true
+    });
 
-        return callback(null, them.escrowDays !== 0);
+    operation.attempt(function () {
+        log.debug('Attempting to check escrow...');
+        offer.getUserDetails(function (err, me, them) {
+            log.debug('Escrow callback');
+            if (!err || err.message !== 'Not Logged In') {
+                // No error / not because session expired
+                if (operation.retry(err)) {
+                    return;
+                }
+
+                if (err) {
+                    return callback(operation.mainError());
+                }
+
+                return callback(null, them.escrowDays !== 0);
+            }
+
+            // Reset attempts
+            operation.reset();
+
+            // Wait for bot to sign in to retry
+            communityLoginCallback(true, function () {
+                // Callback was called, ignore error from callback and retry
+                operation.retry(err);
+            });
+        });
     });
 }
 
