@@ -45,7 +45,7 @@ const EXPORTED_FUNCTIONS = {
 
             log.warn('Exiting...');
 
-            process.exit(0);
+            process.exit(err ? 1 : 0);
         }
     },
     setLoginAttempts (attempts) {
