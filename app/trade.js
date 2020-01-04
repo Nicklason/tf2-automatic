@@ -262,7 +262,7 @@ exports.sendOffer = function (offer, callback) {
         offer.data('actionTime', actionTime);
 
         if (err) {
-            log.warn('Failed to send offer ', err);
+            log.warn('Failed to send offer: ', err);
 
             // Failed to send the offer, the items are no longer in trade
             offer.itemsToGive.forEach(function (item) {
@@ -466,7 +466,7 @@ exports.acceptOffer = function (offer, callback) {
         offer.data('actionTime', actionTime);
 
         if (err) {
-            log.warn('Offer #' + offer.id + ' failed to accept offer', err);
+            log.warn('Offer #' + offer.id + ' failed to accept offer: ', err);
             return callback(err);
         }
 
@@ -508,7 +508,7 @@ function acceptConfirmation (offer, callback) {
         const handler = handlerManager.getHandler();
 
         if (err) {
-            log.debug('Got an error while trying to accept mobile confirmation', err);
+            log.debug('Got an error while trying to accept mobile confirmation: ', err);
             handler.onConfirmationError(offer.id, err);
         } else {
             log.debug('Accepted mobile confirmation', { offer_id: offer.id, confirmation_time: confirmationTime });
@@ -595,7 +595,7 @@ function processNextOffer () {
 
     getOfferRetry(offerId, function (err, offer) {
         if (err) {
-            log.warn('Failed to get offer #' + offerId, err);
+            log.warn('Failed to get offer #' + offerId + ': ', err);
             // After many retries we could not get the offer data
 
             if (receivedOffers.length !== 1) {

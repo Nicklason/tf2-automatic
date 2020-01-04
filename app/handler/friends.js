@@ -74,7 +74,7 @@ function respondToFriendRequest (steamID) {
 
     client.addFriend(steamID, function (err) {
         if (err) {
-            log.warn('Failed to send friend request to ' + steamID64, err);
+            log.warn('Failed to send friend request to ' + steamID64 + ': ', err);
             return;
         }
 

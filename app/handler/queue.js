@@ -49,7 +49,7 @@ exports.handleQueue = function () {
     require('handler/trades').createOffer(entry, function (err, failedMessage) {
         queue.splice(0, 1);
         if (err) {
-            log.debug('Failed to create offer', err);
+            log.debug('Failed to create offer: ', err);
             client.chatMessage(entry.steamid, 'Something went wrong while trying to make the offer, try again later!');
         } else if (failedMessage) {
             client.chatMessage(entry.steamid, 'I failed to make the offer. Reason: ' + failedMessage + '.');
