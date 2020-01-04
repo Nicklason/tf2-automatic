@@ -88,51 +88,70 @@ exports.checkAll = function (callback) {
         // Remove all listings
         listingManager.listings.forEach((listing) => listing.remove());
 
-        const pricelist = prices.getPricelist();
+        // Clear timeout
+        clearTimeout(listingManager._timeout);
 
-        let index = 0;
-        const chunkSize = 50;
+        // Clear create queue if there were somehow listings in that
+        listingManager.actions.create = [];
 
-        const interval = setInterval(function () {
-            const chunk = pricelist.slice(index, index + chunkSize);
+        const removeCount = listingManager.actions.remove.length;
 
-            if (chunk.length === 0) {
-                return clearInterval(interval);
+        // Make bptf-listings process actions
+        listingManager._processActions(function (err) {
+            if (err) {
+                return callback(err);
             }
 
-            log.debug('Enqueueing ' + pluralize('listing', chunk.length, true) + '...');
-
-            for (let i = 0; i < chunk.length; i++) {
-                exports.checkBySKU(chunk[i].sku, pricelist[i]);
+            if (removeCount !== 0) {
+                log.debug('Removed listings');
             }
 
-            index += chunkSize;
-        }, 100);
+            const pricelist = prices.getPricelist();
 
-        const timeout = setTimeout(function () {
-            log.debug('Did not create any listings');
-            doneCheckingAll();
-        }, 1000);
+            let index = 0;
+            const chunkSize = 50;
 
-        listingManager.on('actions', onActionsEvent);
+            const interval = setInterval(function () {
+                const chunk = pricelist.slice(index, index + chunkSize);
 
-        function onActionsEvent (actions) {
-            // Got actions event, stop the timeout
-            clearTimeout(timeout);
-            // Don't need to check for listings we already have because they will be deleted
-            if (actions.create.length >= listingManager.cap || (listingManager._listingsWaitingForRetry() + listingManager._listingsWaitingForInventoryCount() - actions.create.length === 0 && actions.remove.length === 0)) {
-                // Reached listing cap / finished adding listings, stop
-                log.debug('Done creating listings');
+                if (chunk.length === 0) {
+                    return clearInterval(interval);
+                }
+
+                log.debug('Enqueueing ' + pluralize('listing', chunk.length, true) + '...');
+
+                for (let i = 0; i < chunk.length; i++) {
+                    exports.checkBySKU(chunk[i].sku, pricelist[i]);
+                }
+
+                index += chunkSize;
+            }, 100);
+
+            const timeout = setTimeout(function () {
+                log.debug('Did not create any listings');
                 doneCheckingAll();
-            }
-        }
+            }, 1000);
 
-        function doneCheckingAll () {
-            clearTimeout(timeout);
-            clearInterval(interval);
-            listingManager.removeListener('actions', onActionsEvent);
-            callback(null);
-        }
+            listingManager.on('actions', onActionsEvent);
+
+            function onActionsEvent (actions) {
+                // Got actions event, stop the timeout
+                clearTimeout(timeout);
+                // Don't need to check for listings we already have because they will be deleted
+                if (actions.create.length >= listingManager.cap || (listingManager._listingsWaitingForRetry() + listingManager._listingsWaitingForInventoryCount() - actions.create.length === 0 && actions.remove.length === 0)) {
+                    // Reached listing cap / finished adding listings, stop
+                    log.debug('Done creating listings');
+                    doneCheckingAll();
+                }
+            }
+
+            function doneCheckingAll () {
+                clearTimeout(timeout);
+                clearInterval(interval);
+                listingManager.removeListener('actions', onActionsEvent);
+                callback(null);
+            }
+        });
     });
 };
 
