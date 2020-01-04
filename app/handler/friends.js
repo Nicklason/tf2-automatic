@@ -3,7 +3,7 @@ const SteamUser = require('steam-user');
 const client = require('lib/client');
 const log = require('lib/logger');
 
-const admins = require('app/admins');
+const admin = require('app/admins');
 const backoff = require('utils/exponentialBackoff');
 
 exports.checkFriendRequests = function () {
@@ -22,7 +22,7 @@ exports.checkFriendRequests = function () {
         }
     }
 
-    admins.getAdmins().forEach(function (steamID) {
+    admin.getAdmins().forEach(function (steamID) {
         if (!exports.isFriend(steamID)) {
             log.info('Not friends with admin ' + steamID + ', sending friend request...');
             client.addFriend(steamID, function (err) {
