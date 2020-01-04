@@ -16,6 +16,32 @@ const isAdmin = admin.isAdmin;
 const checkBanned = require('utils/isBanned');
 const communityLoginCallback = require('utils/communityLoginCallback');
 
+exports.getTradesWithPeople = function (steamIDs) {
+    // Go through polldata data
+
+    const tradesBySteamID = {};
+
+    steamIDs.forEach(function (steamID) {
+        tradesBySteamID[steamID] = 0;
+    });
+
+    for (const offerID in manager.pollData.offerData) {
+        if (!Object.prototype.hasOwnProperty.call(manager.pollData.offerData, offerID)) {
+            continue;
+        }
+
+        const offerData = manager.pollData.offerData[offerID];
+
+        if (!offerData.partner || tradesBySteamID[offerData.partner] === undefined) {
+            continue;
+        }
+
+        tradesBySteamID[offerData.partner]++;
+    }
+
+    return tradesBySteamID;
+};
+
 exports.getActiveOffer = function (steamID) {
     const pollData = require('lib/manager').pollData;
 
