@@ -24,6 +24,7 @@
             "MINIMUM_SCRAP": 9,
             "MINIMUM_RECLAIMED": 9,
 
+            "SKIP_BPTF_TRADEOFFERURL": false,
             "SKIP_ACCOUNT_LIMITATIONS": false,
             "ALLOW_ESCROW": false,
             "ALLOW_OVERPAY": true,
