@@ -257,7 +257,7 @@ exports.handleMessage = function (steamID, message) {
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin(steamID)) {
-            reply += ', !get, !add, !remove, !update, !restart';
+            reply += ', !get, !add, !remove, !update, !restart, !stop';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
@@ -663,6 +663,14 @@ exports.handleMessage = function (steamID, message) {
             client.chatMessage(steamID, 'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
         } else {
             client.chatMessage(steamID, 'Restarting...');
+        }
+    } else if (command === 'stop') {
+        const stopping = handlerManager.getHandler().stop() !== false;
+
+        if (!stopping) {
+            client.chatMessage(steamID, 'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
+        } else {
+            client.chatMessage(steamID, 'Stopping...');
         }
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
