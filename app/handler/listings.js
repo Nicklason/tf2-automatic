@@ -115,7 +115,8 @@ exports.checkAll = function (callback) {
                 const chunk = pricelist.slice(index, index + chunkSize);
 
                 if (chunk.length === 0) {
-                    return clearInterval(interval);
+                    log.debug('Enqueued all listings');
+                    return doneCheckingAll();
                 }
 
                 log.debug('Enqueueing ' + pluralize('listing', chunk.length, true) + '...');
@@ -139,13 +140,15 @@ exports.checkAll = function (callback) {
                 clearTimeout(timeout);
                 // Don't need to check for listings we already have because they will be deleted
                 if (actions.create.length >= listingManager.cap || (listingManager._listingsWaitingForRetry() + listingManager._listingsWaitingForInventoryCount() - actions.create.length === 0 && actions.remove.length === 0)) {
+                    log.debug('Reached listing cap / created all listings');
                     // Reached listing cap / finished adding listings, stop
-                    log.debug('Done creating listings');
                     doneCheckingAll();
                 }
             }
 
             function doneCheckingAll () {
+                log.debug('Done enqueing listings');
+
                 clearTimeout(timeout);
                 clearInterval(interval);
                 listingManager.removeListener('actions', onActionsEvent);
