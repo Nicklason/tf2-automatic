@@ -2,6 +2,8 @@
     "apps" : [{
         "name": "tf2-automatic",
         "script": "app.js",
+        "exec_mode": "fork",
+        "exp_backoff_restart_delay": 1000,
         "shutdown_with_message": true,
         "kill_timeout": 60000,
         "out_file": "NULL",
