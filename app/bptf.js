@@ -28,7 +28,7 @@ function getAPICredentials (callback) {
         return;
     }
 
-    log.warn('You have not included the backpack.tf API key or access token in the config - signing in to backpack.tf...');
+    log.warn('You have not included the backpack.tf API key or access token in the environment variables - signing in to backpack.tf...');
 
     // Sign in to backpack.tf
     bptfLogin.login(function (err) {
@@ -99,7 +99,7 @@ function setTradeOfferUrl (callback) {
                     return callback(err);
                 }
 
-                log.warn('Updated trade offer url on backpack.tf (' + newSettings.tradeoffers_url + ') - please disable this in the config');
+                log.warn('Updated trade offer url on backpack.tf (' + newSettings.tradeoffers_url + ') - please disable this in the environment variables');
 
                 return callback(null);
             });

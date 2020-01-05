@@ -58,7 +58,7 @@ exports.onGroupRelationship = require('handler/groups').groupRelationChanged;
 
 exports.onBptfAuth = function (bptfAuth) {
     bptfAuth.private = true;
-    log.warn('Please add the backpack.tf API key and access token to the config!', bptfAuth);
+    log.warn('Please add the backpack.tf API key and access token to the environment variables!', bptfAuth);
 };
 
 [{
