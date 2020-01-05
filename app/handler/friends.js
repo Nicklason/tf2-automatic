@@ -93,14 +93,14 @@ exports.checkFriendRequests = function () {
 
 function getFriends () {
     const friends = [];
-    for (const steamID64 in client.myFriends) {
-        if (!Object.prototype.hasOwnProperty.call(client.myFriends, steamID64)) {
+    for (const steamID in client.myFriends) {
+        if (!Object.prototype.hasOwnProperty.call(client.myFriends, steamID)) {
             continue;
         }
 
-        const relation = client.myFriends[steamID64];
-        if (relation == SteamUser.EFriendRelationship.Friend) {
-            friends.push(steamID64);
+        const relation = client.myFriends[steamID];
+        if (relation === SteamUser.EFriendRelationship.Friend) {
+            friends.push(steamID);
         }
     }
 
