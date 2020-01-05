@@ -637,12 +637,9 @@ exports.newOffer = function (offer, done) {
 
                 if (match !== null) {
                     // Add value of items
-                    exchange[which].value += match[intentString].toValue(keyPrices[intentString].metal) * amount;
+                    exchange[which].value += match[intentString].toValue(keyPrices.sell.metal) * amount;
+                    exchange[which].keys += match[intentString].keys * amount;
                     exchange[which].scrap += Currencies.toScrap(match[intentString].metal) * amount;
-
-                    if (sku !== '5021;6') {
-                        exchange[which].keys += match[intentString].keys * amount;
-                    }
 
                     itemPrices[match.sku] = {
                         buy: match.buy,
@@ -654,7 +651,7 @@ exports.newOffer = function (offer, done) {
                     // Offer contains keys
                     if (match === null) {
                         // We are not trading keys, add value anyway
-                        exchange[which].value += keyPrices[intentString].toValue() * amount;
+                        exchange[which].value += keyPrices.sell.toValue() * amount;
                         exchange[which].keys += amount;
                     }
                 } else if (match === null || match.intent === buying ? 1 : 0) {
@@ -675,10 +672,12 @@ exports.newOffer = function (offer, done) {
 
     offer.data('value', {
         our: {
+            total: exchange.our.value,
             keys: exchange.our.keys,
             metal: Currencies.toRefined(exchange.our.scrap)
         },
         their: {
+            total: exchange.their.value,
             keys: exchange.their.keys,
             metal: Currencies.toRefined(exchange.their.scrap)
         },
@@ -721,13 +720,12 @@ exports.newOffer = function (offer, done) {
         }
     }
 
-    // Check if the value is correct
-
+    // Check if the values are correct
     if (exchange.our.value > exchange.their.value) {
         // We are offering more than them, decline the offer
         offer.log('info', 'is not offering enough, declining...');
         return done('decline', 'INVALID_VALUE');
-    } else if (exchange.our.value < exchange.their.value && process.env.ACCEPT_OVERPAY == 'false') {
+    } else if (exchange.our.value < exchange.their.value && process.env.ACCEPT_OVERPAY === 'false') {
         offer.log('info', 'is offering more than needed, declining...');
         return done('decline', 'OVERPAY');
     }
