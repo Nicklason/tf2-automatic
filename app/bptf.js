@@ -38,8 +38,6 @@ function getAPICredentials (callback) {
 
         bptfLogin.loggedIn = true;
 
-        log.verbose('Logged in to backpack.tf!');
-
         log.verbose('Getting API key and access token...');
 
         // Get api key and token
