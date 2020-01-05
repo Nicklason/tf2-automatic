@@ -15,7 +15,7 @@ const queue = require('handler/queue');
 const handlerManager = require('app/handler-manager');
 
 const parseJSON = require('utils/parseJSON');
-const isAdmin = require('app/admins').isAdmin;
+const admin = require('app/admins');
 const fixItem = require('utils/item/fixItem');
 
 let messages = [];
@@ -234,7 +234,8 @@ function getItemFromParams (steamID, params) {
 }
 
 exports.handleMessage = function (steamID, message) {
-    const admin = isAdmin(steamID);
+    const isAdmin = admin.isAdmin(steamID);
+
     const command = getCommand(message);
 
     const friend = friends.getFriend(steamID.getSteamID64());
@@ -256,7 +257,7 @@ exports.handleMessage = function (steamID, message) {
 
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
-        if (isAdmin(steamID)) {
+        if (isAdmin) {
             reply += ', !get, !add, !remove, !update, !restart, !stop';
         }
         client.chatMessage(steamID, reply);
@@ -324,7 +325,7 @@ exports.handleMessage = function (steamID, message) {
             reply += ' and I can sell ' + inventory.amountCanTrade(match.sku, false);
         }
 
-        if (match.autoprice && isAdmin(steamID)) {
+        if (match.autoprice && isAdmin) {
             reply += ' (price last updated ' + moment.unix(match.time).fromNow() + ')';
         }
 
@@ -431,7 +432,7 @@ exports.handleMessage = function (steamID, message) {
         }
 
         queue.handleQueue();
-    } else if (admin && command === 'get') {
+    } else if (isAdmin && command === 'get') {
         const params = getParams(message.substring(command.length + 1).trim());
 
         if (params.item !== undefined) {
@@ -481,7 +482,7 @@ exports.handleMessage = function (steamID, message) {
         } else {
             client.chatMessage(steamID, '/code ' + JSON.stringify(match, null, 4));
         }
-    } else if (admin && command === 'add') {
+    } else if (isAdmin && command === 'add') {
         const params = getParams(message.substring(command.length + 1).trim());
 
         if (params.enabled === undefined) {
@@ -542,7 +543,7 @@ exports.handleMessage = function (steamID, message) {
                 client.chatMessage(steamID, 'Added "' + entry.name + '".');
             }
         });
-    } else if (admin && command === 'update') {
+    } else if (isAdmin && command === 'update') {
         const params = getParams(message.substring(command.length + 1).trim());
 
         if (typeof params.buy === 'object') {
@@ -611,7 +612,7 @@ exports.handleMessage = function (steamID, message) {
                 client.chatMessage(steamID, 'Updated "' + entry.name + '".');
             }
         });
-    } else if (admin && command === 'remove') {
+    } else if (isAdmin && command === 'remove') {
         const params = getParams(message.substring(command.length + 1).trim());
 
         if (params.item !== undefined) {
@@ -656,22 +657,34 @@ exports.handleMessage = function (steamID, message) {
                 client.chatMessage(steamID, 'Removed "' + entry.name + '".');
             }
         });
-    } else if (command === 'restart') {
-        const restarting = handlerManager.getHandler().restart() !== false;
+    } else if (isAdmin && command === 'restart') {
+        client.chatMessage(steamID, 'Restarting...');
 
-        if (!restarting) {
-            client.chatMessage(steamID, 'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
-        } else {
-            client.chatMessage(steamID, 'Restarting...');
-        }
-    } else if (command === 'stop') {
-        const stopping = handlerManager.getHandler().stop() !== false;
+        handlerManager.getHandler().restart(function (err, restarting) {
+            if (err) {
+                log.warn('Error occurred while trying to restart: ', err);
+                client.chatMessage(steamID, 'An error occurred while trying to restart: ' + err.message);
+                return;
+            }
 
-        if (!stopping) {
-            client.chatMessage(steamID, 'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
-        } else {
-            client.chatMessage(steamID, 'Stopping...');
-        }
+            if (!restarting) {
+                client.chatMessage(steamID, 'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
+            }
+        });
+    } else if (isAdmin && command === 'stop') {
+        client.chatMessage(steamID, 'Stopping...');
+
+        handlerManager.getHandler().stop(function (err, stopping) {
+            if (err) {
+                log.warn('Error occurred while trying to stop: ', err);
+                client.chatMessage(steamID, 'An error occurred while trying to stop: ' + err.message);
+                return;
+            }
+
+            if (!stopping) {
+                client.chatMessage(steamID, 'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
+            }
+        });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
     }

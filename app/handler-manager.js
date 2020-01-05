@@ -8,21 +8,39 @@ const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SEC
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData', 'onPricelist'];
 const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onGroupRelationship', 'onPriceChange', 'onTradeOfferChanged', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onLogin', 'onLoginFailure', 'onLoginThrottle', 'onInventoryUpdated', 'onCraftingCompleted', 'onUseCompleted', 'onDeleteCompleted', 'onTF2QueueCompleted', 'onQueue', 'onBptfAuth', 'onSchema', 'onHeartbeat', 'onListings'];
 const EXPORTED_FUNCTIONS = {
-    restart: function () {
+    restart: function (callback) {
         if (process.env.pm_id === undefined) {
-            return false;
+            callback(null, false);
+            return;
         }
 
+        // TODO: Make restart function take arguments, for example, an option to update the environment variables
+
         log.warn('Restart has been initialized, restarting...');
-        pm2.restart(process.env.pm_id);
+
+        pm2.restart(process.env.pm_id, {}, function (err) {
+            if (err) {
+                return callback(err);
+            }
+
+            return callback(null, true);
+        });
     },
-    stop: function () {
+    stop: function (callback) {
         if (process.env.pm_id === undefined) {
-            return false;
+            callback(null, false);
+            return;
         }
 
         log.warn('Stop has been initialized, stopping...');
-        pm2.stop(process.env.pm_id);
+
+        pm2.stop(process.env.pm_id, function (err) {
+            if (err) {
+                return callback(err);
+            }
+
+            return callback(null, true);
+        });
     },
     shutdown: function (err, rudely = false) {
         log.debug('Shutdown has been initialized, stopping...', { err: err });
