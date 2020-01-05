@@ -1,5 +1,6 @@
 const path = require('path');
 const isPathInside = require('is-path-inside');
+const pm2 = require('pm2');
 
 const log = require('lib/logger');
 
@@ -7,8 +8,16 @@ const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SEC
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData', 'onPricelist'];
 const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onGroupRelationship', 'onPriceChange', 'onTradeOfferChanged', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onLogin', 'onLoginFailure', 'onLoginThrottle', 'onInventoryUpdated', 'onCraftingCompleted', 'onUseCompleted', 'onDeleteCompleted', 'onTF2QueueCompleted', 'onQueue', 'onBptfAuth', 'onSchema', 'onHeartbeat', 'onListings'];
 const EXPORTED_FUNCTIONS = {
+    restart: function () {
+        if (process.env.pm_id === undefined) {
+            return false;
+        }
+
+        log.warn('Restart has been initialized, restarting...');
+        pm2.restart(process.env.pm_id);
+    },
     shutdown: function (err, rudely = false) {
-        log.debug('Shutdown has been initialized', { err: err });
+        log.debug('Shutdown has been initialized, stopping...', { err: err });
 
         shutdownCount++;
 

@@ -12,6 +12,7 @@ const log = require('lib/logger');
 const friends = require('handler/friends');
 const trades = require('handler/trades');
 const queue = require('handler/queue');
+const handlerManager = require('app/handler-manager');
 
 const parseJSON = require('utils/parseJSON');
 const isAdmin = require('app/admins').isAdmin;
@@ -249,12 +250,14 @@ exports.handleMessage = function (steamID, message) {
         return;
     }
 
+    messages.push(steamID64);
+
     log.info('Message from ' + friend.player_name + ' (' + steamID64 + '): ' + message);
 
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin(steamID)) {
-            reply += ', !get, !add, !remove, !update';
+            reply += ', !get, !add, !remove, !update, !restart';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
@@ -653,6 +656,14 @@ exports.handleMessage = function (steamID, message) {
                 client.chatMessage(steamID, 'Removed "' + entry.name + '".');
             }
         });
+    } else if (command === 'restart') {
+        const restarting = handlerManager.getHandler().restart() !== false;
+
+        if (!restarting) {
+            client.chatMessage(steamID, 'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
+        } else {
+            client.chatMessage(steamID, 'Restarting...');
+        }
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
     }
