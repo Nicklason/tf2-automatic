@@ -154,7 +154,7 @@ exports.setReady = function () {
 function checkEnv () {
     REQUIRED_OPTS.forEach(function (optName) {
         if (!process.env[optName]) {
-            throw new Error('Missing required environment variable "' + optName.slice(6).toLowerCase().replace(/_/g, '"'));
+            throw new Error('Missing required environment variable "' + optName + '"');
         }
     });
 }
