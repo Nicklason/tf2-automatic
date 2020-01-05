@@ -164,9 +164,9 @@ exports.createOffer = function (details, callback) {
             // Figurated out what items to add to the offer
             const required = constructOffer(buyerCurrencies, price, details.buying, !isKey);
 
-            log.debug('Price: ', price);
-            log.debug('Buyer currencies: ', buyerCurrencies);
-            log.debug('Required currencies: ', required);
+            log.debug('Price:', price);
+            log.debug('Buyer currencies:', buyerCurrencies);
+            log.debug('Required currencies:', required);
 
             if (required.change > 0) {
                 log.warn('Failed to create offer because change is postive');
