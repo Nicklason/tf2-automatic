@@ -663,7 +663,10 @@ function handlerProcessOffer (offer) {
 }
 
 function finishedProcessing (offer) {
-    removeFromQueue(offer.id);
+    if (offer) {
+        removeFromQueue(offer.id);
+    }
+
     processingOffer = false;
     processNextOffer();
 }
