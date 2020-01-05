@@ -91,8 +91,24 @@ exports.checkFriendRequests = function () {
     });
 };
 
+function getFriends () {
+    const friends = [];
+    for (const steamID64 in client.myFriends) {
+        if (!Object.prototype.hasOwnProperty.call(client.myFriends, steamID64)) {
+            continue;
+        }
+
+        const relation = client.myFriends[steamID64];
+        if (relation == SteamUser.EFriendRelationship.Friend) {
+            friends.push(steamID64);
+        }
+    }
+
+    return friends;
+}
+
 function checkFriendsCount (steamIDToIgnore) {
-    const friends = Object.keys(client.myFriends);
+    const friends = getFriends();
 
     const friendslistBuffer = 20;
 
