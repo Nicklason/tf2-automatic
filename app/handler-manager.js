@@ -16,6 +16,14 @@ const EXPORTED_FUNCTIONS = {
         log.warn('Restart has been initialized, restarting...');
         pm2.restart(process.env.pm_id);
     },
+    stop: function () {
+        if (process.env.pm_id === undefined) {
+            return false;
+        }
+
+        log.warn('Stop has been initialized, stopping...');
+        pm2.stop(process.env.pm_id);
+    },
     shutdown: function (err, rudely = false) {
         log.debug('Shutdown has been initialized, stopping...', { err: err });
 
