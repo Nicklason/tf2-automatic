@@ -14,11 +14,11 @@ module.exports = function (opts, data) {
     // onLoginKey -> loginKey
     const pathKey = opts.event.charAt(2).toLowerCase() + opts.event.substring(3);
 
-    if (!Object.prototype.hasOwnProperty.call(paths, pathKey)) {
+    if (!Object.prototype.hasOwnProperty.call(paths.files, pathKey)) {
         throw new Error('Unknown path `' + pathKey + '`');
     }
 
-    files.writeFile(paths[pathKey], data, opts.json, function (err) {
+    files.writeFile(paths.files[pathKey], data, opts.json, function (err) {
         if (err) {
             log.warn('Error saving ' + pathKey + ': ', err);
         }

@@ -72,3 +72,6 @@ ecosystem.json
 
 # file folder
 files/
+
+# log folder
+logs/
