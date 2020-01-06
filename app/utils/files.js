@@ -64,8 +64,6 @@ exports.writeFile = function (p, data, json, callback) {
         write = data;
     }
 
-    filesBeingSaved++;
-
     const dir = path.dirname(p);
 
     if (fs.existsSync(dir)) {
@@ -81,6 +79,7 @@ exports.writeFile = function (p, data, json, callback) {
     }
 
     function writeFile () {
+        filesBeingSaved++;
         fs.writeFile(p, write, { encoding: 'utf8' }, function (err) {
             filesBeingSaved--;
             callback(err);
