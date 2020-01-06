@@ -815,6 +815,8 @@ exports.offerChanged = function (offer, oldState) {
 
         offer.data('isAccepted', true);
 
+        offer.log('trade', 'has been accepted. Summary:\n' + offer.summarize());
+
         // Smelt metal
         require('handler/crafting').keepMetalSupply();
 
@@ -837,9 +839,7 @@ exports.offerChanged = function (offer, oldState) {
 
     if (handledByUs) {
         if (offer.isOurOffer) {
-            if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
-                offer.log('trade', 'has been accepted. Summary:\n' + offer.summarize());
-            } else if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
+            if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
                 client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.');
             } else if (offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
                 if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
