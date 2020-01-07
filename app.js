@@ -160,9 +160,6 @@ pm2.connect(function (err) {
 
                                 log.info('tf2-schema is ready!');
 
-                                // Listen for price changes once the schema has been set up
-                                require('app/prices').listen();
-
                                 // Set access token
                                 listingManager.token = process.env.BPTF_ACCESS_TOKEN;
                                 // Set schema for bptf-listings
@@ -192,6 +189,9 @@ pm2.connect(function (err) {
                                         if (err) {
                                             throw err;
                                         }
+
+                                        // Connect to socketio server after creating listings
+                                        require('lib/ptf-socket').open();
 
                                         log.info('Getting Steam API key...');
 
