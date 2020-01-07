@@ -97,85 +97,91 @@ pm2.connect(function (err) {
     handler.onRun(function (opts) {
         opts = opts || {};
 
-        const loginKey = opts.loginKey || null;
+        log.info('Setting up pricelist...');
 
-        let lastLoginFailed = false;
+        // Set up pricelist before signing in to Steam, this is because if the bot has a big pricelist then it will be blocking the event loop
 
-        const login = require('app/login');
-
-        log.info('Signing in to Steam...');
-
-        // Perform login
-        login(loginKey, loginResponse);
-
-        function loginResponse (err) {
+        // TODO: Don't block event loop when setting up pricelist
+        require('app/prices').init(function (err) {
             if (err) {
-                if (!lastLoginFailed && err.eresult !== SteamUser.EFriendRelationship.RateLimitExceeded && err.eresult !== SteamUser.EFriendRelationship.InvalidPassword) {
-                    lastLoginFailed = true;
-                    // Try and sign in without login key
-                    log.warn('Failed to sign in to Steam, retrying without login key...');
-                    login(null, loginResponse);
-                } else {
-                    log.warn('Failed to sign in to Steam');
-                    handler.onLoginFailure(err);
-                }
-                return;
+                throw err;
             }
 
-            checkAccountLimitations(function (err) {
+            const loginKey = opts.loginKey || null;
+
+            let lastLoginFailed = false;
+
+            const login = require('app/login');
+
+            log.info('Signing in to Steam...');
+
+            // Perform login
+            login(loginKey, loginResponse);
+
+            function loginResponse (err) {
                 if (err) {
-                    throw err;
+                    if (!lastLoginFailed && err.eresult !== SteamUser.EFriendRelationship.RateLimitExceeded && err.eresult !== SteamUser.EFriendRelationship.InvalidPassword) {
+                        lastLoginFailed = true;
+                        // Try and sign in without login key
+                        log.warn('Failed to sign in to Steam, retrying without login key...');
+                        login(null, loginResponse);
+                    } else {
+                        log.warn('Failed to sign in to Steam');
+                        handler.onLoginFailure(err);
+                    }
+                    return;
                 }
 
-                log.debug('Waiting for web session...');
-
-                // Wait for steamcommunity session
-                require('utils/communityLoginCallback')(false, function (err, cookies) {
+                checkAccountLimitations(function (err) {
                     if (err) {
                         throw err;
                     }
 
-                    require('lib/bptf-login').setCookies(cookies);
+                    log.debug('Waiting for web session...');
 
-                    require('app/bptf').setup(function (err) {
+                    // Wait for steamcommunity session
+                    require('utils/communityLoginCallback')(false, function (err, cookies) {
                         if (err) {
                             throw err;
                         }
-                        log.info('Initializing tf2-schema...');
 
-                        schemaManager.init(function (err) {
+                        require('lib/bptf-login').setCookies(cookies);
+
+                        require('app/bptf').setup(function (err) {
                             if (err) {
                                 throw err;
                             }
+                            log.info('Initializing tf2-schema...');
 
-                            log.info('tf2-schema is ready!');
-
-                            // Set access token
-                            listingManager.token = process.env.BPTF_ACCESS_TOKEN;
-                            // Set schema for bptf-listings
-                            listingManager.schema = schemaManager.schema;
-
-                            // Set steamid
-                            listingManager.steamid = client.steamID;
-                            manager.steamID = client.steamID;
-
-                            async.parallel({
-                                inventory: function (callback) {
-                                    // Load inventory
-                                    require('app/inventory').getInventory(client.steamID, callback);
-                                },
-                                listings: function (callback) {
-                                    // Initialize bptf-listings
-                                    listingManager.init(callback);
-                                }
-                            }, function (err, result) {
+                            schemaManager.init(function (err) {
                                 if (err) {
                                     throw err;
                                 }
 
-                                log.info('Setting up pricelist...');
+                                log.info('tf2-schema is ready!');
 
-                                require('app/prices').init(function (err) {
+                                // Listen for price changes once the schema has been set up
+                                require('app/prices').listen();
+
+                                // Set access token
+                                listingManager.token = process.env.BPTF_ACCESS_TOKEN;
+                                // Set schema for bptf-listings
+                                listingManager.schema = schemaManager.schema;
+
+                                // Set steamid
+                                listingManager.steamid = client.steamID;
+                                manager.steamID = client.steamID;
+
+                                async.parallel({
+                                    inventory: function (callback) {
+                                        // Load inventory
+                                        require('app/inventory').getInventory(client.steamID, callback);
+                                    },
+                                    listings: function (callback) {
+                                        // Initialize bptf-listings
+                                        listingManager.init(callback);
+                                    }
+                                }, function (err, result) {
                                     if (err) {
                                         throw err;
                                     }
@@ -211,8 +217,8 @@ pm2.connect(function (err) {
                         });
                     });
                 });
-            });
-        }
+            }
+        });
     });
 });
 
