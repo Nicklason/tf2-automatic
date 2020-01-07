@@ -4,9 +4,9 @@ const Currencies = require('tf2-currencies');
 
 const log = require('lib/logger');
 const api = require('lib/ptf-api');
-const socket = require('lib/ptf-socket');
 const validator = require('lib/validator');
 const schemaManager = require('lib/tf2-schema');
+const socket = require('lib/ptf-socket');
 
 const handlerManager = require('app/handler-manager');
 
@@ -14,11 +14,10 @@ let pricelist = [];
 let keyPrices = null;
 const handling = [];
 
-exports.listen = function () {
-    socket.on('price', handlePriceChange);
-};
-
 exports.init = function (callback) {
+    socket.removeListener('price', handlePriceChange);
+    socket.on('price', handlePriceChange);
+
     const funcs = {
         keys: function (callback) {
             api.getPrice('5021;6', 'bptf', callback);
@@ -73,8 +72,6 @@ exports.init = function (callback) {
                         pricelist[i].time = prices[j].time;
 
                         pricesChanged = true;
-
-                        handler.onPriceChange(pricelist[i].sku);
                     }
 
                     // When a match is found remove it from the ptf pricelist
