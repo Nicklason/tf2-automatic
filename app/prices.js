@@ -14,9 +14,11 @@ let pricelist = [];
 let keyPrices = null;
 const handling = [];
 
-exports.init = function (callback) {
+exports.listen = function () {
     socket.on('price', handlePriceChange);
+};
 
+exports.init = function (callback) {
     const funcs = {
         keys: function (callback) {
             api.getPrice('5021;6', 'bptf', callback);
