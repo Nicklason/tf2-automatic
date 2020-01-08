@@ -44,39 +44,41 @@ exports.init = function (callback) {
             return callback(null);
         }
 
-        const prices = result.pricelist.items;
+        const prices = sortPrices(result.pricelist.items);
 
         const handler = handlerManager.getHandler();
 
         let pricesChanged = false;
 
         // Go through our pricelist
-        for (let i = 0; i < pricelist.length; i++) {
+        for (let i = pricelist.length-1; i >= 0; i--) {
             if (pricelist[i].autoprice !== true) {
                 continue;
             }
 
+            const a = getAttributes(pricelist[i].sku);
+
             // Go through pricestf prices
-            for (let j = 0; j < prices.length; j++) {
-                if (pricelist[i].name === prices[j].name) {
+            for (let j = prices[a.quality][a.killstreak].length-1; j >= 0; j--) {
+                const item = prices[a.quality][a.killstreak][j];
+
+                if (pricelist[i].sku === item.sku) {
                     // Found matching items
-                    if (prices[j].buy !== null && pricelist[i].time < prices[j].time) {
+                    if (pricelist[i].time < item.time) {
                         // Times don't match, update our price
-                        pricelist[i].buy = new Currencies(prices[j].buy);
-                        pricelist[i].sell = new Currencies(prices[j].sell);
-                        pricelist[i].time = prices[j].time;
+                        pricelist[i].buy = new Currencies(item.buy);
+                        pricelist[i].sell = new Currencies(item.sell);
+                        pricelist[i].time = item.time;
 
                         pricesChanged = true;
                     }
 
                     // When a match is found remove it from the ptf pricelist
-                    prices.splice(j, 1);
+                    prices[a.quality][a.killstreak].splice(j, 1);
                     break;
                 }
             }
         }
-
-        // We can afford to go through pricelist.length * prices.length because we will only do this once on startup
 
         if (pricesChanged) {
             // Our pricelist changed, emit it
@@ -448,4 +450,42 @@ function remove (sku, emit) {
     }
 
     return match;
+}
+
+function sortPrices (prices) {
+    const sorted = {};
+    for (let i = 0; i < prices.length; i++) {
+        if (prices[i].buy === null) continue;
+        const Attribs = getAttributes(prices[i].sku);
+        if (!sorted[Attribs['quality']]) sorted[Attribs['quality']] = {};
+        Array.isArray(sorted[Attribs['quality']][Attribs['killstreak']]) ? sorted[Attribs['quality']][Attribs['killstreak']].push(important(prices[i])) : sorted[Attribs['quality']][Attribs['killstreak']] = [important(prices[i])];
+    }
+    return sorted;
+}
+
+function getAttributes (sku) {
+    const segments = sku.split(';');
+    let killstreak = 0;
+    if (segments.length > 2) {
+        for (let i = 2; i < segments.length; i++) {
+            if (segments[i].startsWith('kt-')) {
+                killstreak = Number(segments[i].substring(3));
+                break;
+            }
+        }
+    }
+
+    return {
+        quality: Number(segments[1]),
+        killstreak
+    };
+}
+
+function important (item) {
+    return {
+        sku: item.sku,
+        buy: item.buy,
+        sell: item.sell,
+        time: item.time
+    };
 }
