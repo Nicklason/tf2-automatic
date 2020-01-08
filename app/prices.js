@@ -58,14 +58,9 @@ exports.init = function (callback) {
 
             // Go through pricestf prices
             for (let j = 0; j < prices.length; j++) {
-                if (prices[j].buy === null) {
-                    prices.splice(j, 1);
-                    break;
-                }
-
                 if (pricelist[i].name === prices[j].name) {
                     // Found matching items
-                    if (pricelist[i].time < prices[j].time) {
+                    if (prices[j].buy !== null && pricelist[i].time < prices[j].time) {
                         // Times don't match, update our price
                         pricelist[i].buy = new Currencies(prices[j].buy);
                         pricelist[i].sell = new Currencies(prices[j].sell);
