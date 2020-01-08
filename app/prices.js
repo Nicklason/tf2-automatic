@@ -459,7 +459,9 @@ function organizePrices (prices) {
         if (prices[i].buy === null) {
             continue;
         }
+
         const attribs = getAttributes(prices[i].sku);
+
         if (!sorted[attribs['quality']]) {
             // Define object, if not yet defined
             sorted[attribs['quality']] = {};
@@ -471,6 +473,7 @@ function organizePrices (prices) {
             sorted[attribs['quality']][attribs['killstreak']] = [important(prices[i])];
         }
     }
+
     return sorted;
 }
 
