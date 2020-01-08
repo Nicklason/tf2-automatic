@@ -56,11 +56,11 @@ exports.init = function (callback) {
                 continue;
             }
 
-            const a = getAttributes(pricelist[i].sku);
+            const attributes = getAttributes(pricelist[i].sku);
 
             // Go through pricestf prices
-            for (let j = 0; j < prices[a.quality][a.killstreak].length; j++) {
-                const item = prices[a.quality][a.killstreak][j];
+            for (let j = 0; j < prices[attributes.quality][attributes.killstreak].length; j++) {
+                const item = prices[attributes.quality][attributes.killstreak][j];
 
                 if (pricelist[i].sku === item.sku) {
                     // Found matching items
@@ -74,7 +74,7 @@ exports.init = function (callback) {
                     }
 
                     // When a match is found remove it from the ptf pricelist
-                    prices[a.quality][a.killstreak].splice(j, 1);
+                    prices[attributes.quality][attributes.killstreak].splice(j, 1);
                     break;
                 }
             }
@@ -459,35 +459,28 @@ function organizePrices (prices) {
         if (prices[i].buy === null) {
             continue;
         }
-        const Attribs = getAttributes(prices[i].sku);
-        if (!sorted[Attribs['quality']]) {
+        const attribs = getAttributes(prices[i].sku);
+        if (!sorted[attribs['quality']]) {
             // Define object, if not yet defined
-            sorted[Attribs['quality']] = {};
+            sorted[attribs['quality']] = {};
         }
-        if (Array.isArray(sorted[Attribs['quality']][Attribs['killstreak']])) {
-            sorted[Attribs['quality']][Attribs['killstreak']].push(important(prices[i]));
+
+        if (Array.isArray(sorted[attribs['quality']][attribs['killstreak']])) {
+            sorted[attribs['quality']][attribs['killstreak']].push(important(prices[i]));
         } else {
-            sorted[Attribs['quality']][Attribs['killstreak']] = [important(prices[i])];
+            sorted[attribs['quality']][attribs['killstreak']] = [important(prices[i])];
         }
     }
     return sorted;
 }
 
 function getAttributes (sku) {
-    const segments = sku.split(';');
-    let killstreak = 0;
-    if (segments.length > 2) {
-        for (let i = 2; i < segments.length; i++) {
-            if (segments[i].startsWith('kt-')) {
-                killstreak = parseInt(segments[i].substring(3));
-                break;
-            }
-        }
-    }
+    const obj = SKU.fromString(sku);
 
+    // We only need quality and killstreak, they are the two biggest groups
     return {
-        quality: parseInt(segments[1]),
-        killstreak
+        quality: obj.quality,
+        killstreak: obj.killstreak
     };
 }
 
