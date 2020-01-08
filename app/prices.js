@@ -44,14 +44,14 @@ exports.init = function (callback) {
             return callback(null);
         }
 
-        const prices = sortPrices(result.pricelist.items);
+        const prices = organizePrices(result.pricelist.items);
 
         const handler = handlerManager.getHandler();
 
         let pricesChanged = false;
 
         // Go through our pricelist
-        for (let i = pricelist.length-1; i >= 0; i--) {
+        for (let i = 0; i < pricelist.length; i++) {
             if (pricelist[i].autoprice !== true) {
                 continue;
             }
@@ -59,7 +59,7 @@ exports.init = function (callback) {
             const a = getAttributes(pricelist[i].sku);
 
             // Go through pricestf prices
-            for (let j = prices[a.quality][a.killstreak].length-1; j >= 0; j--) {
+            for (let j = 0; j < prices[a.quality][a.killstreak].length; j++) {
                 const item = prices[a.quality][a.killstreak][j];
 
                 if (pricelist[i].sku === item.sku) {
@@ -452,13 +452,23 @@ function remove (sku, emit) {
     return match;
 }
 
-function sortPrices (prices) {
+function organizePrices (prices) {
+    // Organize prices in an object, this way we will only have to loop through the items with matching attributes
     const sorted = {};
     for (let i = 0; i < prices.length; i++) {
-        if (prices[i].buy === null) continue;
+        if (prices[i].buy === null) {
+            continue;
+        }
         const Attribs = getAttributes(prices[i].sku);
-        if (!sorted[Attribs['quality']]) sorted[Attribs['quality']] = {};
-        Array.isArray(sorted[Attribs['quality']][Attribs['killstreak']]) ? sorted[Attribs['quality']][Attribs['killstreak']].push(important(prices[i])) : sorted[Attribs['quality']][Attribs['killstreak']] = [important(prices[i])];
+        if (!sorted[Attribs['quality']]) {
+            // Define object, if not yet defined
+            sorted[Attribs['quality']] = {};
+        }
+        if (Array.isArray(sorted[Attribs['quality']][Attribs['killstreak']])) {
+            sorted[Attribs['quality']][Attribs['killstreak']].push(important(prices[i]));
+        } else {
+            sorted[Attribs['quality']][Attribs['killstreak']] = [important(prices[i])];
+        }
     }
     return sorted;
 }
@@ -469,19 +479,20 @@ function getAttributes (sku) {
     if (segments.length > 2) {
         for (let i = 2; i < segments.length; i++) {
             if (segments[i].startsWith('kt-')) {
-                killstreak = Number(segments[i].substring(3));
+                killstreak = parseInt(segments[i].substring(3));
                 break;
             }
         }
     }
 
     return {
-        quality: Number(segments[1]),
+        quality: parseInt(segments[1]),
         killstreak
     };
 }
 
 function important (item) {
+    // Return only the data we need
     return {
         sku: item.sku,
         buy: item.buy,
