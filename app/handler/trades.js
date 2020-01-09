@@ -182,7 +182,7 @@ exports.createOffer = function (details, callback) {
 
             const sellerStr = pluralize(match.name, amount, true) + (required.change === 0 ? '' : ' and ' + Currencies.toRefined(Math.abs(required.change)) + ' ref');
 
-            client.chatMessage(partner, 'Please wait while I process your offer! You will be offered ' + (details.buying ? buyerStr : sellerStr) + ' for your ' + (details.buying ? sellerStr : buyerStr));
+            client.chatMessage(partner, 'Please wait while I process your offer! You will be offered ' + (details.buying ? buyerStr : sellerStr) + ' for your ' + (details.buying ? sellerStr : buyerStr) + '. Current key buy/sell price: ' + (keyPrices.buy.metal) + '/' + (keyPrices.sell.metal) + ' ref.'));
 
             const offer = manager.createOffer(partner);
 
