@@ -669,10 +669,12 @@ exports.handleMessage = function (steamID, message) {
                 continue;
             }
 
-            if (offerData[offerID].finishTimestamp >= (dateNow - (86400000)) && offerData[offerID].handledByUs === true && offerData[offerID].isAccepted === true) { // Sucessful trades accepted in the last 24 hours by bot
+            if (offerData[offerID].finishTimestamp >= (dateNow - (86400000)) && offerData[offerID].handledByUs === true && offerData[offerID].isAccepted === true) { 
+                // Sucessful trades accepted in the last 24 hours by bot
                 tradeCount++;
                 tradeTotal++;
-            } else if (offerData[offerID].handledByUs === true && offerData[offerID].isAccepted === true) { // Successful trades not accepted in the last 24 hours by bot
+            } else if (offerData[offerID].handledByUs === true && offerData[offerID].isAccepted === true) { 
+                // Successful trades not accepted in the last 24 hours by bot
                 tradeTotal++;
             }
         }
