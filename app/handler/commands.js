@@ -256,13 +256,18 @@ exports.handleMessage = function (steamID, message) {
     log.info('Message from ' + friend.player_name + ' (' + steamID64 + '): ' + message);
 
     if (command === 'help') {
-        let reply = 'Here\'s a list of all my commands: !help, !how2trade, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
+        let reply = 'Here\'s a list of all my commands: !help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
             reply += ', !get, !add, !remove, !update, !restart, !stop';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
         client.chatMessage(steamID, 'Send me a trade offer with the items you want to buy / sell.');
+    } else if (command === 'rate') {
+        const keyPrice = prices.getKeyPrice();
+        const keyPriceString = keyPrice.toString();
+
+        client.chatMessage(steamID, 'I value Mann Co. Supply Crate Keys at ' + keyPriceString + '. This means that one key is the same as ' + keyPriceString + ', and ' + keyPriceString + ' is the same as one key.');
     } else if (command === 'price') {
         const info = getItemAndAmount(steamID, message.substring(command.length + 1).trim());
 
@@ -278,7 +283,7 @@ exports.handleMessage = function (steamID, message) {
         const isBuying = match.intent === 0 || match.intent === 2;
         const isSelling = match.intent === 1 || match.intent === 2;
 
-        const keyPrices = prices.getKeyPrices();
+        const keyPrice = prices.getKeyPrice();
 
         const isKey = match.sku === '5021;6';
 
@@ -292,13 +297,13 @@ exports.handleMessage = function (steamID, message) {
             }
 
             // If the amount is 1, then don't convert to value and then to currencies. If it is for keys, then don't use conversion rate
-            const currencies = amount === 1 ? match.buy : Currencies.toCurrencies(match.buy.toValue(keyPrices.buy.metal) * amount, isKey ? undefined : keyPrices.buy.metal);
+            const currencies = amount === 1 ? match.buy : Currencies.toCurrencies(match.buy.toValue(keyPrice.metal) * amount, isKey ? undefined : keyPrice.metal);
 
             reply += pluralize(match.name, amount) + ' for ' + currencies.toString();
         }
 
         if (isSelling) {
-            const currencies = amount === 1 ? match.sell : Currencies.toCurrencies(match.sell.toValue(keyPrices.sell.metal) * amount, isKey ? undefined : keyPrices.sell.metal);
+            const currencies = amount === 1 ? match.sell : Currencies.toCurrencies(match.sell.toValue(keyPrice.metal) * amount, isKey ? undefined : keyPrice.metal);
 
             if (reply === '') {
                 reply = 'I am selling ';

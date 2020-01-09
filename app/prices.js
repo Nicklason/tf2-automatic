@@ -96,7 +96,7 @@ exports.init = function (callback) {
  * @return {Number}
  */
 exports.amountCanAfford = function (buying, useKeys, currencies, currenciesDict) {
-    const keyPrice = exports.getKeyPrices()[buying ? 'buy' : 'sell'];
+    const keyPrice = exports.getKeyPrice();
 
     const value = currencies.toValue(keyPrice.metal);
 
@@ -147,8 +147,8 @@ exports.getPricelist = function () {
     return pricelist;
 };
 
-exports.getKeyPrices = function () {
-    return keyPrices;
+exports.getKeyPrice = function () {
+    return keyPrices.sell;
 };
 
 function handlePriceChange (data) {
@@ -272,12 +272,12 @@ exports.add = function (sku, data, callback) {
             return callback(new Error(errors.join(', ')));
         }
 
-        const keyPrice = exports.getKeyPrices()['sell'].metal;
+        const keyPrice = exports.getKeyPrice();
 
         const buy = new Currencies(entry.buy);
         const sell = new Currencies(entry.sell);
 
-        if (buy.toValue(keyPrice) >= sell.toValue(keyPrice)) {
+        if (buy.toValue(keyPrice.metal) >= sell.toValue(keyPrice.metal)) {
             return callback(new Error('Sell must be higher than buy'));
         }
 
@@ -371,12 +371,12 @@ exports.update = function (sku, data, callback) {
     copy.time = time;
 
     if (copy.autoprice === false) {
-        const keyPrice = exports.getKeyPrices()['sell'].metal;
+        const keyPrice = exports.getKeyPrice();
 
         const buy = new Currencies(copy.buy);
         const sell = new Currencies(copy.sell);
 
-        if (buy.toValue(keyPrice) >= sell.toValue(keyPrice)) {
+        if (buy.toValue(keyPrice.metal) >= sell.toValue(keyPrice.metal)) {
             return callback(new Error('Sell must be higher than buy'));
         }
 
