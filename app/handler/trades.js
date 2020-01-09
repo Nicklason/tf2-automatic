@@ -377,6 +377,7 @@ exports.createOffer = function (details, callback) {
                             } else if (err.message.indexOf('can only be sent to friends') != -1) {
                                 return callback(err);
                             } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') > -1) {
+                                admin.message('Alert! My backpack already full. Please do something.');
                                 return callback(null, 'I don\'t have space for more items in my inventory');
                             } else if (err.eresult !== undefined) {
                                 if (err.eresult == 10) {
