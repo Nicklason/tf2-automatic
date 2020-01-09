@@ -703,10 +703,10 @@ exports.handleMessage = function (steamID, message) {
 
         api.requestCheck(params.sku, 'bptf', function (err) {
             if (err) {
-                client.chatMessage(steamID, 'Failed to add the item to the pricelist: ' + (err.body && err.body.message ? err.body.message : err.message));
+                client.chatMessage(steamID, 'Error while requesting price check: ' + (err.body && err.body.message ? err.body.message : err.message));
                 return;
             }
-            client.chatMessage(steamID, 'Price update request has been sent, item price updating soon...');
+            client.chatMessage(steamID, 'Price check has been requested, the item will be checked.');
         });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
