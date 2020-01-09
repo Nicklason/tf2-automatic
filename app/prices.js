@@ -52,23 +52,24 @@ exports.init = function (callback) {
 
         // Go through our pricelist
         for (let i = 0; i < pricelist.length; i++) {
-            if (pricelist[i].autoprice !== true) {
+            const current = pricelist[i];
+            if (current.autoprice !== true) {
                 continue;
             }
 
-            const attributes = getAttributes(pricelist[i].sku);
+            const attributes = getAttributes(current.sku);
 
             // Go through pricestf prices
             for (let j = 0; j < prices[attributes.quality][attributes.killstreak].length; j++) {
                 const item = prices[attributes.quality][attributes.killstreak][j];
 
-                if (pricelist[i].name === item.name) {
+                if (current.name === item.name) {
                     // Found matching items
-                    if (pricelist[i].time < item.time) {
+                    if (current.time < item.time) {
                         // Times don't match, update our price
-                        pricelist[i].buy = new Currencies(item.buy);
-                        pricelist[i].sell = new Currencies(item.sell);
-                        pricelist[i].time = item.time;
+                        current.buy = new Currencies(item.buy);
+                        current.sell = new Currencies(item.sell);
+                        current.time = item.time;
 
                         pricesChanged = true;
                     }
@@ -478,12 +479,12 @@ function organizePrices (prices) {
 }
 
 function getAttributes (sku) {
-    const obj = SKU.fromString(sku);
+    const item = SKU.fromString(sku);
 
     // We only need quality and killstreak, they are the two biggest groups
     return {
-        quality: obj.quality,
-        killstreak: obj.killstreak
+        quality: item.quality,
+        killstreak: item.killstreak
     };
 }
 
