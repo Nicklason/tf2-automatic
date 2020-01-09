@@ -259,7 +259,7 @@ exports.handleMessage = function (steamID, message) {
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
-            reply += ', !get, !add, !remove, !update, !restart, !stop';
+            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
