@@ -58,6 +58,8 @@ const EXPORTED_FUNCTIONS = {
             return false;
         }
 
+        isReady = false;
+
         // Disable login
         require('lib/client').autoRelogin = false;
 
