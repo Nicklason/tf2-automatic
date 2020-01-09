@@ -1,3 +1,4 @@
+const SteamUser = require('steam-user');
 const path = require('path');
 const isPathInside = require('is-path-inside');
 const pm2 = require('pm2');
@@ -58,20 +59,7 @@ const EXPORTED_FUNCTIONS = {
             return false;
         }
 
-        isReady = false;
-
-        // Disable login
-        require('lib/client').autoRelogin = false;
-
-        // Stop price updates
-        require('lib/ptf-socket').disconnect();
-
-        // Stop the polling of trade offers
-        require('lib/manager').pollInterval = -1;
-
-        // Stop heartbeat and inventory timers
-        clearInterval(require('lib/bptf-listings')._heartbeatInterval);
-        clearInterval(require('lib/bptf-listings')._inventoryInterval);
+        this.cleanup();
 
         // TODO: Check if a poll is being made before stopping the bot
 
@@ -90,6 +78,28 @@ const EXPORTED_FUNCTIONS = {
 
             process.exit(err ? 1 : 0);
         }
+    },
+    cleanup: function () {
+        log.debug('Cleaning up');
+
+        // This will disable the reciving of messages and other friend related events
+        isReady = false;
+
+        // Make the bot snooze on Steam, that way people will know it is not running
+        require('lib/client').setPersona(SteamUser.EPersonaState.Snooze);
+
+        // Disable login
+        require('lib/client').autoRelogin = false;
+
+        // Stop price updates
+        require('lib/ptf-socket').disconnect();
+
+        // Stop the polling of trade offers
+        require('lib/manager').pollInterval = -1;
+
+        // Stop heartbeat and inventory timers
+        clearInterval(require('lib/bptf-listings')._heartbeatInterval);
+        clearInterval(require('lib/bptf-listings')._inventoryInterval);
     },
     setLoginAttempts (attempts) {
         require('app/login-attempts').setAttempts(attempts);
