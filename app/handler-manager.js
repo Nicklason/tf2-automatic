@@ -67,6 +67,10 @@ const EXPORTED_FUNCTIONS = {
         // Stop the polling of trade offers
         require('lib/manager').pollInterval = -1;
 
+        // Stop heartbeat and inventory timers
+        clearInterval(require('lib/bptf-listings')._heartbeatInterval);
+        clearInterval(require('lib/bptf-listings')._inventoryInterval);
+
         // TODO: Check if a poll is being made before stopping the bot
 
         handler.onShutdown(err, function () {
