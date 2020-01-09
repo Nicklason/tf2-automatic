@@ -52,30 +52,30 @@ exports.init = function (callback) {
 
         // Go through our pricelist
         for (let i = 0; i < pricelist.length; i++) {
-            const current = pricelist[i];
-            if (current.autoprice !== true) {
+            const currentPrice = pricelist[i];
+            if (currentPrice.autoprice !== true) {
                 continue;
             }
 
-            const attributes = getAttributes(current.sku);
+            const item = SKU.fromString(currentPrice.sku);
 
             // Go through pricestf prices
-            for (let j = 0; j < prices[attributes.quality][attributes.killstreak].length; j++) {
-                const item = prices[attributes.quality][attributes.killstreak][j];
+            for (let j = 0; j < prices[item.quality][item.killstreak].length; j++) {
+                const newestPrice = prices[item.quality][item.killstreak][j];
 
-                if (current.name === item.name) {
+                if (currentPrice.name === newestPrice.name) {
                     // Found matching items
-                    if (current.time < item.time) {
+                    if (currentPrice.time < newestPrice.time) {
                         // Times don't match, update our price
-                        current.buy = new Currencies(item.buy);
-                        current.sell = new Currencies(item.sell);
-                        current.time = item.time;
+                        currentPrice.buy = new Currencies(newestPrice.buy);
+                        currentPrice.sell = new Currencies(newestPrice.sell);
+                        currentPrice.time = newestPrice.time;
 
                         pricesChanged = true;
                     }
 
                     // When a match is found remove it from the ptf pricelist
-                    prices[attributes.quality][attributes.killstreak].splice(j, 1);
+                    prices[item.quality][item.killstreak].splice(j, 1);
                     break;
                 }
             }
@@ -461,39 +461,19 @@ function organizePrices (prices) {
             continue;
         }
 
-        const attribs = getAttributes(prices[i].sku);
+        const item = SKU.fromString(prices[i].sku);
 
-        if (!sorted[attribs['quality']]) {
+        if (!sorted[item.quality]) {
             // Define object, if not yet defined
-            sorted[attribs['quality']] = {};
+            sorted[item.quality] = {};
         }
 
-        if (Array.isArray(sorted[attribs['quality']][attribs['killstreak']])) {
-            sorted[attribs['quality']][attribs['killstreak']].push(important(prices[i]));
+        if (Array.isArray(sorted[item.quality][item.killstreak])) {
+            sorted[item.quality][item.killstreak].push(prices[i]);
         } else {
-            sorted[attribs['quality']][attribs['killstreak']] = [important(prices[i])];
+            sorted[item.quality][item.killstreak] = [prices[i]];
         }
     }
 
     return sorted;
-}
-
-function getAttributes (sku) {
-    const item = SKU.fromString(sku);
-
-    // We only need quality and killstreak, they are the two biggest groups
-    return {
-        quality: item.quality,
-        killstreak: item.killstreak
-    };
-}
-
-function important (item) {
-    // Return only the data we need
-    return {
-        name: item.name,
-        buy: item.buy,
-        sell: item.sell,
-        time: item.time
-    };
 }
