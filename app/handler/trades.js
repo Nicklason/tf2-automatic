@@ -630,7 +630,9 @@ exports.newOffer = function (offer, done) {
 
                 // TODO: Go through all assetids and check if the item is being sold for a specific price
 
-                if (match !== null) {
+                if (match !== null && (sku !== '5021;6' || !exchange.contains.items)) {
+                    // If we found a matching price and the item is not a key, or the we are not trading items (meaning that we are trading keys) then add the price of the item
+
                     // Add value of items
                     exchange[which].value += match[intentString].toValue(keyPrice.metal) * amount;
                     exchange[which].keys += match[intentString].keys * amount;
@@ -640,15 +642,10 @@ exports.newOffer = function (offer, done) {
                         buy: match.buy,
                         sell: match.sell
                     };
-                }
-
-                if (sku === '5021;6') {
-                    // Offer contains keys
-                    if (match === null) {
-                        // We are not trading keys, add value anyway
-                        exchange[which].value += keyPrice.toValue() * amount;
-                        exchange[which].keys += amount;
-                    }
+                } else if (sku === '5021;6' && exchange.contains.items) {
+                    // Offer contains keys and we are not trading keys, add key value
+                    exchange[which].value += keyPrice.toValue() * amount;
+                    exchange[which].keys += amount;
                 } else if (match === null || match.intent === buying ? 1 : 0) {
                     // Offer contains an item that we are not trading
                     return done('decline', 'INVALID_ITEMS');
