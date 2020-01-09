@@ -156,13 +156,12 @@ exports.createOffer = function (details, callback) {
                 client.chatMessage(partner, 'Your offer has been altered! Reason: ' + alteredMessage + '.');
             }
 
-            const keyPrices = prices.getKeyPrices();
-            const keyPrice = keyPrices[details.buying ? 'buy' : 'sell'].metal;
+            const keyPrice = prices.getKeyPrice();
 
-            const price = Currencies.toCurrencies(match[details.buying ? 'buy' : 'sell'].toValue(isKey ? undefined : keyPrice) * amount, isKey ? undefined : keyPrice);
+            const price = Currencies.toCurrencies(match[details.buying ? 'buy' : 'sell'].toValue(isKey ? undefined : keyPrice.metal) * amount, isKey ? undefined : keyPrice.metal);
 
-            // Figurated out what items to add to the offer
-            const required = constructOffer(buyerCurrencies, price, details.buying, !isKey);
+            // Figure out what items to add to the offer
+            const required = constructOffer(buyerCurrencies, price, !isKey);
 
             log.debug('Price:', price);
             log.debug('Buyer currencies:', buyerCurrencies);
@@ -328,10 +327,7 @@ exports.createOffer = function (details, callback) {
                     keys: exchange.their.keys,
                     metal: Currencies.toRefined(exchange.their.scrap)
                 },
-                rates: {
-                    buy: keyPrices.buy.metal,
-                    sell: keyPrices.sell.metal
-                }
+                rate: keyPrice.metal
             });
 
             const itemPrices = {};
@@ -404,15 +400,14 @@ exports.createOffer = function (details, callback) {
 };
 
 /**
- * Figurates out what currencies the buyer needs to offer
+ * Figures out what currencies the buyer needs to offer
  * @param {Object} buyerCurrencies
  * @param {Object} price
- * @param {*} buying
  * @param {*} useKeys
  * @return {Object} An object containing the picked currencies and the amount of change that the seller needs to provide
  */
-function constructOffer (buyerCurrencies, price, buying, useKeys) {
-    const keyPrice = prices.getKeyPrices()[buying ? 'buy' : 'sell'];
+function constructOffer (buyerCurrencies, price, useKeys) {
+    const keyPrice = prices.getKeyPrice();
 
     const value = price.toValue(useKeys ? keyPrice.metal : undefined);
 
@@ -525,8 +520,6 @@ function constructOffer (buyerCurrencies, price, buying, useKeys) {
 exports.newOffer = function (offer, done) {
     offer.log('info', 'is being processed...');
 
-    const keyPrices = prices.getKeyPrices();
-
     const items = {
         our: inventory.createDictionary(offer.itemsToGive),
         their: inventory.createDictionary(offer.itemsToReceive)
@@ -606,6 +599,8 @@ exports.newOffer = function (offer, done) {
 
     const itemPrices = {};
 
+    const keyPrice = prices.getKeyPrice();
+
     for (let i = 0; i < states.length; i++) {
         const buying = states[i];
         const which = buying ? 'their' : 'our';
@@ -637,7 +632,7 @@ exports.newOffer = function (offer, done) {
 
                 if (match !== null) {
                     // Add value of items
-                    exchange[which].value += match[intentString].toValue(keyPrices.sell.metal) * amount;
+                    exchange[which].value += match[intentString].toValue(keyPrice.metal) * amount;
                     exchange[which].keys += match[intentString].keys * amount;
                     exchange[which].scrap += Currencies.toScrap(match[intentString].metal) * amount;
 
@@ -651,7 +646,7 @@ exports.newOffer = function (offer, done) {
                     // Offer contains keys
                     if (match === null) {
                         // We are not trading keys, add value anyway
-                        exchange[which].value += keyPrices.sell.toValue() * amount;
+                        exchange[which].value += keyPrice.toValue() * amount;
                         exchange[which].keys += amount;
                     }
                 } else if (match === null || match.intent === buying ? 1 : 0) {
@@ -681,10 +676,7 @@ exports.newOffer = function (offer, done) {
             keys: exchange.their.keys,
             metal: Currencies.toRefined(exchange.their.scrap)
         },
-        rates: {
-            buy: keyPrices.buy.metal,
-            sell: keyPrices.sell.metal
-        }
+        rate: keyPrice.metal
     });
 
     offer.data('prices', itemPrices);
