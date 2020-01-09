@@ -13,7 +13,6 @@ const friends = require('handler/friends');
 const trades = require('handler/trades');
 const queue = require('handler/queue');
 const handlerManager = require('app/handler-manager');
-
 const manager = require('lib/manager');
 
 const parseJSON = require('utils/parseJSON');
@@ -665,7 +664,6 @@ exports.handleMessage = function (steamID, message) {
 
         let tradeCount = 0;
         let tradeTotal = 0;
-
         for (const offerID in offerData) {
             if (!Object.prototype.hasOwnProperty.call(offerData, offerID)) {
                 continue;
