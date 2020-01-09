@@ -552,6 +552,47 @@ exports.handleMessage = function (steamID, message) {
         });
     } else if (isAdmin && command === 'update') {
         const params = getParams(message.substring(command.length + 1).trim());
+        
+        if (typeof params.intent === 'string') {
+            const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
+            if (intent !== -1) {
+                params.intent = intent;
+            }
+        }
+
+        if (params.all === true) {
+            // TODO: Must have atleast one other param
+            client.chatMessage(steamID, 'Attempting to update all, logging off...');
+            // Log out, stop price updates and stop polling of trade offers to update pricelist in peace c:
+            require('lib/client').logOff();
+            require('lib/ptf-socket').disconnect();
+            require('lib/manager').pollInterval = -1;
+
+            const pricelist = prices.getPricelist();
+            for (i = 0; i < pricelist.length; i++) {
+                if (params.intent) {
+                    pricelist[i].intent = params.intent;
+                }
+                if (params.min && typeof params.min === 'number') {
+                    pricelist[i].min = params.min;
+                }
+                if (params.max && typeof params.max === 'number') {
+                    pricelist[i].max = params.max;
+                }
+                if (params.enabled === false || params.enabled === true) {
+                    pricelist[i].enabled = params.enabled;
+                }
+                if (params.autoprice === false || params.autoprice === true) {
+                    pricelist[i].autoprice = params.autoprice;
+                }
+                pricelist[i].time = 0;
+            }
+            // Save pricelist
+            handlerManager.getHandler().onPricelist(pricelist);
+            // Kill it
+            handlerManager.getHandler().shutdown();
+            return;
+        }
 
         if (typeof params.buy === 'object') {
             params.buy.keys = params.buy.keys || 0;
@@ -567,13 +608,6 @@ exports.handleMessage = function (steamID, message) {
 
             if (params.autoprice === undefined) {
                 params.autoprice = false;
-            }
-        }
-
-        if (typeof params.intent === 'string') {
-            const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
-            if (intent !== -1) {
-                params.intent = intent;
             }
         }
 
