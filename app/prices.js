@@ -44,7 +44,7 @@ exports.init = function (callback) {
             return callback(null);
         }
 
-        const prices = result.pricelist.items;
+        const prices = organizePrices(result.pricelist.items);
 
         const handler = handlerManager.getHandler();
 
@@ -52,31 +52,34 @@ exports.init = function (callback) {
 
         // Go through our pricelist
         for (let i = 0; i < pricelist.length; i++) {
-            if (pricelist[i].autoprice !== true) {
+            const current = pricelist[i];
+            if (current.autoprice !== true) {
                 continue;
             }
 
+            const attributes = getAttributes(current.sku);
+
             // Go through pricestf prices
-            for (let j = 0; j < prices.length; j++) {
-                if (pricelist[i].name === prices[j].name) {
+            for (let j = 0; j < prices[attributes.quality][attributes.killstreak].length; j++) {
+                const item = prices[attributes.quality][attributes.killstreak][j];
+
+                if (current.name === item.name) {
                     // Found matching items
-                    if (prices[j].buy !== null && pricelist[i].time < prices[j].time) {
+                    if (current.time < item.time) {
                         // Times don't match, update our price
-                        pricelist[i].buy = new Currencies(prices[j].buy);
-                        pricelist[i].sell = new Currencies(prices[j].sell);
-                        pricelist[i].time = prices[j].time;
+                        current.buy = new Currencies(item.buy);
+                        current.sell = new Currencies(item.sell);
+                        current.time = item.time;
 
                         pricesChanged = true;
                     }
 
                     // When a match is found remove it from the ptf pricelist
-                    prices.splice(j, 1);
+                    prices[attributes.quality][attributes.killstreak].splice(j, 1);
                     break;
                 }
             }
         }
-
-        // We can afford to go through pricelist.length * prices.length because we will only do this once on startup
 
         if (pricesChanged) {
             // Our pricelist changed, emit it
@@ -448,4 +451,49 @@ function remove (sku, emit) {
     }
 
     return match;
+}
+
+function organizePrices (prices) {
+    // Organize prices in an object, this way we will only have to loop through the items with matching attributes
+    const sorted = {};
+    for (let i = 0; i < prices.length; i++) {
+        if (prices[i].buy === null) {
+            continue;
+        }
+
+        const attribs = getAttributes(prices[i].sku);
+
+        if (!sorted[attribs['quality']]) {
+            // Define object, if not yet defined
+            sorted[attribs['quality']] = {};
+        }
+
+        if (Array.isArray(sorted[attribs['quality']][attribs['killstreak']])) {
+            sorted[attribs['quality']][attribs['killstreak']].push(important(prices[i]));
+        } else {
+            sorted[attribs['quality']][attribs['killstreak']] = [important(prices[i])];
+        }
+    }
+
+    return sorted;
+}
+
+function getAttributes (sku) {
+    const item = SKU.fromString(sku);
+
+    // We only need quality and killstreak, they are the two biggest groups
+    return {
+        quality: item.quality,
+        killstreak: item.killstreak
+    };
+}
+
+function important (item) {
+    // Return only the data we need
+    return {
+        name: item.name,
+        buy: item.buy,
+        sell: item.sell,
+        time: item.time
+    };
 }
