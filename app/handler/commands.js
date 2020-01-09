@@ -562,11 +562,8 @@ exports.handleMessage = function (steamID, message) {
 
         if (params.all === true) {
             // TODO: Must have atleast one other param
-            client.chatMessage(steamID, 'Attempting to update all, logging off...');
-            // Log out, stop price updates and stop polling of trade offers to update pricelist in peace c:
-            require('lib/client').logOff();
-            require('lib/ptf-socket').disconnect();
-            require('lib/manager').pollInterval = -1;
+            client.chatMessage(steamID, 'Attempting to update all, snoozing...');
+            handlerManager.getHandler().cleanup();
 
             const pricelist = prices.getPricelist();
             for (i = 0; i < pricelist.length; i++) {
@@ -589,6 +586,7 @@ exports.handleMessage = function (steamID, message) {
             }
             // Save pricelist
             handlerManager.getHandler().onPricelist(pricelist);
+            client.chatMessage(steamID, 'Pricelist updated, shutting down...');
             // Kill it
             handlerManager.getHandler().shutdown();
             return;
