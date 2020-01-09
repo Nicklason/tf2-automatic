@@ -26,7 +26,7 @@ setInterval(function () {
     messages = [];
 }, 1000);
 
-function getCommand(string) {
+function getCommand (string) {
     if (string.startsWith('!')) {
         const command = string.toLowerCase().split(' ')[0].substr(1);
         return command;
@@ -35,7 +35,7 @@ function getCommand(string) {
     }
 }
 
-function getParams(string) {
+function getParams (string) {
     const params = parseJSON('{"' + string.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"') + '"}');
 
     const parsed = {};
@@ -67,7 +67,7 @@ function getParams(string) {
     return parsed;
 }
 
-function getItemFromParams(steamID, params) {
+function getItemFromParams (steamID, params) {
     const item = SKU.fromString('');
 
     delete item.paint;
@@ -665,8 +665,8 @@ exports.handleMessage = function (steamID, message) {
             }
         });
     } else if (isAdmin && command === 'trades') {
-        const dateNow = new Date().getTime(); // Gets date & time in milliseconds
-        const offerData = manager.pollData.offerData
+        const dateNow = new Date().getTime();
+        const offerData = manager.pollData.offerData;
 
         let tradeToday = 0;
         let tradeTotal = 0;
@@ -685,7 +685,8 @@ exports.handleMessage = function (steamID, message) {
                 }
             }
         }
-        client.chatMessage(steamID, 'Trades today: ' + tradeToday + ' \n Total trades: ' + tradeTotal)
+
+        client.chatMessage(steamID, 'Trades today: ' + tradeToday + ' \n Total trades: ' + tradeTotal);
     } else if (isAdmin && command === 'restart') {
         client.chatMessage(steamID, 'Restarting...');
 
@@ -741,7 +742,7 @@ exports.handleMessage = function (steamID, message) {
     }
 };
 
-function getItemAndAmount(steamID, message) {
+function getItemAndAmount (steamID, message) {
     let name = message;
     let amount = 1;
 
