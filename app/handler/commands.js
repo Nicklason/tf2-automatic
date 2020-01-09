@@ -13,6 +13,7 @@ const friends = require('handler/friends');
 const trades = require('handler/trades');
 const queue = require('handler/queue');
 const handlerManager = require('app/handler-manager');
+const manager = require('lib/manager');
 
 const parseJSON = require('utils/parseJSON');
 const admin = require('app/admins');
@@ -24,7 +25,7 @@ setInterval(function () {
     messages = [];
 }, 1000);
 
-function getCommand (string) {
+function getCommand(string) {
     if (string.startsWith('!')) {
         const command = string.toLowerCase().split(' ')[0].substr(1);
         return command;
@@ -33,7 +34,7 @@ function getCommand (string) {
     }
 }
 
-function getParams (string) {
+function getParams(string) {
     const params = parseJSON('{"' + string.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"') + '"}');
 
     const parsed = {};
@@ -65,7 +66,7 @@ function getParams (string) {
     return parsed;
 }
 
-function getItemFromParams (steamID, params) {
+function getItemFromParams(steamID, params) {
     const item = SKU.fromString('');
 
     delete item.paint;
@@ -258,7 +259,7 @@ exports.handleMessage = function (steamID, message) {
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
-            reply += ', !get, !add, !remove, !update, !restart, !stop';
+            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
@@ -662,6 +663,28 @@ exports.handleMessage = function (steamID, message) {
                 client.chatMessage(steamID, 'Removed "' + entry.name + '".');
             }
         });
+    } else if (isAdmin && command === 'trades') {
+        const dateNow = new Date().getTime(); // Gets date & time in milliseconds
+        const offerData = manager.pollData.offerData
+
+        let tradeToday = 0;
+        let tradeTotal = 0;
+        for (const offerID in offerData) {
+            if (!Object.prototype.hasOwnProperty.call(offerData, offerID)) {
+                continue;
+            }
+
+            if (offerData[offerID].handledByUs === true && offerData[offerID].isAccepted === true) {
+                // Sucessful trades handled by the bot
+                tradeTotal++;
+
+                if (offerData[offerID].finishTimestamp >= (dateNow - 86400000)) {
+                    // Within the last 24 hours
+                    tradeToday++;
+                }
+            }
+        }
+        client.chatMessage(steamID, 'Trades today: ' + tradeToday + ' \n Total trades: ' + tradeTotal)
     } else if (isAdmin && command === 'restart') {
         client.chatMessage(steamID, 'Restarting...');
 
@@ -695,7 +718,7 @@ exports.handleMessage = function (steamID, message) {
     }
 };
 
-function getItemAndAmount (steamID, message) {
+function getItemAndAmount(steamID, message) {
     let name = message;
     let amount = 1;
 
