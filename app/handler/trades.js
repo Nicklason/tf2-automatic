@@ -597,6 +597,37 @@ exports.newOffer = function (offer, done) {
         return;
     }
 
+    if (exchange.contains.metal && !exchange.contains.keys && !exchange.contains.items) {
+        // Offer only contains metal
+        offer.log('info', 'only contains metal, declining...');
+        return done('decline', 'ONLY_METAL');
+    } else if (exchange.contains.keys && !exchange.contains.items) {
+        // Offer is for trading keys, check if we are trading them
+        const priceEntry = prices.get('5021;6', true);
+        if (priceEntry === null) {
+            // We are not trading keys
+            offer.log('info', 'we are not trading keys, declining...');
+            return done('decline', 'NOT_TRADING_KEYS');
+        } else if (exchange.our.contains.keys && (priceEntry.intent !== 1 && priceEntry.intent !== 2)) {
+            // We are not selling keys
+            offer.log('info', 'we are not selling keys, declining...');
+            return done('decline', 'NOT_TRADING_KEYS');
+        } else if (exchange.their.contains.keys && (priceEntry.intent !== 0 && priceEntry.intent !== 2)) {
+            // We are not buying keys
+            offer.log('info', 'we are not buying keys, declining...');
+            return done('decline', 'NOT_TRADING_KEYS');
+        } else {
+            // Check overstock / understock on keys
+            const diff = itemsDiff['5021;6'];
+            // If the diff is greater than 0 then we are buying, less than is selling
+            if (diff !== 0 && inventory.amountCanTrade('5021;6', diff > 0) - diff < 0) {
+                // User is taking too many / offering too many
+                offer.log('info', 'is taking / offering too many keys, declining...');
+                return done('decline', 'OVERSTOCKED');
+            }
+        }
+    }
+
     const itemPrices = {};
 
     const keyPrice = prices.getKeyPrice();
@@ -677,37 +708,6 @@ exports.newOffer = function (offer, done) {
     });
 
     offer.data('prices', itemPrices);
-
-    if (exchange.contains.metal && !exchange.contains.keys && !exchange.contains.items) {
-        // Offer only contains metal
-        offer.log('info', 'only contains metal, declining...');
-        return done('decline', 'ONLY_METAL');
-    } else if (exchange.contains.keys && !exchange.contains.items) {
-        // Offer is for trading keys, check if we are trading them
-        const priceEntry = prices.get('5021;6', true);
-        if (priceEntry === null) {
-            // We are not trading keys
-            offer.log('info', 'we are not trading keys, declining...');
-            return done('decline', 'NOT_TRADING_KEYS');
-        } else if (exchange.our.contains.keys && (priceEntry.intent !== 1 && priceEntry.intent !== 2)) {
-            // We are not selling keys
-            offer.log('info', 'we are not selling keys, declining...');
-            return done('decline', 'NOT_TRADING_KEYS');
-        } else if (exchange.their.contains.keys && (priceEntry.intent !== 0 && priceEntry.intent !== 2)) {
-            // We are not buying keys
-            offer.log('info', 'we are not buying keys, declining...');
-            return done('decline', 'NOT_TRADING_KEYS');
-        } else {
-            // Check overstock / understock on keys
-            const diff = itemsDiff['5021;6'];
-            // If the diff is greater than 0 then we are buying, less than is selling
-            if (diff !== 0 && inventory.amountCanTrade('5021;6', diff > 0) - diff < 0) {
-                // User is taking too many / offering too many
-                offer.log('info', 'is taking / offering too many keys, declining...');
-                return done('decline', 'OVERSTOCKED');
-            }
-        }
-    }
 
     // Check if the values are correct
     if (exchange.our.value > exchange.their.value) {
