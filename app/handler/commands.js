@@ -14,6 +14,8 @@ const trades = require('handler/trades');
 const queue = require('handler/queue');
 const handlerManager = require('app/handler-manager');
 
+const manager = require('lib/manager');
+
 const parseJSON = require('utils/parseJSON');
 const admin = require('app/admins');
 const fixItem = require('utils/item/fixItem');
@@ -657,6 +659,26 @@ exports.handleMessage = function (steamID, message) {
                 client.chatMessage(steamID, 'Removed "' + entry.name + '".');
             }
         });
+    } else if (isAdmin && command === 'trades') {
+        const dateNow = new Date().getTime(); // Gets date & time in milliseconds
+        const offerData = manager.pollData.offerData
+
+        let tradeCount = 0;
+        let tradeTotal = 0;
+
+        for (const offerID in offerData) {
+            if (!Object.prototype.hasOwnProperty.call(offerData, offerID)) {
+                continue;
+            }
+
+            if (offerData[offerID].finishTimestamp >= (dateNow - (86400000)) && offerData[offerID].handledByUs === true && offerData[offerID].isAccepted === true) { // Sucessful trades accepted in the last 24 hours by bot
+                tradeCount++;
+                tradeTotal++;
+            } else if (offerData[offerID].handledByUs === true && offerData[offerID].isAccepted === true) { // Successful trades not accepted in the last 24 hours by bot
+                tradeTotal++;
+            }
+        }
+        client.chatMessage(steamID, 'Trades today: ' + tradeCount + ' \n Total trades: ' + tradeTotal)
     } else if (isAdmin && command === 'restart') {
         client.chatMessage(steamID, 'Restarting...');
 
