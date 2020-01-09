@@ -14,6 +14,7 @@ const trades = require('handler/trades');
 const queue = require('handler/queue');
 const handlerManager = require('app/handler-manager');
 const api = require('lib/ptf-api');
+const validator = require('lib/validator');
 const manager = require('lib/manager');
 
 const parseJSON = require('utils/parseJSON');
@@ -562,10 +563,17 @@ exports.handleMessage = function (steamID, message) {
 
         if (params.all === true) {
             // TODO: Must have atleast one other param
-            client.chatMessage(steamID, 'Attempting to update all, snoozing...');
-            handlerManager.getHandler().cleanup();
+            client.chatMessage(steamID, 'Updating pricelist...');
 
             const pricelist = prices.getPricelist();
+
+            if (pricelist.length === 0) {
+                client.chatMessage(steamID, 'Your pricelist is empty');
+                return;
+            }
+
+            handlerManager.getHandler().cleanup();
+
             for (i = 0; i < pricelist.length; i++) {
                 if (params.intent) {
                     pricelist[i].intent = params.intent;
@@ -583,10 +591,29 @@ exports.handleMessage = function (steamID, message) {
                     pricelist[i].autoprice = params.autoprice;
                 }
                 pricelist[i].time = 0;
+
+                if (i === 0) {
+                    const errors = validator({
+                        sku: pricelist[i].sku,
+                        enabled: pricelist[i].enabled,
+                        intent: pricelist[i].intent,
+                        max: pricelist[i].max,
+                        min: pricelist[i].min,
+                        autoprice: pricelist[i].autoprice,
+                        name: pricelist[i].name,
+                        buy: pricelist[i].buy.toJSON(),
+                        sell: pricelist[i].sell.toJSON(),
+                        time: pricelist[i].time
+                    }, 'pricelist');
+
+                    if (errors !== null) {
+                        throw new Error(errors.join(', '));
+                    }
+                }
             }
+
             // Save pricelist
             handlerManager.getHandler().onPricelist(pricelist);
-            client.chatMessage(steamID, 'Pricelist updated, shutting down...');
             // Kill it
             handlerManager.getHandler().shutdown();
             return;
