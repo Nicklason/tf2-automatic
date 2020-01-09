@@ -13,6 +13,7 @@ const friends = require('handler/friends');
 const trades = require('handler/trades');
 const queue = require('handler/queue');
 const handlerManager = require('app/handler-manager');
+const api = require('lib/ptf-api');
 const manager = require('lib/manager');
 
 const parseJSON = require('utils/parseJSON');
@@ -712,6 +713,28 @@ exports.handleMessage = function (steamID, message) {
             if (!stopping) {
                 client.chatMessage(steamID, 'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
             }
+        });
+    } else if (isAdmin && command === 'pricecheck') {
+        const params = getParams(message.substring(command.length + 1).trim());
+
+        if (params.sku === undefined) {
+            const item = getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
+        params.sku = SKU.fromObject(fixItem(SKU.fromString(params.sku)));
+
+        api.requestCheck(params.sku, 'bptf', function (err) {
+            if (err) {
+                client.chatMessage(steamID, 'Error while requesting price check: ' + (err.body && err.body.message ? err.body.message : err.message));
+                return;
+            }
+            client.chatMessage(steamID, 'Price check has been requested, the item will be checked.');
         });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
