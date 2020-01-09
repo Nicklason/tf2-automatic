@@ -1,376 +1,451 @@
-const TF2Automatic = require('tf2automatic');
-const isObject = require('isobject');
-const fs = require('graceful-fs');
+const async = require('async');
+const SKU = require('tf2-sku');
 const Currencies = require('tf2-currencies');
 
-const utils = require('./utils.js');
+const log = require('lib/logger');
+const api = require('lib/ptf-api');
+const validator = require('lib/validator');
+const schemaManager = require('lib/tf2-schema');
+const socket = require('lib/ptf-socket');
 
-let Automatic;
-let log;
-let config;
-let API;
-let Backpack;
-let Items;
-let Inventory;
+const handlerManager = require('app/handler-manager');
 
-const FOLDER_NAME = 'temp';
-const LISTINGS_FILENAME = FOLDER_NAME + '/listings.json';
-
-exports.register = function (automatic) {
-    Automatic = automatic;
-    log = automatic.log;
-    config = automatic.config;
-    Backpack = automatic.backpack;
-    Items = automatic.items;
-    Inventory = automatic.inventory;
-
-    API = new TF2Automatic({ client_id: config.get('client_id'), client_secret: config.get('client_secret'), pollTime: 2 * 60 * 1000 });
-};
+let pricelist = [];
+let keyPrices = null;
+const handling = [];
 
 exports.init = function (callback) {
-    if (fs.existsSync(LISTINGS_FILENAME)) {
-        const pricelist = utils.parseJSON(fs.readFileSync(LISTINGS_FILENAME));
-        if (pricelist != null) {
-            API.listings = pricelist;
+    socket.removeListener('price', handlePriceChange);
+    socket.on('price', handlePriceChange);
+
+    const funcs = {
+        keys: function (callback) {
+            api.getPrice('5021;6', 'bptf', callback);
         }
+    };
+
+    if (pricelist.length !== 0) {
+        funcs.pricelist = function (callback) {
+            api.getPricelist('bptf', callback);
+        };
     }
 
-    log.debug('Initializing tf2automatic package.');
-    API.steamid = Automatic.getOwnSteamID();
-    API.init(function (err) {
+    async.parallel(funcs, function (err, result) {
         if (err) {
-            callback(new Error('tf2automatic (' + err.message + ')'));
-            return;
+            return callback(err);
+        }
+
+        keyPrices = {
+            buy: new Currencies(result.keys.buy),
+            sell: new Currencies(result.keys.sell)
+        };
+
+        if (pricelist.length === 0) {
+            return callback(null);
+        }
+
+        const prices = result.pricelist.items;
+
+        const handler = handlerManager.getHandler();
+
+        let pricesChanged = false;
+
+        // Go through our pricelist
+        for (let i = 0; i < pricelist.length; i++) {
+            if (pricelist[i].autoprice !== true) {
+                continue;
+            }
+
+            // Go through pricestf prices
+            for (let j = 0; j < prices.length; j++) {
+                if (pricelist[i].name === prices[j].name) {
+                    // Found matching items
+                    if (prices[j].buy !== null && pricelist[i].time < prices[j].time) {
+                        // Times don't match, update our price
+                        pricelist[i].buy = new Currencies(prices[j].buy);
+                        pricelist[i].sell = new Currencies(prices[j].sell);
+                        pricelist[i].time = prices[j].time;
+
+                        pricesChanged = true;
+                    }
+
+                    // When a match is found remove it from the ptf pricelist
+                    prices.splice(j, 1);
+                    break;
+                }
+            }
+        }
+
+        // We can afford to go through pricelist.length * prices.length because we will only do this once on startup
+
+        if (pricesChanged) {
+            // Our pricelist changed, emit it
+            handler.onPricelist(pricelist);
         }
 
         callback(null);
     });
-
-    API.on('listings', pricesRefreshed);
-    API.on('change', priceChanged);
-    API.on('rate', rateEmitted);
-    API.on('expired', Automatic.expired);
 };
 
-exports.list = list;
-exports.key = key;
-exports.getPrice = function (name) {
-    const listing = API.findListing(name);
-    if (listing == null) {
-        return null;
-    }
-    const item = API.getItem(listing);
-    return {
-        item: item,
-        intent: listing.intent,
-        price: listing.prices
-    };
-};
-exports.findListing = function (name) {
-    return API.findListing(name);
-};
-exports.getItem = function (listing) {
-    return API.getItem(listing);
-};
-exports.upload = function (data, type, callback) {
-    API.upload(data, type, callback);
-};
-exports.getLimit = function (name) {
-    const listing = exports.findListing(name);
-    let limit = config.get('stocklimit');
-    if (listing != null && isObject(listing.meta) && listing.meta.hasOwnProperty('max_stock')) {
-        limit = listing.meta.max_stock;
-    }
+/**
+ * Returns how many of an item you can afford
+ * @param {Boolean} buying If we are buying or not (used for key prices)
+ * @param {Boolean} useKeys
+ * @param {Object} currencies Currencies object containing keys and metal value
+ * @param {Object} currenciesDict Object containing all pure available
+ * @return {Number}
+ */
+exports.amountCanAfford = function (buying, useKeys, currencies, currenciesDict) {
+    const keyPrice = exports.getKeyPrices()[buying ? 'buy' : 'sell'];
 
-    if (limit == -1) {
-        limit = Infinity;
-    }
+    const value = currencies.toValue(keyPrice.metal);
 
-    return limit;
-};
+    let totalValue = 0;
 
-exports.findMatch = findMatch;
-
-exports.handleBuyOrders = handleBuyOrders;
-exports.handleSellOrders = handleSellOrders;
-
-exports.addItem = function (items, callback) {
-    API.addListing(items, callback);
-};
-exports.removeItems = function (items, callback) {
-    API.removeListings(items, callback);
-};
-exports.removeAll = function removeAll (callback) {
-    API.removeAllListings(callback);
-};
-exports.updateItem = function (name, update, callback) {
-    API.updateListing(name, update, callback);
-};
-
-exports.required = getRequired;
-exports.value = getValue;
-exports.afford = canAfford;
-
-exports.valueToPure = valueToPure;
-exports.valueToCurrencies = valueToCurrencies;
-
-function getPrice (name, our) {
-    if (name == 'Scrap Metal') {
-        return { metal: 0.11 };
-    } else if (name == 'Reclaimed Metal') {
-        return { metal: 0.33 };
-    } else if (name == 'Refined Metal') {
-        return { metal: 1 };
-    }
-
-    let price = exports.getPrice(name);
-    if (price == null || price.price == null ) {
-        // If the item is not in the pricelist / not priced / we are not selling / banking the item
-        return null;
-    }
-    if ((price.intent != 1 && price.intent != 2 && our === true) || (price.intent != 0 && price.intent != 2 && our === false)) {
-        // If they ask for our item, and we are not selling / banking, or if they sell an item, but we are not buying / banking, then don't price the item :thinksmart:
-        return null;
-    }
-
-    price = price.price;
-
-    const intent = our == true ? 'sell' : 'buy';
-    if (!price.hasOwnProperty(intent)) {
-        return null;
-    }
-    return price[intent];
-}
-
-function getRequired (price, amount, useKeys) {
-    const keyValue = utils.refinedToScrap(key());
-
-    const value = utils.refinedToScrap(price.metal) * amount + keyValue * price.keys * amount;
-
-    const keys = useKeys ? Math.floor(value / keyValue) : 0;
-    const metal = utils.scrapToRefined(value - keys * keyValue);
-
-    return {
-        keys,
-        metal
-    };
-}
-
-function getValue (currencies) {
-    let value = 0;
-    if (currencies.keys) {
-        value += utils.refinedToScrap(key()) * currencies.keys;
-    }
-    if (currencies.metal) {
-        value += utils.refinedToScrap(currencies.metal);
-    }
-    return value;
-}
-
-function pureValue (pure) {
-    let value = 0;
-
-    const summary = Items.createSummary(pure);
-
-    value += utils.refinedToScrap(key()) * summary.keys;
-    value += 9 * summary.refined;
-    value += 3 * summary.reclaimed;
-    value += summary.scrap;
-
-    return value;
-}
-
-function canAfford (price, pure) {
-    const priceVal = getValue(price);
-    const pureVal = pureValue(pure);
-
-    const amount = Math.floor(pureVal / priceVal);
-    return amount;
-}
-
-function valueToPure (value, useKeys = true) {
-    const keyValue = utils.refinedToScrap(key());
-
-    const keys = useKeys ? Math.floor(value / keyValue) : 0;
-    const refined = Math.floor((value - keys * keyValue) / 9);
-    const reclaimed = Math.floor((value - refined * 9 - keys * keyValue) / 3);
-    const scrap = value - refined * 9 - reclaimed * 3 - keys * keyValue;
-
-    return {
-        keys: keys,
-        refined: refined,
-        reclaimed: reclaimed,
-        scrap: scrap
-    };
-}
-
-function valueToCurrencies (value, useKeys = true) {
-    const currencies = Currencies.toCurrencies(value, key());
-
-    if (useKeys == false) {
-        const valueOfKeys = currencies.keys * Currencies.toScrap(key());
-        currencies.keys = 0;
-        currencies.metal = Currencies.toRefined(Currencies.toScrap(currencies.metal) + valueOfKeys);
-    }
-
-    return currencies.toJSON();
-}
-
-function handleBuyOrders (offer) {
-    const their = offer.items.their;
-    const dict = Items.createDictionary(their);
-    const summary = Items.createSummary(dict);
-    for (const name in summary) {
-        if (!summary.hasOwnProperty(name)) {
+    for (const sku in currenciesDict) {
+        if (!Object.prototype.hasOwnProperty.call(currenciesDict, sku)) {
             continue;
         }
-        const amount = summary[name];
 
-        const price = getPrice(name, false);
-        if (price == null) return false;
+        const amount = Array.isArray(currenciesDict[sku]) ? currenciesDict[sku].length : currenciesDict[sku];
 
-        const value = getValue(price);
-        offer.currencies.their.metal += value * amount;
+        if (useKeys && sku === '5021;6') {
+            totalValue += keyPrice.toValue() * amount;
+        } else if (sku === '5002;6') {
+            totalValue += 9 * amount;
+        } else if (sku === '5001;6') {
+            totalValue += 3 * amount;
+        } else if (sku === '5000;6') {
+            totalValue += amount;
+        }
+    }
 
-        offer.prices.push({
-            intent: 0,
-            ids: dict[name],
-            name: name,
-            value: value
-        });
+    return Math.floor(totalValue / value);
+};
+
+exports.setPricelist = function (prices) {
+    if (!Array.isArray(prices)) {
+        throw new Error('Pricelist is not an array');
+    }
+
+    for (let i = 0; i < prices.length; i++) {
+        const entry = prices[i];
+
+        const errors = validator(entry, 'pricelist');
+        if (errors !== null) {
+            throw new Error('Invalid pricelist item: ' + errors.join(', '));
+        }
+
+        entry.buy = new Currencies(entry.buy);
+        entry.sell = new Currencies(entry.sell);
+    }
+
+    pricelist = prices;
+};
+
+exports.getPricelist = function () {
+    return pricelist;
+};
+
+exports.getKeyPrices = function () {
+    return keyPrices;
+};
+
+function handlePriceChange (data) {
+    if (data.source === 'bptf') {
+        if (data.sku === '5021;6') {
+            // Update key prices
+            keyPrices.buy = new Currencies(data.buy);
+            keyPrices.sell = new Currencies(data.sell);
+        }
+
+        const match = exports.get(data.sku);
+        if (match !== null && match.autoprice === true) {
+            log.debug('Price of ' + match.name + ' (' + match.sku + ') changed');
+
+            // Update prices
+            match.buy = new Currencies(data.buy);
+            match.sell = new Currencies(data.sell);
+            match.time = data.time;
+
+            // Emit price change for sku (maybe include old price / new price?)
+            handlerManager.getHandler().onPriceChange(match.sku, match);
+        }
     }
 }
 
-function handleSellOrders (offer) {
-    const our = offer.items.our;
-    const dict = Items.createDictionary(our);
-    const summary = Items.createSummary(dict);
-    for (const name in summary) {
-        if (!summary.hasOwnProperty(name)) {
-            continue;
-        }
-        const amount = summary[name];
-
-        const price = getPrice(name, true);
-        if (price == null) return false;
-
-        const value = getValue(price);
-        offer.currencies.our.metal += value * amount;
-
-        offer.prices.push({
-            intent: 1,
-            ids: dict[name],
-            name: name,
-            value: value
-        });
-    }
-}
-
-function priceChanged (state, item, prices) {
-    switch (state) {
-        case 1:
-            log.info('"' + item.name + '" has been added to the pricelist');
-            Automatic.alert('price', '"' + item.name + '" has been added to the pricelist.');
-            break;
-        case 2:
-            log.info('"' + item.name + '" has changed');
-            Automatic.alert('price', '"' + item.name + '" has changed.');
-            break;
-        case 3:
-            log.info('"' + item.name + '" is no longer in the pricelist');
-            Automatic.alert('price', '"' + item.name + '" is no longer in the pricelist');
-            break;
-    }
-
-    if ((state == 0 || state == 2) && prices != null) {
-        const limit = exports.getLimit(item.name);
-        const inInv = Inventory.amount(item.name);
-        if (prices.buy && (prices.intent == 2 || prices.intent == 0)) {
-            if (!(limit != -1 && inInv >= limit)) {
-                Backpack.createListing({
-                    intent: 0,
-                    item: item,
-                    currencies: prices.buy,
-                    details: Backpack.listingComment(0, item.name, prices.buy)
-                }, true);
-            } else {
-                const order = Backpack.findBuyOrder(item.name);
-                if (order) {
-                    Backpack.removeListing(order.id);
-                }
-            }
-        } else {
-            // We are not buying, remove listing if one is active
-            const order = Backpack.findBuyOrder(item.name);
-            if (order) {
-                Backpack.removeListing(order.id);
-            }
-        }
-
-        if (prices.sell && (prices.intent == 2 || prices.intent == 1)) {
-            Backpack.updateSellOrders(item.name);
-        } else {
-            // We are not selling, remove listing if one is active
-            Backpack.removeSellOrders(item.name);
-        }
-    } else if (state == 3) {
-        const order = Backpack.findBuyOrder(item.name);
-        if (order) {
-            Backpack.removeListing(order.id);
-        }
-        Backpack.removeSellOrders(item.name);
-    }
-}
-
-function pricesRefreshed (pricelist) {
-    log.debug('Pricelist has been refreshed.');
-    fs.writeFile(LISTINGS_FILENAME, JSON.stringify(pricelist), function (err) {
-        if (err) {
-            log.warn('Error writing price data: ' + err);
-        }
-    });
-}
-
-function rateEmitted (rate) {
-    log.debug(rate);
-}
-
-function key () {
-    return API.currencies.keys.price.value;
-}
-function list () {
-    return API.listings;
-}
-
-// Bunch of random checks, but it works better than just checking for items that contains the search strng
-function findMatch (search) {
+/**
+ * Searches for names in the pricelist that match the search
+ * @param {String} search
+ * @param {Boolean} [enabledOnly=true]
+ * @return {null|Object|Array<String>}
+ */
+exports.searchByName = function (search, enabledOnly = true) {
     search = search.toLowerCase();
 
     const match = [];
 
-    const pricelist = list();
+    const pricelist = exports.getPricelist();
+
     for (let i = 0; i < pricelist.length; i++) {
-        const listing = pricelist[i];
-        if (listing.prices == null) {
+        const entry = pricelist[i];
+
+        if (enabledOnly && entry.enabled === false) {
             continue;
         }
-        const name = listing.name.toLowerCase();
-        if (name == search) {
-            return listing;
+
+        const name = entry.name.toLowerCase();
+
+        if (search === name) {
+            // Found direct match
+            return entry;
         }
 
-        if (name.toLowerCase().indexOf(search) != -1) {
-            match.push(listing);
+        if (name.indexOf(search) !== -1) {
+            match.push(entry);
         }
     }
 
-    if (match.length == 0) {
+    if (match.length === 0) {
+        // No match
         return null;
-    } else if (match.length == 1) {
+    } else if (match.length === 1) {
+        // Found one that matched the search
         return match[0];
     }
 
-    for (let i = 0; i < match.length; i++) match[i] = match[i].name;
+    // Found many that matched, return list of the names
+    return match.map((entry) => entry.name);
+};
+
+exports.get = function (sku, onlyEnabled = false) {
+    const name = schemaManager.schema.getName(SKU.fromString(sku));
+    const match = pricelist.find((v) => v.name === name);
+
+    return match === undefined || (onlyEnabled && match.enabled !== true) ? null : match;
+};
+
+exports.add = function (sku, data, callback) {
+    if (sku === undefined) {
+        callback(new Error('Missing sku'));
+        return;
+    } else if (sku === '0;0') {
+        callback(new Error('Invalid item'));
+        return;
+    }
+
+    log.debug('Handling request to add item to pricelist', { sku: sku, data: data });
+
+    const match = exports.get(sku);
+
+    if (match !== null) {
+        callback(new Error('Item is already in the pricelist'));
+        return;
+    } else if (handling.indexOf(sku) !== -1) {
+        callback(new Error('Item is already being changed'));
+        return;
+    }
+
+    const item = SKU.fromString(sku);
+
+    if (item.defindex === 0 || item.quality === 0) {
+        callback(new Error('Unknown item'));
+        return;
+    }
+
+    const entry = Object.assign(data, {
+        sku: sku,
+        name: schemaManager.schema.getName(SKU.fromString(sku))
+    });
+
+    // Validate data object
+    const errors = validator(entry, 'add');
+    if (errors !== null) {
+        return callback(new Error(errors.join(', ')));
+    }
+
+    if (entry.autoprice !== true) {
+        entry.time = null;
+
+        const errors = validator(entry, 'pricelist');
+        if (errors !== null) {
+            return callback(new Error(errors.join(', ')));
+        }
+
+        const keyPrice = exports.getKeyPrices()['sell'].metal;
+
+        const buy = new Currencies(entry.buy);
+        const sell = new Currencies(entry.sell);
+
+        if (buy.toValue(keyPrice) >= sell.toValue(keyPrice)) {
+            return callback(new Error('Sell must be higher than buy'));
+        }
+
+        add(entry, true);
+        return callback(null, entry);
+    }
+
+    handling.push(sku);
+
+    log.debug('Item is being autopriced, getting price...');
+
+    // TODO: If the item is not in the pricestf pricelist then request a check
+    api.getPrice(sku, 'bptf', function (err, prices) {
+        handling.splice(handling.indexOf(sku), 1);
+        if (err) {
+            return callback(err);
+        }
+
+        if (prices.buy === null) {
+            return callback(new Error('Item has no buy price on pricestf'));
+        }
+
+        entry.buy = prices.buy;
+        entry.sell = prices.sell;
+        entry.time = prices.time;
+
+        add(entry, true);
+        return callback(null, entry);
+    });
+};
+
+function add (entry, emit) {
+    log.debug('Adding item to pricelist', { entry: entry });
+
+    const errors = validator(entry, 'pricelist');
+
+    if (errors !== null) {
+        throw new Error(errors.join(', '));
+    }
+
+    entry.buy = new Currencies(entry.buy);
+    entry.sell = new Currencies(entry.sell);
+
+    pricelist.push(entry);
+
+    if (emit === true) {
+        const handler = handlerManager.getHandler();
+        // Price of item changed
+        handler.onPriceChange(entry.sku, entry);
+        // Pricelist updated
+        handler.onPricelist(pricelist);
+    }
+}
+
+exports.update = function (sku, data, callback) {
+    const match = exports.get(sku, false);
+
+    if (match === null) {
+        callback(new Error('Item is not in the pricelist'));
+        return;
+    } else if (handling.indexOf(match.sku) !== -1) {
+        callback(new Error('Item is already being changed'));
+        return;
+    }
+
+    const copy = Object.assign({}, match);
+
+    copy.buy = copy.buy.toJSON();
+    copy.sell = copy.sell.toJSON();
+
+    for (const property in data) {
+        if (!Object.prototype.hasOwnProperty.call(data, property)) {
+            continue;
+        }
+
+        copy[property] = data[property];
+    }
+
+    const time = copy.time;
+    delete copy.time;
+    const errors = validator(copy, 'add');
+
+    if (errors !== null) {
+        return callback(new Error(errors.join(', ')));
+    }
+
+    if (copy.max !== -1 && copy.max <= copy.min) {
+        return callback(new Error('Max needs to be more than min'));
+    }
+
+    copy.time = time;
+
+    if (copy.autoprice === false) {
+        const keyPrice = exports.getKeyPrices()['sell'].metal;
+
+        const buy = new Currencies(copy.buy);
+        const sell = new Currencies(copy.sell);
+
+        if (buy.toValue(keyPrice) >= sell.toValue(keyPrice)) {
+            return callback(new Error('Sell must be higher than buy'));
+        }
+
+        copy.time = null;
+        remove(copy.sku, false);
+        add(copy, true);
+        return callback(null, copy);
+    } else if (copy.autoprice === match.autoprice) {
+        remove(copy.sku, false);
+        add(copy, true);
+        return callback(null, copy);
+    }
+
+    handling.push(match.sku);
+
+    // TODO: If the item is not in the pricestf pricelist then request a check
+    api.getPrice(match.sku, 'bptf', function (err, prices) {
+        handling.splice(handling.indexOf(match.sku), 1);
+        if (err) {
+            return callback(err);
+        }
+
+        if (prices.buy === null) {
+            return callback(new Error('Item has no buy price on pricestf'));
+        }
+
+        copy.buy = prices.buy;
+        copy.sell = prices.sell;
+        copy.time = prices.time;
+
+        remove(copy.sku, false);
+        add(copy, true);
+        return callback(null, copy);
+    });
+};
+
+exports.remove = function (sku, callback) {
+    const match = remove(sku, true);
+
+    if (match === null) {
+        return callback(new Error('Item is not in the pricelist'));
+    }
+
+    return callback(null, match);
+};
+
+function remove (sku, emit) {
+    let index = -1;
+    for (let i = 0; i < pricelist.length; i++) {
+        if (pricelist[i].sku === sku) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index === -1) {
+        return null;
+    }
+
+    const match = pricelist[index];
+    pricelist.splice(index, 1);
+
+    if (emit === true) {
+        const handler = handlerManager.getHandler();
+        // Price of item changed
+        handler.onPriceChange(sku, null);
+        // Pricelist updated
+        handler.onPricelist(pricelist);
+    }
 
     return match;
 }

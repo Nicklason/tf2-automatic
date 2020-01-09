@@ -1,141 +1,262 @@
-const fs = require('graceful-fs');
-const utils = require('./utils.js');
+const manager = require('lib/manager');
 
-let Automatic;
-let log;
-let manager;
-let Items;
-let Prices;
+const handlerManager = require('app/handler-manager');
+const prices = require('app/prices');
 
-const INVENTORY_FILENAME = 'temp/inventory.json';
+let dictionary = {};
+let nonTradableDictionary = {};
 
-let INVENTORY = [];
-let DICTIONARY = {};
+/**
+ * Fetches an inventory
+ * @param {Object|String} steamID SteamID object or steamid64
+ * @param {Function} callback
+ */
+exports.getInventory = function (steamID, callback) {
+    const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
+    const isOurInv = manager.steamID.getSteamID64() === steamID64;
 
-exports.register = function (automatic) {
-    Automatic = automatic;
-    log = automatic.log;
-    manager = automatic.manager;
-
-    Items = automatic.items;
-    Prices = automatic.prices;
-};
-
-exports.init = function (callback) {
-    log.debug('Initializing inventory.');
-    getInventory(Automatic.getOwnSteamID(), function (err) {
+    manager.getUserInventoryContents(steamID, 440, 2, !isOurInv, function (err, items) {
         if (err) {
-            callback(new Error('inventory (' + err.message + ')'));
-            return;
+            return callback(err);
         }
-        callback(null);
+
+        const tradable = items.filter((item) => item.tradable);
+
+        if (isOurInv) {
+            inventoryUpdated(tradable, items.filter((item) => !item.tradable));
+        }
+
+        callback(null, tradable);
     });
 };
 
-exports.getInventory = getInventory;
-exports.get = inventory;
-exports.update = update;
-exports.getDictionary = getDictionary;
-exports.dictionary = dictionary;
-exports.amount = amountInDictionary;
-exports.overstocked = isOverstocked;
-exports.save = save;
-
-function getInventory (steamid64, callback) {
-    if (callback == undefined) {
-        callback = utils.void;
+/**
+ * Gets items dictionary
+ * @param {Object|String} steamID
+ * @param {Boolean} [includeInTrade=true]
+ * @param {Function} callback
+ */
+exports.getDictionary = function (steamID, includeInTrade, callback) {
+    if (typeof includeInTrade === 'function') {
+        callback = includeInTrade;
+        includeInTrade = true;
     }
 
-    const own = steamid64 == Automatic.getOwnSteamID();
-    const method = own == true ? 'getInventoryContents' : 'getUserInventoryContents';
-    let args = [];
+    const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
+    const isOurInv = manager.steamID.getSteamID64() === steamID64;
 
-    if (!own) args.push(steamid64);
-    args = args.concat([440, 2, true, function (err, inventory) {
-        if (err) {
-            callback(err);
-            return;
+    if (isOurInv) {
+        if (includeInTrade) {
+            callback(null, Object.assign({}, dictionary));
+        } else {
+            callback(null, exports.filterInTrade(Object.assign({}, dictionary)));
         }
-
-        inventory.reverse();
-
-        if (own) save(inventory);
-        callback(null, inventory);
-    }]);
-
-    /* eslint-disable-next-line prefer-spread */
-    manager[method].apply(manager, args);
-}
-
-function save (inventory) {
-    update(inventory);
-    fs.writeFile(INVENTORY_FILENAME, JSON.stringify(inventory), function (err) {
-        if (err) {
-            log.warn('Error writing inventory data: ' + err);
-        }
-    });
-}
-
-function update (inventory) {
-    INVENTORY = inventory;
-    DICTIONARY = Items.createDictionary(inventory);
-}
-
-function dictionary () {
-    return DICTIONARY;
-}
-
-function inventory () {
-    return INVENTORY;
-}
-
-function getDictionary (steamid64, callback) {
-    if (steamid64 == Automatic.getOwnSteamID()) {
-        callback(null, DICTIONARY);
         return;
     }
 
-    getInventory(steamid64, function (err, inventory) {
+    exports.getInventory(steamID, function (err, items) {
         if (err) {
-            callback(err);
-            return;
+            return callback(err);
         }
 
-        const dictionary = Items.createDictionary(inventory);
-        callback(null, dictionary);
+        return callback(null, exports.createDictionary(items));
     });
-}
+};
 
-function amountInDictionary (dictionary, name) {
-    if (name == undefined) {
-        name = dictionary;
-        dictionary = DICTIONARY;
+/**
+ * Returns own cached inventory
+ * @param {Boolean} [onlyTradable=true]
+ * @return {Object}
+ */
+exports.getOwnInventory = function (onlyTradable = true) {
+    const inventory = Object.assign({}, dictionary);
+
+    if (onlyTradable) {
+        return inventory;
     }
 
-    const amount = Array.isArray(dictionary[name]) ? dictionary[name].length : 0;
-    return amount;
-}
+    // Add non-tradable
 
-function isOverstocked (name, difference = 0) {
-    if (difference < 1) {
-        return false;
+    for (const sku in nonTradableDictionary) {
+        if (!Object.prototype.hasOwnProperty.call(nonTradableDictionary, sku)) {
+            continue;
+        }
+
+        inventory[sku] = (inventory[sku] || []).concat(nonTradableDictionary[sku]);
     }
 
-    const listing = Prices.findListing(name);
-    const limit = Prices.getLimit(listing.name);
+    return inventory;
+};
 
-    if (limit == 0) {
-        return true;
+exports.filterInTrade = function (dict) {
+    const filtered = {};
+
+    const itemsInTrade = require('app/trade').inTrade();
+
+    for (const sku in dict) {
+        if (!Object.prototype.hasOwnProperty.call(dict, sku)) {
+            continue;
+        }
+
+        const ids = dict[sku].filter((assetid) => itemsInTrade.indexOf(assetid) === -1);
+        filtered[sku] = ids;
     }
 
-    const stock = amountInDictionary(name);
-    const canBuy = limit - stock;
+    return filtered;
+};
 
-    if (canBuy >= difference && difference != 0) {
-        return false;
-    } else if (canBuy > 0) {
-        return canBuy;
-    } else {
-        return true;
+/**
+ * Returns the amount of an item in our inventory
+ * @param {String} sku
+ * @return {Number}
+ */
+exports.getAmount = function (sku) {
+    return exports.findBySKU(sku).length;
+};
+
+/**
+ * Returns the sku of the item, null if no match found
+ * @param {String} assetid
+ * @param {Boolean} [includeInTrade=true]
+ * @return {Object}
+ */
+exports.findByAssetid = function (assetid) {
+    const inventory = exports.getOwnInventory(false);
+
+    for (const sku in inventory) {
+        if (!Object.prototype.hasOwnProperty.call(inventory, sku)) {
+            continue;
+        }
+
+        if (inventory[sku].indexOf(assetid) === -1) {
+            continue;
+        }
+
+        return sku;
     }
+
+    return null;
+};
+
+/**
+ * Returns all assetids with a matching sku
+ * @param {String} sku
+ * @param {Boolean} [includeInTrade=true]
+ * @return {Array<Object>}
+ */
+exports.findBySKU = function (sku, includeInTrade = true) {
+    const assetids = (dictionary[sku] || []);
+
+    if (includeInTrade) {
+        return assetids;
+    }
+
+    const itemsInTrade = require('app/trade').inTrade();
+    return assetids.filter((assetid) => itemsInTrade.indexOf(assetid) === -1);
+};
+
+exports.amountCanTrade = function (sku, buy) {
+    const amount = exports.getAmount(sku);
+
+    const match = prices.get(sku);
+    if (match === null) {
+        return 0;
+    }
+
+    if (buy && match.max === -1) {
+        return Infinity;
+    }
+
+    let canTrade = match[buy === true ? 'max' : 'min'] - amount;
+    if (!buy) {
+        canTrade *= -1;
+    }
+
+    return canTrade > 0 ? canTrade : 0;
+};
+
+/**
+ * Gets an object with keys, refined, reclaimed and scrap
+ * @param {Object} dict Items dictionary
+ * @param {Boolean} [amount=false] If you want assetids or counts
+ * @return {Object}
+ */
+exports.getCurrencies = function (dict, amount = false) {
+    const currencies = {
+        '5021;6': dict['5021;6'] || [],
+        '5002;6': dict['5002;6'] || [],
+        '5001;6': dict['5001;6'] || [],
+        '5000;6': dict['5000;6'] || []
+    };
+
+    if (amount === true) {
+        for (const sku in currencies) {
+            if (!Object.prototype.hasOwnProperty.call(currencies, sku)) {
+                continue;
+            }
+
+            currencies[sku] = currencies[sku].length;
+        }
+    }
+
+    return currencies;
+};
+
+/**
+ * Removes an item from our cached inventory
+ * @param {String} assetid
+ */
+exports.removeItem = function (assetid) {
+    for (const sku in dictionary) {
+        if (!Object.prototype.hasOwnProperty.call(dictionary, sku)) {
+            continue;
+        }
+
+        if (dictionary[sku] === undefined) {
+            continue;
+        }
+
+        const index = dictionary[sku].indexOf(assetid);
+        if (index !== -1) {
+            dictionary[sku].splice(index, 1);
+        }
+    }
+};
+
+/**
+ * Adds an item to our cached inventory
+ * @param {String} sku
+ * @param {String} assetid
+ */
+exports.addItem = function (sku, assetid) {
+    (dictionary[sku] = (dictionary[sku] || [])).push(assetid);
+};
+
+/**
+ * Makes a dictionary of items
+ * @param {Array<Object>} items
+ * @return {Object}
+ */
+exports.createDictionary = function (items) {
+    const dict = {};
+
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const sku = item.getSKU();
+        (dict[sku] = (dict[sku] || [])).push(item.id);
+    }
+
+    return dict;
+};
+
+/**
+ * Function is called when our inventory is fetched
+ * @param {Array<Object>} tradable
+ * @param {Array<Object>} nonTradable
+ */
+function inventoryUpdated (tradable, nonTradable) {
+    dictionary = exports.createDictionary(tradable);
+    nonTradableDictionary = exports.createDictionary(nonTradable);
+
+    handlerManager.getHandler().onInventoryUpdated(dictionary);
 }
