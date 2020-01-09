@@ -13,6 +13,7 @@ const friends = require('handler/friends');
 const trades = require('handler/trades');
 const queue = require('handler/queue');
 const handlerManager = require('app/handler-manager');
+const api = require('lib/ptf-api');
 const manager = require('lib/manager');
 
 const parseJSON = require('utils/parseJSON');
@@ -25,7 +26,7 @@ setInterval(function () {
     messages = [];
 }, 1000);
 
-function getCommand(string) {
+function getCommand (string) {
     if (string.startsWith('!')) {
         const command = string.toLowerCase().split(' ')[0].substr(1);
         return command;
@@ -34,7 +35,7 @@ function getCommand(string) {
     }
 }
 
-function getParams(string) {
+function getParams (string) {
     const params = parseJSON('{"' + string.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"') + '"}');
 
     const parsed = {};
@@ -66,7 +67,7 @@ function getParams(string) {
     return parsed;
 }
 
-function getItemFromParams(steamID, params) {
+function getItemFromParams (steamID, params) {
     const item = SKU.fromString('');
 
     delete item.paint;
@@ -664,8 +665,8 @@ exports.handleMessage = function (steamID, message) {
             }
         });
     } else if (isAdmin && command === 'trades') {
-        const dateNow = new Date().getTime(); // Gets date & time in milliseconds
-        const offerData = manager.pollData.offerData
+        const dateNow = new Date().getTime();
+        const offerData = manager.pollData.offerData;
 
         let tradeToday = 0;
         let tradeTotal = 0;
@@ -684,7 +685,8 @@ exports.handleMessage = function (steamID, message) {
                 }
             }
         }
-        client.chatMessage(steamID, 'Trades today: ' + tradeToday + ' \n Total trades: ' + tradeTotal)
+
+        client.chatMessage(steamID, 'Trades today: ' + tradeToday + ' \n Total trades: ' + tradeTotal);
     } else if (isAdmin && command === 'restart') {
         client.chatMessage(steamID, 'Restarting...');
 
@@ -713,12 +715,34 @@ exports.handleMessage = function (steamID, message) {
                 client.chatMessage(steamID, 'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
             }
         });
+    } else if (isAdmin && command === 'pricecheck') {
+        const params = getParams(message.substring(command.length + 1).trim());
+
+        if (params.sku === undefined) {
+            const item = getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
+        params.sku = SKU.fromObject(fixItem(SKU.fromString(params.sku)));
+
+        api.requestCheck(params.sku, 'bptf', function (err) {
+            if (err) {
+                client.chatMessage(steamID, 'Error while requesting price check: ' + (err.body && err.body.message ? err.body.message : err.message));
+                return;
+            }
+            client.chatMessage(steamID, 'Price check has been requested, the item will be checked.');
+        });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
     }
 };
 
-function getItemAndAmount(steamID, message) {
+function getItemAndAmount (steamID, message) {
     let name = message;
     let amount = 1;
 
