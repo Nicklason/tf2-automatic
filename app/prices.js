@@ -62,7 +62,7 @@ exports.init = function (callback) {
             for (let j = 0; j < prices[attributes.quality][attributes.killstreak].length; j++) {
                 const item = prices[attributes.quality][attributes.killstreak][j];
 
-                if (pricelist[i].sku === item.sku) {
+                if (pricelist[i].name === item.name) {
                     // Found matching items
                     if (pricelist[i].time < item.time) {
                         // Times don't match, update our price
@@ -490,7 +490,7 @@ function getAttributes (sku) {
 function important (item) {
     // Return only the data we need
     return {
-        sku: item.sku,
+        name: item.name,
         buy: item.buy,
         sell: item.sell,
         time: item.time
