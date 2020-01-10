@@ -218,6 +218,10 @@ exports.searchByName = function (search, enabledOnly = true) {
 
         const name = entry.name.toLowerCase();
 
+        if (search.includes('uncraftable')) {
+            search = search.replace('uncraftable ', '');
+        }
+
         if (search === name) {
             // Found direct match
             return entry;
