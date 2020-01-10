@@ -44,7 +44,7 @@ exports.init = function (callback) {
             return callback(null);
         }
 
-        const prices = organizePrices(result.pricelist.items);
+        const prices = groupPrices(result.pricelist.items);
 
         const handler = handlerManager.getHandler();
 
@@ -453,7 +453,7 @@ function remove (sku, emit) {
     return match;
 }
 
-function organizePrices (prices) {
+function groupPrices (prices) {
     // Organize prices in an object, this way we will only have to loop through the items with matching attributes
     const sorted = {};
     for (let i = 0; i < prices.length; i++) {
