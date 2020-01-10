@@ -37,7 +37,8 @@
             "GROUPS": ["103582791462300957"],
             "ALERTS": "none",
 
-            "DEBUG": false
+            "DEBUG": false,
+            "DEBUG_FILE": true
         }
     }]
 }
