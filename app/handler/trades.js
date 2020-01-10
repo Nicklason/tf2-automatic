@@ -11,6 +11,7 @@ const client = require('lib/client');
 const manager = require('lib/manager');
 const admin = require('app/admins');
 const groups = require('handler/groups');
+const discord = require('app/discord');
 
 const isAdmin = admin.isAdmin;
 const checkBanned = require('utils/isBanned');
@@ -841,6 +842,9 @@ exports.offerChanged = function (offer, oldState) {
 
         if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
             admin.message('Trade #' + offer.id + ' with ' + offer.partner.getSteamID64() + ' is accepted. Summary:\n' + offer.summarize());
+            if (process.env.DISCORD_WEBHOOK_URL) {
+                discord.sendHook('Trade #' + offer.id + ' with ' + offer.partner.getSteamID64() + ' is accepted. Summary:\n' + offer.summarize())
+            }
             client.chatMessage(offer.partner, 'Success! The offer went through successfully.');
         } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
             client.chatMessage(offer.partner, 'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).');
