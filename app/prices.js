@@ -28,12 +28,18 @@ exports.init = function (callback) {
         }
     };
 
-    // Find old prices
-    const now = moment().unix();
+    let oldPrices;
 
-    const oldPrices = pricelist.filter(function (v) {
-        return v.time + maxPriceAge <= now;
-    });
+    if (maxPriceAge <= 0) {
+        oldPrices = pricelist;
+    } else {
+        // Find old prices
+        const now = moment().unix();
+
+        oldPrices = pricelist.filter(function (v) {
+            return v.time + maxPriceAge <= now;
+        });
+    }
 
     // Only request pricelist if there are old prices that needs to be updated
     if (oldPrices.length !== 0) {
