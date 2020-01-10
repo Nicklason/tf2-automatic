@@ -210,7 +210,7 @@ pm2.connect(function (err) {
 
                                                 handler.onReady();
 												
-												setInterval(require('app/version-check').checkForUpdates, 1000 * 2 * 60 * 60) // Check for updates every 2 hours
+												require('app/version-check') // Check for updates every 2 hours
                                             });
                                         });
                                     });
