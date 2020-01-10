@@ -13,6 +13,9 @@ const friends = require('handler/friends');
 const trades = require('handler/trades');
 const queue = require('handler/queue');
 const handlerManager = require('app/handler-manager');
+const api = require('lib/ptf-api');
+const validator = require('lib/validator');
+const manager = require('lib/manager');
 
 const parseJSON = require('utils/parseJSON');
 const admin = require('app/admins');
@@ -256,13 +259,18 @@ exports.handleMessage = function (steamID, message) {
     log.info('Message from ' + friend.player_name + ' (' + steamID64 + '): ' + message);
 
     if (command === 'help') {
-        let reply = 'Here\'s a list of all my commands: !help, !how2trade, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
+        let reply = 'Here\'s a list of all my commands: !help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
-            reply += ', !get, !add, !remove, !update, !restart, !stop';
+            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
         client.chatMessage(steamID, 'Send me a trade offer with the items you want to buy / sell.');
+    } else if (command === 'rate') {
+        const keyPrice = prices.getKeyPrice();
+        const keyPriceString = keyPrice.toString();
+
+        client.chatMessage(steamID, 'I value Mann Co. Supply Crate Keys at ' + keyPriceString + '. This means that one key is the same as ' + keyPriceString + ', and ' + keyPriceString + ' is the same as one key.');
     } else if (command === 'price') {
         const info = getItemAndAmount(steamID, message.substring(command.length + 1).trim());
 
@@ -278,7 +286,7 @@ exports.handleMessage = function (steamID, message) {
         const isBuying = match.intent === 0 || match.intent === 2;
         const isSelling = match.intent === 1 || match.intent === 2;
 
-        const keyPrices = prices.getKeyPrices();
+        const keyPrice = prices.getKeyPrice();
 
         const isKey = match.sku === '5021;6';
 
@@ -292,13 +300,13 @@ exports.handleMessage = function (steamID, message) {
             }
 
             // If the amount is 1, then don't convert to value and then to currencies. If it is for keys, then don't use conversion rate
-            const currencies = amount === 1 ? match.buy : Currencies.toCurrencies(match.buy.toValue(keyPrices.buy.metal) * amount, isKey ? undefined : keyPrices.buy.metal);
+            const currencies = amount === 1 ? match.buy : Currencies.toCurrencies(match.buy.toValue(keyPrice.metal) * amount, isKey ? undefined : keyPrice.metal);
 
             reply += pluralize(match.name, amount) + ' for ' + currencies.toString();
         }
 
         if (isSelling) {
-            const currencies = amount === 1 ? match.sell : Currencies.toCurrencies(match.sell.toValue(keyPrices.sell.metal) * amount, isKey ? undefined : keyPrices.sell.metal);
+            const currencies = amount === 1 ? match.sell : Currencies.toCurrencies(match.sell.toValue(keyPrice.metal) * amount, isKey ? undefined : keyPrice.metal);
 
             if (reply === '') {
                 reply = 'I am selling ';
@@ -545,6 +553,71 @@ exports.handleMessage = function (steamID, message) {
         });
     } else if (isAdmin && command === 'update') {
         const params = getParams(message.substring(command.length + 1).trim());
+        
+        if (typeof params.intent === 'string') {
+            const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
+            if (intent !== -1) {
+                params.intent = intent;
+            }
+        }
+
+        if (params.all === true) {
+            // TODO: Must have atleast one other param
+            client.chatMessage(steamID, 'Updating pricelist...');
+
+            const pricelist = prices.getPricelist();
+
+            if (pricelist.length === 0) {
+                client.chatMessage(steamID, 'Your pricelist is empty');
+                return;
+            }
+
+            handlerManager.getHandler().cleanup();
+
+            for (i = 0; i < pricelist.length; i++) {
+                if (params.intent) {
+                    pricelist[i].intent = params.intent;
+                }
+                if (params.min && typeof params.min === 'number') {
+                    pricelist[i].min = params.min;
+                }
+                if (params.max && typeof params.max === 'number') {
+                    pricelist[i].max = params.max;
+                }
+                if (params.enabled === false || params.enabled === true) {
+                    pricelist[i].enabled = params.enabled;
+                }
+                if (params.autoprice === false || params.autoprice === true) {
+                    pricelist[i].autoprice = params.autoprice;
+                }
+                pricelist[i].time = 0;
+
+                if (i === 0) {
+                    const errors = validator({
+                        sku: pricelist[i].sku,
+                        enabled: pricelist[i].enabled,
+                        intent: pricelist[i].intent,
+                        max: pricelist[i].max,
+                        min: pricelist[i].min,
+                        autoprice: pricelist[i].autoprice,
+                        name: pricelist[i].name,
+                        buy: pricelist[i].buy.toJSON(),
+                        sell: pricelist[i].sell.toJSON(),
+                        time: pricelist[i].time
+                    }, 'pricelist');
+
+                    if (errors !== null) {
+                        throw new Error(errors.join(', '));
+                    }
+                }
+            }
+
+            // Save pricelist
+            handlerManager.getHandler().onPricelist(pricelist);
+            // Kill it
+            handlerManager.getHandler().shutdown();
+            return;
+        }
 
         if (typeof params.buy === 'object') {
             params.buy.keys = params.buy.keys || 0;
@@ -560,13 +633,6 @@ exports.handleMessage = function (steamID, message) {
 
             if (params.autoprice === undefined) {
                 params.autoprice = false;
-            }
-        }
-
-        if (typeof params.intent === 'string') {
-            const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
-            if (intent !== -1) {
-                params.intent = intent;
             }
         }
 
@@ -657,6 +723,29 @@ exports.handleMessage = function (steamID, message) {
                 client.chatMessage(steamID, 'Removed "' + entry.name + '".');
             }
         });
+    } else if (isAdmin && command === 'trades') {
+        const dateNow = new Date().getTime();
+        const offerData = manager.pollData.offerData;
+
+        let tradeToday = 0;
+        let tradeTotal = 0;
+        for (const offerID in offerData) {
+            if (!Object.prototype.hasOwnProperty.call(offerData, offerID)) {
+                continue;
+            }
+
+            if (offerData[offerID].handledByUs === true && offerData[offerID].isAccepted === true) {
+                // Sucessful trades handled by the bot
+                tradeTotal++;
+
+                if (offerData[offerID].finishTimestamp >= (dateNow - 86400000)) {
+                    // Within the last 24 hours
+                    tradeToday++;
+                }
+            }
+        }
+
+        client.chatMessage(steamID, 'Trades today: ' + tradeToday + ' \n Total trades: ' + tradeTotal);
     } else if (isAdmin && command === 'restart') {
         client.chatMessage(steamID, 'Restarting...');
 
@@ -684,6 +773,28 @@ exports.handleMessage = function (steamID, message) {
             if (!stopping) {
                 client.chatMessage(steamID, 'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
             }
+        });
+    } else if (isAdmin && command === 'pricecheck') {
+        const params = getParams(message.substring(command.length + 1).trim());
+
+        if (params.sku === undefined) {
+            const item = getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
+        params.sku = SKU.fromObject(fixItem(SKU.fromString(params.sku)));
+
+        api.requestCheck(params.sku, 'bptf', function (err) {
+            if (err) {
+                client.chatMessage(steamID, 'Error while requesting price check: ' + (err.body && err.body.message ? err.body.message : err.message));
+                return;
+            }
+            client.chatMessage(steamID, 'Price check has been requested, the item will be checked.');
         });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
