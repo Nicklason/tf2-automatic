@@ -820,7 +820,7 @@ exports.offerChanged = function (offer, oldState) {
         if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
             admin.message('Trade #' + offer.id + ' with ' + offer.partner.getSteamID64() + ' is accepted. Summary:\n' + offer.summarize());
             client.chatMessage(offer.partner, 'Success! The offer went through successfully.');
-        } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
+        } else if (offer.state === TradeOfferManager.ETradeOfferState.InvalidItems) {
             client.chatMessage(offer.partner, 'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).');
         }
     }
