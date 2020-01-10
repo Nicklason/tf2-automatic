@@ -209,8 +209,9 @@ pm2.connect(function (err) {
                                                 handlerManager.setReady();
 
                                                 handler.onReady();
-												
-												require('app/version-check') // Check for updates every 2 hours
+
+                                                // Start version checker
+                                                require('app/version-check');
                                             });
                                         });
                                     });
