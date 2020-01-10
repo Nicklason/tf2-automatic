@@ -156,13 +156,12 @@ exports.createOffer = function (details, callback) {
                 client.chatMessage(partner, 'Your offer has been altered! Reason: ' + alteredMessage + '.');
             }
 
-            const keyPrices = prices.getKeyPrices();
-            const keyPrice = keyPrices[details.buying ? 'buy' : 'sell'].metal;
+            const keyPrice = prices.getKeyPrice();
 
-            const price = Currencies.toCurrencies(match[details.buying ? 'buy' : 'sell'].toValue(isKey ? undefined : keyPrice) * amount, isKey ? undefined : keyPrice);
+            const price = Currencies.toCurrencies(match[details.buying ? 'buy' : 'sell'].toValue(isKey ? undefined : keyPrice.metal) * amount, isKey ? undefined : keyPrice.metal);
 
-            // Figurated out what items to add to the offer
-            const required = constructOffer(buyerCurrencies, price, details.buying, !isKey);
+            // Figure out what items to add to the offer
+            const required = constructOffer(buyerCurrencies, price, !isKey);
 
             log.debug('Price:', price);
             log.debug('Buyer currencies:', buyerCurrencies);
@@ -328,10 +327,7 @@ exports.createOffer = function (details, callback) {
                     keys: exchange.their.keys,
                     metal: Currencies.toRefined(exchange.their.scrap)
                 },
-                rates: {
-                    buy: keyPrices.buy.metal,
-                    sell: keyPrices.sell.metal
-                }
+                rate: keyPrice.metal
             });
 
             const itemPrices = {};
@@ -404,15 +400,14 @@ exports.createOffer = function (details, callback) {
 };
 
 /**
- * Figurates out what currencies the buyer needs to offer
+ * Figures out what currencies the buyer needs to offer
  * @param {Object} buyerCurrencies
  * @param {Object} price
- * @param {*} buying
  * @param {*} useKeys
  * @return {Object} An object containing the picked currencies and the amount of change that the seller needs to provide
  */
-function constructOffer (buyerCurrencies, price, buying, useKeys) {
-    const keyPrice = prices.getKeyPrices()[buying ? 'buy' : 'sell'];
+function constructOffer (buyerCurrencies, price, useKeys) {
+    const keyPrice = prices.getKeyPrice();
 
     const value = price.toValue(useKeys ? keyPrice.metal : undefined);
 
@@ -525,8 +520,6 @@ function constructOffer (buyerCurrencies, price, buying, useKeys) {
 exports.newOffer = function (offer, done) {
     offer.log('info', 'is being processed...');
 
-    const keyPrices = prices.getKeyPrices();
-
     const items = {
         our: inventory.createDictionary(offer.itemsToGive),
         their: inventory.createDictionary(offer.itemsToReceive)
@@ -604,91 +597,6 @@ exports.newOffer = function (offer, done) {
         return;
     }
 
-    const itemPrices = {};
-
-    for (let i = 0; i < states.length; i++) {
-        const buying = states[i];
-        const which = buying ? 'their' : 'our';
-        const intentString = buying ? 'buy' : 'sell';
-
-        for (const sku in items[which]) {
-            if (!Object.prototype.hasOwnProperty.call(items[which], sku)) {
-                continue;
-            }
-
-            const assetids = items[which][sku];
-            const amount = assetids.length;
-
-            if (sku === '5000;6') {
-                exchange[which].value += amount;
-                exchange[which].scrap += amount;
-            } else if (sku === '5001;6') {
-                const value = 3 * amount;
-                exchange[which].value += value;
-                exchange[which].scrap += value;
-            } else if (sku === '5002;6') {
-                const value = 9 * amount;
-                exchange[which].value += value;
-                exchange[which].scrap += value;
-            } else {
-                const match = prices.get(sku, true);
-
-                // TODO: Go through all assetids and check if the item is being sold for a specific price
-
-                if (match !== null) {
-                    // Add value of items
-                    exchange[which].value += match[intentString].toValue(keyPrices.sell.metal) * amount;
-                    exchange[which].keys += match[intentString].keys * amount;
-                    exchange[which].scrap += Currencies.toScrap(match[intentString].metal) * amount;
-
-                    itemPrices[match.sku] = {
-                        buy: match.buy,
-                        sell: match.sell
-                    };
-                }
-
-                if (sku === '5021;6') {
-                    // Offer contains keys
-                    if (match === null) {
-                        // We are not trading keys, add value anyway
-                        exchange[which].value += keyPrices.sell.toValue() * amount;
-                        exchange[which].keys += amount;
-                    }
-                } else if (match === null || match.intent === buying ? 1 : 0) {
-                    // Offer contains an item that we are not trading
-                    return done('decline', 'INVALID_ITEMS');
-                } else {
-                    // Check stock limits (not for keys)
-                    const diff = itemsDiff[sku];
-                    if (inventory.amountCanTrade(sku, buying) - diff < 0) {
-                        // User is taking too many / offering too many
-                        offer.log('info', 'is taking / offering too many, declining...');
-                        return done('decline', 'OVERSTOCKED');
-                    }
-                }
-            }
-        }
-    }
-
-    offer.data('value', {
-        our: {
-            total: exchange.our.value,
-            keys: exchange.our.keys,
-            metal: Currencies.toRefined(exchange.our.scrap)
-        },
-        their: {
-            total: exchange.their.value,
-            keys: exchange.their.keys,
-            metal: Currencies.toRefined(exchange.their.scrap)
-        },
-        rates: {
-            buy: keyPrices.buy.metal,
-            sell: keyPrices.sell.metal
-        }
-    });
-
-    offer.data('prices', itemPrices);
-
     if (exchange.contains.metal && !exchange.contains.keys && !exchange.contains.items) {
         // Offer only contains metal
         offer.log('info', 'only contains metal, declining...');
@@ -719,6 +627,87 @@ exports.newOffer = function (offer, done) {
             }
         }
     }
+
+    const itemPrices = {};
+
+    const keyPrice = prices.getKeyPrice();
+
+    for (let i = 0; i < states.length; i++) {
+        const buying = states[i];
+        const which = buying ? 'their' : 'our';
+        const intentString = buying ? 'buy' : 'sell';
+
+        for (const sku in items[which]) {
+            if (!Object.prototype.hasOwnProperty.call(items[which], sku)) {
+                continue;
+            }
+
+            const assetids = items[which][sku];
+            const amount = assetids.length;
+
+            if (sku === '5000;6') {
+                exchange[which].value += amount;
+                exchange[which].scrap += amount;
+            } else if (sku === '5001;6') {
+                const value = 3 * amount;
+                exchange[which].value += value;
+                exchange[which].scrap += value;
+            } else if (sku === '5002;6') {
+                const value = 9 * amount;
+                exchange[which].value += value;
+                exchange[which].scrap += value;
+            } else {
+                const match = prices.get(sku, true);
+
+                // TODO: Go through all assetids and check if the item is being sold for a specific price
+
+                if (match !== null && (sku !== '5021;6' || !exchange.contains.items)) {
+                    // If we found a matching price and the item is not a key, or the we are not trading items (meaning that we are trading keys) then add the price of the item
+
+                    // Add value of items
+                    exchange[which].value += match[intentString].toValue(keyPrice.metal) * amount;
+                    exchange[which].keys += match[intentString].keys * amount;
+                    exchange[which].scrap += Currencies.toScrap(match[intentString].metal) * amount;
+
+                    itemPrices[match.sku] = {
+                        buy: match.buy,
+                        sell: match.sell
+                    };
+                } else if (sku === '5021;6' && exchange.contains.items) {
+                    // Offer contains keys and we are not trading keys, add key value
+                    exchange[which].value += keyPrice.toValue() * amount;
+                    exchange[which].keys += amount;
+                } else if (match === null || match.intent === buying ? 1 : 0) {
+                    // Offer contains an item that we are not trading
+                    return done('decline', 'INVALID_ITEMS');
+                } else {
+                    // Check stock limits (not for keys)
+                    const diff = itemsDiff[sku];
+                    if (inventory.amountCanTrade(sku, buying) - diff < 0) {
+                        // User is taking too many / offering too many
+                        offer.log('info', 'is taking / offering too many, declining...');
+                        return done('decline', 'OVERSTOCKED');
+                    }
+                }
+            }
+        }
+    }
+
+    offer.data('value', {
+        our: {
+            total: exchange.our.value,
+            keys: exchange.our.keys,
+            metal: Currencies.toRefined(exchange.our.scrap)
+        },
+        their: {
+            total: exchange.their.value,
+            keys: exchange.their.keys,
+            metal: Currencies.toRefined(exchange.their.scrap)
+        },
+        rate: keyPrice.metal
+    });
+
+    offer.data('prices', itemPrices);
 
     // Check if the values are correct
     if (exchange.our.value > exchange.their.value) {
