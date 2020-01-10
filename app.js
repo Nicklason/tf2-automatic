@@ -89,21 +89,6 @@ const listingManager = require('lib/bptf-listings');
 
 log.info(package.name + ' v' + package.version + ' is starting...');
 
-const request = require('@nicklason/request-retry');
-const semver = require('semver');
-setInterval(function () {
-	request.get('https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json', function (err, body) {
-		if (err) {
-			log.warn('Failed to check for updates: ' + err);
-			return
-		}
-
-		if (semver.lt(package.version, body.version)) {
-			require('app/admins').message('Update available! Download it here: https://github.com/Nicklason/tf2-automatic');
-		}
-	});
-}, 1000 * 60 * 60);
-
 pm2.connect(function (err) {
     if (err) {
         throw err;
@@ -224,6 +209,8 @@ pm2.connect(function (err) {
                                                 handlerManager.setReady();
 
                                                 handler.onReady();
+												
+												setInterval(require('app/version-check').checkForUpdates, 1000 * 2 * 60 * 60) // Check for updates every 2 hours
                                             });
                                         });
                                     });
