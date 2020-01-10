@@ -1,7 +1,7 @@
 const request = require('@nicklason/request-retry');
 const semver = require('semver');
 
-exports.checkForUpdates = function () {
+function checkForUpdates() {
 	request.get('https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json', function (err, body) {
 		if (err) {
 			log.warn('Failed to check for updates: ' + err);
@@ -13,3 +13,5 @@ exports.checkForUpdates = function () {
 		}
 	});
 }
+
+setInterval(checkForUpdates,  1000 * 2 * 60 * 60);
