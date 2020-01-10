@@ -70,13 +70,25 @@ const EXPORTED_FUNCTIONS = {
         });
 
         function stop () {
+            if (exiting) {
+                return;
+            }
+
+            log.warn('Exiting...');
+
+            exiting = true;
+
             require('lib/manager').shutdown();
             require('lib/bptf-listings').shutdown();
             require('lib/client').logOff();
 
-            log.warn('Exiting...');
+            // Listen for logger to finish
+            log.on('finish', function () {
+                process.exit(err ? 1 : 0);
+            });
 
-            process.exit(err ? 1 : 0);
+            // Stop the logger
+            log.end();
         }
     },
     cleanup: function () {
@@ -149,6 +161,7 @@ let handler;
 
 let isReady = false;
 let shutdownCount = 0;
+let exiting = false;
 
 /**
  * Prepares the handler
