@@ -219,7 +219,7 @@ exports.searchByName = function (search, enabledOnly = true) {
         const name = entry.name.toLowerCase();
 
         if (search.includes('uncraftable')) {
-            search = search.replace('uncraftable ', '');
+            search = search.replace('uncraftable ', 'non-craftable ');
         }
 
         if (search === name) {
