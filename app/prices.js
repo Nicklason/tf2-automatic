@@ -1,4 +1,5 @@
 const async = require('async');
+const moment = require('moment');
 const SKU = require('tf2-sku');
 const Currencies = require('tf2-currencies');
 
@@ -9,6 +10,9 @@ const schemaManager = require('lib/tf2-schema');
 const socket = require('lib/ptf-socket');
 
 const handlerManager = require('app/handler-manager');
+
+// Max age of a price in seconds
+const maxPriceAge = parseInt(process.env.MAX_PRICE_AGE) || 8 * 60 * 60;
 
 let pricelist = [];
 let keyPrices = null;
@@ -24,7 +28,21 @@ exports.init = function (callback) {
         }
     };
 
-    if (pricelist.length !== 0) {
+    let oldPrices;
+
+    if (maxPriceAge <= 0) {
+        oldPrices = pricelist;
+    } else {
+        // Find old prices
+        const now = moment().unix();
+
+        oldPrices = pricelist.filter(function (v) {
+            return v.time + maxPriceAge <= now;
+        });
+    }
+
+    // Only request pricelist if there are old prices that needs to be updated
+    if (oldPrices.length !== 0) {
         funcs.pricelist = function (callback) {
             api.getPricelist('bptf', callback);
         };
@@ -40,19 +58,20 @@ exports.init = function (callback) {
             sell: new Currencies(result.keys.sell)
         };
 
-        if (pricelist.length === 0) {
+        if (oldPrices.length === 0) {
+            // No prices to check
             return callback(null);
         }
 
-        const prices = organizePrices(result.pricelist.items);
+        const prices = groupPrices(result.pricelist.items);
 
         const handler = handlerManager.getHandler();
 
         let pricesChanged = false;
 
         // Go through our pricelist
-        for (let i = 0; i < pricelist.length; i++) {
-            const currentPrice = pricelist[i];
+        for (let i = 0; i < oldPrices.length; i++) {
+            const currentPrice = oldPrices[i];
             if (currentPrice.autoprice !== true) {
                 continue;
             }
@@ -453,7 +472,7 @@ function remove (sku, emit) {
     return match;
 }
 
-function organizePrices (prices) {
+function groupPrices (prices) {
     // Organize prices in an object, this way we will only have to loop through the items with matching attributes
     const sorted = {};
     for (let i = 0; i < prices.length; i++) {

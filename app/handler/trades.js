@@ -366,6 +366,8 @@ exports.createOffer = function (details, callback) {
 
                     offer.data('handleTimestamp', start);
 
+                    offer.setMessage(process.env.OFFER_MESSAGE || 'Powered by TF2 Automatic');
+
                     require('app/trade').sendOffer(offer, function (err) {
                         if (err) {
                             if (err.message.indexOf('We were unable to contact the game\'s item server') !== -1) {
@@ -797,7 +799,33 @@ function checkEscrow (offer, callback) {
 }
 
 exports.offerChanged = function (offer, oldState) {
+    // Not sure if it can go from other states to active
+    if (oldState === TradeOfferManager.ETradeOfferState.Accepted) {
+        offer.data('switchedState', oldState);
+    }
+
     const handledByUs = offer.data('handledByUs') === true;
+
+    if (handledByUs && offer.data('switchedState') !== offer.state) {
+        if (offer.isOurOffer) {
+            if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
+                client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.');
+            } else if (offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
+                if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+                    client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: Failed to accept mobile confirmation.');
+                } else {
+                    client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been active for a while.');
+                }
+            }
+        }
+
+        if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
+            admin.message('Trade #' + offer.id + ' with ' + offer.partner.getSteamID64() + ' is accepted. Summary:\n' + offer.summarize());
+            client.chatMessage(offer.partner, 'Success! The offer went through successfully.');
+        } else if (offer.state === TradeOfferManager.ETradeOfferState.InvalidItems) {
+            client.chatMessage(offer.partner, 'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).');
+        }
+    }
 
     if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
         // Offer is accepted
@@ -824,26 +852,5 @@ exports.offerChanged = function (offer, oldState) {
         }
 
         groups.inviteToGroups(offer.partner);
-    }
-
-    if (handledByUs) {
-        if (offer.isOurOffer) {
-            if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
-                client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.');
-            } else if (offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
-                if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
-                    client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: Failed to accept mobile confirmation.');
-                } else {
-                    client.chatMessage(offer.partner, 'Ohh nooooes! The offer is no longer available. Reason: The offer has been active for a while.');
-                }
-            }
-        }
-
-        if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
-            admin.message('Trade #' + offer.id + ' with ' + offer.partner.getSteamID64() + ' is accepted. Summary:\n' + offer.summarize());
-            client.chatMessage(offer.partner, 'Success! The offer went through successfully.');
-        } else if (offer.state == TradeOfferManager.ETradeOfferState.InvalidItems) {
-            client.chatMessage(offer.partner, 'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).');
-        }
     }
 };

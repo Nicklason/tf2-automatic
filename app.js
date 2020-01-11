@@ -209,6 +209,9 @@ pm2.connect(function (err) {
                                                 handlerManager.setReady();
 
                                                 handler.onReady();
+
+                                                // Start version checker
+                                                require('app/version-check');
                                             });
                                         });
                                     });
