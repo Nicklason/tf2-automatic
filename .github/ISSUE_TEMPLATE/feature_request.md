@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 <!--
-Your issue may already be reported!
+Your feature may already be requested!
 Please search on the [issue tracker](https://github.com/Nicklason/tf2-automatic/search?type=Issues) before creating one.
 -->
 
@@ -17,7 +17,7 @@ Please search on the [issue tracker](https://github.com/Nicklason/tf2-automatic/
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
 -->
 
-**Describe the solution you'd like**
+**Describe the feature you'd like**
 <!--
 A clear and concise description of what you want to happen.
 -->
