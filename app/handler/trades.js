@@ -194,7 +194,7 @@ exports.createOffer = function (details, callback) {
                 their: { value: 0, keys: 0, scrap: 0 }
             };
 
-            exchange[details.buying ? 'our' : 'their'].value = buyerCurrenciesPay.toValue(keyPrice);
+            exchange[details.buying ? 'our' : 'their'].value = buyerCurrenciesPay.toValue(keyPrice.metal);
             exchange[details.buying ? 'our' : 'their'].keys = buyerCurrenciesPay.keys;
             exchange[details.buying ? 'our' : 'their'].scrap = Currencies.toScrap(buyerCurrenciesPay.metal);
 
@@ -222,7 +222,7 @@ exports.createOffer = function (details, callback) {
             }
 
             itemsDict[details.buying ? 'their' : 'our'][match.sku] = amount;
-            exchange[details.buying ? 'their' : 'our'].value = price.toValue(isKey ? undefined : keyPrice);
+            exchange[details.buying ? 'their' : 'our'].value = price.toValue(isKey ? undefined : keyPrice.metal);
             exchange[details.buying ? 'their' : 'our'].scrap = exchange[details.buying ? 'their' : 'our'].value;
 
             if (required.change !== 0) {
@@ -316,14 +316,18 @@ exports.createOffer = function (details, callback) {
                 }
             });
 
+            const totalValue = match[details.buying ? 'buy' : 'sell'].toValue(keyPrice.metal) + required.change;
+
             offer.data('diff', itemsDiff);
             offer.data('dict', itemsDict);
             offer.data('value', {
                 our: {
+                    total: totalValue,
                     keys: exchange.our.keys,
                     metal: Currencies.toRefined(exchange.our.scrap)
                 },
                 their: {
+                    total: totalValue,
                     keys: exchange.their.keys,
                     metal: Currencies.toRefined(exchange.their.scrap)
                 },
