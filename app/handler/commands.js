@@ -553,7 +553,7 @@ exports.handleMessage = function (steamID, message) {
         });
     } else if (isAdmin && command === 'update') {
         const params = getParams(message.substring(command.length + 1).trim());
-        
+
         if (typeof params.intent === 'string') {
             const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
             if (intent !== -1) {
@@ -574,23 +574,30 @@ exports.handleMessage = function (steamID, message) {
 
             handlerManager.getHandler().cleanup();
 
-            for (i = 0; i < pricelist.length; i++) {
+            for (let i = 0; i < pricelist.length; i++) {
                 if (params.intent) {
                     pricelist[i].intent = params.intent;
                 }
+
                 if (params.min && typeof params.min === 'number') {
                     pricelist[i].min = params.min;
                 }
+
                 if (params.max && typeof params.max === 'number') {
                     pricelist[i].max = params.max;
                 }
+
                 if (params.enabled === false || params.enabled === true) {
                     pricelist[i].enabled = params.enabled;
                 }
-                if (params.autoprice === false || params.autoprice === true) {
-                    pricelist[i].autoprice = params.autoprice;
+
+                if (params.autoprice === false) {
+                    pricelist[i].time = null;
+                    pricelist[i].autoprice = false;
+                } else if (params.autoprice === true) {
+                    pricelist[i].time = 0;
+                    pricelist[i].autoprice = true;
                 }
-                pricelist[i].time = 0;
 
                 if (i === 0) {
                     const errors = validator({

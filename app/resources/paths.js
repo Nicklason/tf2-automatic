@@ -11,7 +11,7 @@ module.exports = {
         pricelist: path.join(__dirname, `../../files/${folderName}/pricelist.json`)
     },
     logs: {
-        log: path.join(__dirname, `../../logs/${filePrefix}.log`),
+        log: path.join(__dirname, `../../logs/${filePrefix}-%DATE%.log`),
         trade: path.join(__dirname, `../../logs/${filePrefix}.trade.log`),
         error: path.join(__dirname, `../../logs/${filePrefix}.error.log`)
     }
