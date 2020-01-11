@@ -409,7 +409,7 @@ exports.createOffer = function (details, callback) {
  * Figures out what currencies the buyer needs to offer
  * @param {Object} buyerCurrencies
  * @param {Object} price
- * @param {*} useKeys
+ * @param {Boolean} useKeys
  * @return {Object} An object containing the picked currencies and the amount of change that the seller needs to provide
  */
 function constructOffer (buyerCurrencies, price, useKeys) {
