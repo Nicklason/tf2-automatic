@@ -168,7 +168,7 @@ exports.newOffer = function (offer) {
         return;
     }
 
-    offer.log('info', 'received offer from ' + offer.partner.getSteamID64());
+    offer.log('info', 'received offer');
 
     // Offer is active, items are in trade
     offer.itemsToGive.forEach(function (item) {
