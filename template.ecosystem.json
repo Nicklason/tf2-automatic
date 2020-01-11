@@ -22,6 +22,7 @@
 
             "BPTF_DETAILS_BUY": "I am buying your %name% for %price%, I have %current_stock% / %max_stock%.",
             "BPTF_DETAILS_SELL": "I am selling my %name% for %price%, I am selling %amount_trade%.",
+            "OFFER_MESSAGE": "Powered by TF2 Automatic",
 
             "MINIMUM_SCRAP": 9,
             "MINIMUM_RECLAIMED": 9,

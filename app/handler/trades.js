@@ -366,6 +366,8 @@ exports.createOffer = function (details, callback) {
 
                     offer.data('handleTimestamp', start);
 
+                    offer.setMessage(process.env.OFFER_MESSAGE || 'Powered by TF2 Automatic');
+
                     require('app/trade').sendOffer(offer, function (err) {
                         if (err) {
                             if (err.message.indexOf('We were unable to contact the game\'s item server') !== -1) {
