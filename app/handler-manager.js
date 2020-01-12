@@ -1,3 +1,4 @@
+const SteamUser = require('steam-user');
 const path = require('path');
 const isPathInside = require('is-path-inside');
 const pm2 = require('pm2');
@@ -58,14 +59,7 @@ const EXPORTED_FUNCTIONS = {
             return false;
         }
 
-        // Disable login
-        require('lib/client').autoRelogin = false;
-
-        // Stop price updates
-        require('lib/ptf-socket').disconnect();
-
-        // Stop the polling of trade offers
-        require('lib/manager').pollInterval = -1;
+        this.cleanup();
 
         // TODO: Check if a poll is being made before stopping the bot
 
@@ -76,14 +70,48 @@ const EXPORTED_FUNCTIONS = {
         });
 
         function stop () {
+            if (exiting) {
+                return;
+            }
+
+            log.warn('Exiting...');
+
+            exiting = true;
+
             require('lib/manager').shutdown();
             require('lib/bptf-listings').shutdown();
             require('lib/client').logOff();
 
-            log.warn('Exiting...');
+            // Listen for logger to finish
+            log.on('finish', function () {
+                process.exit(err ? 1 : 0);
+            });
 
-            process.exit(err ? 1 : 0);
+            // Stop the logger
+            log.end();
         }
+    },
+    cleanup: function () {
+        log.debug('Cleaning up');
+
+        // This will disable the reciving of messages and other friend related events
+        isReady = false;
+
+        // Make the bot snooze on Steam, that way people will know it is not running
+        require('lib/client').setPersona(SteamUser.EPersonaState.Snooze);
+
+        // Disable login
+        require('lib/client').autoRelogin = false;
+
+        // Stop price updates
+        require('lib/ptf-socket').disconnect();
+
+        // Stop the polling of trade offers
+        require('lib/manager').pollInterval = -1;
+
+        // Stop heartbeat and inventory timers
+        clearInterval(require('lib/bptf-listings')._heartbeatInterval);
+        clearInterval(require('lib/bptf-listings')._inventoryInterval);
     },
     setLoginAttempts (attempts) {
         require('app/login-attempts').setAttempts(attempts);
@@ -133,6 +161,7 @@ let handler;
 
 let isReady = false;
 let shutdownCount = 0;
+let exiting = false;
 
 /**
  * Prepares the handler

@@ -1,4 +1,5 @@
 const async = require('async');
+const moment = require('moment');
 const SKU = require('tf2-sku');
 const Currencies = require('tf2-currencies');
 
@@ -9,6 +10,9 @@ const schemaManager = require('lib/tf2-schema');
 const socket = require('lib/ptf-socket');
 
 const handlerManager = require('app/handler-manager');
+
+// Max age of a price in seconds
+const maxPriceAge = parseInt(process.env.MAX_PRICE_AGE) || 8 * 60 * 60;
 
 let pricelist = [];
 let keyPrices = null;
@@ -24,7 +28,21 @@ exports.init = function (callback) {
         }
     };
 
-    if (pricelist.length !== 0) {
+    let oldPrices;
+
+    if (maxPriceAge <= 0) {
+        oldPrices = pricelist;
+    } else {
+        // Find old prices
+        const now = moment().unix();
+
+        oldPrices = pricelist.filter(function (v) {
+            return v.time + maxPriceAge <= now;
+        });
+    }
+
+    // Only request pricelist if there are old prices that needs to be updated
+    if (oldPrices.length !== 0) {
         funcs.pricelist = function (callback) {
             api.getPricelist('bptf', callback);
         };
@@ -40,48 +58,47 @@ exports.init = function (callback) {
             sell: new Currencies(result.keys.sell)
         };
 
-        if (pricelist.length === 0) {
+        if (oldPrices.length === 0) {
+            // No prices to check
             return callback(null);
         }
 
-        const prices = result.pricelist.items;
+        const prices = groupPrices(result.pricelist.items);
 
         const handler = handlerManager.getHandler();
 
         let pricesChanged = false;
 
         // Go through our pricelist
-        for (let i = 0; i < pricelist.length; i++) {
-            if (pricelist[i].autoprice !== true) {
+        for (let i = 0; i < oldPrices.length; i++) {
+            const currentPrice = oldPrices[i];
+            if (currentPrice.autoprice !== true) {
                 continue;
             }
 
-            // Go through pricestf prices
-            for (let j = 0; j < prices.length; j++) {
-                if (prices[j].buy === null) {
-                    prices.splice(j, 1);
-                    break;
-                }
+            const item = SKU.fromString(currentPrice.sku);
 
-                if (pricelist[i].name === prices[j].name) {
+            // Go through pricestf prices
+            for (let j = 0; j < prices[item.quality][item.killstreak].length; j++) {
+                const newestPrice = prices[item.quality][item.killstreak][j];
+
+                if (currentPrice.name === newestPrice.name) {
                     // Found matching items
-                    if (pricelist[i].time < prices[j].time) {
+                    if (currentPrice.time < newestPrice.time) {
                         // Times don't match, update our price
-                        pricelist[i].buy = new Currencies(prices[j].buy);
-                        pricelist[i].sell = new Currencies(prices[j].sell);
-                        pricelist[i].time = prices[j].time;
+                        currentPrice.buy = new Currencies(newestPrice.buy);
+                        currentPrice.sell = new Currencies(newestPrice.sell);
+                        currentPrice.time = newestPrice.time;
 
                         pricesChanged = true;
                     }
 
                     // When a match is found remove it from the ptf pricelist
-                    prices.splice(j, 1);
+                    prices[item.quality][item.killstreak].splice(j, 1);
                     break;
                 }
             }
         }
-
-        // We can afford to go through pricelist.length * prices.length because we will only do this once on startup
 
         if (pricesChanged) {
             // Our pricelist changed, emit it
@@ -101,7 +118,7 @@ exports.init = function (callback) {
  * @return {Number}
  */
 exports.amountCanAfford = function (buying, useKeys, currencies, currenciesDict) {
-    const keyPrice = exports.getKeyPrices()[buying ? 'buy' : 'sell'];
+    const keyPrice = exports.getKeyPrice();
 
     const value = currencies.toValue(keyPrice.metal);
 
@@ -152,8 +169,8 @@ exports.getPricelist = function () {
     return pricelist;
 };
 
-exports.getKeyPrices = function () {
-    return keyPrices;
+exports.getKeyPrice = function () {
+    return keyPrices.sell;
 };
 
 function handlePriceChange (data) {
@@ -277,12 +294,12 @@ exports.add = function (sku, data, callback) {
             return callback(new Error(errors.join(', ')));
         }
 
-        const keyPrice = exports.getKeyPrices()['sell'].metal;
+        const keyPrice = exports.getKeyPrice();
 
         const buy = new Currencies(entry.buy);
         const sell = new Currencies(entry.sell);
 
-        if (buy.toValue(keyPrice) >= sell.toValue(keyPrice)) {
+        if (buy.toValue(keyPrice.metal) >= sell.toValue(keyPrice.metal)) {
             return callback(new Error('Sell must be higher than buy'));
         }
 
@@ -376,12 +393,12 @@ exports.update = function (sku, data, callback) {
     copy.time = time;
 
     if (copy.autoprice === false) {
-        const keyPrice = exports.getKeyPrices()['sell'].metal;
+        const keyPrice = exports.getKeyPrice();
 
         const buy = new Currencies(copy.buy);
         const sell = new Currencies(copy.sell);
 
-        if (buy.toValue(keyPrice) >= sell.toValue(keyPrice)) {
+        if (buy.toValue(keyPrice.metal) >= sell.toValue(keyPrice.metal)) {
             return callback(new Error('Sell must be higher than buy'));
         }
 
@@ -453,4 +470,29 @@ function remove (sku, emit) {
     }
 
     return match;
+}
+
+function groupPrices (prices) {
+    // Organize prices in an object, this way we will only have to loop through the items with matching attributes
+    const sorted = {};
+    for (let i = 0; i < prices.length; i++) {
+        if (prices[i].buy === null) {
+            continue;
+        }
+
+        const item = SKU.fromString(prices[i].sku);
+
+        if (!sorted[item.quality]) {
+            // Define object, if not yet defined
+            sorted[item.quality] = {};
+        }
+
+        if (Array.isArray(sorted[item.quality][item.killstreak])) {
+            sorted[item.quality][item.killstreak].push(prices[i]);
+        } else {
+            sorted[item.quality][item.killstreak] = [prices[i]];
+        }
+    }
+
+    return sorted;
 }

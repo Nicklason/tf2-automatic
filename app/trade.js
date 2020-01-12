@@ -168,7 +168,7 @@ exports.newOffer = function (offer) {
         return;
     }
 
-    offer.log('info', 'received offer from ' + offer.partner.getSteamID64());
+    offer.log('info', 'received offer');
 
     // Offer is active, items are in trade
     offer.itemsToGive.forEach(function (item) {
@@ -607,7 +607,7 @@ function processNextOffer () {
         }
 
         if (!offer) {
-            finishedProcessing();
+            finishedProcessing(offerId);
         } else {
             handlerProcessOffer(offer);
         }
@@ -644,7 +644,7 @@ function handlerProcessOffer (offer) {
         }
 
         if (!actionFunc) {
-            finishedProcessing(offer);
+            finishedProcessing(offer.id);
             return;
         }
 
@@ -657,16 +657,13 @@ function handlerProcessOffer (offer) {
 
             callback(err);
 
-            finishedProcessing(offer);
+            finishedProcessing(offer.id);
         });
     });
 }
 
-function finishedProcessing (offer) {
-    if (offer) {
-        removeFromQueue(offer.id);
-    }
-
+function finishedProcessing (offerId) {
+    removeFromQueue(offerId);
     processingOffer = false;
     processNextOffer();
 }

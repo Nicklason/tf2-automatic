@@ -52,7 +52,7 @@ require('death')({ uncaughtException: true })(function (signal, err) {
             require('util').inspect(err)
         ].join('\r\n'));
 
-        log.error('Create an issue here: https://github.com/Nicklason/bot-framework/issues/new');
+        log.error('Create an issue here: https://github.com/Nicklason/tf2-automatic/issues/new?template=bug_report.md');
     }
 
     if (!crashed) {
@@ -209,6 +209,9 @@ pm2.connect(function (err) {
                                                 handlerManager.setReady();
 
                                                 handler.onReady();
+
+                                                // Start version checker
+                                                require('app/version-check');
                                             });
                                         });
                                     });
