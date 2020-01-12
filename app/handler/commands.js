@@ -273,7 +273,7 @@ exports.handleMessage = function (steamID, message) {
 
         client.chatMessage(steamID, 'I value Mann Co. Supply Crate Keys at ' + keyPriceString + '. This means that one key is the same as ' + keyPriceString + ', and ' + keyPriceString + ' is the same as one key.');
     } else if (command === 'price') {
-        const info = getItemAndAmount(steamID, message.substring(command.length + 1).trim());
+        const info = getItemAndAmount(steamID, getMessageParams(message, command));
 
         if (info === null) {
             return;
@@ -408,7 +408,7 @@ exports.handleMessage = function (steamID, message) {
 
         client.chatMessage(steamID, reply);
     } else if (command === 'buy' || command === 'sell') {
-        const info = getItemAndAmount(steamID, message.substring(command.length + 1).trim());
+        const info = getItemAndAmount(steamID, getMessageParams(message, command));
 
         if (info === null) {
             return;
@@ -442,7 +442,7 @@ exports.handleMessage = function (steamID, message) {
 
         queue.handleQueue();
     } else if (isAdmin && command === 'get') {
-        const params = getParams(message.substring(command.length + 1).trim());
+        const params = getParams(getMessageParams(message, command));
 
         if (params.item !== undefined) {
             // Remove by full name
@@ -492,7 +492,7 @@ exports.handleMessage = function (steamID, message) {
             client.chatMessage(steamID, '/code ' + JSON.stringify(match, null, 4));
         }
     } else if (isAdmin && command === 'add') {
-        const params = getParams(message.substring(command.length + 1).trim());
+        const params = getParams(getMessageParams(message, command));
 
         if (params.enabled === undefined) {
             params.enabled = true;
@@ -553,7 +553,7 @@ exports.handleMessage = function (steamID, message) {
             }
         });
     } else if (isAdmin && command === 'update') {
-        const params = getParams(message.substring(command.length + 1).trim());
+        const params = getParams(getMessageParams(message, command));
 
         if (typeof params.intent === 'string') {
             const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
@@ -687,7 +687,7 @@ exports.handleMessage = function (steamID, message) {
             }
         });
     } else if (isAdmin && command === 'remove') {
-        const params = getParams(message.substring(command.length + 1).trim());
+        const params = getParams(getMessageParams(message, command));
 
         if (params.item !== undefined) {
             // Remove by full name
@@ -783,7 +783,7 @@ exports.handleMessage = function (steamID, message) {
             }
         });
     } else if (isAdmin && command === 'pricecheck') {
-        const params = getParams(message.substring(command.length + 1).trim());
+        const params = getParams(getMessageParams(message, command));
 
         if (params.sku === undefined) {
             const item = getItemFromParams(steamID, params);
@@ -877,4 +877,8 @@ function getItemAndAmount (steamID, message) {
         amount: amount,
         match: match
     };
+}
+
+function getMessageParams (message, command) {
+    return message.substring(command.length + 1).trim();
 }
