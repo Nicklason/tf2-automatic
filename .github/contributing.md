@@ -70,7 +70,7 @@ Just like [bug reports](#reporting-bugs), feature requests are tracked as [GitHu
 
 When contributing to this repository, please first discuss the change you wish to make via issue, or any other method with the owners or contributors of this repository before making a change.
 
-All pull requests should be made from and to [the development branch](https://github.com/Nicklason/tf2-automatic/tree/development). When a new release is made the development branch will be merged with the master branch.
+All pull requests should be made to [the development branch](https://github.com/Nicklason/tf2-automatic/tree/development). When a new release is made the development branch will be merged with the master branch.
 
 ## Styleguides
 
