@@ -812,10 +812,8 @@ exports.handleMessage = function (steamID, message) {
             name: newName
         }, function (err) {
             if (err) {
-                const errorMessage = 'Error while changing name: ' + err.message;
-
-                log.warn(errorMessage);
-                client.chatMessage(steamID, errorMessage);
+                log.warn('Error while changing name: ', err);
+                client.chatMessage(steamID, 'Error while changing name: ' + err.message);
 
                 return;
             }
@@ -827,10 +825,8 @@ exports.handleMessage = function (steamID, message) {
 
         community.uploadAvatar(imageUrl, (err) => {
             if (err) {
-                const errorMessage = 'Error while uploading new avatar: ' + err.message;
-
-                log.warn(errorMessage);
-                client.chatMessage(steamID, errorMessage);
+                log.warn('Error while uploading new avatar: ', err);
+                client.chatMessage(steamID, 'Error while uploading new avatar: ' + err.message);
 
                 return;
             }
