@@ -806,24 +806,32 @@ exports.handleMessage = function (steamID, message) {
         });
     } else if (isAdmin && command === 'name') {
         // This has already been used but since I'm planning on rewriting this for user extensions it will remain.
-        const newName = message.substr(command.length + 1).trim();
+        const newName = removeCommandFromMessage(message, command);
 
         community.editProfile({
             name: newName
         }, function (err) {
             if (err) {
-                client.chatMessage(steamID, 'Error while changing bot\'s name: ' + err.message);
+                const errorMessage = 'Error while changing name: ' + err.message;
+
+                log.error(errorMessage);
+                client.chatMessage(steamID, errorMessage);
+
                 return;
             }
 
-            client.chatMessage(steamID, 'Successfully changed bot\'s name.');
+            client.chatMessage(steamID, 'Successfully changed name.');
         });
     } else if (isAdmin && command === 'avatar') {
-        const imageUrl = message.substr(command.length + 1).trim();
+        const imageUrl = removeCommandFromMessage(message, command);
 
         community.uploadAvatar(imageUrl, (err) => {
             if (err) {
-                client.chatMessage(steamID, 'Error while uploading avatar: ' + err.message);
+                const errorMessage = 'Error while uploading new avatar: ' + err.message;
+
+                log.error(errorMessage);
+                client.chatMessage(steamID, errorMessage);
+
                 return;
             }
 
