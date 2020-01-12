@@ -830,12 +830,12 @@ exports.handleMessage = function (steamID, message) {
         const imageUrl = removeCommandFromMessage(message, command);
 
         if (imageUrl === '') {
-            client.chatMessage(steamID, 'You forgot to add an image url. Example: "!avatar https://steamuserimages-a.akamaihd.net/ugc/949595415286366323/8FECE47652C9D77501035833E937584E30D0F5E7"');
+            client.chatMessage(steamID, 'You forgot to add an image url. Example: "!avatar https://steamuserimages-a.akamaihd.net/ugc/949595415286366323/8FECE47652C9D77501035833E937584E30D0F5E7/"');
             return;
         }
 
         if (!validUrl.isUri(imageUrl)) {
-            client.chatMessage(steamID, 'Your url is not valid. Example: "!avatar https://steamuserimages-a.akamaihd.net/ugc/949595415286366323/8FECE47652C9D77501035833E937584E30D0F5E7"');
+            client.chatMessage(steamID, 'Your url is not valid. Example: "!avatar https://steamuserimages-a.akamaihd.net/ugc/949595415286366323/8FECE47652C9D77501035833E937584E30D0F5E7/"');
             return;
         }
 
