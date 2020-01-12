@@ -879,6 +879,12 @@ function getItemAndAmount (steamID, message) {
     };
 }
 
+/**
+ * Gets message params by removing the command.
+ * @param {string} message
+ * @param {string} command
+ * @return {string} message parameters
+ */
 function getMessageParams (message, command) {
     return message.substring(command.length + 1).trim();
 }
