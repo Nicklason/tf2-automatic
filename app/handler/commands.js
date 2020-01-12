@@ -814,7 +814,7 @@ exports.handleMessage = function (steamID, message) {
             if (err) {
                 const errorMessage = 'Error while changing name: ' + err.message;
 
-                log.error(errorMessage);
+                log.warn(errorMessage);
                 client.chatMessage(steamID, errorMessage);
 
                 return;
@@ -829,7 +829,7 @@ exports.handleMessage = function (steamID, message) {
             if (err) {
                 const errorMessage = 'Error while uploading new avatar: ' + err.message;
 
-                log.error(errorMessage);
+                log.warn(errorMessage);
                 client.chatMessage(steamID, errorMessage);
 
                 return;
