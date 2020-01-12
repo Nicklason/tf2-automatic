@@ -262,7 +262,7 @@ exports.handleMessage = function (steamID, message) {
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
-            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades, !name';
+            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades, !name, !avatar';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
@@ -817,6 +817,17 @@ exports.handleMessage = function (steamID, message) {
             }
 
             client.chatMessage(steamID, 'Successfully changed bot\'s name.');
+        });
+    } else if (isAdmin && command === 'avatar') {
+        const imageUrl = message.substr(command.length + 1).trim();
+
+        community.uploadAvatar(imageUrl, (err) => {
+            if (err) {
+                client.chatMessage(steamID, 'Error while uploading avatar: ' + err.message);
+                return;
+            }
+
+            client.chatMessage(steamID, 'Successfully uploaded new avatar.');
         });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
