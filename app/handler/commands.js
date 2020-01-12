@@ -16,6 +16,7 @@ const handlerManager = require('app/handler-manager');
 const api = require('lib/ptf-api');
 const validator = require('lib/validator');
 const manager = require('lib/manager');
+const community = require('lib/community');
 
 const parseJSON = require('utils/parseJSON');
 const admin = require('app/admins');
@@ -261,7 +262,7 @@ exports.handleMessage = function (steamID, message) {
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
-            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades';
+            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades, !name';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
@@ -802,6 +803,20 @@ exports.handleMessage = function (steamID, message) {
                 return;
             }
             client.chatMessage(steamID, 'Price check has been requested, the item will be checked.');
+        });
+    } else if (isAdmin && command === 'name') {
+        // This has already been used but since I'm planning on rewriting this for user extensions it will remain.
+        const newName = message.substr(command.length + 1).trim();
+
+        community.editProfile({
+            name: newName
+        }, function (err) {
+            if (err) {
+                client.chatMessage(steamID, 'Error while changing bot\'s name: ' + err.message);
+                return;
+            }
+
+            client.chatMessage(steamID, 'Successfully changed bot\'s name.');
         });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
