@@ -40,7 +40,7 @@ Bugs are tracked as [GitHub issues](https://guides.github.com/features/issues/).
 
 Explain the problem and include additional details to help reproduce the problem:
 
-* **Use a clear and descriptibe title** for the issue to identify the problem.
+* **Use a clear and descriptive title** for the issue to identify the problem.
 * **Describe the exact steps which reproduce the problem.**
 * **Describe the behavior you observed following the steps** and point out what the problem is with the behavior.
 * **Describe what you expected to see instead and why.**
@@ -100,7 +100,7 @@ All pull requests should be made to [the development branch](https://github.com/
 
 All JavaScript must follow the eslint rules made.
 
-To enable eslint, install it globally using `npm install -g npm`. It can be used either using the command `npm run lint`, or by installing [an extention](https://eslint.org/docs/6.0.0/user-guide/integrations) to your editor.
+To enable eslint, install it globally using `npm install -g pm2`. It can be used either using the command `npm run lint`, or by installing [an extention](https://eslint.org/docs/6.0.0/user-guide/integrations) to your editor.
 
 ### Documentation Styleguide
 
