@@ -3,6 +3,7 @@ const pluralize = require('pluralize');
 const moment = require('moment');
 const SKU = require('tf2-sku');
 const Currencies = require('tf2-currencies');
+const validUrl = require('valid-url');
 
 const prices = require('app/prices');
 const client = require('lib/client');
@@ -808,6 +809,11 @@ exports.handleMessage = function (steamID, message) {
         // This has already been used but since I'm planning on rewriting this for user extensions it will remain.
         const newName = removeCommandFromMessage(message, command);
 
+        if (newName === '') {
+            client.chatMessage(steamID, 'You forgot to add a name. Example: "!name Nicklason"');
+            return;
+        }
+
         community.editProfile({
             name: newName
         }, function (err) {
@@ -822,6 +828,16 @@ exports.handleMessage = function (steamID, message) {
         });
     } else if (isAdmin && command === 'avatar') {
         const imageUrl = removeCommandFromMessage(message, command);
+
+        if (imageUrl === '') {
+            client.chatMessage(steamID, 'You forgot to add an image url. Example: "!avatar https://steamuserimages-a.akamaihd.net/ugc/949595415286366323/8FECE47652C9D77501035833E937584E30D0F5E7"');
+            return;
+        }
+
+        if (!validUrl.isUri(imageUrl)) {
+            client.chatMessage(steamID, 'Your url is not valid. Example: "!avatar https://steamuserimages-a.akamaihd.net/ugc/949595415286366323/8FECE47652C9D77501035833E937584E30D0F5E7"');
+            return;
+        }
 
         community.uploadAvatar(imageUrl, (err) => {
             if (err) {
