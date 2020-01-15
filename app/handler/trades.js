@@ -409,10 +409,12 @@ exports.createOffer = function (details, callback) {
  * Figures out what currencies the buyer needs to offer
  * @param {Object} buyerCurrencies
  * @param {Object} price
- * @param {*} useKeys
+ * @param {Boolean} useKeys
  * @return {Object} An object containing the picked currencies and the amount of change that the seller needs to provide
  */
 function constructOffer (buyerCurrencies, price, useKeys) {
+    log.debug('Constructing offer');
+
     const keyPrice = prices.getKeyPrice();
 
     const value = price.toValue(useKeys ? keyPrice.metal : undefined);
@@ -423,6 +425,8 @@ function constructOffer (buyerCurrencies, price, useKeys) {
         '5001;6': 3,
         '5000;6': 1
     };
+
+    log.debug('Currency values', currencyValues);
 
     const skus = Object.keys(currencyValues);
 
@@ -477,6 +481,16 @@ function constructOffer (buyerCurrencies, price, useKeys) {
             remaining -= Math.floor(amount) * currencyValues[key];
         }
 
+        log.debug('Iteration', {
+            index: index,
+            key: key,
+            amount: amount,
+            remaining: remaining,
+            reverse: reverse,
+            hasReversed: hasReversed,
+            picked: pickedCurrencies
+        });
+
         if (remaining === 0) {
             // Picked the exact amount, stop
             break;
@@ -496,7 +510,11 @@ function constructOffer (buyerCurrencies, price, useKeys) {
         index += reverse ? -1 : 1;
     }
 
+    log.debug('Done picking currencies', { remaining: remaining, picked: pickedCurrencies });
+
     if (remaining < 0) {
+        log.debug('Picked too much value, removing...');
+
         // Removes unnessesary items
         for (let i = 0; i < skus.length; i++) {
             const sku = skus[i];
@@ -514,8 +532,12 @@ function constructOffer (buyerCurrencies, price, useKeys) {
                     delete pickedCurrencies[sku];
                 }
             }
+
+            log.debug('Iteration', { sku: sku, amount: amount, remaining: remaining, picked: pickedCurrencies });
         }
     }
+
+    log.debug('Done constructing offer', { picked: pickedCurrencies, change: remaining });
 
     return {
         currencies: pickedCurrencies,
