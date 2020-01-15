@@ -185,8 +185,20 @@ exports.setup = function () {
     try {
         handler = require(handlerPath);
     } catch (err) {
-        if (err.code === 'MODULE_NOT_FOUND' && err.message.indexOf(handlerPath) !== -1) {
-            throw new Error('Missing handler file');
+        if (err.code === 'MODULE_NOT_FOUND') {
+            const moduleName = err.message.substring(err.message.indexOf('\'') + 1, err.message.indexOf('\n') - 1);
+
+            let requireError;
+
+            if (moduleName !== handlerPath) {
+                requireError = new Error('Missing dependencies! Install them with `npm install`');
+            } else {
+                requireError = new Error('Missing handler file');
+            }
+
+            requireError.require = moduleName;
+
+            throw requireError;
         }
 
         // Something is wrong with the handler
