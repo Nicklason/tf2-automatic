@@ -3,6 +3,7 @@ const pluralize = require('pluralize');
 const moment = require('moment');
 const SKU = require('tf2-sku');
 const Currencies = require('tf2-currencies');
+const validUrl = require('valid-url');
 
 const prices = require('app/prices');
 const client = require('lib/client');
@@ -16,6 +17,7 @@ const handlerManager = require('app/handler-manager');
 const api = require('lib/ptf-api');
 const validator = require('lib/validator');
 const manager = require('lib/manager');
+const community = require('lib/community');
 
 const parseJSON = require('utils/parseJSON');
 const admin = require('app/admins');
@@ -261,7 +263,7 @@ exports.handleMessage = function (steamID, message) {
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
-            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades';
+            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades, !name, !avatar';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
@@ -272,7 +274,7 @@ exports.handleMessage = function (steamID, message) {
 
         client.chatMessage(steamID, 'I value Mann Co. Supply Crate Keys at ' + keyPriceString + '. This means that one key is the same as ' + keyPriceString + ', and ' + keyPriceString + ' is the same as one key.');
     } else if (command === 'price') {
-        const info = getItemAndAmount(steamID, message.substring(command.length + 1).trim());
+        const info = getItemAndAmount(steamID, removeCommandFromMessage(message, command));
 
         if (info === null) {
             return;
@@ -407,7 +409,7 @@ exports.handleMessage = function (steamID, message) {
 
         client.chatMessage(steamID, reply);
     } else if (command === 'buy' || command === 'sell') {
-        const info = getItemAndAmount(steamID, message.substring(command.length + 1).trim());
+        const info = getItemAndAmount(steamID, removeCommandFromMessage(message, command));
 
         if (info === null) {
             return;
@@ -441,7 +443,7 @@ exports.handleMessage = function (steamID, message) {
 
         queue.handleQueue();
     } else if (isAdmin && command === 'get') {
-        const params = getParams(message.substring(command.length + 1).trim());
+        const params = getParams(removeCommandFromMessage(message, command));
 
         if (params.item !== undefined) {
             // Remove by full name
@@ -491,7 +493,7 @@ exports.handleMessage = function (steamID, message) {
             client.chatMessage(steamID, '/code ' + JSON.stringify(match, null, 4));
         }
     } else if (isAdmin && command === 'add') {
-        const params = getParams(message.substring(command.length + 1).trim());
+        const params = getParams(removeCommandFromMessage(message, command));
 
         if (params.enabled === undefined) {
             params.enabled = true;
@@ -552,7 +554,7 @@ exports.handleMessage = function (steamID, message) {
             }
         });
     } else if (isAdmin && command === 'update') {
-        const params = getParams(message.substring(command.length + 1).trim());
+        const params = getParams(removeCommandFromMessage(message, command));
 
         if (typeof params.intent === 'string') {
             const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
@@ -686,7 +688,7 @@ exports.handleMessage = function (steamID, message) {
             }
         });
     } else if (isAdmin && command === 'remove') {
-        const params = getParams(message.substring(command.length + 1).trim());
+        const params = getParams(removeCommandFromMessage(message, command));
 
         if (params.item !== undefined) {
             // Remove by full name
@@ -782,7 +784,7 @@ exports.handleMessage = function (steamID, message) {
             }
         });
     } else if (isAdmin && command === 'pricecheck') {
-        const params = getParams(message.substring(command.length + 1).trim());
+        const params = getParams(removeCommandFromMessage(message, command));
 
         if (params.sku === undefined) {
             const item = getItemFromParams(steamID, params);
@@ -802,6 +804,50 @@ exports.handleMessage = function (steamID, message) {
                 return;
             }
             client.chatMessage(steamID, 'Price check has been requested, the item will be checked.');
+        });
+    } else if (isAdmin && command === 'name') {
+        // This has already been used but since I'm planning on rewriting this for user extensions it will remain.
+        const newName = removeCommandFromMessage(message, command);
+
+        if (newName === '') {
+            client.chatMessage(steamID, 'You forgot to add a name. Example: "!name Nicklason"');
+            return;
+        }
+
+        community.editProfile({
+            name: newName
+        }, function (err) {
+            if (err) {
+                log.warn('Error while changing name: ', err);
+                client.chatMessage(steamID, 'Error while changing name: ' + err.message);
+
+                return;
+            }
+
+            client.chatMessage(steamID, 'Successfully changed name.');
+        });
+    } else if (isAdmin && command === 'avatar') {
+        const imageUrl = removeCommandFromMessage(message, command);
+
+        if (imageUrl === '') {
+            client.chatMessage(steamID, 'You forgot to add an image url. Example: "!avatar https://steamuserimages-a.akamaihd.net/ugc/949595415286366323/8FECE47652C9D77501035833E937584E30D0F5E7/"');
+            return;
+        }
+
+        if (!validUrl.isUri(imageUrl)) {
+            client.chatMessage(steamID, 'Your url is not valid. Example: "!avatar https://steamuserimages-a.akamaihd.net/ugc/949595415286366323/8FECE47652C9D77501035833E937584E30D0F5E7/"');
+            return;
+        }
+
+        community.uploadAvatar(imageUrl, (err) => {
+            if (err) {
+                log.warn('Error while uploading new avatar: ', err);
+                client.chatMessage(steamID, 'Error while uploading new avatar: ' + err.message);
+
+                return;
+            }
+
+            client.chatMessage(steamID, 'Successfully uploaded new avatar.');
         });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
@@ -851,4 +897,8 @@ function getItemAndAmount (steamID, message) {
         amount: amount,
         match: match
     };
+}
+
+function removeCommandFromMessage (message, command) {
+    return message.substring(command.length + 1).trim();
 }

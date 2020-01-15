@@ -274,6 +274,13 @@ function getTarget (item) {
             return parseInt(gameItem.static_attrs['tool target item'], 10);
         }
 
+        // Get schema item using market_hash_name
+        const schemaItem = schemaManager.schema.getItemByItemName(item.market_hash_name.replace('Strangifier', '').trim());
+
+        if (schemaItem !== null) {
+            return schemaItem.defindex;
+        }
+
         throw new Error('Could not find target for item "' + item.market_hash_name + '"');
     }
 

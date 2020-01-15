@@ -701,6 +701,15 @@ exports.newOffer = function (offer, done) {
                         buy: match.buy,
                         sell: match.sell
                     };
+
+                    // Check stock limits (not for keys)
+                    const diff = itemsDiff[sku];
+
+                    if (inventory.amountCanTrade(sku, buying) - diff < 0) {
+                        // User is taking too many / offering too many
+                        offer.log('info', 'is taking / offering too many, declining...');
+                        return done('decline', 'OVERSTOCKED');
+                    }
                 } else if (sku === '5021;6' && exchange.contains.items) {
                     // Offer contains keys and we are not trading keys, add key value
                     exchange[which].value += keyPrice.toValue() * amount;
@@ -708,14 +717,6 @@ exports.newOffer = function (offer, done) {
                 } else if (match === null || match.intent === buying ? 1 : 0) {
                     // Offer contains an item that we are not trading
                     return done('decline', 'INVALID_ITEMS');
-                } else {
-                    // Check stock limits (not for keys)
-                    const diff = itemsDiff[sku];
-                    if (inventory.amountCanTrade(sku, buying) - diff < 0) {
-                        // User is taking too many / offering too many
-                        offer.log('info', 'is taking / offering too many, declining...');
-                        return done('decline', 'OVERSTOCKED');
-                    }
                 }
             }
         }
