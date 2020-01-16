@@ -182,7 +182,7 @@ pm2.connect(function (err) {
                                         listingManager.init(callback);
                                     },
                                     profile: function (callback) {
-                                        //Updating profile and inventory to be public
+                                        // Updating profile and inventory to be public
                                         if (process.env.SKIP_UPDATE_PROFILE_SETTINGS === 'true') {
                                             return callback(null);
                                         }
