@@ -198,35 +198,43 @@ pm2.connect(function (err) {
                                         throw err;
                                     }
 
-                                    log.info('Creating listings...');
+                                    log.info('Removing all listings...');
 
-                                    require('handler/listings').checkAll(function (err) {
+                                    require('handler/listings').removeAll(function (err) {
                                         if (err) {
                                             throw err;
                                         }
 
-                                        // Connect to socketio server after creating listings
-                                        require('lib/ptf-socket').open();
+                                        log.info('Creating listings...');
 
-                                        log.info('Getting Steam API key...');
-
-                                        // Set cookies for the tradeoffer manager which will start the polling
-                                        manager.setCookies(cookies, function (err) {
+                                        require('handler/listings').checkAll(function (err) {
                                             if (err) {
                                                 throw err;
                                             }
 
-                                            require('handler/friends').getMaxFriends(function (err) {
+                                            // Connect to socketio server after creating listings
+                                            require('lib/ptf-socket').open();
+
+                                            log.info('Getting Steam API key...');
+
+                                            // Set cookies for the tradeoffer manager which will start the polling
+                                            manager.setCookies(cookies, function (err) {
                                                 if (err) {
                                                     throw err;
                                                 }
 
-                                                handlerManager.setReady();
+                                                require('handler/friends').getMaxFriends(function (err) {
+                                                    if (err) {
+                                                        throw err;
+                                                    }
 
-                                                handler.onReady();
+                                                    handlerManager.setReady();
 
-                                                // Start version checker
-                                                require('app/version-check');
+                                                    handler.onReady();
+
+                                                    // Start version checker
+                                                    require('app/version-check');
+                                                });
                                             });
                                         });
                                     });
