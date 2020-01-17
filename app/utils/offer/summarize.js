@@ -32,9 +32,5 @@ function summarizeItems (dict) {
         summary.push(name + (amount > 1 ? ' x' + amount : ''));
     }
 
-    if (summary.length === 0) {
-        return 'nothing';
-    }
-
     return summary.join(', ');
 }
