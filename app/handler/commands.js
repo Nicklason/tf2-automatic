@@ -239,18 +239,22 @@ function getItemFromParams (steamID, params) {
 }
 
 exports.handleMessage = function (steamID, message) {
-    const isAdmin = admin.isAdmin(steamID);
+    const steamID64 = steamID.getSteamID64();
 
-    const command = getCommand(message);
+    const isFriend = friends.isFriend(steamID64);
 
-    const friend = friends.getFriend(steamID.getSteamID64());
-
-    if (friend === null) {
-        // We are not friends, ignore the message
+    if (!isFriend) {
+        // Not friends with user
         return;
     }
 
-    const steamID64 = steamID.getSteamID64();
+    const friend = friends.getFriend(steamID);
+
+    if (friend === null) {
+        log.info('Message from ' + steamID64 + ': ' + message);
+    } else {
+        log.info('Message from ' + friend.player_name + ' (' + steamID64 + '): ' + message);
+    }
 
     if (messages.indexOf(steamID64) !== -1) {
         return;
@@ -258,7 +262,8 @@ exports.handleMessage = function (steamID, message) {
 
     messages.push(steamID64);
 
-    log.info('Message from ' + friend.player_name + ' (' + steamID64 + '): ' + message);
+    const isAdmin = admin.isAdmin(steamID64);
+    const command = getCommand(message);
 
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';

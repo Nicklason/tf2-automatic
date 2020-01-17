@@ -186,7 +186,7 @@ function onNewFriend (steamID, tries = 0) {
             // Wait for friend info to be available
             setTimeout(function () {
                 onNewFriend(steamID, tries);
-            }, backoff(tries - 1, 100));
+            }, backoff(tries - 1, 200));
             return;
         }
 
@@ -227,5 +227,6 @@ exports.getFriend = function (steamID) {
     const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
 
     const friend = client.users[steamID64];
+
     return friend === undefined ? null : friend;
 };

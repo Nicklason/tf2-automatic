@@ -5,13 +5,13 @@ const schemaManager = require('lib/tf2-schema');
 
 module.exports = function () {
     const value = this.data('value');
-
-    const ourCurrencies = !value ? 'unknown currencies' : new Currencies(value.our).toString();
-    const theirCurrencies = !value ? 'unknown currencies' : new Currencies(value.their).toString();
-
     const items = this.data('dict') || { our: null, their: null };
 
-    return 'Asked: ' + ourCurrencies + ' (' + summarizeItems(items.our) + ')\nOffered: ' + theirCurrencies + ' (' + summarizeItems(items.their) + ')';
+    if (!value) {
+        return 'Asked: ' + summarizeItems(items.our) + '\nOffered: ' + summarizeItems(items.their);
+    } else {
+        return 'Asked: ' + new Currencies(value.our).toString() + ' (' + summarizeItems(items.our) + ')\nOffered: ' + new Currencies(value.their).toString() + ' (' + summarizeItems(items.their) + ')';
+    }
 };
 
 function summarizeItems (dict) {
