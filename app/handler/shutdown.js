@@ -1,31 +1,15 @@
 const log = require('lib/logger');
-const listingManager = require('lib/bptf-listings');
 
 const files = require('utils/files');
 
 module.exports = function (err, done) {
-    listingManager.actions.create = [];
-
-    if (listingManager.ready !== true || (listingManager.listings.length === 0 && listingManager._processingActions !== true)) {
-        checkFiles();
-        return;
-    }
-
-    listingManager.listings.forEach((listing) => listing.remove());
-
-    listingManager.on('actions', onActions);
-
-    function onActions (actions) {
-        if (actions.remove.length === 0) {
-            log.debug('Done removing listings');
-            listingManager.removeListener('actions', onActions);
-            checkFiles();
-        } else {
-            listingManager.removeListener('actions', onActions);
-            listingManager.listings.forEach((listing) => listing.remove());
-            listingManager.on('actions', onActions);
+    require('handler/listings').removeAll(function (err) {
+        if (err) {
+            log.warn('Failed to remove all listings: ', err);
         }
-    }
+
+        checkFiles();
+    });
 
     function checkFiles (checks = 0) {
         if (!files.isWritingToFiles()) {
