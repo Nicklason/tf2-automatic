@@ -4,6 +4,8 @@ const isPathInside = require('is-path-inside');
 const pm2 = require('pm2');
 
 const log = require('lib/logger');
+const files = require('utils/files');
+const backoff = require('utils/exponentialBackoff');
 
 const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SECRET', 'STEAM_IDENTITY_SECRET'];
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData', 'onPricelist'];
@@ -48,13 +50,14 @@ const EXPORTED_FUNCTIONS = {
 
         shutdownCount++;
 
-        if (rudely) {
-            stop();
+        if (shutdownCount >= 10) {
+            rudely = true;
         }
 
-        if (shutdownCount >= 10) {
+        if (rudely) {
             log.warn('Forcing exit...');
             stop();
+            return;
         } else if (shutdownCount > 1) {
             return false;
         }
@@ -74,21 +77,23 @@ const EXPORTED_FUNCTIONS = {
                 return;
             }
 
-            log.warn('Exiting...');
-
             exiting = true;
 
             require('lib/manager').shutdown();
             require('lib/bptf-listings').shutdown();
             require('lib/client').logOff();
 
-            // Listen for logger to finish
-            log.on('finish', function () {
-                process.exit(err ? 1 : 0);
-            });
+            checkFiles(function () {
+                // Listen for logger to finish
+                log.on('finish', function () {
+                    process.exit(err ? 1 : 0);
+                });
 
-            // Stop the logger
-            log.end();
+                log.warn('Exiting...');
+
+                // Stop the logger
+                log.end();
+            });
         }
     },
     cleanup: function () {
@@ -278,6 +283,32 @@ function bindThis () {
     OPTIONAL_EVENTS.forEach(function (event) {
         handler[event] = handler[event].bind(client);
     });
+}
+
+function checkFiles (checks, done) {
+    if (typeof checks === 'function') {
+        done = checks;
+        checks = 0;
+    }
+
+    if (!files.isWritingToFiles()) {
+        // We are not writing to any files, stop the bot
+
+        if (checks !== 0) {
+            log.debug('Done writing files');
+        }
+
+        return done();
+    }
+
+    if (checks === 0) {
+        log.warn('Writing to files, waiting for them to finish...');
+    }
+
+    // Files are still being written to, wait for them to be done
+    setTimeout(function () {
+        checkFiles(checks + 1, done);
+    }, backoff(checks, 100));
 }
 
 function noop () {}
