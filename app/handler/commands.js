@@ -860,7 +860,7 @@ exports.handleMessage = function (steamID, message) {
         let sku;
         let amount;
 
-        if (message.includes('&')) {
+        if (message.includes('=')) {
             // Using params
             const params = getParams(message);
 
@@ -874,10 +874,12 @@ exports.handleMessage = function (steamID, message) {
                 params.sku = SKU.fromObject(item);
             }
 
-            params.sku = SKU.fromObject(fixItem(SKU.fromString(params.sku)));
+            sku = SKU.fromObject(fixItem(SKU.fromString(params.sku)));
 
             if (params.amount === undefined || params.amount < 1) {
-                params.amount === 1;
+                amount = 1;
+            } else {
+                amount = params.amount;
             }
         } else {
             // Using full name
@@ -889,7 +891,7 @@ exports.handleMessage = function (steamID, message) {
 
         const deposit = command.length === 7 ? true : false;
 
-        trades.addToCart(sku, amount, deposit, steamID, function (err, respond) {
+        trades.addToCart(sku, amount, deposit, steamID, function (err, response) {
             if (err) {
                 log.warn('Error while adding items to cart: ', err);
                 client.chatMessage(steamID, 'Error while adding items to cart');
@@ -897,7 +899,7 @@ exports.handleMessage = function (steamID, message) {
                 return;
             }
 
-            client.chatMessage(steamID, respond);
+            client.chatMessage(steamID, response.message + '\n' + stringifyCart(response.cart));
         });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
@@ -947,6 +949,26 @@ function getItemAndAmount (steamID, message) {
         amount: amount,
         match: match
     };
+}
+
+function stringifyCart (cart) {
+    let message = '== YOUR CART ==';
+
+    message += '\n\nMy side (items you will receive):';
+    for (const name in cart['itemsToGive']) {
+        if (Object.prototype.hasOwnProperty.call(cart['itemsToGive'], name)) {
+            message += '\n- ' + cart['itemsToGive'][name].amount + 'x ' + name;
+        }
+    }
+
+    message += '\n\nYour side (items you will lose):';
+    for (const name in cart['itemsToReceive']) {
+        if (Object.prototype.hasOwnProperty.call(cart['itemsToReceive'], name)) {
+            message += '\n- ' + cart['itemsToReceive'][name].amount + 'x ' + name;
+        }
+    }
+
+    return message;
 }
 
 function removeCommandFromMessage (message, command) {

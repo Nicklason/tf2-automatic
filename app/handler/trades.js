@@ -121,7 +121,7 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
             amount = amountCanTrade;
             message = 'I only have ' + pluralize(name, amount, true) + '. ' + (amount > 1 ? 'They have' : 'It has') + ' been added to your cart';
         } else {
-            message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
+            message = pluralize(name, amount, true) + (amount > 1 ? ' have' : ' has') + ' been added to your cart';
         }
 
         _addToCart(sku, name, amount, side);
@@ -159,7 +159,7 @@ exports.removeFromCart = function (name, amount, our, all = false) {
             amount = cart[side][name].amount;
             message = 'There were only ' + pluralize(name, amount, true) + ' on ' + whose + ' side of the cart. ' + (amount > 1 ? 'They have' : 'It has') + ' been removed';
         } else {
-            message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been removed from ' + whose + ' side of the cart';
+            message = pluralize(name, amount, true) + (amount > 1 ? ' have' : ' has') + ' been removed from ' + whose + ' side of the cart';
         }
     }
 
@@ -193,7 +193,7 @@ function correctDeposit (sku, name, amount, side) {
             amount = amountCanTrade;
             message = 'You only have ' + pluralize(name, amount, true) + '. ' + (amount > 1 ? 'They have' : 'It has') + ' been added to your cart';
         } else {
-            message = pluralize(name, amount, true) + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
+            message = pluralize(name, amount, true) + (amount > 1 ? ' have' : ' has') + ' been added to your cart';
         }
     } else {
         message = 'You don\'t have any ' + pluralize(name, 0);
@@ -1016,7 +1016,7 @@ exports.offerChanged = function (offer, oldState) {
 exports.updateAdminInventory = function (steamid, callback) {
     inventory.getDictionary(steamid, function (err, dict) {
         if (err) {
-            return callback(null, 'Failed to load inventory, Steam might be down');
+            callback(null, 'Failed to load inventory, Steam might be down');
         }
 
         adminInventory.steamid = steamid;
