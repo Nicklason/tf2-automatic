@@ -100,7 +100,7 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
             callback(null, { cart, message });
         } else {
             // adminInventory is not saved yet or a different admin's inventory is saved, request it
-            this.updateAdminInventory(steamID, function (err, response) {
+            exports.updateAdminInventory(steamID, function (err, response) {
                 if (err || response.startsWith('Failed')) {
                     message = response;
                 }
