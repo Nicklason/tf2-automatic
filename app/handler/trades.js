@@ -90,23 +90,22 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
     let message;
 
     if (deposit) {
-        if (Object.prototype.hasOwnProperty.call(adminInventory, 'steamid')) {
+        if (Object.prototype.hasOwnProperty.call(adminInventory, 'steamid') && adminInventory.steamid == steamID) {
             // adminInventory is already saved
-            if (Object.prototype.hasOwnProperty.call(adminInventory.dictionary, sku)) {
-                const amountCanTrade = adminInventory.dictionary[sku].length;
-                if (amountCanTrade < amount) {
-                    amount = amountCanTrade;
-                    message = 'You only have ' + pluralize(name, amount, true) + '. ' + (amount > 1 ? 'They have' : 'It has') + ' been added to your cart';
-                } else {
-                    message = pluralize(name, amount, true) + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
-                }
-            } else {
-                message = 'You don\'t have any ' + pluralize(name, 0);
-            }
+            message = correctDeposit(sku, name, amount, side);
 
             callback(null, { cart, message });
         } else {
             // adminInventory is not saved yet, request it
+            this.updateAdminInventory(steamID, function (err, response) {
+                if (err || response.startsWith('Failed')) {
+                    message = response;
+                }
+
+                message = correctDeposit(sku, name, amount, side);
+
+                callback(null, { cart, message });
+            });
         }
     } else {
         // Get all items in inventory, we don't need to check stock limits for withdrawals
@@ -137,6 +136,26 @@ function _addToCart (sku, name, amount, side) {
             amount: amount
         };
     }
+}
+
+function correctDeposit (sku, name, amount, side) {
+    let message;
+
+    if (Object.prototype.hasOwnProperty.call(adminInventory.dictionary, sku)) {
+        const amountCanTrade = adminInventory.dictionary[sku].length;
+        if (amountCanTrade < amount) {
+            amount = amountCanTrade;
+            message = 'You only have ' + pluralize(name, amount, true) + '. ' + (amount > 1 ? 'They have' : 'It has') + ' been added to your cart';
+        } else {
+            message = pluralize(name, amount, true) + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
+        }
+    } else {
+        message = 'You don\'t have any ' + pluralize(name, 0);
+    }
+
+    _addToCart(sku, name, amount, side);
+
+    return message;
 }
 
 exports.createOffer = function (details, callback) {
@@ -946,4 +965,17 @@ exports.offerChanged = function (offer, oldState) {
 
         groups.inviteToGroups(offer.partner);
     }
+};
+
+exports.updateAdminInventory = function (steamid, callback) {
+    inventory.getDictionary(steamid, function (err, dict) {
+        if (err) {
+            return callback(null, 'Failed to load inventory, Steam might be down');
+        }
+
+        adminInventory.steamid = steamid;
+        adminInventory.dictionary = dict;
+
+        callback(null, 'Your inventory has been updated.');
+    });
 };
