@@ -879,7 +879,6 @@ exports.handleMessage = function (steamID, message) {
                 return;
             }
 
-            log.info('Inventory space increased by 100.');
             client.chatMessage(steamID, 'Inventory space increased by 100.');
         });
     } else {
