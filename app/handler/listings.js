@@ -13,71 +13,69 @@ const templates = {
 };
 
 exports.checkBySKU = function (sku, data) {
-    setImmediate(function () {
-        const match = data && data.enabled === false ? null : prices.get(sku, true);
+    const match = data && data.enabled === false ? null : prices.get(sku, true);
 
-        let hasBuyListing = false;
-        let hasSellListing = false;
+    let hasBuyListing = false;
+    let hasSellListing = false;
 
-        const amountCanBuy = inventory.amountCanTrade(sku, true);
-        const amountCanSell = inventory.amountCanTrade(sku, false);
+    const amountCanBuy = inventory.amountCanTrade(sku, true);
+    const amountCanSell = inventory.amountCanTrade(sku, false);
 
-        listingManager.findListings(sku).forEach((listing) => {
-            if (listing.intent === 1 && hasSellListing) {
-                // Already have a sell order
-                listing.remove();
-                return;
-            }
+    listingManager.findListings(sku).forEach((listing) => {
+        if (listing.intent === 1 && hasSellListing) {
+            // Already have a sell order
+            listing.remove();
+            return;
+        }
 
-            if (listing.intent === 0) {
-                hasBuyListing = true;
-            } else if (listing.intent === 1) {
-                hasSellListing = true;
-            }
+        if (listing.intent === 0) {
+            hasBuyListing = true;
+        } else if (listing.intent === 1) {
+            hasSellListing = true;
+        }
 
-            if (match === null || (match.intent !== 2 && match.intent !== listing.intent)) {
-                // We are not trading the item, remove the listing
-                listing.remove();
-            } else if ((listing.intent === 0 && amountCanBuy <= 0) || (listing.intent === 1 && amountCanSell <= 0)) {
-                // We are not buying / selling more, remove the listing
-                listing.remove();
-            } else {
-                const newDetails = getDetails(listing.intent, match);
-                if (listing.details !== newDetails) {
-                    // Listing details don't match, update listing with new details and price
-                    const currencies = match[listing.intent === 0 ? 'buy' : 'sell'];
-                    listing.update({
-                        details: getDetails(listing.intent, match),
-                        currencies: currencies
-                    });
-                }
-            }
-        });
-
-        if (match !== null && match.enabled === true) {
-            const items = inventory.findBySKU(sku);
-
-            // TODO: Check if we are already making a listing for same type of item + intent
-
-            if (!hasBuyListing && (match.intent === 0 || match.intent === 2) && amountCanBuy > 0) {
-                listingManager.createListing({
-                    sku: sku,
-                    intent: 0,
-                    details: getDetails(0, match),
-                    currencies: match.buy
-                });
-            }
-
-            if (!hasSellListing && (match.intent === 1 || match.intent === 2) && amountCanSell > 0) {
-                listingManager.createListing({
-                    id: items[items.length - 1],
-                    intent: 1,
-                    details: getDetails(1, match),
-                    currencies: match.sell
+        if (match === null || (match.intent !== 2 && match.intent !== listing.intent)) {
+            // We are not trading the item, remove the listing
+            listing.remove();
+        } else if ((listing.intent === 0 && amountCanBuy <= 0) || (listing.intent === 1 && amountCanSell <= 0)) {
+            // We are not buying / selling more, remove the listing
+            listing.remove();
+        } else {
+            const newDetails = getDetails(listing.intent, match);
+            if (listing.details !== newDetails) {
+                // Listing details don't match, update listing with new details and price
+                const currencies = match[listing.intent === 0 ? 'buy' : 'sell'];
+                listing.update({
+                    details: getDetails(listing.intent, match),
+                    currencies: currencies
                 });
             }
         }
     });
+
+    if (match !== null && match.enabled === true) {
+        const items = inventory.findBySKU(sku);
+
+        // TODO: Check if we are already making a listing for same type of item + intent
+
+        if (!hasBuyListing && (match.intent === 0 || match.intent === 2) && amountCanBuy > 0) {
+            listingManager.createListing({
+                sku: sku,
+                intent: 0,
+                details: getDetails(0, match),
+                currencies: match.buy
+            });
+        }
+
+        if (!hasSellListing && (match.intent === 1 || match.intent === 2) && amountCanSell > 0) {
+            listingManager.createListing({
+                id: items[items.length - 1],
+                intent: 1,
+                details: getDetails(1, match),
+                currencies: match.sell
+            });
+        }
+    }
 };
 
 /**
