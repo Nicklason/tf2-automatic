@@ -22,8 +22,6 @@ const cart = {
     itemsToGive: {},
     itemsToReceive: {}
 };
-// We save admin inventory to avoid multiple inventory requests when depositing items
-const adminInventory = {};
 
 exports.getTradesWithPeople = function (steamIDs) {
     // Go through polldata data
@@ -90,26 +88,11 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
     let message;
 
     if (deposit) {
-        if (Object.prototype.hasOwnProperty.call(adminInventory, 'steamid') && adminInventory.steamid == steamID) {
-            // adminInventory is already saved
-            clearTimeout(adminInventory.expire);
-            assignExpiry();
+        message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
 
-            message = correctDeposit(sku, name, amount, side);
+        _addToCart(sku, name, amount, side);
 
-            callback(null, { cart, message });
-        } else {
-            // adminInventory is not saved yet or a different admin's inventory is saved, request it
-            exports.updateAdminInventory(steamID, function (err, response) {
-                if (err || response.startsWith('Failed')) {
-                    message = response;
-                }
-
-                message = correctDeposit(sku, name, amount, side);
-
-                callback(null, { cart, message });
-            });
-        }
+        callback(null, { cart, message });
     } else {
         // Get all items in inventory, we don't need to check stock limits for withdrawals
         const amountCanTrade = inventory.getAmount(sku);
@@ -121,7 +104,7 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
             amount = amountCanTrade;
             message = 'I only have ' + pluralize(name, amount, true) + '. ' + (amount > 1 ? 'They have' : 'It has') + ' been added to your cart';
         } else {
-            message = pluralize(name, amount, true) + (amount > 1 ? ' have' : ' has') + ' been added to your cart';
+            message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
         }
 
         _addToCart(sku, name, amount, side);
@@ -184,25 +167,6 @@ function _removeFromCart (name, amount, side, all = false) {
     }
 }
 
-function correctDeposit (sku, name, amount, side) {
-    let message;
-
-    if (Object.prototype.hasOwnProperty.call(adminInventory.dictionary, sku)) {
-        const amountCanTrade = adminInventory.dictionary[sku].length;
-        if (amountCanTrade < amount) {
-            amount = amountCanTrade;
-            message = 'You only have ' + pluralize(name, amount, true) + '. ' + (amount > 1 ? 'They have' : 'It has') + ' been added to your cart';
-        } else {
-            message = pluralize(name, amount, true) + (amount > 1 ? ' have' : ' has') + ' been added to your cart';
-        }
-    } else {
-        message = 'You don\'t have any ' + pluralize(name, 0);
-    }
-
-    _addToCart(sku, name, amount, side);
-
-    return message;
-}
 
 exports.createOffer = function (details, callback) {
     const partner = details.steamid;
@@ -1012,28 +976,3 @@ exports.offerChanged = function (offer, oldState) {
         groups.inviteToGroups(offer.partner);
     }
 };
-
-exports.updateAdminInventory = function (steamid, callback) {
-    inventory.getDictionary(steamid, function (err, dict) {
-        if (err) {
-            callback(null, 'Failed to load inventory, Steam might be down');
-        }
-
-        adminInventory.steamid = steamid;
-        adminInventory.dictionary = dict;
-
-        assignExpiry();
-
-        callback(null, 'Your inventory has been updated.');
-    });
-};
-
-function assignExpiry (time = 5 * 60 * 1000) {
-    adminInventory.expire = setTimeout(function () {
-        for (const prop in adminInventory) {
-            if (Object.prototype.hasOwnProperty.call(adminInventory, prop)) {
-                delete adminInventory[prop];
-            }
-        }
-    }, time);
-}
