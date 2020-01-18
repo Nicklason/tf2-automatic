@@ -164,10 +164,10 @@ function getItemFromParams (steamID, params) {
     }
 
     if (item.effect !== null) {
-        const effect = schemaManager.schema.getEffectByName(item.effect);
+        const effect = schemaManager.schema.getEffectIdByName(item.effect);
 
         if (effect === null) {
-            client.chatMessage(steamID, 'Could not find an unusual effect in the schema with the name "' + item.paintkit + '"');
+            client.chatMessage(steamID, 'Could not find an unusual effect in the schema with the name "' + item.effect + '"');
             return null;
         }
 
@@ -738,11 +738,14 @@ exports.handleMessage = function (steamID, message) {
             }
         });
     } else if (isAdmin && command === 'trades') {
-        const dateNow = new Date().getTime();
+        const d = new Date();
+        const dateNow = d.getTime();
         const offerData = manager.pollData.offerData;
+        const dateMs = d.getHours() * 3600000 + d.getMinutes() * 60000;
 
-        let tradeToday = 0;
-        let tradeTotal = 0;
+        let tradesToday = 0;
+        let trades24Hours = 0;
+        let tradesTotal = 0;
         for (const offerID in offerData) {
             if (!Object.prototype.hasOwnProperty.call(offerData, offerID)) {
                 continue;
@@ -750,16 +753,21 @@ exports.handleMessage = function (steamID, message) {
 
             if (offerData[offerID].handledByUs === true && offerData[offerID].isAccepted === true) {
                 // Sucessful trades handled by the bot
-                tradeTotal++;
+                tradesTotal++;
 
                 if (offerData[offerID].finishTimestamp >= (dateNow - 86400000)) {
                     // Within the last 24 hours
-                    tradeToday++;
+                    trades24Hours++;
+                }
+
+                if (offerData[offerID].finishTimestamp >= (dateNow - dateMs)) {
+                    // All trades since 0:00 in the morning.
+                    tradesToday++;
                 }
             }
         }
 
-        client.chatMessage(steamID, 'Trades today: ' + tradeToday + ' \n Total trades: ' + tradeTotal);
+        client.chatMessage(steamID, 'Total: ' + tradesTotal + ' \n Last 24 hours: ' + trades24Hours + ' \n Since beginning of today: ' + tradesToday);
     } else if (isAdmin && command === 'restart') {
         client.chatMessage(steamID, 'Restarting...');
 
