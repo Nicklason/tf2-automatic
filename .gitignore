@@ -63,11 +63,10 @@ typings/
 # Local testing environment
 local/
 
-# Previously used temp folder
-temp/
-
 # dev environment
 nodemon.json
+
+# ecosystem file
 ecosystem.json
 
 # file folder
