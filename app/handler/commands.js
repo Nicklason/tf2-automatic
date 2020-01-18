@@ -874,7 +874,7 @@ exports.handleMessage = function (steamID, message) {
 
         crafting.useItem(assetids[0], function (err) {
             if (err) {
-                log.error('Error occured while trying to use a backpack expander: ' + err.message);
+                log.warn('Error trying to expand inventory: ', err);
                 client.chatMessage(steamID, 'Error occured while trying to use a backpack expander: ' + err.message);
                 return;
             }
