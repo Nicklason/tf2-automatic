@@ -80,7 +80,15 @@ exports.checkBySKU = function (sku, data) {
     });
 };
 
+/**
+ * Checks entire pricelist and updates listings
+ * @param {Function} callback
+ */
 exports.checkAll = function (callback) {
+    if (callback === undefined) {
+        callback = noop;
+    }
+
     // Wait for listings to be made / removed
     waitForListings(function (err) {
         if (err) {
@@ -89,21 +97,39 @@ exports.checkAll = function (callback) {
 
         const pricelist = prices.getPricelist();
 
-        const limit = Math.min(pricelist.length, listingManager.cap);
+        log.debug('Checking listings for ' + pluralize('items', pricelist.length, true) + '...');
 
-        log.debug('Enqueueing ' + pluralize('listing', limit, true) + '...');
-
-        for (let i = 0; i < limit; i++) {
-            exports.checkBySKU(pricelist[i].sku, pricelist[i]);
-        }
-
-        // This function is called at the end of the callback queue
-        setImmediate(function () {
-            log.debug('Done enqueing listings');
+        recursiveCheckPricelist(pricelist, function () {
+            log.debug('Done checking listings');
             callback(null);
         });
     });
 };
+
+/**
+ * A non-blocking function for checking listings
+ * @param {Array} pricelist
+ * @param {Function} done
+ */
+function recursiveCheckPricelist (pricelist, done) {
+    let index = 0;
+
+    iteration();
+
+    function iteration () {
+        if (pricelist.length <= index) {
+            done();
+            return;
+        }
+
+        setImmediate(function () {
+            exports.checkBySKU(pricelist[index].sku, pricelist[index]);
+
+            index++;
+            iteration();
+        });
+    }
+}
 
 function waitForListings (callback) {
     let checks = 0;
@@ -183,3 +209,5 @@ function getDetails (intent, pricelistEntry) {
 
     return details;
 }
+
+function noop () {}
