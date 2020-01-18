@@ -121,7 +121,7 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
             amount = amountCanTrade;
             message = 'I only have ' + pluralize(name, amount, true) + '. ' + (amount > 1 ? 'They have' : 'It has') + ' been added to your cart';
         } else {
-            message = pluralize(name, amount, true) + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
+            message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
         }
 
         _addToCart(sku, name, amount, side);
@@ -138,6 +138,49 @@ function _addToCart (sku, name, amount, side) {
             sku: sku,
             amount: amount
         };
+    }
+}
+
+exports.removeFromCart = function (name, amount, our, all = false) {
+    let message;
+
+    const side = our ? 'itemsToGive' : 'itemsToReceive';
+
+    if (all) {
+        _removeFromCart(name, amount, our, true);
+
+        message = 'Your cart has been emptied';
+    } else {
+        const whose = our ? 'the bot\'s' : 'your';
+
+        if (!cart[side][name]) {
+            message = 'There are no ' + pluralize(name, 0) + ' on ' + whose + ' side of the cart';
+        } else if (amount > cart[side][name].amount) {
+            amount = cart[side][name].amount;
+            message = 'There were only ' + pluralize(name, amount, true) + ' on ' + whose + ' side of the cart. ' + (amount > 1 ? 'They have' : 'It has') + ' been removed';
+        } else {
+            message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been removed from ' + whose + ' side of the cart';
+        }
+    }
+
+    _removeFromCart(name, amount, side);
+
+    return message;
+};
+
+function _removeFromCart (name, amount, side, all = false) {
+    if (all) {
+        for (const side in cart) {
+            if (Object.prototype.hasOwnProperty.call(cart, side)) {
+                cart[side] = {};
+            }
+        }
+    } else {
+        cart[side][name].amount -= amount;
+
+        if (cart[side][name].amount <= 0) {
+            delete cart[side][name];
+        }
     }
 }
 
