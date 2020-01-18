@@ -92,11 +92,14 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
     if (deposit) {
         if (Object.prototype.hasOwnProperty.call(adminInventory, 'steamid') && adminInventory.steamid == steamID) {
             // adminInventory is already saved
+            clearTimeout(adminInventory.expire);
+            assignExpiry();
+
             message = correctDeposit(sku, name, amount, side);
 
             callback(null, { cart, message });
         } else {
-            // adminInventory is not saved yet, request it
+            // adminInventory is not saved yet or a different admin's inventory is saved, request it
             this.updateAdminInventory(steamID, function (err, response) {
                 if (err || response.startsWith('Failed')) {
                     message = response;
@@ -976,6 +979,18 @@ exports.updateAdminInventory = function (steamid, callback) {
         adminInventory.steamid = steamid;
         adminInventory.dictionary = dict;
 
+        assignExpiry();
+
         callback(null, 'Your inventory has been updated.');
     });
 };
+
+function assignExpiry (time = 5 * 60 * 1000) {
+    adminInventory.expire = setTimeout(function () {
+        for (const prop in adminInventory) {
+            if (Object.prototype.hasOwnProperty.call(adminInventory, prop)) {
+                delete adminInventory[prop];
+            }
+        }
+    }, time);
+}
