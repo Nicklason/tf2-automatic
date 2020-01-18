@@ -41,10 +41,6 @@ exports.onLogin = function () {
     }
 };
 
-exports.onLoginFailure = function (err) {
-    exports.shutdown(err);
-};
-
 exports.onHeartbeat = function (bumped) {
     log.debug('Heartbeat sent to www.backpack.tf' + (bumped > 0 ? '; Bumped ' + pluralize('listing', bumped, true) : '') + '.');
 };

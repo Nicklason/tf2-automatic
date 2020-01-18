@@ -4,10 +4,12 @@ const isPathInside = require('is-path-inside');
 const pm2 = require('pm2');
 
 const log = require('lib/logger');
+const files = require('utils/files');
+const backoff = require('utils/exponentialBackoff');
 
 const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SECRET', 'STEAM_IDENTITY_SECRET'];
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData', 'onPricelist'];
-const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onGroupRelationship', 'onPriceChange', 'onTradeOfferChanged', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onLogin', 'onLoginFailure', 'onLoginThrottle', 'onInventoryUpdated', 'onCraftingCompleted', 'onUseCompleted', 'onDeleteCompleted', 'onTF2QueueCompleted', 'onQueue', 'onBptfAuth', 'onSchema', 'onHeartbeat', 'onListings'];
+const OPTIONAL_EVENTS = ['onMessage', 'onFriendRelationship', 'onGroupRelationship', 'onPriceChange', 'onTradeOfferChanged', 'onTradeFetchError', 'onConfirmationAccepted', 'onConfirmationError', 'onLogin', 'onLoginThrottle', 'onInventoryUpdated', 'onCraftingCompleted', 'onUseCompleted', 'onDeleteCompleted', 'onTF2QueueCompleted', 'onQueue', 'onBptfAuth', 'onSchema', 'onHeartbeat', 'onListings'];
 const EXPORTED_FUNCTIONS = {
     restart: function (callback) {
         if (process.env.pm_id === undefined) {
@@ -43,21 +45,31 @@ const EXPORTED_FUNCTIONS = {
             return callback(null, true);
         });
     },
-    shutdown: function (err, rudely = false) {
+    shutdown: function (err=null, checkIfReady=true, rudely=false) {
         log.debug('Shutdown has been initialized, stopping...', { err: err });
 
+        shutdownRequested = true;
         shutdownCount++;
 
-        if (rudely) {
-            stop();
+        if (shutdownCount >= 10) {
+            rudely = true;
         }
 
-        if (shutdownCount >= 10) {
-            log.warn('Forcing exit...');
+        if (rudely) {
+            log.warn('Forcefully exiting');
             stop();
-        } else if (shutdownCount > 1) {
+            return;
+        }
+
+        if (err === null && checkIfReady && !EXPORTED_FUNCTIONS.isReady()) {
             return false;
         }
+
+        if (shutdownCount > 1 && shuttingDown) {
+            return false;
+        }
+
+        shuttingDown = true;
 
         this.cleanup();
 
@@ -74,21 +86,23 @@ const EXPORTED_FUNCTIONS = {
                 return;
             }
 
-            log.warn('Exiting...');
-
             exiting = true;
 
             require('lib/manager').shutdown();
             require('lib/bptf-listings').shutdown();
             require('lib/client').logOff();
 
-            // Listen for logger to finish
-            log.on('finish', function () {
-                process.exit(err ? 1 : 0);
-            });
+            checkFiles(function () {
+                // Listen for logger to finish
+                log.on('finish', function () {
+                    process.exit(err ? 1 : 0);
+                });
 
-            // Stop the logger
-            log.end();
+                log.warn('Exiting...');
+
+                // Stop the logger
+                log.end();
+            });
         }
     },
     cleanup: function () {
@@ -160,7 +174,9 @@ const EXPORTED_FUNCTIONS = {
 let handler;
 
 let isReady = false;
+let shuttingDown = false;
 let shutdownCount = 0;
+let shutdownRequested = false;
 let exiting = false;
 
 /**
@@ -218,6 +234,10 @@ exports.isReady = function () {
 
 exports.isShuttingDown = function () {
     return shutdownCount > 0;
+};
+
+exports.shutdownRequested = function () {
+    return shutdownRequested;
 };
 
 exports.setReady = function () {
@@ -278,6 +298,32 @@ function bindThis () {
     OPTIONAL_EVENTS.forEach(function (event) {
         handler[event] = handler[event].bind(client);
     });
+}
+
+function checkFiles (checks, done) {
+    if (typeof checks === 'function') {
+        done = checks;
+        checks = 0;
+    }
+
+    if (!files.isWritingToFiles()) {
+        // We are not writing to any files, stop the bot
+
+        if (checks !== 0) {
+            log.debug('Done writing files');
+        }
+
+        return done();
+    }
+
+    if (checks === 0) {
+        log.warn('Writing to files, waiting for them to finish...');
+    }
+
+    // Files are still being written to, wait for them to be done
+    setTimeout(function () {
+        checkFiles(checks + 1, done);
+    }, backoff(checks, 100));
 }
 
 function noop () {}
