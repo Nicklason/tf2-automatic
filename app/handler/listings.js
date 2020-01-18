@@ -16,14 +16,10 @@ const templates = {
 exports.checkBySKU = function (sku, data) {
     const item = SKU.fromString(sku);
 
-    if (item.paintkit !== null) {
-        // Ignore creating listings for skins
-        return;
-    }
-
     const match = data && data.enabled === false ? null : prices.get(sku, true);
 
-    let hasBuyListing = false;
+    // We don't actually have a buy order if it is a skin, but this makes the code not make a new buy order
+    let hasBuyListing = item.paintkit !== null;
     let hasSellListing = false;
 
     const amountCanBuy = inventory.amountCanTrade(sku, true);
