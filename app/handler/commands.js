@@ -854,6 +854,51 @@ exports.handleMessage = function (steamID, message) {
 
             client.chatMessage(steamID, 'Successfully uploaded new avatar.');
         });
+    } else if (isAdmin && (command === 'withdraw' || command === 'deposit')) {
+        message = removeCommandFromMessage(message, command);
+
+        let sku;
+        let amount;
+
+        if (message.includes('&')) {
+            // Using params
+            const params = getParams(message);
+
+            if (params.sku === undefined) {
+                const item = getItemFromParams(steamID, params);
+
+                if (item === null) {
+                    return;
+                }
+
+                params.sku = SKU.fromObject(item);
+            }
+
+            params.sku = SKU.fromObject(fixItem(SKU.fromString(params.sku)));
+
+            if (params.amount === undefined || params.amount < 1) {
+                params.amount === 1;
+            }
+        } else {
+            // Using full name
+            // TODO
+            client.chatMessage(steamID, 'Missing item properties');
+
+            return;
+        }
+
+        const deposit = command.length === 7 ? true : false;
+
+        trades.addToCart(sku, amount, deposit, steamID, function (err, respond) {
+            if (err) {
+                log.warn('Error while adding items to cart: ', err);
+                client.chatMessage(steamID, 'Error while adding items to cart');
+
+                return;
+            }
+
+            client.chatMessage(steamID, respond);
+        });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
     }
