@@ -18,10 +18,7 @@ const isAdmin = admin.isAdmin;
 const checkBanned = require('utils/isBanned');
 const communityLoginCallback = require('utils/communityLoginCallback');
 
-const cart = {
-    itemsToGive: {},
-    itemsToReceive: {}
-};
+const cart = {};
 
 exports.getTradesWithPeople = function (steamIDs) {
     // Go through polldata data
@@ -81,6 +78,13 @@ exports.getActiveOffer = function (steamID) {
 };
 
 exports.addToCart = function (sku, amount, deposit, steamID, callback) {
+    if (cart[steamID] === undefined) {
+        cart[steamID] = {
+            itemsToGive: {},
+            itemsToReceive: {}
+        };
+    }
+
     const side = deposit ? 'itemsToReceive' : 'itemsToGive';
 
     const name = schemaManager.schema.getName(SKU.fromString(sku));
@@ -90,9 +94,11 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
     if (deposit) {
         message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
 
-        _addToCart(sku, name, amount, side);
+        _addToCart(sku, name, amount, side, steamID);
 
-        callback(null, { cart, message });
+        const userCart = cart[steamID];
+
+        callback(null, { cart: userCart, message });
     } else {
         // Get all items in inventory, we don't need to check stock limits for withdrawals
         const amountCanTrade = inventory.getAmount(sku);
@@ -107,30 +113,39 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
             message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
         }
 
-        _addToCart(sku, name, amount, side);
+        _addToCart(sku, name, amount, side, steamID);
 
-        callback(null, { cart, message });
+        const userCart = cart[steamID];
+
+        callback(null, { cart: userCart, message });
     }
 };
 
-function _addToCart (sku, name, amount, side) {
-    if (cart[side][name]) {
-        cart[side][name].amount += amount;
+function _addToCart (sku, name, amount, side, steamID) {
+    if (cart[steamID] === undefined) {
+        cart[steamID] = {
+            itemsToGive: {},
+            itemsToReceive: {}
+        };
+    }
+
+    if (cart[steamID][side][name]) {
+        cart[steamID][side][name].amount += amount;
     } else {
-        cart[side][name] = {
+        cart[steamID][side][name] = {
             sku: sku,
             amount: amount
         };
     }
 }
 
-exports.removeFromCart = function (name, amount, our, all = false) {
+exports.removeFromCart = function (name, amount, our, steamID, all = false) {
     let message;
 
     const side = our ? 'itemsToGive' : 'itemsToReceive';
 
     if (all) {
-        _removeFromCart(name, amount, our, true);
+        _removeFromCart(name, amount, our, steamID, true);
 
         message = 'Your cart has been emptied';
     } else {
@@ -146,23 +161,30 @@ exports.removeFromCart = function (name, amount, our, all = false) {
         }
     }
 
-    _removeFromCart(name, amount, side);
+    _removeFromCart(name, amount, side, steamID);
 
     return message;
 };
 
-function _removeFromCart (name, amount, side, all = false) {
+function _removeFromCart (name, amount, side, steamID, all = false) {
+    if (cart[steamID] === undefined) {
+        cart[steamID] = {
+            itemsToGive: {},
+            itemsToReceive: {}
+        };
+    }
+
     if (all) {
-        for (const side in cart) {
-            if (Object.prototype.hasOwnProperty.call(cart, side)) {
-                cart[side] = {};
+        for (const side in cart[steamID]) {
+            if (Object.prototype.hasOwnProperty.call(cart[steamID], side)) {
+                cart[steamID][side] = {};
             }
         }
     } else {
-        cart[side][name].amount -= amount;
+        cart[steamID][side][name].amount -= amount;
 
-        if (cart[side][name].amount <= 0) {
-            delete cart[side][name];
+        if (cart[steamID][side][name].amount <= 0) {
+            delete cart[steamID][side][name];
         }
     }
 }
