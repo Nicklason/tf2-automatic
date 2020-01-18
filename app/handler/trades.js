@@ -93,12 +93,6 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
 
     if (deposit) {
         message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
-
-        _addToCart(sku, name, amount, side, steamID);
-
-        const userCart = cart[steamID];
-
-        callback(null, { cart: userCart, message });
     } else {
         // Get all items in inventory, we don't need to check stock limits for withdrawals
         const amountCanTrade = inventory.getAmount(sku);
@@ -112,13 +106,13 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
         } else {
             message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
         }
-
-        _addToCart(sku, name, amount, side, steamID);
-
-        const userCart = cart[steamID];
-
-        callback(null, { cart: userCart, message });
     }
+
+    _addToCart(sku, name, amount, side, steamID);
+
+    const userCart = cart[steamID];
+
+    callback(null, { cart: userCart, message });
 };
 
 function _addToCart (sku, name, amount, side, steamID) {
