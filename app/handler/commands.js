@@ -269,7 +269,7 @@ exports.handleMessage = function (steamID, message) {
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
-            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades, !name, !avatar';
+            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades, !name, !avatar, !expand';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
@@ -866,7 +866,7 @@ exports.handleMessage = function (steamID, message) {
     } else if (isAdmin && command === 'expand') {
         const assetids = [].concat(inventory.findBySKU('5050;6', false)).concat(inventory.findBySKU('5050;6;uncraftable', false));
 
-        if (assetids.length < 1) {
+        if (assetids.length === 1) {
             // No backpack expanders in your inventory.
             client.chatMessage(steamID, 'I couldn\'t find any backpack expander(s) in your inventory.');
             return;
@@ -877,8 +877,9 @@ exports.handleMessage = function (steamID, message) {
                 client.chatMessage(steamID, 'Error occured while trying to use a backpack expander.');
                 return;
             }
-            client.chatMessage(steamID, 'Inventory space increased by 100.');
+
             log.info('Inventory space increased by 100.');
+            client.chatMessage(steamID, 'Inventory space increased by 100.');
         });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
