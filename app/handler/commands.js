@@ -570,16 +570,12 @@ exports.handleMessage = function (steamID, message) {
 
         if (params.all === true) {
             // TODO: Must have atleast one other param
-            client.chatMessage(steamID, 'Updating pricelist...');
-
             const pricelist = prices.getPricelist();
 
             if (pricelist.length === 0) {
                 client.chatMessage(steamID, 'Your pricelist is empty');
                 return;
             }
-
-            handlerManager.getHandler().cleanup();
 
             for (let i = 0; i < pricelist.length; i++) {
                 if (params.intent) {
@@ -628,8 +624,13 @@ exports.handleMessage = function (steamID, message) {
 
             // Save pricelist
             handlerManager.getHandler().onPricelist(pricelist);
-            // Kill it
-            handlerManager.getHandler().shutdown();
+
+            client.chatMessage(steamID, 'Updated pricelist');
+
+            // FIXME: Make it so that it is not needed to remove all listings
+            require('handler/listings').removeAll(function () {
+                require('handler/listings').checkAll();
+            });
             return;
         }
 

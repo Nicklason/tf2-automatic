@@ -106,21 +106,14 @@ exports.checkAll = function (callback) {
 
     checkingAllListings = true;
 
-    // Wait for listings to be made / removed
-    waitForListings(function (err) {
-        if (err) {
-            return callback(err);
-        }
+    const pricelist = prices.getPricelist();
 
-        const pricelist = prices.getPricelist();
+    log.debug('Checking listings for ' + pluralize('items', pricelist.length, true) + '...');
 
-        log.debug('Checking listings for ' + pluralize('items', pricelist.length, true) + '...');
-
-        recursiveCheckPricelist(pricelist, function () {
-            checkingAllListings = false;
-            log.debug('Done checking listings');
-            callback(null);
-        });
+    recursiveCheckPricelist(pricelist, function () {
+        checkingAllListings = false;
+        log.debug('Done checking listings');
+        callback(null);
     });
 };
 
