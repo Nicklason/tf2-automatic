@@ -866,7 +866,7 @@ exports.handleMessage = function (steamID, message) {
     } else if (isAdmin && command === 'expand') {
         const assetids = [].concat(inventory.findBySKU('5050;6', false)).concat(inventory.findBySKU('5050;6;uncraftable', false));
 
-        if (assetids.length === 1) {
+        if (assetids.length === 0) {
             // No backpack expanders in your inventory.
             client.chatMessage(steamID, 'I couldn\'t find any backpack expander(s) in your inventory.');
             return;
