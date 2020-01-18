@@ -1,4 +1,5 @@
 const pluralize = require('pluralize');
+const moment = require('moment');
 
 const log = require('lib/logger');
 const prices = require('app/prices');
@@ -11,6 +12,9 @@ const templates = {
     buy: process.env.BPTF_DETAILS_BUY || 'I am buying your %name% for %price%, I have %current_stock% / %max_stock%.',
     sell: process.env.BPTF_DETAILS_SELL || 'I am selling my %name% for %price%, I am selling %amount_trade%.'
 };
+
+let cancelListingCheck = false;
+let checkingAllListings = false;
 
 exports.checkBySKU = function (sku, data) {
     const match = data && data.enabled === false ? null : prices.get(sku, true);
@@ -46,6 +50,7 @@ exports.checkBySKU = function (sku, data) {
                 // Listing details don't match, update listing with new details and price
                 const currencies = match[listing.intent === 0 ? 'buy' : 'sell'];
                 listing.update({
+                    time: match.time || moment.unix(),
                     details: getDetails(listing.intent, match),
                     currencies: currencies
                 });
@@ -60,6 +65,7 @@ exports.checkBySKU = function (sku, data) {
 
         if (!hasBuyListing && (match.intent === 0 || match.intent === 2) && amountCanBuy > 0) {
             listingManager.createListing({
+                time: match.time || moment.unix(),
                 sku: sku,
                 intent: 0,
                 details: getDetails(0, match),
@@ -69,6 +75,7 @@ exports.checkBySKU = function (sku, data) {
 
         if (!hasSellListing && (match.intent === 1 || match.intent === 2) && amountCanSell > 0) {
             listingManager.createListing({
+                time: match.time || moment.unix(),
                 id: items[items.length - 1],
                 intent: 1,
                 details: getDetails(1, match),
@@ -87,6 +94,14 @@ exports.checkAll = function (callback) {
         callback = noop;
     }
 
+    if (checkingAllListings) {
+        // Already checking listings
+        callback(null);
+        return;
+    }
+
+    checkingAllListings = true;
+
     // Wait for listings to be made / removed
     waitForListings(function (err) {
         if (err) {
@@ -98,6 +113,7 @@ exports.checkAll = function (callback) {
         log.debug('Checking listings for ' + pluralize('items', pricelist.length, true) + '...');
 
         recursiveCheckPricelist(pricelist, function () {
+            checkingAllListings = false;
             log.debug('Done checking listings');
             callback(null);
         });
@@ -115,7 +131,8 @@ function recursiveCheckPricelist (pricelist, done) {
     iteration();
 
     function iteration () {
-        if (pricelist.length <= index) {
+        if (pricelist.length <= index || cancelListingCheck) {
+            cancelListingCheck = false;
             done();
             return;
         }
@@ -161,6 +178,10 @@ function waitForListings (callback) {
  * @param {function} callback
  */
 exports.removeAll = function (callback) {
+    if (checkingAllListings) {
+        cancelListingCheck = true;
+    }
+
     // Clear create queue
     listingManager.actions.create = [];
 
