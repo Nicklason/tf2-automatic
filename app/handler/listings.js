@@ -1,4 +1,5 @@
 const pluralize = require('pluralize');
+const SKU = require('tf2-sku');
 
 const log = require('lib/logger');
 const prices = require('app/prices');
@@ -13,6 +14,13 @@ const templates = {
 };
 
 exports.checkBySKU = function (sku, data) {
+    const item = SKU.fromString(sku);
+
+    if (item.paintkit !== null) {
+        // Ignore creating listings for skins
+        return;
+    }
+
     const match = data && data.enabled === false ? null : prices.get(sku, true);
 
     let hasBuyListing = false;
