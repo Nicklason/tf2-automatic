@@ -1,4 +1,5 @@
 const pluralize = require('pluralize');
+const SKU = require('tf2-sku');
 const moment = require('moment');
 
 const log = require('lib/logger');
@@ -17,9 +18,12 @@ let cancelListingCheck = false;
 let checkingAllListings = false;
 
 exports.checkBySKU = function (sku, data) {
+    const item = SKU.fromString(sku);
+
     const match = data && data.enabled === false ? null : prices.get(sku, true);
 
-    let hasBuyListing = false;
+    // We don't actually have a buy order if it is a skin, but this makes the code not make a new buy order
+    let hasBuyListing = item.paintkit !== null;
     let hasSellListing = false;
 
     const amountCanBuy = inventory.amountCanTrade(sku, true);
