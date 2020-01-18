@@ -55,9 +55,16 @@ exports.combineMetal = function (defindex, amount) {
 /**
  * Enqueues a use job
  * @param {String} assetid Assetid of the item to use
+ * @param {Function} [callback]
  */
-exports.useItem = function (assetid) {
-    jobs.push({ type: 'use', assetid: assetid });
+exports.useItem = function (assetid, callback) {
+    const job = { type: 'use', assetid: assetid };
+
+    if (callback !== undefined) {
+        job.callback = callback;
+    }
+
+    jobs.push(job);
 
     handleJobsQueue();
 };
@@ -65,15 +72,33 @@ exports.useItem = function (assetid) {
 /**
  * Enqueues a delete job
  * @param {String} assetid Assetid of the item to delete
+ * @param {Function} [callback]
  */
-exports.deleteItem = function (assetid) {
-    jobs.push({ type: 'delete', assetid: assetid });
+exports.deleteItem = function (assetid, callback) {
+    const job = { type: 'delete', assetid: assetid };
+
+    if (callback !== undefined) {
+        job.callback = callback;
+    }
+
+    jobs.push(job);
 
     handleJobsQueue();
 };
 
-exports.sortInventory = function (type) {
-    jobs.push({ type: 'sort', sortType: type });
+/**
+ * Enqueues a sort job
+ * @param {Number} type Sort type
+ * @param {Function} [callback]
+ */
+exports.sortInventory = function (type, callback) {
+    const job = { type: 'sort', sortType: type };
+
+    if (callback !== undefined) {
+        job.callback = callback;
+    }
+
+    jobs.push(job);
 
     handleJobsQueue();
 };
@@ -147,7 +172,7 @@ function handleJobsQueue () {
     if (!canProcessJob(job)) {
         // Can't process job, skip it
         log.debug('Can\'t process job', { job: job });
-        doneProcessingJob();
+        doneProcessingJob(new Error('Can\'t process job'));
         return;
     }
 
@@ -157,7 +182,7 @@ function handleJobsQueue () {
 
     exports.connectToGC(function (err) {
         if (err) {
-            return doneProcessingJob();
+            return doneProcessingJob(err);
         }
 
         if (job.type === 'crafting') {
@@ -170,7 +195,7 @@ function handleJobsQueue () {
             processSortJob(job, doneProcessingJob);
         } else {
             log.debug('Unknown job type', { job: job });
-            doneProcessingJob();
+            doneProcessingJob(new Error('Unknown job type'));
         }
     });
 }
@@ -197,10 +222,15 @@ function canProcessJob (job) {
 
 /**
  * Function to call when done processing a job
- * @param {Object} job
+ * @param {Error} err
  */
-function doneProcessingJob (job) {
-    jobs.splice(0, 1);
+function doneProcessingJob (err) {
+    const job = jobs.splice(0, 1)[0];
+
+    if (job.callback) {
+        job.callback(err);
+    }
+
     processingQueue = false;
     handleJobsQueue();
 }
@@ -220,7 +250,7 @@ function isInTF2 () {
  */
 function processCraftingJob (job, callback) {
     if (!canProcessJob(job)) {
-        callback();
+        callback(new Error('Can\'t process job'));
         return;
     }
 
@@ -258,7 +288,7 @@ function processCraftingJob (job, callback) {
 
         handlerManager.getHandler().onCraftingCompleted(sku, itemsGained);
 
-        return callback();
+        return callback(null);
     }
 
     function disconnectedFromGCEvent () {
@@ -268,7 +298,7 @@ function processCraftingJob (job, callback) {
 
         log.debug('Disconnected from GC while crafting', { job: job });
 
-        return callback();
+        return callback(new Error('Disconnected from GC'));
     }
 
     function timeoutFired () {
@@ -278,7 +308,7 @@ function processCraftingJob (job, callback) {
 
         log.debug('Craft job timed out', { job: job });
 
-        return callback();
+        return callback(new Error('Job timed out'));
     }
 }
 
@@ -313,7 +343,7 @@ function processUseJob (job, callback) {
 
         handlerManager.getHandler().onUseCompleted(job.assetid);
 
-        return callback();
+        return callback(null);
     }
 
     function disconnectedFromGCEvent () {
@@ -323,7 +353,7 @@ function processUseJob (job, callback) {
 
         log.debug('Disconnected from GC while using item', { job: job });
 
-        return callback();
+        return callback(new Error('Disconnected from GC'));
     }
 
     function timeoutFired () {
@@ -333,7 +363,7 @@ function processUseJob (job, callback) {
 
         log.debug('Use job timed out', { job: job });
 
-        return callback();
+        return callback(new Error('Job timed out'));
     }
 }
 
@@ -363,7 +393,7 @@ function processDeleteJob (job, callback) {
 
         handlerManager.getHandler().onDeleteCompleted(job.assetid);
 
-        return callback();
+        return callback(null);
     }
 
     function disconnectedFromGCEvent () {
@@ -373,7 +403,7 @@ function processDeleteJob (job, callback) {
 
         log.debug('Disconnected from GC while deleting item', { job: job });
 
-        return callback();
+        return callback(new Error('Disconnected from GC'));
     }
 
     function timeoutFired () {
@@ -383,7 +413,7 @@ function processDeleteJob (job, callback) {
 
         log.debug('Delete job timed out', { job: job });
 
-        return callback();
+        return callback(new Error('Job timed out'));
     }
 }
 
@@ -409,7 +439,7 @@ function processSortJob (job, callback) {
         timeout = setTimeout(function () {
             tf2.removeListener('itemChanged', itemChangedEvent);
             tf2.removeListener('disconnectedFromGC', disconnectedFromGCEvent);
-            callback();
+            callback(null);
         }, 1000);
     }
 
@@ -421,7 +451,7 @@ function processSortJob (job, callback) {
 
         log.debug('Disconnected from GC while sorting inventory', { job: job });
 
-        return callback();
+        return callback(new Error('Disconnected from GC'));
     }
 
     function timeoutFired () {
@@ -432,6 +462,6 @@ function processSortJob (job, callback) {
 
         log.debug('Sort job timed out', { job: job });
 
-        return callback();
+        return callback(new Error('Job timed out'));
     }
 }
