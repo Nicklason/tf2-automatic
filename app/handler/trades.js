@@ -2,6 +2,7 @@ const TradeOfferManager = require('steam-tradeoffer-manager');
 const Currencies = require('tf2-currencies');
 const pluralize = require('pluralize');
 const retry = require('retry');
+const SKU = require('tf2-sku');
 
 const log = require('lib/logger');
 const inventory = require('app/inventory');
@@ -11,10 +12,18 @@ const client = require('lib/client');
 const manager = require('lib/manager');
 const admin = require('app/admins');
 const groups = require('handler/groups');
+const schemaManager = require('lib/tf2-schema');
 
 const isAdmin = admin.isAdmin;
 const checkBanned = require('utils/isBanned');
 const communityLoginCallback = require('utils/communityLoginCallback');
+
+const cart = {
+    itemsToGive: {},
+    itemsToReceive: {}
+};
+// We save admin inventory to avoid multiple inventory requests when depositing items
+const adminInventory = {};
 
 exports.getTradesWithPeople = function (steamIDs) {
     // Go through polldata data
@@ -72,6 +81,63 @@ exports.getActiveOffer = function (steamID) {
 
     return null;
 };
+
+exports.addToCart = function (sku, amount, deposit, steamID, callback) {
+    const side = deposit ? 'itemsToReceive' : 'itemsToGive';
+
+    const name = schemaManager.schema.getName(SKU.fromString(sku));
+
+    let message;
+
+    if (deposit) {
+        if (Object.prototype.hasOwnProperty.call(adminInventory, 'steamid')) {
+            // adminInventory is already saved
+            if (Object.prototype.hasOwnProperty.call(adminInventory.dictionary, sku)) {
+                const amountCanTrade = adminInventory.dictionary[sku].length;
+                if (amountCanTrade < amount) {
+                    amount = amountCanTrade;
+                    message = 'You only have ' + pluralize(name, amount, true) + '. ' + (amount > 1 ? 'They have' : 'It has') + ' been added to your cart';
+                } else {
+                    message = pluralize(name, amount, true) + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
+                }
+            } else {
+                message = 'You don\'t have any ' + pluralize(name, 0);
+            }
+
+            callback(null, { cart, message });
+        } else {
+            // adminInventory is not saved yet, request it
+        }
+    } else {
+        // Get all items in inventory, we don't need to check stock limits for withdrawals
+        const amountCanTrade = inventory.getAmount(sku);
+
+        // Correct trade if needed
+        if (amountCanTrade === 0) {
+            message = 'I don\'t have any ' + pluralize(name, 0);
+        } else if (amountCanTrade < amount) {
+            amount = amountCanTrade;
+            message = 'I only have ' + pluralize(name, amount, true) + '. ' + (amount > 1 ? 'They have' : 'It has') + ' been added to your cart';
+        } else {
+            message = pluralize(name, amount, true) + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
+        }
+
+        _addToCart(sku, name, amount, side);
+
+        callback(null, { cart, message });
+    }
+};
+
+function _addToCart (sku, name, amount, side) {
+    if (cart[side][name]) {
+        cart[side][name].amount += amount;
+    } else {
+        cart[side][name] = {
+            sku: sku,
+            amount: amount
+        };
+    }
+}
 
 exports.createOffer = function (details, callback) {
     const partner = details.steamid;
