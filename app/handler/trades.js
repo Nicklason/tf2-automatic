@@ -705,7 +705,10 @@ exports.newOffer = function (offer, done) {
                     // Check stock limits (not for keys)
                     const diff = itemsDiff[sku];
 
-                    if (inventory.amountCanTrade(sku, buying) - diff < 0) {
+                    const amountWeCanTrade = inventory.amountCanTrade(sku, buying);
+                    const isOverStocked = buying ? amountWeCanTrade - diff < 0 : amountWeCanTrade + diff < 0;
+
+                    if (isOverStocked) {
                         // User is taking too many / offering too many
                         offer.log('info', 'is taking / offering too many, declining...');
                         return done('decline', 'OVERSTOCKED');
