@@ -77,14 +77,7 @@ exports.getActiveOffer = function (steamID) {
     return null;
 };
 
-exports.addToCart = function (sku, amount, deposit, steamID, callback) {
-    if (cart[steamID] === undefined) {
-        cart[steamID] = {
-            itemsToGive: {},
-            itemsToReceive: {}
-        };
-    }
-
+exports.addToCart = function (sku, amount, deposit, steamID) {
     const side = deposit ? 'itemsToReceive' : 'itemsToGive';
 
     const name = schemaManager.schema.getName(SKU.fromString(sku));
@@ -112,7 +105,7 @@ exports.addToCart = function (sku, amount, deposit, steamID, callback) {
 
     const userCart = cart[steamID];
 
-    callback(null, { cart: userCart, message });
+    return { cart: userCart, message };
 };
 
 function _addToCart (sku, name, amount, side, steamID) {
@@ -157,7 +150,9 @@ exports.removeFromCart = function (name, amount, our, steamID, all = false) {
 
     _removeFromCart(name, amount, side, steamID);
 
-    return message;
+    const userCart = cart[steamID];
+
+    return { cart: userCart, message };
 };
 
 function _removeFromCart (name, amount, side, steamID, all = false) {

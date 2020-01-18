@@ -891,16 +891,20 @@ exports.handleMessage = function (steamID, message) {
 
         const deposit = command.length === 7 ? true : false;
 
-        trades.addToCart(sku, amount, deposit, steamID, function (err, response) {
-            if (err) {
-                log.warn('Error while adding items to cart: ', err);
-                client.chatMessage(steamID, 'Error while adding items to cart');
+        const response = trades.addToCart(sku, amount, deposit, steamID);
 
-                return;
-            }
+        client.chatMessage(steamID, response.message + '\n' + stringifyCart(response.cart));
 
-            client.chatMessage(steamID, response.message + '\n' + stringifyCart(response.cart));
-        });
+        // trades.addToCart(sku, amount, deposit, steamID, function (err, response) {
+        //     if (err) {
+        //         log.warn('Error while adding items to cart: ', err);
+        //         client.chatMessage(steamID, 'Error while adding items to cart');
+
+        //         return;
+        //     }
+
+        //     client.chatMessage(steamID, response.message + '\n' + stringifyCart(response.cart));
+        // });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
     }
