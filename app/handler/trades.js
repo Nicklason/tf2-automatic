@@ -648,7 +648,8 @@ exports.newOffer = function (offer, done) {
             // Check overstock / understock on keys
             const diff = itemsDiff['5021;6'];
             // If the diff is greater than 0 then we are buying, less than is selling
-            if (diff !== 0 && inventory.amountCanTrade('5021;6', diff > 0) - diff < 0) {
+
+            if (diff !== 0 && inventory.isOverstocked('5021;6', diff > 0, diff)) {
                 // User is taking too many / offering too many
                 offer.log('info', 'is taking / offering too many keys, declining...');
                 return done('decline', 'OVERSTOCKED');
@@ -705,10 +706,7 @@ exports.newOffer = function (offer, done) {
                     // Check stock limits (not for keys)
                     const diff = itemsDiff[sku];
 
-                    const amountWeCanTrade = inventory.amountCanTrade(sku, buying);
-                    const isOverStocked = buying ? amountWeCanTrade - diff < 0 : amountWeCanTrade + diff < 0;
-
-                    if (isOverStocked) {
+                    if (diff !== 0 && inventory.isOverstocked(sku, diff > 0, diff)) {
                         // User is taking too many / offering too many
                         offer.log('info', 'is taking / offering too many, declining...');
                         return done('decline', 'OVERSTOCKED');
