@@ -251,8 +251,7 @@ function start () {
             // Create listings
             log.info('Creating listings...');
 
-            require('handler/listings').checkAll();
-            callback(null);
+            require('handler/listings').checkAll(callback);
         },
         function (callback) {
             // Set up trade offer manager
