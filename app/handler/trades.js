@@ -177,7 +177,7 @@ function _removeFromCart (name, amount, side, steamID, all = false) {
     if (all) {
         for (const side in cart[steamID]) {
             if (Object.prototype.hasOwnProperty.call(cart[steamID], side)) {
-                cart[steamID][side] = {};
+                delete cart[steamID];
             }
         }
     } else {
@@ -185,6 +185,11 @@ function _removeFromCart (name, amount, side, steamID, all = false) {
 
         if (cart[steamID][side][name].amount <= 0) {
             delete cart[steamID][side][name];
+        }
+
+        if (Object.getOwnPropertyNames(cart[steamID]['itemsToGive']).length === 0 && Object.getOwnPropertyNames(cart[steamID]['itemsToReceive']).length === 0) {
+            // Remove user's cart if it's empty
+            delete cart[steamID];
         }
     }
 }
