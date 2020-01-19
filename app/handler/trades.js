@@ -77,7 +77,7 @@ exports.getActiveOffer = function (steamID) {
     return null;
 };
 
-exports.addToCart = function (sku, amount, deposit, steamID) {
+exports.addToCart = function (steamID, sku, amount, deposit) {
     const side = deposit ? 'itemsToReceive' : 'itemsToGive';
 
     const name = schemaManager.schema.getName(SKU.fromString(sku));
@@ -88,7 +88,7 @@ exports.addToCart = function (sku, amount, deposit, steamID) {
         message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
     } else {
         // Get all items in inventory, we don't need to check stock limits for withdrawals
-        const amountCanTrade = inventory.getAmount(sku) - amountInCart(name, side, steamID);
+        const amountCanTrade = inventory.getAmount(sku) - amountInCart(steamID, name, side);
 
         // Correct trade if needed
         if (amountCanTrade <= 0) {
@@ -102,14 +102,14 @@ exports.addToCart = function (sku, amount, deposit, steamID) {
         }
     }
 
-    _addToCart(sku, name, amount, side, steamID);
+    _addToCart(steamID, sku, name, amount, side);
 
     const userCart = cart[steamID];
 
     return { cart: userCart, message };
 };
 
-function _addToCart (sku, name, amount, side, steamID) {
+function _addToCart (steamID, sku, name, amount, side) {
     if (cart[steamID] === undefined) {
         cart[steamID] = {
             itemsToGive: {},
@@ -127,11 +127,11 @@ function _addToCart (sku, name, amount, side, steamID) {
     }
 }
 
-function amountInCart (name, side, steamID) {
+function amountInCart (steamID, name, side) {
     return cart[steamID] && cart[steamID][side][name] ? cart[steamID][side][name].amount : 0;
 }
 
-exports.removeFromCart = function (name, steamID, amount, our, all = false) {
+exports.removeFromCart = function (steamID, name, amount, our, all = false) {
     if (cart[steamID] === undefined) {
         return { cart: undefined, message: 'Your cart is empty' };
     }
@@ -147,7 +147,7 @@ exports.removeFromCart = function (name, steamID, amount, our, all = false) {
     if (all) {
         message = 'Your cart has been emptied';
     } else {
-        const whose = our ? 'the bot\'s' : 'your';
+        const whose = our ? 'my' : 'your';
 
         if (!cart[steamID][side][name]) {
             message = 'There are no ' + pluralize(name, 0) + ' on ' + whose + ' side of the cart';
@@ -159,14 +159,14 @@ exports.removeFromCart = function (name, steamID, amount, our, all = false) {
         }
     }
 
-    _removeFromCart(name, amount, side, steamID, all);
+    _removeFromCart(steamID, name, amount, side, all);
 
     const userCart = cart[steamID];
 
     return { cart: userCart, message };
 };
 
-function _removeFromCart (name, amount, side, steamID, all = false) {
+function _removeFromCart (steamID, name, amount, side, all = false) {
     if (all) {
         delete cart[steamID];
     } else {
