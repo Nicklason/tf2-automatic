@@ -268,9 +268,33 @@ exports.handleMessage = function (steamID, message) {
     const command = getCommand(message);
 
     if (command === 'help') {
-        let reply = 'Here\'s a list of all my commands: !help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
+        const commands = [
+            '!help - Get list of commands',
+            '!how2trade - Guide on how to trade with the bot',
+            '!price [amount] <name> - Get the price and stock of an item',
+            '!stock - Get a list of items that the bot has',
+            '!buy [amount] <name> - Request to buy an item from the bot',
+            '!sell [amount] <name> - Request to selll an item to the bot'
+        ];
+
+        let reply = 'Here\'s a list of all my commands:\n- ' + commands.join('\n- ');
+
+        '!help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
-            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades, !name, !avatar, !expand';
+            const adminCommands = [
+                '!get - Used to see raw pricelist info about an item',
+                '!add - Add an item to the pricelist',
+                '!remove - Remove an item from the pricelist',
+                '!update - Update an item in the pricelist',
+                '!stop - Stop the bot',
+                '!restart - Restart the bot using PM2',
+                '!trades - Get information about confirmed trades',
+                '!name - Change name',
+                '!avatar - Change avatar',
+                '!expand - Use a Backpack Expander to expand the inventory'
+            ];
+
+            reply += '\n\nAdmin commands:\n- ' + adminCommands.join('\n- ');
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
