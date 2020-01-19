@@ -21,21 +21,32 @@ exports.getLatestVersion = function (callback) {
     });
 };
 
-function checkForUpdate () {
+exports.checkForUpdates = function (callback) {
+    if (!callback) {
+        callback = noop;
+    }
+
     exports.getLatestVersion(function (err, latestVersion) {
         if (err) {
-            log.warn('Failed to check for updates: ' + err);
+            log.warn('Failed to check for updates: ', err);
+            callback(err);
             return;
         }
 
         if (lastNotifiedVersion !== latestVersion && semver.lt(package.version, latestVersion)) {
             lastNotifiedVersion = latestVersion;
             require('app/admins').message(`Update available! Current: v${package.version}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`);
+
+            callback(null, true, latestVersion);
+        } else {
+            callback(null, false, latestVersion);
         }
     });
-}
+};
 
-checkForUpdate();
+exports.checkForUpdates();
 
-// Check for updates every 60 minutes
-setInterval(checkForUpdate, 1 * 60 * 60 * 1000);
+// Check for updates every 10 minutes
+setInterval(exports.checkForUpdates, 10 * 60 * 1000);
+
+function noop () {}
