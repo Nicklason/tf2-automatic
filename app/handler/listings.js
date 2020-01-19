@@ -1,11 +1,16 @@
 const pluralize = require('pluralize');
 const SKU = require('tf2-sku');
 const moment = require('moment');
+const async = require('async');
+const callbackQueue = require('callback-queue');
+const request = require('@nicklason/request-retry');
 
 const log = require('lib/logger');
 const prices = require('app/prices');
 const inventory = require('app/inventory');
 const listingManager = require('lib/bptf-listings');
+const handlerManager = require('app/handler-manager');
+const client = require('lib/client');
 
 const backoff = require('utils/exponentialBackoff');
 
@@ -16,6 +21,130 @@ const templates = {
 
 let cancelListingCheck = false;
 let checkingAllListings = false;
+let removingAllListings = false;
+
+let autobumpEnabled = false;
+let autobumpTimeout;
+
+/**
+ * Checks if autobump is enabled and if the account is premium
+ */
+exports.setupAutobump = function () {
+    if (process.env.AUTOBUMP !== 'true') {
+        // Autobump is not enabled
+        return;
+    }
+
+    // Autobump is enabled, add heartbeat listener
+
+    listingManager.removeListener('heartbeat', onHeartbeat);
+    listingManager.on('heartbeat', onHeartbeat);
+
+    // Get account info
+    checkAccountInfo();
+};
+
+function onHeartbeat () {
+    // Check account info on heartbeat
+    checkAccountInfo();
+}
+
+function checkAccountInfo () {
+    log.debug('Checking account info');
+    getAccountInfo(function (err, info) {
+        if (err) {
+            log.warn('Failed to get account info from backpack.tf: ', err);
+            return;
+        }
+
+        log.debug('Got account info');
+
+        if (autobumpEnabled && info.premium === true) {
+            log.warn('Disabling autobump! - Your account is premium, no need to forcefully bump listings');
+            exports.disableAutobump();
+        } else if (!autobumpEnabled && info.premium !== true) {
+            log.warn('Enabling autobump! - Consider paying for backpack.tf premium or donating instead of forcefully autobumping: https://backpack.tf/donate');
+            exports.enableAutobump();
+        }
+    });
+}
+
+exports.enableAutobump = function () {
+    if (autobumpEnabled) {
+        return;
+    }
+
+    log.debug('Enabled autobump');
+
+    autobumpEnabled = true;
+
+    clearTimeout(autobumpTimeout);
+
+    autobumpTimeout = setTimeout(doneWait, 30 * 60 * 1000);
+
+    function doneWait () {
+        log.debug('Autobumping...');
+
+        async.eachSeries([
+            function (callback) {
+                log.debug('Removing all listings...');
+                exports.removeAll(callback);
+            },
+            function (callback) {
+                log.debug('Enqueuing listings...');
+                exports.checkAll(callback);
+            },
+            function (callback) {
+                log.debug('Waiting for listings to be made...');
+                exports.waitForListings(callback);
+            }
+        ], function (item, callback) {
+            if (handlerManager.shutdownRequested()) {
+                // Could return an error, but it is not really an error
+                return;
+            }
+
+            // Call function
+            item(callback);
+        }, function () {
+            log.debug('Done bumping');
+            if (autobumpEnabled) {
+                log.debug('Waiting 30 minutes before bumping again...');
+                autobumpTimeout = setTimeout(doneWait, 30 * 60 * 1000);
+            }
+        });
+    }
+};
+
+exports.disableAutobump = function () {
+    clearTimeout(autobumpTimeout);
+    autobumpEnabled = false;
+
+    log.debug('Disabled autobump');
+};
+
+function getAccountInfo (callback) {
+    const steamID64 = client.steamID.getSteamID64();
+
+    const options = {
+        url: 'https://backpack.tf/api/users/info/v1',
+        method: 'GET',
+        qs: {
+            key: process.env.BPTF_API_KEY,
+            steamids: steamID64
+        },
+        gzip: true,
+        json: true
+    };
+
+    request(options, function (err, reponse, body) {
+        if (err) {
+            return callback(err);
+        }
+
+        return callback(null, body.users[steamID64]);
+    });
+}
 
 exports.checkBySKU = function (sku, data) {
     const item = SKU.fromString(sku);
@@ -98,19 +227,24 @@ exports.checkAll = function (callback) {
         callback = noop;
     }
 
-    if (checkingAllListings) {
-        // Already checking listings
-        callback(null);
+    if (!removingAllListings) {
+        doneRemovingAll();
         return;
     }
 
-    checkingAllListings = true;
+    // Add callback to removeAll
+    callbackQueue.add('removeAll', callback)(function () {
+        // Done removing all, now check all
+        doneRemovingAll();
+    });
 
-    // Wait for listings to be made / removed
-    waitForListings(function (err) {
-        if (err) {
-            return callback(err);
+    function doneRemovingAll () {
+        const next = callbackQueue.add('checkAll', callback);
+        if (!next) {
+            return;
         }
+
+        checkingAllListings = true;
 
         const pricelist = prices.getPricelist();
 
@@ -119,9 +253,9 @@ exports.checkAll = function (callback) {
         recursiveCheckPricelist(pricelist, function () {
             checkingAllListings = false;
             log.debug('Done checking listings');
-            callback(null);
+            next(null);
         });
-    });
+    }
 };
 
 /**
@@ -149,6 +283,15 @@ function recursiveCheckPricelist (pricelist, done) {
         });
     }
 }
+
+exports.waitForListings = function (callback) {
+    const next = callbackQueue.add('waitForListings', callback);
+    if (!next) {
+        return;
+    }
+
+    waitForListings(next);
+};
 
 function waitForListings (callback) {
     let checks = 0;
@@ -186,17 +329,29 @@ exports.removeAll = function (callback) {
         cancelListingCheck = true;
     }
 
+    const next = callbackQueue.add('removeAll', callback);
+    if (!next) {
+        return;
+    }
+
+    removeAll(next);
+};
+
+function removeAll (callback) {
+    removingAllListings = true;
+
     // Clear create queue
     listingManager.actions.create = [];
 
     // Wait for backpack.tf to finish creating / removing listings
-    waitForListings(function (err) {
+    exports.waitForListings(function (err) {
         if (err) {
             return callback(err);
         }
 
         if (listingManager.listings.length === 0) {
             log.debug('We have no listings');
+            removingAllListings = false;
             return callback(null);
         }
 
@@ -215,10 +370,10 @@ exports.removeAll = function (callback) {
             }
 
             // The request might fail, if it does we will try again
-            exports.removeAll(callback);
+            removeAll(callback);
         });
     });
-};
+}
 
 function getDetails (intent, pricelistEntry) {
     const buying = intent === 0;
