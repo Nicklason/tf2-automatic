@@ -23,6 +23,9 @@ const crafting = require('app/crafting');
 const parseJSON = require('utils/parseJSON');
 const admin = require('app/admins');
 const fixItem = require('utils/item/fixItem');
+const versionCheck = require('app/version-check');
+
+const package = require('@root/package.json');
 
 let messages = [];
 
@@ -288,6 +291,7 @@ exports.handleMessage = function (steamID, message) {
                 '!update - Update an item in the pricelist',
                 '!stop - Stop the bot',
                 '!restart - Restart the bot using PM2',
+                '!version - Check for new version',
                 '!trades - Get information about confirmed trades',
                 '!name - Change name',
                 '!avatar - Change avatar',
@@ -830,6 +834,19 @@ exports.handleMessage = function (steamID, message) {
                 log.warn('Error occurred while trying to stop: ', err);
                 client.chatMessage(steamID, 'An error occurred while trying to stop: ' + err.message);
                 return;
+            }
+        });
+    } else if (isAdmin && command === 'version') {
+        client.chatMessage(steamID, 'Currently running ' + package.name + '@' + package.version + '. Checking for a new version...');
+
+        versionCheck.checkForUpdates(function (err, hasNewVersion, newestVersion) {
+            if (err) {
+                client.chatMessage(steamID, 'Failed to check for updates: ' + err.message);
+                return;
+            }
+
+            if (!hasNewVersion) {
+                client.chatMessage(steamID, 'You are running the latest version of ' + package.name + '!');
             }
         });
     } else if (isAdmin && command === 'pricecheck') {
