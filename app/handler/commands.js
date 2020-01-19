@@ -839,7 +839,7 @@ exports.handleMessage = function (steamID, message) {
     } else if (isAdmin && command === 'version') {
         client.chatMessage(steamID, 'Currently running ' + package.name + '@' + package.version + '. Checking for a new version...');
 
-        versionCheck.checkForUpdates(function (err, hasNewVersion, newestVersion) {
+        versionCheck.checkForUpdates(function (err, hasNewVersion, lastNotifiedVersion, latestVersion) {
             if (err) {
                 client.chatMessage(steamID, 'Failed to check for updates: ' + err.message);
                 return;
@@ -847,6 +847,8 @@ exports.handleMessage = function (steamID, message) {
 
             if (!hasNewVersion) {
                 client.chatMessage(steamID, 'You are running the latest version of ' + package.name + '!');
+            } else if (lastNotifiedVersion === latestVersion) {
+                client.chatMessage(steamID, `Update available! Current: v${package.version}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`);
             }
         });
     } else if (isAdmin && command === 'pricecheck') {
