@@ -18,6 +18,7 @@ const api = require('lib/ptf-api');
 const validator = require('lib/validator');
 const manager = require('lib/manager');
 const community = require('lib/community');
+const crafting = require('app/crafting');
 
 const parseJSON = require('utils/parseJSON');
 const admin = require('app/admins');
@@ -268,7 +269,7 @@ exports.handleMessage = function (steamID, message) {
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
-            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades, !name, !avatar';
+            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades, !name, !avatar, !expand';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
@@ -862,6 +863,24 @@ exports.handleMessage = function (steamID, message) {
             }
 
             client.chatMessage(steamID, 'Successfully uploaded new avatar.');
+        });
+    } else if (isAdmin && command === 'expand') {
+        const assetids = [].concat(inventory.findBySKU('5050;6', false)).concat(inventory.findBySKU('5050;6;uncraftable', false));
+
+        if (assetids.length === 0) {
+            // No backpack expanders in your inventory.
+            client.chatMessage(steamID, 'I couldn\'t find any backpack expander(s) in your inventory.');
+            return;
+        }
+
+        crafting.useItem(assetids[0], function (err) {
+            if (err) {
+                log.warn('Error trying to expand inventory: ', err);
+                client.chatMessage(steamID, 'Error occured while trying to use a backpack expander: ' + err.message);
+                return;
+            }
+
+            client.chatMessage(steamID, 'Inventory space increased by 100.');
         });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
