@@ -24,6 +24,8 @@
             "BPTF_DETAILS_SELL": "I am selling my %name% for %price%, I am selling %amount_trade%.",
             "OFFER_MESSAGE": "Powered by TF2 Automatic",
 
+            "AUTOBUMP": true,
+
             "MINIMUM_SCRAP": 9,
             "MINIMUM_RECLAIMED": 9,
 

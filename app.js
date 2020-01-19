@@ -102,10 +102,14 @@ function start () {
 
     async.eachSeries([
         function (callback) {
+            log.debug('Connecting to PM2');
+
             // Connect to PM2
             pm2.connect(callback);
         },
         function (callback) {
+            log.debug('Calling onRun');
+
             // Run handler onRun function
             handler.onRun(function (v) {
                 // Set options
@@ -114,6 +118,8 @@ function start () {
             });
         },
         function (callback) {
+            log.info('Setting up pricelist...');
+
             // Set up pricelist
             require('app/prices').init(callback);
         },
