@@ -18,6 +18,7 @@ const api = require('lib/ptf-api');
 const validator = require('lib/validator');
 const manager = require('lib/manager');
 const community = require('lib/community');
+const crafting = require('app/crafting');
 
 const parseJSON = require('utils/parseJSON');
 const admin = require('app/admins');
@@ -164,10 +165,10 @@ function getItemFromParams (steamID, params) {
     }
 
     if (item.effect !== null) {
-        const effect = schemaManager.schema.getEffectByName(item.effect);
+        const effect = schemaManager.schema.getEffectIdByName(item.effect);
 
         if (effect === null) {
-            client.chatMessage(steamID, 'Could not find an unusual effect in the schema with the name "' + item.paintkit + '"');
+            client.chatMessage(steamID, 'Could not find an unusual effect in the schema with the name "' + item.effect + '"');
             return null;
         }
 
@@ -268,7 +269,7 @@ exports.handleMessage = function (steamID, message) {
     if (command === 'help') {
         let reply = 'Here\'s a list of all my commands: !help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
-            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades, !name, !avatar';
+            reply += ', !get, !add, !remove, !update, !restart, !stop, !trades, !name, !avatar, !expand';
         }
         client.chatMessage(steamID, reply);
     } else if (command === 'how2trade') {
@@ -570,16 +571,12 @@ exports.handleMessage = function (steamID, message) {
 
         if (params.all === true) {
             // TODO: Must have atleast one other param
-            client.chatMessage(steamID, 'Updating pricelist...');
-
             const pricelist = prices.getPricelist();
 
             if (pricelist.length === 0) {
                 client.chatMessage(steamID, 'Your pricelist is empty');
                 return;
             }
-
-            handlerManager.getHandler().cleanup();
 
             for (let i = 0; i < pricelist.length; i++) {
                 if (params.intent) {
@@ -626,10 +623,28 @@ exports.handleMessage = function (steamID, message) {
                 }
             }
 
-            // Save pricelist
-            handlerManager.getHandler().onPricelist(pricelist);
-            // Kill it
-            handlerManager.getHandler().shutdown();
+            // FIXME: Make it so that it is not needed to remove all listings
+
+            if (params.autoprice !== true) {
+                handlerManager.getHandler().onPricelist(pricelist);
+                client.chatMessage(steamID, 'Updated pricelist!');
+                require('handler/listings').redoListings();
+                return;
+            }
+
+            client.chatMessage(steamID, 'Updating prices...');
+
+            prices.init(function (err) {
+                require('handler/listings').redoListings();
+
+                if (err) {
+                    log.warn('Failed to update prices: ', err);
+                    client.chatMessage(steamID, 'Failed to update prices: ' + err.message);
+                    return;
+                }
+
+                client.chatMessage(steamID, 'Updated pricelist!');
+            });
             return;
         }
 
@@ -738,11 +753,14 @@ exports.handleMessage = function (steamID, message) {
             }
         });
     } else if (isAdmin && command === 'trades') {
-        const dateNow = new Date().getTime();
+        const d = new Date();
+        const dateNow = d.getTime();
         const offerData = manager.pollData.offerData;
+        const dateMs = d.getHours() * 3600000 + d.getMinutes() * 60000;
 
-        let tradeToday = 0;
-        let tradeTotal = 0;
+        let tradesToday = 0;
+        let trades24Hours = 0;
+        let tradesTotal = 0;
         for (const offerID in offerData) {
             if (!Object.prototype.hasOwnProperty.call(offerData, offerID)) {
                 continue;
@@ -750,16 +768,21 @@ exports.handleMessage = function (steamID, message) {
 
             if (offerData[offerID].handledByUs === true && offerData[offerID].isAccepted === true) {
                 // Sucessful trades handled by the bot
-                tradeTotal++;
+                tradesTotal++;
 
                 if (offerData[offerID].finishTimestamp >= (dateNow - 86400000)) {
                     // Within the last 24 hours
-                    tradeToday++;
+                    trades24Hours++;
+                }
+
+                if (offerData[offerID].finishTimestamp >= (dateNow - dateMs)) {
+                    // All trades since 0:00 in the morning.
+                    tradesToday++;
                 }
             }
         }
 
-        client.chatMessage(steamID, 'Trades today: ' + tradeToday + ' \n Total trades: ' + tradeTotal);
+        client.chatMessage(steamID, 'Total: ' + tradesTotal + ' \n Last 24 hours: ' + trades24Hours + ' \n Since beginning of today: ' + tradesToday);
     } else if (isAdmin && command === 'restart') {
         client.chatMessage(steamID, 'Restarting...');
 
@@ -907,6 +930,23 @@ exports.handleMessage = function (steamID, message) {
             } else {
                 trades.removeFromCart(true, steamID);
             }
+    } else if (isAdmin && command === 'expand') {
+        const assetids = [].concat(inventory.findBySKU('5050;6', false)).concat(inventory.findBySKU('5050;6;uncraftable', false));
+
+        if (assetids.length === 0) {
+            // No backpack expanders in your inventory.
+            client.chatMessage(steamID, 'I couldn\'t find any backpack expander(s) in your inventory.');
+            return;
+        }
+
+        crafting.useItem(assetids[0], function (err) {
+            if (err) {
+                log.warn('Error trying to expand inventory: ', err);
+                client.chatMessage(steamID, 'Error occured while trying to use a backpack expander: ' + err.message);
+                return;
+            }
+
+            client.chatMessage(steamID, 'Inventory space increased by 100.');
         });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');

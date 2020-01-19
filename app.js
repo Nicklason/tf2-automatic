@@ -58,10 +58,10 @@ require('death')({ uncaughtException: true })(function (signal, err) {
     }
 
     if (!crashed) {
-        log.warn('Received kill signal `' + signal + '`, stopping...');
+        log.warn('Received kill signal `' + signal + '`');
     }
 
-    handler.shutdown(crashed ? err : null, signal === 'SIGKILL');
+    handler.shutdown(crashed ? err : null, true, signal === 'SIGKILL');
 });
 
 process.on('message', function (message) {
@@ -92,31 +92,45 @@ const listingManager = require('lib/bptf-listings');
 
 log.info(package.name + ' v' + package.version + ' is starting...');
 
-pm2.connect(function (err) {
-    if (err) {
-        throw err;
-    }
+start();
 
-    handler.onRun(function (opts) {
-        opts = opts || {};
+function start () {
+    let opts;
+    let cookies;
 
-        log.info('Setting up pricelist...');
+    log.debug('Going through startup process...');
 
-        // Set up pricelist before signing in to Steam, this is because if the bot has a big pricelist then it will be blocking the event loop
+    async.eachSeries([
+        function (callback) {
+            log.debug('Connecting to PM2');
 
-        // TODO: Don't block event loop when setting up pricelist
-        require('app/prices').init(function (err) {
-            if (err) {
-                throw err;
-            }
+            // Connect to PM2
+            pm2.connect(callback);
+        },
+        function (callback) {
+            log.debug('Calling onRun');
 
-            const loginKey = opts.loginKey || null;
+            // Run handler onRun function
+            handler.onRun(function (v) {
+                // Set options
+                opts = v;
+                callback(null);
+            });
+        },
+        function (callback) {
+            log.info('Setting up pricelist...');
 
-            let lastLoginFailed = false;
+            // Set up pricelist
+            require('app/prices').init(callback);
+        },
+        function (callback) {
+            // Sign in to Steam
+            log.info('Signing in to Steam...');
 
             const login = require('app/login');
 
-            log.info('Signing in to Steam...');
+            const loginKey = opts.loginKey || null;
+            let lastLoginFailed = false;
 
             // Perform login
             login(loginKey, loginResponse);
@@ -127,141 +141,154 @@ pm2.connect(function (err) {
                         lastLoginFailed = true;
                         // Try and sign in without login key
                         log.warn('Failed to sign in to Steam, retrying without login key...');
-                        login(null, loginResponse);
+                        return login(null, loginResponse);
                     } else {
-                        log.warn('Failed to sign in to Steam');
-                        handler.onLoginFailure(err);
+                        log.warn('Failed to sign in to Steam: ', err);
+                        return callback(err);
                     }
-                    return;
                 }
 
-                checkAccountLimitations(function (err) {
-                    if (err) {
-                        throw err;
+                return callback(null);
+            }
+        },
+        function (callback) {
+            // Check account limitations
+            if (process.env.SKIP_ACCOUNT_LIMITATIONS === 'true') {
+                return callback(null);
+            }
+
+            log.verbose('Checking account limitations...');
+
+            require('utils/limitationsCallback')(function (err, limitations) {
+                if (err) {
+                    return callback(err);
+                }
+
+                if (limitations.limited) {
+                    return callback(new Error('The account is limited'));
+                } else if (limitations.communityBanned) {
+                    return callback(new Error('The account is community banned'));
+                } else if (limitations.locked) {
+                    return callback(new Error('The account is locked'));
+                }
+
+                log.verbose('Account limitation checks completed!');
+
+                return callback(null);
+            });
+        },
+        function (callback) {
+            // Wait for web session
+            log.debug('Waiting for web session...');
+
+            // Wait for steamcommunity session
+            require('utils/communityLoginCallback')(false, function (err, v) {
+                if (err) {
+                    return callback(err);
+                }
+
+                cookies = v;
+
+                return callback(null);
+            });
+        },
+        function (callback) {
+            // Sign in to backpack.tf if needed
+            require('lib/bptf-login').setCookies(cookies);
+
+            require('app/bptf').setup(callback);
+        },
+        function (callback) {
+            // Set up tf2-schema
+            log.info('Initializing tf2-schema...');
+
+            schemaManager.init(function (err) {
+                if (err) {
+                    return callback(err);
+                }
+
+                log.info('tf2-schema is ready!');
+
+                return callback(null);
+            });
+        },
+        function (callback) {
+            // Get inventory, set up bptf-listings, update profile settings
+
+            // Set access token
+            listingManager.token = process.env.BPTF_ACCESS_TOKEN;
+            // Set schema for bptf-listings
+            listingManager.schema = schemaManager.schema;
+
+            // Set steamid
+            listingManager.steamid = client.steamID;
+            manager.steamID = client.steamID;
+
+            async.parallel({
+                inventory: function (callback) {
+                    // Load inventory
+                    require('app/inventory').getInventory(client.steamID, callback);
+                },
+                listings: function (callback) {
+                    // Initialize bptf-listings
+                    listingManager.init(callback);
+                },
+                profile: function (callback) {
+                    // Updating profile and inventory to be public
+                    if (process.env.SKIP_UPDATE_PROFILE_SETTINGS === 'true') {
+                        return callback(null);
                     }
 
-                    log.debug('Waiting for web session...');
+                    community.profileSettings({
+                        profile: 3,
+                        inventory: 3,
+                        inventoryGifts: false
+                    }, callback);
+                }
+            }, callback);
+        },
+        function (callback) {
+            // Create listings
+            log.info('Creating listings...');
 
-                    // Wait for steamcommunity session
-                    require('utils/communityLoginCallback')(false, function (err, cookies) {
-                        if (err) {
-                            throw err;
-                        }
+            require('handler/listings').redoListings(callback);
+        },
+        function (callback) {
+            // Set up trade offer manager
 
-                        require('lib/bptf-login').setCookies(cookies);
+            // Connect to socketio server after creating listings
+            require('lib/ptf-socket').open();
 
-                        require('app/bptf').setup(function (err) {
-                            if (err) {
-                                throw err;
-                            }
-                            log.info('Initializing tf2-schema...');
+            log.info('Getting Steam API key...');
 
-                            schemaManager.init(function (err) {
-                                if (err) {
-                                    throw err;
-                                }
+            // Set cookies for the tradeoffer manager which will start the polling
+            manager.setCookies(cookies, callback);
+        },
+        function (callback) {
+            // Get friends limit
+            require('handler/friends').getMaxFriends(callback);
+        }
+    ], function (item, callback) {
+        // Check if we are trying to shut down
+        if (handlerManager.shutdownRequested()) {
+            log.warn('Shutdown requested during startup process, stopping now...');
+            // Stop the bot
+            handlerManager.getHandler().shutdown(null, false, false);
+            return;
+        }
 
-                                log.info('tf2-schema is ready!');
-
-                                // Set access token
-                                listingManager.token = process.env.BPTF_ACCESS_TOKEN;
-                                // Set schema for bptf-listings
-                                listingManager.schema = schemaManager.schema;
-
-                                // Set steamid
-                                listingManager.steamid = client.steamID;
-                                manager.steamID = client.steamID;
-
-                                async.parallel({
-                                    inventory: function (callback) {
-                                        // Load inventory
-                                        require('app/inventory').getInventory(client.steamID, callback);
-                                    },
-                                    listings: function (callback) {
-                                        // Initialize bptf-listings
-                                        listingManager.init(callback);
-                                    },
-                                    profile: function (callback) {
-                                        // Updating profile and inventory to be public
-                                        if (process.env.SKIP_UPDATE_PROFILE_SETTINGS === 'true') {
-                                            return callback(null);
-                                        }
-
-                                        community.profileSettings({
-                                            profile: 3,
-                                            inventory: 3,
-                                            inventoryGifts: false
-                                        }, callback);
-                                    }
-                                }, function (err, result) {
-                                    if (err) {
-                                        throw err;
-                                    }
-
-                                    log.info('Creating listings...');
-
-                                    require('handler/listings').checkAll(function (err) {
-                                        if (err) {
-                                            throw err;
-                                        }
-
-                                        // Connect to socketio server after creating listings
-                                        require('lib/ptf-socket').open();
-
-                                        log.info('Getting Steam API key...');
-
-                                        // Set cookies for the tradeoffer manager which will start the polling
-                                        manager.setCookies(cookies, function (err) {
-                                            if (err) {
-                                                throw err;
-                                            }
-
-                                            require('handler/friends').getMaxFriends(function (err) {
-                                                if (err) {
-                                                    throw err;
-                                                }
-
-                                                handlerManager.setReady();
-
-                                                handler.onReady();
-
-                                                // Start version checker
-                                                require('app/version-check');
-                                            });
-                                        });
-                                    });
-                                });
-                            });
-                        });
-                    });
-                });
-            }
-        });
-    });
-});
-
-function checkAccountLimitations (callback) {
-    if (process.env.SKIP_ACCOUNT_LIMITATIONS === 'true') {
-        return callback(null);
-    }
-
-    log.verbose('Checking account limitations...');
-
-    require('utils/limitationsCallback')(function (err, limitations) {
+        // Call function
+        item(callback);
+    }, function (err) {
         if (err) {
-            return callback(err);
+            throw err;
         }
 
-        if (limitations.limited) {
-            return callback(new Error('The account is limited'));
-        } else if (limitations.communityBanned) {
-            return callback(new Error('The account is community banned'));
-        } else if (limitations.locked) {
-            return callback(new Error('The account is locked'));
-        }
+        handlerManager.setReady();
 
-        log.verbose('Account limitation checks completed!');
+        handler.onReady();
 
-        return callback(null);
+        // Start version checker
+        require('app/version-check');
     });
 }

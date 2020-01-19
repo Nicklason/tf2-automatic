@@ -185,6 +185,10 @@ exports.amountCanTrade = function (sku, buy) {
     return canTrade > 0 ? canTrade : 0;
 };
 
+exports.isOverstocked = function (sku, buying, diff) {
+    return exports.amountCanTrade(sku, buying) + (buying ? -diff : diff) < 0;
+};
+
 /**
  * Gets an object with keys, refined, reclaimed and scrap
  * @param {Object} dict Items dictionary

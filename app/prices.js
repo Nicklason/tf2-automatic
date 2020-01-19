@@ -19,6 +19,8 @@ let keyPrices = null;
 const handling = [];
 
 exports.init = function (callback) {
+    log.debug('Setting up pricelist');
+
     socket.removeListener('price', handlePriceChange);
     socket.on('price', handlePriceChange);
 
@@ -217,6 +219,10 @@ exports.searchByName = function (search, enabledOnly = true) {
         }
 
         const name = entry.name.toLowerCase();
+
+        if (search.includes('uncraftable')) {
+            search = search.replace('uncraftable', 'non-craftable');
+        }
 
         if (search === name) {
             // Found direct match
