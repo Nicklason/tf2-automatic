@@ -248,16 +248,10 @@ function start () {
             }, callback);
         },
         function (callback) {
-            // Remove listings
-            log.info('Removing listings...');
-
-            require('handler/listings').removeAll(callback);
-        },
-        function (callback) {
             // Create listings
             log.info('Creating listings...');
 
-            require('handler/listings').checkAll(callback);
+            require('handler/listings').redoListings(callback);
         },
         function (callback) {
             // Set up trade offer manager

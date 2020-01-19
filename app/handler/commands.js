@@ -623,14 +623,27 @@ exports.handleMessage = function (steamID, message) {
                 }
             }
 
-            // Save pricelist
-            handlerManager.getHandler().onPricelist(pricelist);
-
-            client.chatMessage(steamID, 'Updated pricelist');
-
             // FIXME: Make it so that it is not needed to remove all listings
-            require('handler/listings').removeAll(function () {
-                require('handler/listings').checkAll();
+
+            if (params.autoprice !== true) {
+                handlerManager.getHandler().onPricelist(pricelist);
+                client.chatMessage(steamID, 'Updated pricelist!');
+                require('handler/listings').redoListings();
+                return;
+            }
+
+            client.chatMessage(steamID, 'Updating prices...');
+
+            prices.init(function (err) {
+                require('handler/listings').redoListings();
+
+                if (err) {
+                    log.warn('Failed to update prices: ', err);
+                    client.chatMessage(steamID, 'Failed to update prices: ' + err.message);
+                    return;
+                }
+
+                client.chatMessage(steamID, 'Updated pricelist!');
             });
             return;
         }
