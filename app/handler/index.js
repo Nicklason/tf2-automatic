@@ -27,6 +27,8 @@ exports.onReady = function () {
 
     // Check group invites that we got while offline
     require('handler/groups').checkGroupInvites();
+
+    require('handler/listings').setupAutobump();
 };
 
 exports.onTF2QueueCompleted = function () {
