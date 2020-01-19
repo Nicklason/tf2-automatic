@@ -17,10 +17,11 @@ exports.getPosition = function (steamID) {
     return queue.findIndex((v) => v.steamid === steamID64);
 };
 
-exports.addRequestedTrade = function (steamID, sku, amount, buying) {
+exports.addRequestedTrade = function (steamID, sku, amount, buying, custom = false) {
     const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
 
     const entry = {
+        custom: custom,
         steamid: steamID64,
         sku: sku,
         amount: amount,
@@ -46,20 +47,37 @@ exports.handleQueue = function () {
 
     const entry = queue[0];
 
-    require('handler/trades').createOffer(entry, function (err, failedMessage) {
-        queue.splice(0, 1);
-        if (err) {
-            log.debug('Failed to create offer: ', err);
-            client.chatMessage(entry.steamid, 'Something went wrong while trying to make the offer, try again later!');
-        } else if (failedMessage) {
-            client.chatMessage(entry.steamid, 'I failed to make the offer. Reason: ' + failedMessage + '.');
-        } else {
-            client.chatMessage(entry.steamid, 'Your offer has been made, please wait while I accept the mobile confirmation.');
-        }
+    if (!entry.custom) {
+        require('handler/trades').createOffer(entry, function (err, failedMessage) {
+            queue.splice(0, 1);
+            if (err) {
+                log.debug('Failed to create offer: ', err);
+                client.chatMessage(entry.steamid, 'Something went wrong while trying to make the offer, try again later!');
+            } else if (failedMessage) {
+                client.chatMessage(entry.steamid, 'I failed to make the offer. Reason: ' + failedMessage + '.');
+            } else {
+                client.chatMessage(entry.steamid, 'Your offer has been made, please wait while I accept the mobile confirmation.');
+            }
 
-        processingQueue = false;
-        exports.handleQueue();
-    });
+            processingQueue = false;
+            exports.handleQueue();
+        });
+    } else {
+        require('handler/trades').customOffer(entry, function (err, failedMessage) {
+            queue.splice(0, 1);
+            if (err) {
+                log.debug('Failed to create offer: ', err);
+                client.chatMessage(entry.steamid, 'Something went wrong while trying to make the offer, try again later!');
+            } else if (failedMessage) {
+                client.chatMessage(entry.steamid, 'I failed to make the offer. Reason: ' + failedMessage + '.');
+            } else {
+                client.chatMessage(entry.steamid, 'Your offer has been made, please wait while I accept the mobile confirmation.');
+            }
+
+            processingQueue = false;
+            exports.handleQueue();
+        });
+    }
 };
 
 function queueChanged () {

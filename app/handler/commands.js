@@ -907,6 +907,8 @@ exports.handleMessage = function (steamID, message) {
         // });
     } else if (isAdmin && command === 'clearcart') {
         client.chatMessage(steamID, trades.removeFromCart(true, steamID).message);
+    } else if (isAdmin && command === 'checkout') {
+        queue.addRequestedTrade(steamID, '', 0, 0, true);
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
     }
