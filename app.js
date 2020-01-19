@@ -289,6 +289,6 @@ function start () {
         handler.onReady();
 
         // Start version checker
-        require('app/version-check');
+        require('app/version-check').startVersionChecker();
     });
 }
