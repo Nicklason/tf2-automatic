@@ -87,15 +87,9 @@ exports.enableAutobump = function () {
 
         async.eachSeries([
             function (callback) {
-                log.debug('Removing all listings...');
-                exports.removeAll(callback);
+                exports.redoListings(callback);
             },
             function (callback) {
-                log.debug('Enqueuing listings...');
-                exports.checkAll(callback);
-            },
-            function (callback) {
-                log.debug('Waiting for listings to be made...');
                 exports.waitForListings(callback);
             }
         ], function (item, callback) {
@@ -145,6 +139,16 @@ function getAccountInfo (callback) {
         return callback(null, body.users[steamID64]);
     });
 }
+
+exports.redoListings = function (callback) {
+    if (callback === undefined) {
+        callback = noop;
+    }
+
+    exports.removeAll(function () {
+        exports.checkAll(callback);
+    });
+};
 
 exports.checkBySKU = function (sku, data) {
     const item = SKU.fromString(sku);
@@ -226,6 +230,8 @@ exports.checkAll = function (callback) {
     if (callback === undefined) {
         callback = noop;
     }
+
+    log.debug('Checking all');
 
     if (!removingAllListings) {
         doneRemovingAll();
@@ -328,6 +334,8 @@ exports.removeAll = function (callback) {
     if (checkingAllListings) {
         cancelListingCheck = true;
     }
+
+    log.debug('Removing all');
 
     const next = callbackQueue.add('removeAll', callback);
     if (!next) {
