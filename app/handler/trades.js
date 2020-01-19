@@ -88,11 +88,12 @@ exports.addToCart = function (sku, amount, deposit, steamID) {
         message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
     } else {
         // Get all items in inventory, we don't need to check stock limits for withdrawals
-        const amountCanTrade = inventory.getAmount(sku);
+        const amountCanTrade = inventory.getAmount(sku) - amountInCart(name, side, steamID);
 
         // Correct trade if needed
-        if (amountCanTrade === 0) {
+        if (amountCanTrade <= 0) {
             message = 'I don\'t have any ' + pluralize(name, 0);
+            amount = 0;
         } else if (amountCanTrade < amount) {
             amount = amountCanTrade;
             message = 'I only have ' + pluralize(name, amount, true) + '. ' + (amount > 1 ? 'They have' : 'It has') + ' been added to your cart';
@@ -124,6 +125,10 @@ function _addToCart (sku, name, amount, side, steamID) {
             amount: amount
         };
     }
+}
+
+function amountInCart (name, side, steamID) {
+    return cart[steamID] && cart[steamID][side][name] ? cart[steamID][side][name].amount : 0;
 }
 
 exports.removeFromCart = function (name, steamID, amount, our, all = false) {
@@ -178,6 +183,260 @@ function _removeFromCart (name, amount, side, steamID, all = false) {
     }
 }
 
+exports.customOffer = function (details, callback) {
+    const partner = details.steamid;
+
+    const start = new Date().getTime();
+
+    if (cart[partner] === undefined) {
+        callback(null, 'Failed to send offer, your cart is empty');
+        return;
+    }
+
+    const alteredItems = { itemsToGive: [], itemsToReceive: [] };
+    let alteredMessage;
+
+    // Check if we have all the items requested
+    for (const name in cart[partner]['itemsToGive']) {
+        if (!Object.prototype.hasOwnProperty.call(cart[partner]['itemsToGive'], name)) {
+            continue;
+        }
+
+        const amountCanTrade = inventory.findBySKU(cart[partner]['itemsToGive'][name], false).length;
+
+        if (cart[partner]['itemsToGive'][name].amount > amountCanTrade) {
+            if (amountCanTrade === 0) {
+                delete cart[partner]['itemsToGive'][name];
+            } else {
+                cart[partner]['itemsToGive'][name].amount = amountCanTrade;
+            }
+            alteredItems['itemsToGive'].push(name);
+        }
+    }
+
+    if (Object.getOwnPropertyNames(cart[partner]['itemsToGive']).length === 0 && Object.getOwnPropertyNames(cart[partner]['itemsToReceive']).length === 0) {
+        // We are only giving items, but none of them are available
+        /*
+        alteredMessage = 'I don\'t have any';
+        alteredItems['itemsToGive'].forEach((name, i) => {
+            const last = (i === alteredItems['itemsToGive'].length-1 && i > 0);
+            if (last) {
+                alteredMessage = alteredMessage.slice(0, -1);
+                alteredMessage += ' or';
+            }
+
+            alteredMessage += ' ' + pluralize(name, 0);
+
+            if (!last) {
+                alteredMessage += ',';
+            }
+        });
+        */
+        alteredMessage = createAlteredMessage(alteredItems, partner);
+        callback(null, alteredMessage);
+        return;
+    }
+
+    const offer = manager.createOffer(partner);
+
+    offer.data('partner', partner);
+
+    const itemsDict = { our: {}, their: {} };
+    const itemsDiff = {};
+
+    // Add our items to the trade
+    for (const name in cart[partner]['itemsToGive']) {
+        if (!Object.prototype.hasOwnProperty.call(cart[partner]['itemsToGive'], name)) {
+            continue;
+        }
+
+        const sku = cart[partner]['itemsToGive'][name].sku;
+        const amount = cart[partner]['itemsToGive'][name].amount;
+
+        const assetids = inventory.findBySKU(sku, false);
+
+        for (let i = 0; i < amount; i++) {
+            offer.addMyItem({
+                assetid: assetids[i],
+                appid: 440,
+                contextid: 2,
+                amount: 1
+            });
+        }
+
+        itemsDict['our'][sku] = amount;
+        itemsDiff[sku] = amount*(-1);
+    }
+
+    if (Object.getOwnPropertyNames(cart[partner]['itemsToReceive']).length === 0) {
+        // We are not taking any items, don't request their inventory
+        // TODO: Send the offer
+        offer.data('dict', itemsDict);
+        offer.data('diff', itemsDiff);
+
+        offer.data('handleTimestamp', start);
+
+        offer.setMessage(process.env.OFFER_MESSAGE || 'Powered by TF2 Automatic');
+
+        alteredMessage = createAlteredMessage(alteredItems, partner);
+        client.chatMessage(partner, alteredMessage);
+        return;
+    }
+
+    inventory.getDictionary(partner, false, function (err, theirDict) {
+        if (err) {
+            return callback(null, 'Failed to load inventories, Steam might be down');
+        }
+
+        for (const name in cart[partner]['itemsToReceive']) {
+            if (!Object.prototype.hasOwnProperty.call(cart[partner]['itemsToReceive'], name)) {
+                continue;
+            }
+
+            const sku = cart[partner]['itemsToReceive'][name].sku;
+
+            const assetids = inventory.findBySKU(sku, true, theirDict);
+            const amountCanTrade = assetids.length;
+
+            if (cart[partner]['itemsToReceive'][name].amount > amountCanTrade) {
+                if (amountCanTrade === 0) {
+                    delete cart[partner]['itemsToReceive'][name];
+                } else {
+                    cart[partner]['itemsToReceive'][name].amount = amountCanTrade;
+                }
+                alteredItems['itemsToReceive'].push(name);
+            }
+
+            const amount = cart[partner]['itemsToReceive'][name].amount;
+
+            for (let i = 0; i < amount; i++) {
+                offer.addTheirItem({
+                    assetid: assetids[i],
+                    appid: 440,
+                    contextid: 2,
+                    amount: 1
+                });
+            }
+
+            itemsDict['their'][sku] = amount;
+            itemsDiff[sku] = (itemsDiff[sku] || 0) + amount;
+        }
+
+        offer.data('dict', itemsDict);
+        offer.data('diff', itemsDiff);
+
+        offer.data('handleTimestamp', start);
+
+        offer.setMessage(process.env.OFFER_MESSAGE || 'Powered by TF2 Automatic');
+
+        // TODO: Send the offer
+        // TODO: Create message if nothing is altered
+        alteredMessage = createAlteredMessage(alteredItems, partner);
+        client.chatMessage(partner, alteredMessage);
+
+        require('app/trade').sendOffer(offer, function (err) {
+            if (err) {
+                if (err.message.indexOf('We were unable to contact the game\'s item server') !== -1) {
+                    return callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
+                } else if (err.message.indexOf('can only be sent to friends') != -1) {
+                    return callback(err);
+                } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') > -1) {
+                    return callback(null, 'I don\'t have space for more items in my inventory');
+                } else if (err.eresult !== undefined) {
+                    if (err.eresult == 10) {
+                        callback(null, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
+                    } else if (err.eresult == 15) {
+                        callback(null, 'I don\'t, or you don\'t, have space for more items');
+                    } else if (err.eresult == 16) {
+                        // This happens when Steam is already handling an offer (usually big offers), the offer should be made
+                        callback(null, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
+                    } else if (err.eresult == 20) {
+                        callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
+                    } else {
+                        callback(null, 'An error occurred while sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')');
+                    }
+                    return;
+                }
+            }
+
+            return callback(err);
+        });
+    });
+};
+
+function createAlteredMessage (alteredItems, steamID) {
+    const noneAvailable = { our: 'I don\'t have any', their: 'You don\'t have any' };
+    const someAvailable = { our: 'I only have', their: 'You only have' };
+
+    const none = { our: [], their: [] };
+    const some = { our: [], their: [] };
+
+    ['itemsToGive', 'itemsToReceive'].forEach((side, i) => {
+        const whose = i ? 'their' : 'our';
+        alteredItems[side].forEach((name) => {
+            if (cart[steamID][side][name]) {
+                some[whose].push({ name, amount: cart[steamID][side][name].amount });
+            } else {
+                none[whose].push(name);
+            }
+        });
+    });
+
+    ['our', 'their'].forEach((whose) => {
+        none[whose].forEach((name, i) => {
+            const last = (i === none[whose].length-1 && i > 0);
+
+            if (last) {
+                noneAvailable[whose] = noneAvailable[whose].slice(0, -1);
+                noneAvailable[whose] += ' or';
+            }
+
+            noneAvailable[whose] += ' ' + pluralize(name, 0);
+
+            if (!last && i > 0) {
+                noneAvailable[whose] += ',';
+            }
+        });
+    });
+
+    ['our', 'their'].forEach((whose) => {
+        some[whose].forEach((obj, i) => {
+            const name = obj.name;
+            const amount = obj.amount;
+
+            const last = (i === some[whose].length-1 && i > 0);
+
+            if (last) {
+                someAvailable[whose] = someAvailable[whose].slice(0, -1);
+                someAvailable[whose] += ' and';
+            }
+
+            someAvailable[whose] += ' ' + pluralize(name, amount, true);
+
+            if (!last && i > 0) {
+                someAvailable[whose] += ',';
+            }
+        });
+    });
+
+    let message = '';
+
+    ['our', 'their'].forEach((whose) => {
+        ['none', 'some'].forEach((which, i) => {
+            if (i) {
+                if (some[whose].length) {
+                    message += someAvailable[whose] + '\n';
+                }
+            } else {
+                if (none[whose].length) {
+                    message += noneAvailable[whose] + '\n';
+                }
+            }
+        });
+    });
+
+    return message;
+}
 
 exports.createOffer = function (details, callback) {
     const partner = details.steamid;
