@@ -31,7 +31,8 @@ const EXPORTED_FUNCTIONS = {
     },
     stop: function (callback) {
         if (process.env.pm_id === undefined) {
-            callback(null, false);
+            EXPORTED_FUNCTIONS.shutdown();
+            callback(null);
             return;
         }
 
@@ -42,7 +43,7 @@ const EXPORTED_FUNCTIONS = {
                 return callback(err);
             }
 
-            return callback(null, true);
+            return callback(null);
         });
     },
     shutdown: function (err=null, checkIfReady=true, rudely=false) {

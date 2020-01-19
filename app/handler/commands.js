@@ -801,15 +801,11 @@ exports.handleMessage = function (steamID, message) {
     } else if (isAdmin && command === 'stop') {
         client.chatMessage(steamID, 'Stopping...');
 
-        handlerManager.getHandler().stop(function (err, stopping) {
+        handlerManager.getHandler().stop(function (err) {
             if (err) {
                 log.warn('Error occurred while trying to stop: ', err);
                 client.chatMessage(steamID, 'An error occurred while trying to stop: ' + err.message);
                 return;
-            }
-
-            if (!stopping) {
-                client.chatMessage(steamID, 'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
             }
         });
     } else if (isAdmin && command === 'pricecheck') {
