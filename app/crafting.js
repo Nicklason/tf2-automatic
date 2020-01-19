@@ -227,7 +227,7 @@ function canProcessJob (job) {
 function doneProcessingJob (err) {
     const job = jobs.splice(0, 1)[0];
 
-    if (job.callback) {
+    if (job !== undefined && job.callback) {
         job.callback(err);
     }
 
