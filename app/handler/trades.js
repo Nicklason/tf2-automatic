@@ -126,29 +126,35 @@ function _addToCart (sku, name, amount, side, steamID) {
     }
 }
 
-exports.removeFromCart = function (name, amount, our, steamID, all = false) {
+exports.removeFromCart = function (name, steamID, amount, our, all = false) {
+    if (cart[steamID] === undefined) {
+        return { cart: undefined, message: 'Your cart is empty' };
+    }
+
+    if (typeof name === 'boolean') {
+        all = name;
+    }
+
     let message;
 
     const side = our ? 'itemsToGive' : 'itemsToReceive';
 
     if (all) {
-        _removeFromCart(name, amount, our, steamID, true);
-
         message = 'Your cart has been emptied';
     } else {
         const whose = our ? 'the bot\'s' : 'your';
 
-        if (!cart[side][name]) {
+        if (!cart[steamID][side][name]) {
             message = 'There are no ' + pluralize(name, 0) + ' on ' + whose + ' side of the cart';
-        } else if (amount > cart[side][name].amount) {
-            amount = cart[side][name].amount;
+        } else if (amount > cart[steamID][side][name].amount) {
+            amount = cart[steamID][side][name].amount;
             message = 'There were only ' + pluralize(name, amount, true) + ' on ' + whose + ' side of the cart. ' + (amount > 1 ? 'They have' : 'It has') + ' been removed';
         } else {
             message = pluralize(name, amount, true) + (amount > 1 ? ' have' : ' has') + ' been removed from ' + whose + ' side of the cart';
         }
     }
 
-    _removeFromCart(name, amount, side, steamID);
+    _removeFromCart(name, amount, side, steamID, all);
 
     const userCart = cart[steamID];
 
@@ -156,19 +162,8 @@ exports.removeFromCart = function (name, amount, our, steamID, all = false) {
 };
 
 function _removeFromCart (name, amount, side, steamID, all = false) {
-    if (cart[steamID] === undefined) {
-        cart[steamID] = {
-            itemsToGive: {},
-            itemsToReceive: {}
-        };
-    }
-
     if (all) {
-        for (const side in cart[steamID]) {
-            if (Object.prototype.hasOwnProperty.call(cart[steamID], side)) {
-                delete cart[steamID];
-            }
-        }
+        delete cart[steamID];
     } else {
         cart[steamID][side][name].amount -= amount;
 
