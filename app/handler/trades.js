@@ -519,8 +519,12 @@ function constructOffer (buyerCurrencies, price, useKeys) {
         for (let i = 0; i < skus.length; i++) {
             const sku = skus[i];
 
+            if (pickedCurrencies[sku] === undefined) {
+                continue;
+            }
+
             let amount = Math.floor(Math.abs(remaining) / currencyValues[sku]);
-            if (pickedCurrencies[sku] && pickedCurrencies[sku] < amount) {
+            if (pickedCurrencies[sku] < amount) {
                 amount = pickedCurrencies[sku];
             }
 
