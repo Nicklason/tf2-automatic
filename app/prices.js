@@ -19,6 +19,8 @@ let keyPrices = null;
 const handling = [];
 
 exports.init = function (callback) {
+    log.debug('Setting up pricelist');
+
     socket.removeListener('price', handlePriceChange);
     socket.on('price', handlePriceChange);
 
