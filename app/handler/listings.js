@@ -252,7 +252,11 @@ exports.checkAll = function (callback) {
 
         checkingAllListings = true;
 
-        const pricelist = prices.getPricelist();
+        // Prioritize items in the pricelist that we also have in the inventory
+        const pricelist = prices.getPricelist().sort((a, b) => {
+            // Using sort because then we could add other ways to prioritize items
+            return inventory.findBySKU(b.sku).length - inventory.findBySKU(a.sku).length;
+        });
 
         log.debug('Checking listings for ' + pluralize('items', pricelist.length, true) + '...');
 
