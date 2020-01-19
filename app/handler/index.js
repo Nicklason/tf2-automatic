@@ -27,6 +27,8 @@ exports.onReady = function () {
 
     // Check group invites that we got while offline
     require('handler/groups').checkGroupInvites();
+
+    require('handler/listings').setupAutobump();
 };
 
 exports.onTF2QueueCompleted = function () {
@@ -39,10 +41,6 @@ exports.onLogin = function () {
         this.gamesPlayed(package.name);
         this.setPersona(SteamUser.EPersonaState.Online);
     }
-};
-
-exports.onLoginFailure = function (err) {
-    exports.shutdown(err);
 };
 
 exports.onHeartbeat = function (bumped) {
