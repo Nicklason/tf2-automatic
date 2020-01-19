@@ -891,11 +891,11 @@ exports.handleMessage = function (steamID, message) {
 
         const deposit = command.length === 7 ? true : false;
 
-        const response = trades.addToCart(sku, amount, deposit, steamID);
+        const response = trades.addToCart(steamID, sku, amount, deposit);
 
         client.chatMessage(steamID, response.message + '\n' + stringifyCart(response.cart));
     } else if (isAdmin && command === 'clearcart') {
-        client.chatMessage(steamID, trades.removeFromCart(true, steamID).message);
+        client.chatMessage(steamID, trades.removeFromCart(steamID, true).message);
     } else if (isAdmin && command === 'checkout') {
         trades.customOffer(steamID, function (err, failedMessage) {
             if (err) {
