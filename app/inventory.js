@@ -146,6 +146,11 @@ exports.findByAssetid = function (assetid) {
  * @return {Array<Object>}
  */
 exports.findBySKU = function (sku, includeInTrade = true, dict = undefined) {
+    if (typeof includeInTrade === 'object') {
+        dict = includeInTrade;
+        includeInTrade = true;
+    }
+
     const assetids = ((dict[sku] || dictionary[sku]) || []);
 
     if (includeInTrade || dict !== undefined) {
