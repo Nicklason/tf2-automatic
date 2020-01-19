@@ -143,7 +143,7 @@ function start () {
                         log.warn('Failed to sign in to Steam, retrying without login key...');
                         return login(null, loginResponse);
                     } else {
-                        log.warn('Failed to sign in to Steam');
+                        log.warn('Failed to sign in to Steam: ', err);
                         return callback(err);
                     }
                 }
