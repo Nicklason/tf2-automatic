@@ -53,13 +53,14 @@ function getParams (string) {
             let value = params[key];
 
             if (key !== 'sku') {
-                if (/^\d+$/.test(value)) {
-                    value = parseInt(value);
-                } else if (/^\d+(\.\d+)?$/.test(value)) {
-                    value = parseFloat(value);
-                } else if (value === 'true') {
+                const lowerCase = value.toLowerCase();
+                if (/^\d+$/.test(lowerCase)) {
+                    value = parseInt(lowerCase);
+                } else if (/^\d+(\.\d+)?$/.test(lowerCase)) {
+                    value = parseFloat(lowerCase);
+                } else if (lowerCase === 'true') {
                     value = true;
-                } else if (value === 'false') {
+                } else if (lowerCase === 'false') {
                     value = false;
                 }
             }
