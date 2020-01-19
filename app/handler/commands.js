@@ -894,17 +894,6 @@ exports.handleMessage = function (steamID, message) {
         const response = trades.addToCart(sku, amount, deposit, steamID);
 
         client.chatMessage(steamID, response.message + '\n' + stringifyCart(response.cart));
-
-        // trades.addToCart(sku, amount, deposit, steamID, function (err, response) {
-        //     if (err) {
-        //         log.warn('Error while adding items to cart: ', err);
-        //         client.chatMessage(steamID, 'Error while adding items to cart');
-
-        //         return;
-        //     }
-
-        //     client.chatMessage(steamID, response.message + '\n' + stringifyCart(response.cart));
-        // });
     } else if (isAdmin && command === 'clearcart') {
         client.chatMessage(steamID, trades.removeFromCart(true, steamID).message);
     } else if (isAdmin && command === 'checkout') {
