@@ -151,6 +151,10 @@ exports.findBySKU = function (sku, includeInTrade = true, dict = undefined) {
         includeInTrade = true;
     }
 
+    if (dict === undefined) {
+        dict = {};
+    }
+
     const assetids = ((dict[sku] || dictionary[sku]) || []);
 
     if (includeInTrade || dict !== undefined) {

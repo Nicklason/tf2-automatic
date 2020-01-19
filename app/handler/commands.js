@@ -908,7 +908,17 @@ exports.handleMessage = function (steamID, message) {
     } else if (isAdmin && command === 'clearcart') {
         client.chatMessage(steamID, trades.removeFromCart(true, steamID).message);
     } else if (isAdmin && command === 'checkout') {
-        queue.addRequestedTrade(steamID, '', 0, 0, true);
+        trades.customOffer(steamID, function (err, failedMessage) {
+            if (err) {
+                client.chatMessage(steamID, 'Error sending offer: ' + err.message);
+            }
+
+            if (failedMessage) {
+                client.chatMessage(steamID, failedMessage);
+            } else {
+                trades.removeFromCart(true, steamID);
+            }
+        });
     } else {
         client.chatMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
     }
