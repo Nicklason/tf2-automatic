@@ -183,9 +183,7 @@ function _removeFromCart (name, amount, side, steamID, all = false) {
     }
 }
 
-exports.customOffer = function (details, callback) {
-    const partner = details.steamid;
-
+exports.customOffer = function (partner, callback) {
     const start = new Date().getTime();
 
     if (cart[partner] === undefined) {
@@ -202,7 +200,7 @@ exports.customOffer = function (details, callback) {
             continue;
         }
 
-        const amountCanTrade = inventory.findBySKU(cart[partner]['itemsToGive'][name], false).length;
+        const amountCanTrade = inventory.findBySKU(cart[partner]['itemsToGive'][name].sku, false).length;
 
         if (cart[partner]['itemsToGive'][name].amount > amountCanTrade) {
             if (amountCanTrade === 0) {
@@ -215,23 +213,6 @@ exports.customOffer = function (details, callback) {
     }
 
     if (Object.getOwnPropertyNames(cart[partner]['itemsToGive']).length === 0 && Object.getOwnPropertyNames(cart[partner]['itemsToReceive']).length === 0) {
-        // We are only giving items, but none of them are available
-        /*
-        alteredMessage = 'I don\'t have any';
-        alteredItems['itemsToGive'].forEach((name, i) => {
-            const last = (i === alteredItems['itemsToGive'].length-1 && i > 0);
-            if (last) {
-                alteredMessage = alteredMessage.slice(0, -1);
-                alteredMessage += ' or';
-            }
-
-            alteredMessage += ' ' + pluralize(name, 0);
-
-            if (!last) {
-                alteredMessage += ',';
-            }
-        });
-        */
         alteredMessage = createAlteredMessage(alteredItems, partner);
         callback(null, alteredMessage);
         return;
@@ -270,16 +251,52 @@ exports.customOffer = function (details, callback) {
 
     if (Object.getOwnPropertyNames(cart[partner]['itemsToReceive']).length === 0) {
         // We are not taking any items, don't request their inventory
-        // TODO: Send the offer
+
+        alteredMessage = createAlteredMessage(alteredItems, partner);
+
+        if (Object.getOwnPropertyNames(cart[partner]['itemsToGive']).length === 0) {
+            exports.removeFromCart(true, partner);
+            callback(null, alteredMessage);
+            return;
+        }
+
         offer.data('dict', itemsDict);
         offer.data('diff', itemsDiff);
 
         offer.data('handleTimestamp', start);
 
-        offer.setMessage(process.env.OFFER_MESSAGE || 'Powered by TF2 Automatic');
+        offer.setMessage('Powered by TF2 Automatic');
 
-        alteredMessage = createAlteredMessage(alteredItems, partner);
-        client.chatMessage(partner, alteredMessage);
+        client.chatMessage(partner, (alteredMessage || 'Please wait while I process your offer...'));
+
+        require('app/trade').sendOffer(offer, function (err) {
+            if (err) {
+                if (err.message.indexOf('We were unable to contact the game\'s item server') !== -1) {
+                    return callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
+                } else if (err.message.indexOf('can only be sent to friends') != -1) {
+                    return callback(err);
+                } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') > -1) {
+                    return callback(null, 'I don\'t have space for more items in my inventory');
+                } else if (err.eresult !== undefined) {
+                    if (err.eresult == 10) {
+                        callback(null, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
+                    } else if (err.eresult == 15) {
+                        callback(null, 'I don\'t, or you don\'t, have space for more items');
+                    } else if (err.eresult == 16) {
+                        // This happens when Steam is already handling an offer (usually big offers), the offer should be made
+                        callback(null, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
+                    } else if (err.eresult == 20) {
+                        callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
+                    } else {
+                        callback(null, 'An error occurred while sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')');
+                    }
+                    return;
+                }
+            }
+
+            return callback(err);
+        });
+
         return;
     }
 
@@ -307,6 +324,10 @@ exports.customOffer = function (details, callback) {
                 alteredItems['itemsToReceive'].push(name);
             }
 
+            if (cart[partner]['itemsToReceive'][name] === undefined) {
+                continue;
+            }
+
             const amount = cart[partner]['itemsToReceive'][name].amount;
 
             for (let i = 0; i < amount; i++) {
@@ -322,17 +343,24 @@ exports.customOffer = function (details, callback) {
             itemsDiff[sku] = (itemsDiff[sku] || 0) + amount;
         }
 
+        alteredMessage = createAlteredMessage(alteredItems, partner);
+
+        if ((Object.getOwnPropertyNames(cart[partner]['itemsToReceive']).length === 0) && (Object.getOwnPropertyNames(cart[partner]['itemsToGive']).length === 0)) {
+            exports.removeFromCart(true, partner);
+            callback(null, alteredMessage);
+            return;
+        }
+
         offer.data('dict', itemsDict);
         offer.data('diff', itemsDiff);
 
         offer.data('handleTimestamp', start);
 
-        offer.setMessage(process.env.OFFER_MESSAGE || 'Powered by TF2 Automatic');
+        offer.setMessage('Powered by TF2 Automatic');
 
         // TODO: Send the offer
         // TODO: Create message if nothing is altered
-        alteredMessage = createAlteredMessage(alteredItems, partner);
-        client.chatMessage(partner, alteredMessage);
+        client.chatMessage(partner, (alteredMessage || 'Please wait while I process your offer...'));
 
         require('app/trade').sendOffer(offer, function (err) {
             if (err) {
