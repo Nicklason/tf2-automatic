@@ -1,6 +1,6 @@
-const SteamID = require('steamid');
+import SteamID from 'steamid';
 
-const client = require('../lib/client');
+import client from '../lib/client';
 
 const admins = process.env.ADMINS === undefined ? [] : JSON.parse(process.env.ADMINS);
 

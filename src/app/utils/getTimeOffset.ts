@@ -1,4 +1,4 @@
-const SteamTotp = require('steam-totp');
+import SteamTotp from 'steam-totp';
 
 let timeOffset = null;
 

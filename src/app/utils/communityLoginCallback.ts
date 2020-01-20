@@ -1,5 +1,5 @@
-const client = require('../../lib/client');
-const community = require('../../lib/community');
+import client from '../../lib/client';
+import community from '../../lib/community';
 
 /**
  * Waits for webSession event to fire

@@ -1,4 +1,4 @@
-const jsonschema = require('jsonschema');
+import jsonschema from 'jsonschema';
 const Validator = jsonschema.Validator;
 
 const v = new Validator();

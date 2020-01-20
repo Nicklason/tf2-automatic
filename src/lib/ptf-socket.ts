@@ -1,8 +1,8 @@
-const io = require('socket.io-client');
+import io from 'socket.io-client';
 
-const log = require('./logger');
+import log from './logger';
 
-const pjson = require('pjson');
+import pjson from 'pjson';
 
 const socket = io('https://api.prices.tf', {
     forceNew: true,

@@ -1,10 +1,10 @@
-const async = require('async');
+import async from 'async';
 
-const log = require('../lib/logger');
-const bptfLogin = require('../lib/bptf-login');
-const community = require('../lib/community');
+import log from '../lib/logger';
+import bptfLogin from '../lib/bptf-login';
+import community from '../lib/community';
 
-const handlerManager = require('./handler-manager');
+import * as handlerManager from './handler-manager';
 
 let hasLoggedIn = false;
 

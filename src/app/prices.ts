@@ -1,15 +1,15 @@
-const async = require('async');
-const moment = require('moment');
-const SKU = require('tf2-sku');
-const Currencies = require('tf2-currencies');
+import async from 'async';
+import moment from 'moment';
+import SKU from 'tf2-sku';
+import Currencies from 'tf2-currencies';
 
-const log = require('../lib/logger');
-const api = require('../lib/ptf-api');
-const validator = require('../lib/validator');
-const schemaManager = require('../lib/tf2-schema');
-const socket = require('../lib/ptf-socket');
+import log from '../lib/logger';
+import* as api from '../lib/ptf-api';
+import validator from '../lib/validator';
+import schemaManager from '../lib/tf2-schema';
+import socket from '../lib/ptf-socket';
 
-const handlerManager = require('./handler-manager');
+import * as handlerManager from './handler-manager';
 
 // Max age of a price in seconds
 const maxPriceAge = process.env.MAX_PRICE_AGE ? parseInt(process.env.MAX_PRICE_AGE) : 8 * 60 * 60;

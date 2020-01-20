@@ -1,8 +1,8 @@
-const BptfListings = require('bptf-listings');
+import BptfListings from 'bptf-listings';
 
-const log = require('./logger');
+import log from './logger';
 
-const handlerManager = require('../app/handler-manager');
+import * as handlerManager from '../app/handler-manager';
 
 const listingManager = new BptfListings({
     token: process.env.BPTF_ACCESS_TOKEN,

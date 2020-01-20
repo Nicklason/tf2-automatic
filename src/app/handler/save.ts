@@ -1,7 +1,7 @@
-const log = require('../../lib/logger');
-const files = require('../utils/files');
+import log from '../../lib/logger';
+import * as files from '../utils/files';
 
-const paths = require('../resources/paths');
+import paths from '../resources/paths';
 
 /**
  * Saves data from events

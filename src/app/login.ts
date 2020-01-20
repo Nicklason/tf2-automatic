@@ -1,8 +1,8 @@
-const log = require('../lib/logger');
-const client = require('../lib/client');
+import log from '../lib/logger';
+import client from '../lib/client';
 
-const loginAttempts = require('./login-attempts');
-const handlerManager = require('./handler-manager');
+import * as loginAttempts from './login-attempts';
+import * as handlerManager from './handler-manager';
 
 /**
  * Signs in to Steam and catches login error

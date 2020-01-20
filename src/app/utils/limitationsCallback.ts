@@ -1,4 +1,4 @@
-const client = require('../../lib/client');
+import client from '../../lib/client';
 
 /**
  * Waits for accountLimitations event to fire

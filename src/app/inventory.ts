@@ -1,7 +1,7 @@
-const manager = require('../lib/manager');
+import manager from '../lib/manager';
 
-const handlerManager = require('./handler-manager');
-const prices = require('./prices');
+import * as handlerManager from './handler-manager';
+import * as prices from './prices';
 
 let dictionary = {};
 let nonTradableDictionary = {};

@@ -1,5 +1,5 @@
-const async = require('async');
-const request = require('@nicklason/request-retry');
+import async from 'async';
+import request from '@nicklason/request-retry';
 
 export default function (steamid64, callback) {
     async.parallel({

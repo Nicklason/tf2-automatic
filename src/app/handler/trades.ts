@@ -1,20 +1,20 @@
-const TradeOfferManager = require('steam-tradeoffer-manager');
-const Currencies = require('tf2-currencies');
-const pluralize = require('pluralize');
-const retry = require('retry');
+import TradeOfferManager from 'steam-tradeoffer-manager';
+import Currencies from 'tf2-currencies';
+import pluralize from 'pluralize';
+import retry from 'retry';
 
-const log = require('../../lib/logger');
-const inventory = require('../inventory');
-const prices = require('../prices');
-const listings = require('./listings');
-const client = require('../../lib/client');
-const manager = require('../../lib/manager');
-const admin = require('../admins');
-const groups = require('./groups');
+import log from '../../lib/logger';
+import * as inventory from '../inventory';
+import * as prices from '../prices';
+import * as listings from './listings';
+import client from '../../lib/client';
+import manager from '../../lib/manager';
+import * as admin from '../admins';
+import * as groups from './groups';
 
 const isAdmin = admin.isAdmin;
-const checkBanned = require('../utils/isBanned');
-const communityLoginCallback = require('../utils/communityLoginCallback');
+import checkBanned from '../utils/isBanned';
+import communityLoginCallback from '../utils/communityLoginCallback';
 
 exports.getTradesWithPeople = function (steamIDs) {
     // Go through polldata data

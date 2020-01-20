@@ -1,7 +1,7 @@
-const SteamCommunity = require('steamcommunity');
-const SteamTotp = require('steam-totp');
+import SteamCommunity from 'steamcommunity';
+import SteamTotp from 'steam-totp';
 
-const log = require('./logger');
+import log from './logger';
 
 const community = new SteamCommunity();
 

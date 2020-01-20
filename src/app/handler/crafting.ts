@@ -1,5 +1,5 @@
-const inventory = require('../inventory');
-const crafting = require('../crafting');
+import * as inventory from '../inventory';
+import * as crafting from '../crafting';
 
 const minimumScrap = process.env.MINIMUM_SCRAP ? parseInt(process.env.MINIMUM_SCRAP) : 6;
 const minimumReclaimed = process.env.MINIMUM_RECLAIMED ? parseInt(process.env.MINIMUM_RECLAIMED) : 6;

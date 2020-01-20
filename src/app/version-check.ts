@@ -1,8 +1,8 @@
-const request = require('@nicklason/request-retry');
-const semver = require('semver');
-const log = require('../lib/logger');
+import request from '@nicklason/request-retry';
+import semver from 'semver';
+import log from '../lib/logger';
 
-const pjson = require('pjson');
+import pjson from 'pjson';
 
 // Maybe save latest notified version to a file?
 let lastNotifiedVersion = pjson.version;

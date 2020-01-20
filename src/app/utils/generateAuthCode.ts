@@ -1,6 +1,6 @@
-const SteamTotp = require('steam-totp');
+import SteamTotp from 'steam-totp';
 
-const getTimeOffset = require('./getTimeOffset');
+import getTimeOffset from './getTimeOffset';
 
 /**
  * Generates Steam authentication code

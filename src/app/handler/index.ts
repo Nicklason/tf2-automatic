@@ -1,12 +1,12 @@
-const SteamUser = require('steam-user');
-const pluralize = require('pluralize');
+import SteamUser from 'steam-user';
+import pluralize from 'pluralize';
 
-const pjson = require('pjson');
+import pjson from 'pjson';
 
-const prices = require('../prices');
-const listingManager = require('../../lib/bptf-listings');
-const log = require('../../lib/logger');
-const client = require('../../lib/client');
+import * as prices from '../prices';
+import listingManager from '../../lib/bptf-listings';
+import log from '../../lib/logger';
+import client from '../../lib/client';
 
 exports.onRun = require('../handler/init');
 exports.onShutdown = require('../handler/shutdown');

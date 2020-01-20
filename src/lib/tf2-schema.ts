@@ -1,9 +1,9 @@
-const Schema = require('tf2-schema');
+import Schema from 'tf2-schema';
 
-const log = require('./logger');
-const api = require('./ptf-api');
-const socket = require('./ptf-socket');
-const handlerManager = require('../app/handler-manager');
+import log from './logger';
+import * as api from './ptf-api';
+import socket from './ptf-socket';
+import * as handlerManager from '../app/handler-manager';
 
 const schemaManager = new Schema({ updateTime: -1 });
 

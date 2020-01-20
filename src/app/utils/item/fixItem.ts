@@ -1,6 +1,6 @@
-const isObject = require('isobject');
+import isObject from 'isobject';
 
-const schemaManager = require('../../../lib/tf2-schema');
+import schemaManager from '../../../lib/tf2-schema';
 
 export default function (item) {
     const schemaItem = schemaManager.schema.getItemByDefindex(item.defindex);

@@ -1,4 +1,4 @@
-const BptfLogin = require('bptf-login');
+import BptfLogin from 'bptf-login';
 
 const bptfLogin = new BptfLogin();
 

@@ -1,7 +1,7 @@
-const TeamFortress2 = require('tf2');
+import TeamFortress2 from 'tf2';
 
-const log = require('./logger');
-const client = require('./client');
+import log from './logger';
+import client from './client';
 
 const tf2 = new TeamFortress2(client);
 

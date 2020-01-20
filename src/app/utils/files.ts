@@ -1,5 +1,5 @@
-const fs = require('graceful-fs');
-const path = require('path');
+import fs from 'graceful-fs';
+import path from 'path';
 
 let filesBeingSaved = 0;
 

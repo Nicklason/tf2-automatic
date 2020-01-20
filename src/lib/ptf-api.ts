@@ -1,6 +1,6 @@
-const request = require('@nicklason/request-retry');
+import request from '@nicklason/request-retry';
 
-const pjson = require('pjson');
+import pjson from 'pjson';
 
 exports.getSchema = function (callback) {
     apiRequest('GET', '/schema', { appid: 440 }, callback);

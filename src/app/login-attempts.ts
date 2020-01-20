@@ -1,6 +1,6 @@
-const moment = require('moment');
+import moment from 'moment';
 
-const handlerManager = require('./handler-manager');
+import * as handlerManager from './handler-manager';
 
 const maxLoginAttemptsWithinPeriod = 3;
 const loginPeriodTime = 60 * 1000;

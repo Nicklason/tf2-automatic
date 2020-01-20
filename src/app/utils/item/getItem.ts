@@ -1,9 +1,9 @@
-const SKU = require('tf2-sku');
-const url = require('url');
+import SKU from 'tf2-sku';
+import url from 'url';
 
-const schemaManager = require('../../../lib/tf2-schema');
+import schemaManager from '../../../lib/tf2-schema';
 
-const fixItem = require('../../utils/item/fixItem');
+import fixItem from '../../utils/item/fixItem';
 
 export default function () {
     // @ts-ignore

@@ -1,4 +1,4 @@
-const path = require('path');
+import path from 'path';
 
 const folderName = process.env.FOLDER_NAME || process.env.STEAM_ACCOUNT_NAME;
 const filePrefix = process.env.FILE_PREFIX || process.env.STEAM_ACCOUNT_NAME;

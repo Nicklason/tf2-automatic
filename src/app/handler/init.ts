@@ -1,10 +1,10 @@
-const async = require('async');
+import async from 'async';
 
-const files = require('../utils/files');
+import * as files from '../utils/files';
 
-const paths = require('../resources/paths');
+import paths from '../resources/paths';
 
-const handlerManager = require('../handler-manager');
+import * as handlerManager from '../handler-manager';
 
 export default function (done) {
     async.parallel({

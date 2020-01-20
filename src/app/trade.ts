@@ -1,12 +1,12 @@
-const TradeOfferManager = require('steam-tradeoffer-manager');
+import TradeOfferManager from 'steam-tradeoffer-manager';
 
-const log = require('../lib/logger');
-const community = require('../lib/community');
+import log from '../lib/logger';
+import community from '../lib/community';
 
-const handlerManager = require('./handler-manager');
+import * as handlerManager from './handler-manager';
 
-const communityLoginCallback = require('./utils/communityLoginCallback');
-const backoff = require('./utils/exponentialBackoff');
+import communityLoginCallback from './utils/communityLoginCallback';
+import backoff from './utils/exponentialBackoff';
 
 const receivedOffers = [];
 const itemsInTrade = [];

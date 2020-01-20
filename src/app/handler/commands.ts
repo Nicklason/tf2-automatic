@@ -1,31 +1,31 @@
-const dotProp = require('dot-prop');
-const pluralize = require('pluralize');
-const moment = require('moment');
-const SKU = require('tf2-sku');
-const Currencies = require('tf2-currencies');
-const validUrl = require('valid-url');
+import dotProp from 'dot-prop';
+import pluralize from 'pluralize';
+import moment from 'moment';
+import SKU from 'tf2-sku';
+import Currencies from 'tf2-currencies';
+import validUrl from 'valid-url';
 
-const prices = require('../prices');
-const client = require('../../lib/client');
-const inventory = require('../inventory');
-const schemaManager = require('../../lib/tf2-schema');
-const log = require('../../lib/logger');
-const friends = require('./friends');
-const trades = require('./trades');
-const queue = require('./queue');
-const handlerManager = require('../handler-manager');
-const api = require('../../lib/ptf-api');
-const validator = require('../../lib/validator');
-const manager = require('../../lib/manager');
-const community = require('../../lib/community');
-const crafting = require('../crafting');
+import * as prices from '../prices';
+import client from '../../lib/client';
+import * as inventory from '../inventory';
+import schemaManager from '../../lib/tf2-schema';
+import log from '../../lib/logger';
+import * as friends from './friends';
+import * as trades from './trades';
+import * as queue from './queue';
+import * as handlerManager from '../handler-manager';
+import * as api from '../../lib/ptf-api';
+import validator from '../../lib/validator';
+import manager from '../../lib/manager';
+import community from '../../lib/community';
+import * as crafting from '../crafting';
 
-const parseJSON = require('../utils/parseJSON');
-const admin = require('../admins');
-const fixItem = require('../utils/item/fixItem');
-const versionCheck = require('../version-check');
+import parseJSON from '../utils/parseJSON';
+import * as admin from '../admins';
+import fixItem from '../utils/item/fixItem';
+import * as versionCheck from '../version-check';
 
-const pjson = require('pjson');
+import pjson from 'pjson';
 
 let messages = [];
 

@@ -1,19 +1,19 @@
-const dotenv = require('dotenv');
+import dotenv from 'dotenv';
 dotenv.config();
 
-const log = require('./lib/logger');
+import log from './lib/logger';
 
 if (process.env.pm_id === undefined) {
     log.warn('You are not running the bot with PM2! If the bot crashes it won\'t start again, see the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
 }
 
-const handlerManager = require('./app/handler-manager');
+import * as handlerManager from './app/handler-manager';
 handlerManager.setup();
 
 const handler = handlerManager.getHandler();
 
-const EconItem = require('steam-tradeoffer-manager/lib/classes/EconItem.js');
-const CEconItem = require('steamcommunity/classes/CEconItem.js');
+import EconItem from 'steam-tradeoffer-manager/lib/classes/EconItem.js';
+import CEconItem from 'steamcommunity/classes/CEconItem.js';
 
 ['hasDescription', 'getAction', 'getTag', 'getItem', 'getSKU', 'getName', 'getPrice'].forEach(function (v) {
     const func = require('./app/utils/item/' + v);
@@ -21,38 +21,38 @@ const CEconItem = require('steamcommunity/classes/CEconItem.js');
     CEconItem.prototype[v] = func;
 });
 
-const TradeOffer = require('steam-tradeoffer-manager/lib/classes/TradeOffer');
+import TradeOffer from 'steam-tradeoffer-manager/lib/classes/TradeOffer';
 
 ['log', 'summarize'].forEach(function (v) {
     TradeOffer.prototype[v] = require('./app/utils/offer/' + v);
 });
 
-const pjson = require('pjson');
+import pjson from 'pjson';
 
 require('death')({ uncaughtException: true })(function (signal, err) {
     const crashed = typeof err !== 'string';
-
+    
     if (crashed) {
         if (err.statusCode >= 500 || err.statusCode === 429) {
             delete err.body;
         }
-
+        
         log.error([
             pjson.name + (!handler.isReady() ? ' failed to start properly, this is most likely a temporary error. See the log:' : ' crashed! Please create an issue with the following log:'),
             `package.version: ${pjson.version || undefined}; node: ${process.version} ${process.platform} ${process.arch}}`,
             'Stack trace:',
             require('util').inspect(err)
         ].join('\r\n'));
-
+        
         if (handler.isReady()) {
             log.error('Create an issue here: https://github.com/Nicklason/tf2-automatic/issues/new?template=bug_report.md');
         }
     }
-
+    
     if (!crashed) {
         log.warn('Received kill signal `' + signal + '`');
     }
-
+    
     handler.shutdown(crashed ? err : null, true, signal === 'SIGKILL');
 });
 
@@ -60,27 +60,28 @@ process.on('message', function (message) {
     if (message === 'shutdown') {
         // For using PM2 on Windows
         log.warn('Process received shutdown message, stopping...');
-
+        
         handler.shutdown(null);
     } else {
         log.warn('Process received unknown message `' + message + '`');
     }
 });
 
-const SteamUser = require('steam-user');
-const async = require('async');
+import SteamUser from 'steam-user';
+import async from 'async';
 
 // Set up node-tf2
 require('./lib/tf2');
 
-const pm2 = require('pm2');
+import pm2 from 'pm2';
 
-const client = require('./lib/client');
-const manager = require('./lib/manager');
-const community = require('./lib/community');
+import client from './lib/client';
+import manager from './lib/manager';
+import community from './lib/community';
 
-const schemaManager = require('./lib/tf2-schema');
-const listingManager = require('./lib/bptf-listings');
+import schemaManager from './lib/tf2-schema';
+import listingManager from './lib/bptf-listings';
+import login from './app/login';
 
 log.info(pjson.name + ' v' + pjson.version + ' is starting...');
 
@@ -89,19 +90,19 @@ start();
 function start () {
     let opts;
     let cookies;
-
+    
     log.debug('Going through startup process...');
-
+    
     async.eachSeries([
         function (callback) {
             log.debug('Connecting to PM2');
-
+            
             // Connect to PM2
             pm2.connect(callback);
         },
         function (callback) {
             log.debug('Calling onRun');
-
+            
             // Run handler onRun function
             handler.onRun(function (v) {
                 // Set options
@@ -119,7 +120,6 @@ function start () {
             // Sign in to Steam
             log.info('Signing in to Steam...');
 
-            const login = require('./app/login');
 
             const loginKey = opts.loginKey || null;
             let lastLoginFailed = false;

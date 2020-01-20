@@ -1,11 +1,11 @@
-const SteamUser = require('steam-user');
-const path = require('path');
-const isPathInside = require('is-path-inside');
-const pm2 = require('pm2');
+import SteamUser from 'steam-user';
+import path from 'path';
+import isPathInside from 'is-path-inside';
+import pm2 from 'pm2';
 
-const log = require('../lib/logger');
-const files = require('./utils/files');
-const backoff = require('./utils/exponentialBackoff');
+import log from '../lib/logger';
+import * as files from './utils/files';
+import backoff from './utils/exponentialBackoff';
 
 const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SECRET', 'STEAM_IDENTITY_SECRET'];
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData', 'onPricelist'];

@@ -1,7 +1,7 @@
-const winston = require('winston');
+import winston from 'winston';
 require('winston-daily-rotate-file');
 
-const paths = require('../app/resources/paths');
+import paths from '../app/resources/paths';
 
 const levels = {
     debug: 5,

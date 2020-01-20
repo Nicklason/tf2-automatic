@@ -1,10 +1,10 @@
-const SteamUser = require('steam-user');
-const log = require('./logger');
+import SteamUser from 'steam-user';
+import log from './logger';
 
-const generateAuthCode = require('../app/utils/generateAuthCode');
+import generateAuthCode from '../app/utils/generateAuthCode';
 
-const loginAttempts = require('../app/login-attempts');
-const handlerManager = require('../app/handler-manager');
+import * as loginAttempts from '../app/login-attempts';
+import * as handlerManager from '../app/handler-manager';
 
 const client = new SteamUser();
 

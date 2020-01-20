@@ -1,4 +1,4 @@
-const log = require('../../../lib/logger');
+import log from '../../../lib/logger';
 
 export default function (level, message) {
     // @ts-ignore

@@ -1,8 +1,8 @@
-const moment = require('moment');
+import moment from 'moment';
 
-const log = require('../../lib/logger');
-const handlerManager = require('../handler-manager');
-const client = require('../../lib/client');
+import log from '../../lib/logger';
+import * as handlerManager from '../handler-manager';
+import client from '../../lib/client';
 
 const queue = [];
 let processingQueue = false;

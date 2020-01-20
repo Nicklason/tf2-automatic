@@ -1,7 +1,7 @@
-const Currencies = require('tf2-currencies');
-const SKU = require('tf2-sku');
+import Currencies from 'tf2-currencies';
+import SKU from 'tf2-sku';
 
-const schemaManager = require('../../../lib/tf2-schema');
+import schemaManager from '../../../lib/tf2-schema';
 
 export default function () {
     // @ts-ignore

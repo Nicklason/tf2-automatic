@@ -1,8 +1,8 @@
-const TradeOfferManager = require('steam-tradeoffer-manager');
+import TradeOfferManager from 'steam-tradeoffer-manager';
 
-const log = require('./logger');
-const client = require('./client');
-const community = require('./community');
+import log from './logger';
+import client from './client';
+import community from './community';
 
 const manager = new TradeOfferManager({
     steam: client,

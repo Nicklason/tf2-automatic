@@ -1,4 +1,4 @@
-const SKU = require('tf2-sku');
+import SKU from 'tf2-sku';
 
 export default function () {
     // @ts-ignore
