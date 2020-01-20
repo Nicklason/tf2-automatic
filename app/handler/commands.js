@@ -917,7 +917,7 @@ exports.handleMessage = function (steamID, message) {
 
         const response = cart.addToCart(steamID, sku, amount, deposit);
 
-        client.chatMessage(steamID, response.message + '\n' + stringifyCart(response.cart));
+        client.chatMessage(steamID, response.message + '\n' + cart.stringify(steamID));
     } else if (isAdmin && command === 'clearcart') {
         client.chatMessage(steamID, cart.removeFromCart(steamID, true).message);
     } else if (isAdmin && command === 'checkout') {
@@ -998,26 +998,6 @@ function getItemAndAmount (steamID, message) {
         amount: amount,
         match: match
     };
-}
-
-function stringifyCart (cart) {
-    let message = '== YOUR CART ==';
-
-    message += '\n\nMy side (items you will receive):';
-    for (const name in cart.our) {
-        if (Object.prototype.hasOwnProperty.call(cart.our, name)) {
-            message += '\n- ' + cart.our[name].amount + 'x ' + name;
-        }
-    }
-
-    message += '\n\nYour side (items you will lose):';
-    for (const name in cart.their) {
-        if (Object.prototype.hasOwnProperty.call(cart.their, name)) {
-            message += '\n- ' + cart.their[name].amount + 'x ' + name;
-        }
-    }
-
-    return message;
 }
 
 function removeCommandFromMessage (message, command) {
