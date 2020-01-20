@@ -21,7 +21,7 @@ const EXPORTED_FUNCTIONS = {
 
         log.warn('Restart has been initialized, restarting...');
 
-        pm2.restart(process.env.pm_id, {}, function (err) {
+        pm2.restart(process.env.pm_id, function (err) {
             if (err) {
                 return callback(err);
             }
@@ -212,8 +212,6 @@ exports.setup = function () {
             } else {
                 requireError = new Error('Missing handler file');
             }
-
-            requireError.require = moduleName;
 
             throw requireError;
         }

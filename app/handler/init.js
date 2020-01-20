@@ -9,7 +9,7 @@ const handlerManager = require('../handler-manager');
 module.exports = function (done) {
     async.parallel({
         loginKey: function (callback) {
-            files.readFile(paths.files.loginKey, callback);
+            files.readFile(paths.files.loginKey, false, callback);
         },
         pollData: function (callback) {
             files.readFile(paths.files.pollData, true, callback);
