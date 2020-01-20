@@ -375,7 +375,7 @@ function getOffers (includeInactive, callback) {
         includeInactive = false;
     }
 
-    require('../lib/manager').getOffers(includeInactive ? TradeOfferManager.EOfferFilter.All : TradeOfferManager.EOfferFilter.ActiveOnly, callback);
+    require('../lib/manager').getOffers(includeInactive ? TradeOfferManager.EOfferFilter.All : TradeOfferManager.EOfferFilter.ActiveOnly, undefined, callback);
 }
 
 /**
