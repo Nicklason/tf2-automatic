@@ -1,7 +1,7 @@
 const SteamUser = require('steam-user');
 const pluralize = require('pluralize');
 
-const package = require('../../package.json');
+const packageInfo = require('../../package.json');
 
 const prices = require('../prices');
 const listingManager = require('../../lib/bptf-listings');
@@ -11,9 +11,9 @@ exports.onRun = require('../handler/init');
 exports.onShutdown = require('../handler/shutdown');
 
 exports.onReady = function () {
-    log.info(package.name + ' v' + package.version + ' is ready! ' + pluralize('item', prices.getPricelist().length, true) + ' in pricelist, ' + pluralize('listing', listingManager.listings.length, true) + ' on www.backpack.tf (cap: ' + listingManager.cap + ')');
+    log.info(packageInfo.name + ' v' + packageInfo.version + ' is ready! ' + pluralize('item', prices.getPricelist().length, true) + ' in pricelist, ' + pluralize('listing', listingManager.listings.length, true) + ' on www.backpack.tf (cap: ' + listingManager.cap + ')');
 
-    this.gamesPlayed(package.name);
+    this.gamesPlayed(packageInfo.name);
     this.setPersona(SteamUser.EPersonaState.Online);
 
     // Smelt metal if needed
@@ -32,13 +32,13 @@ exports.onReady = function () {
 };
 
 exports.onTF2QueueCompleted = function () {
-    this.gamesPlayed(package.name);
+    this.gamesPlayed(packageInfo.name);
 };
 
 exports.onLogin = function () {
     if (exports.isReady()) {
         // We have relogged, set game and online
-        this.gamesPlayed(package.name);
+        this.gamesPlayed(packageInfo.name);
         this.setPersona(SteamUser.EPersonaState.Online);
     }
 };

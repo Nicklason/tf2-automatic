@@ -27,7 +27,7 @@ const TradeOffer = require('steam-tradeoffer-manager/lib/classes/TradeOffer');
     TradeOffer.prototype[v] = require('./app/utils/offer/' + v);
 });
 
-const package = require('./package.json');
+const packageInfo = require('./package.json');
 
 require('death')({ uncaughtException: true })(function (signal, err) {
     const crashed = typeof err !== 'string';
@@ -38,8 +38,8 @@ require('death')({ uncaughtException: true })(function (signal, err) {
         }
 
         log.error([
-            package.name + (!handler.isReady() ? ' failed to start properly, this is most likely a temporary error. See the log:' : ' crashed! Please create an issue with the following log:'),
-            `package.version: ${package.version || undefined}; node: ${process.version} ${process.platform} ${process.arch}}`,
+            packageInfo.name + (!handler.isReady() ? ' failed to start properly, this is most likely a temporary error. See the log:' : ' crashed! Please create an issue with the following log:'),
+            `package.version: ${packageInfo.version || undefined}; node: ${process.version} ${process.platform} ${process.arch}}`,
             'Stack trace:',
             require('util').inspect(err)
         ].join('\r\n'));
@@ -82,7 +82,7 @@ const community = require('./lib/community');
 const schemaManager = require('./lib/tf2-schema');
 const listingManager = require('./lib/bptf-listings');
 
-log.info(package.name + ' v' + package.version + ' is starting...');
+log.info(packageInfo.name + ' v' + packageInfo.version + ' is starting...');
 
 start();
 
