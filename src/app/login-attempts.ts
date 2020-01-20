@@ -7,11 +7,11 @@ const loginPeriodTime = 60 * 1000;
 
 let loginAttempts = [];
 
-exports.setAttempts = function (attempts) {
+export function setAttempts (attempts) {
     loginAttempts = attempts.sort((a, b) => a - b).map((attempt) => moment.unix(attempt));
 };
 
-exports.wait = function () {
+export function wait () {
     const attemptsWithinPeriod = getWithinPeriod(loginPeriodTime);
 
     if (attemptsWithinPeriod.length >= maxLoginAttemptsWithinPeriod) {
@@ -26,7 +26,7 @@ exports.wait = function () {
     return 0;
 };
 
-exports.newAttempt = function () {
+export function newAttempt () {
     cleanup();
 
     loginAttempts.push(moment());

@@ -17,7 +17,7 @@ let startedProcessing = false;
  * @param {Number} defindex Defindex of item to smelt
  * @param {Number} amount Amount of times to repeat the job
  */
-exports.smeltMetal = function (defindex, amount) {
+export function smeltMetal (defindex, amount) {
     if ([5001, 5002].indexOf(defindex) === -1) {
         log.warn('Invalid defindex for smelt job `' + defindex + '`');
         return;
@@ -37,7 +37,7 @@ exports.smeltMetal = function (defindex, amount) {
  * @param {Number} defindex Defindex of item to combine
  * @param {Number} amount Amount of times to repeat the job
  */
-exports.combineMetal = function (defindex, amount) {
+export function combineMetal (defindex, amount) {
     if ([5000, 5001].indexOf(defindex) === -1) {
         log.warn('Invalid defindex for combine job `' + defindex + '`');
         return;
@@ -57,7 +57,7 @@ exports.combineMetal = function (defindex, amount) {
  * @param {String} assetid Assetid of the item to use
  * @param {Function} [callback]
  */
-exports.useItem = function (assetid, callback) {
+export function useItem (assetid, callback) {
     const job = { type: 'use', assetid: assetid };
 
     if (callback !== undefined) {
@@ -74,7 +74,7 @@ exports.useItem = function (assetid, callback) {
  * @param {String} assetid Assetid of the item to delete
  * @param {Function} [callback]
  */
-exports.deleteItem = function (assetid, callback) {
+export function deleteItem (assetid, callback) {
     const job = { type: 'delete', assetid: assetid };
 
     if (callback !== undefined) {
@@ -91,7 +91,7 @@ exports.deleteItem = function (assetid, callback) {
  * @param {Number} type Sort type
  * @param {Function} [callback]
  */
-exports.sortInventory = function (type, callback) {
+export function sortInventory (type, callback) {
     const job = { type: 'sort', sortType: type };
 
     if (callback !== undefined) {
@@ -107,7 +107,7 @@ exports.sortInventory = function (type, callback) {
  * Connects to the TF2 Game Coordinator
  * @param {Function} callback
  */
-exports.connectToGC = function (callback) {
+export function connectToGC (callback) {
     if (!isInTF2()) {
         log.debug('We are not playing TF2');
         client.gamesPlayed([440]);

@@ -11,7 +11,7 @@ import client from '../../lib/client';
 exports.onRun = require('../handler/init');
 exports.onShutdown = require('../handler/shutdown');
 
-exports.onReady = function () {
+export function onReady () {
     log.info(pjson.name + ' v' + pjson.version + ' is ready! ' + pluralize('item', prices.getPricelist().length, true) + ' in pricelist, ' + pluralize('listing', listingManager.listings.length, true) + ' on www.backpack.tf (cap: ' + listingManager.cap + ')');
 
     client.gamesPlayed(pjson.name);
@@ -32,11 +32,11 @@ exports.onReady = function () {
     require('../handler/listings').setupAutobump();
 };
 
-exports.onTF2QueueCompleted = function () {
+export function onTF2QueueCompleted () {
     client.gamesPlayed(pjson.name);
 };
 
-exports.onLogin = function () {
+export function onLogin () {
     // @ts-ignore
     if (exports.isReady()) {
         // We have relogged, set game and online
@@ -45,7 +45,7 @@ exports.onLogin = function () {
     }
 };
 
-exports.onHeartbeat = function (bumped) {
+export function onHeartbeat (bumped) {
     log.debug('Heartbeat sent to www.backpack.tf' + (bumped > 0 ? '; Bumped ' + pluralize('listing', bumped, true) : '') + '.');
 };
 
@@ -56,7 +56,7 @@ exports.onTradeOfferChanged = require('./trades').offerChanged;
 exports.onFriendRelationship = require('./friends').friendRelationChanged;
 exports.onGroupRelationship = require('./groups').groupRelationChanged;
 
-exports.onBptfAuth = function (bptfAuth) {
+export function onBptfAuth (bptfAuth) {
     bptfAuth.private = true;
     log.warn('Please add the backpack.tf API key and access token to the environment variables!', bptfAuth);
 };

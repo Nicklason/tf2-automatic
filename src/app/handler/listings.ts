@@ -29,7 +29,7 @@ let autobumpTimeout;
 /**
  * Checks if autobump is enabled and if the account is premium
  */
-exports.setupAutobump = function () {
+export function setupAutobump () {
     if (process.env.AUTOBUMP !== 'true') {
         // Autobump is not enabled
         return;
@@ -69,7 +69,7 @@ function checkAccountInfo () {
     });
 }
 
-exports.enableAutobump = function () {
+export function enableAutobump () {
     if (autobumpEnabled) {
         return;
     }
@@ -110,7 +110,7 @@ exports.enableAutobump = function () {
     }
 };
 
-exports.disableAutobump = function () {
+export function disableAutobump () {
     clearTimeout(autobumpTimeout);
     autobumpEnabled = false;
 
@@ -140,7 +140,7 @@ function getAccountInfo (callback) {
     });
 }
 
-exports.redoListings = function (callback) {
+export function redoListings (callback) {
     if (callback === undefined) {
         callback = noop;
     }
@@ -150,7 +150,7 @@ exports.redoListings = function (callback) {
     });
 };
 
-exports.checkBySKU = function (sku, data) {
+export function checkBySKU (sku, data) {
     const item = SKU.fromString(sku);
 
     const match = data && data.enabled === false ? null : prices.get(sku, true);
@@ -226,7 +226,7 @@ exports.checkBySKU = function (sku, data) {
  * Checks entire pricelist and updates listings
  * @param {Function} callback
  */
-exports.checkAll = function (callback) {
+export function checkAll (callback) {
     if (callback === undefined) {
         callback = noop;
     }
@@ -294,7 +294,7 @@ function recursiveCheckPricelist (pricelist, done) {
     }
 }
 
-exports.waitForListings = function (callback) {
+export function waitForListings (callback) {
     const next = callbackQueue.add('waitForListings', callback);
     if (!next) {
         return;
@@ -334,7 +334,7 @@ function waitForListings (callback) {
  * Guaranteed way to remove all listings on backpack.tf
  * @param {function} callback
  */
-exports.removeAll = function (callback) {
+export function removeAll (callback) {
     if (checkingAllListings) {
         cancelListingCheck = true;
     }

@@ -20,7 +20,7 @@ friendsToKeep.forEach(function (steamid64) {
 
 let maxFriends = null;
 
-exports.getMaxFriends = function (callback) {
+export function getMaxFriends (callback) {
     request({
         uri: 'https://api.steampowered.com/IPlayerService/GetBadges/v1/',
         method: 'GET',
@@ -60,7 +60,7 @@ exports.getMaxFriends = function (callback) {
     });
 };
 
-exports.checkFriendRequests = function () {
+export function checkFriendRequests () {
     if (!client.myFriends) {
         return;
     }
@@ -150,7 +150,7 @@ function checkFriendsCount (steamIDToIgnore) {
     }
 }
 
-exports.friendRelationChanged = function (steamID, relationship) {
+export function friendRelationChanged (steamID, relationship) {
     if (relationship === SteamUser.EFriendRelationship.Friend) {
         onNewFriend(steamID);
         checkFriendsCount(steamID);
@@ -215,7 +215,7 @@ function respondToFriendRequest (steamID) {
     });
 }
 
-exports.isFriend = function (steamID) {
+export function isFriend (steamID) {
     const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
 
     const relation = client.myFriends[steamID64];
@@ -223,7 +223,7 @@ exports.isFriend = function (steamID) {
     return relation === SteamUser.EFriendRelationship.Friend;
 };
 
-exports.getFriend = function (steamID) {
+export function getFriend (steamID) {
     const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
 
     const friend = client.users[steamID64];

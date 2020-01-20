@@ -9,7 +9,7 @@ let filesBeingSaved = 0;
  * @param {Boolean} json If what you are reading is JSON and you want to parse it
  * @param {Function} callback
  */
-exports.readFile = function (p, json, callback) {
+export function readFile (p, json, callback) {
     if (typeof json === 'function') {
         callback = json;
         json = false;
@@ -51,7 +51,7 @@ exports.readFile = function (p, json, callback) {
  * @param {Boolean} json If you want to stringify the data you are writing
  * @param {Function} callback
  */
-exports.writeFile = function (p, data, json, callback) {
+export function writeFile (p, data, json, callback) {
     if (typeof json === 'function') {
         callback = json;
         json = false;
@@ -87,7 +87,7 @@ exports.writeFile = function (p, data, json, callback) {
     }
 };
 
-exports.isWritingToFiles = function () {
+export function isWritingToFiles () {
     return filesBeingSaved !== 0;
 };
 

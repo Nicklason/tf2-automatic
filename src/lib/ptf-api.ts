@@ -2,19 +2,19 @@ import request from '@nicklason/request-retry';
 
 import pjson from 'pjson';
 
-exports.getSchema = function (callback) {
+export function getSchema (callback) {
     apiRequest('GET', '/schema', { appid: 440 }, callback);
 };
 
-exports.getPricelist = function (source, callback) {
+export function getPricelist (source, callback) {
     apiRequest('GET', '/items', { src: source }, callback);
 };
 
-exports.getPrice = function (sku, source, callback) {
+export function getPrice (sku, source, callback) {
     apiRequest('GET', `/items/${sku}`, { src: source }, callback);
 };
 
-exports.requestCheck = function (sku, source, callback) {
+export function requestCheck (sku, source, callback) {
     apiRequest('POST', `/items/${sku}`, { source: source }, callback);
 };
 

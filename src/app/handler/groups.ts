@@ -14,7 +14,7 @@ groups.forEach(function (steamid64) {
     }
 });
 
-exports.inviteToGroups = function (steamID) {
+export function inviteToGroups (steamID) {
     if (!friends.isFriend(steamID)) {
         return;
     }
@@ -33,7 +33,7 @@ exports.inviteToGroups = function (steamID) {
     });
 };
 
-exports.groupRelationChanged = function (steamID, relationship) {
+export function groupRelationChanged (steamID, relationship) {
     log.debug('Group relation changed', { steamID: steamID, relationship: relationship });
     if (relationship === SteamUser.EClanRelationship.Invited) {
         const join = groups.indexOf(steamID.getSteamID64()) === -1;
@@ -45,7 +45,7 @@ exports.groupRelationChanged = function (steamID, relationship) {
     }
 };
 
-exports.checkGroupInvites = function () {
+export function checkGroupInvites () {
     log.debug('Checking group invites', { groups: client.myGroups });
     for (const steamID in client.myGroups) {
         if (!Object.prototype.hasOwnProperty.call(client.myGroups, steamID)) {

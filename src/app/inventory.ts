@@ -11,7 +11,7 @@ let nonTradableDictionary = {};
  * @param {Object|String} steamID SteamID object or steamid64
  * @param {Function} callback
  */
-exports.getInventory = function (steamID, callback) {
+export function getInventory (steamID, callback) {
     const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
     const isOurInv = manager.steamID.getSteamID64() === steamID64;
 
@@ -36,7 +36,7 @@ exports.getInventory = function (steamID, callback) {
  * @param {Boolean} [includeInTrade=true]
  * @param {Function} callback
  */
-exports.getDictionary = function (steamID, includeInTrade, callback) {
+export function getDictionary (steamID, includeInTrade, callback) {
     if (typeof includeInTrade === 'function') {
         callback = includeInTrade;
         includeInTrade = true;
@@ -68,7 +68,7 @@ exports.getDictionary = function (steamID, includeInTrade, callback) {
  * @param {Boolean} [onlyTradable=true]
  * @return {Object}
  */
-exports.getOwnInventory = function (onlyTradable = true) {
+export function getOwnInventory (onlyTradable = true) {
     const inventory = Object.assign({}, dictionary);
 
     if (onlyTradable) {
@@ -88,7 +88,7 @@ exports.getOwnInventory = function (onlyTradable = true) {
     return inventory;
 };
 
-exports.filterInTrade = function (dict) {
+export function filterInTrade (dict) {
     const filtered = {};
 
     const itemsInTrade = require('./trade').inTrade();
@@ -110,7 +110,7 @@ exports.filterInTrade = function (dict) {
  * @param {String} sku
  * @return {Number}
  */
-exports.getAmount = function (sku) {
+export function getAmount (sku) {
     return exports.findBySKU(sku).length;
 };
 
@@ -119,7 +119,7 @@ exports.getAmount = function (sku) {
  * @param {String} assetid
  * @return {Object}
  */
-exports.findByAssetid = function (assetid) {
+export function findByAssetid (assetid) {
     const inventory = exports.getOwnInventory(false);
 
     for (const sku in inventory) {
@@ -143,7 +143,7 @@ exports.findByAssetid = function (assetid) {
  * @param {Boolean} [includeInTrade=true]
  * @return {Array<String>}
  */
-exports.findBySKU = function (sku, includeInTrade = true) {
+export function findBySKU (sku, includeInTrade = true) {
     const assetids = (dictionary[sku] || []);
 
     if (includeInTrade) {
@@ -154,7 +154,7 @@ exports.findBySKU = function (sku, includeInTrade = true) {
     return assetids.filter((assetid) => itemsInTrade.indexOf(assetid) === -1);
 };
 
-exports.amountCanTrade = function (sku, buy) {
+export function amountCanTrade (sku, buy) {
     const amount = exports.getAmount(sku);
 
     const match = prices.get(sku);
@@ -174,7 +174,7 @@ exports.amountCanTrade = function (sku, buy) {
     return canTrade > 0 ? canTrade : 0;
 };
 
-exports.isOverstocked = function (sku, buying, diff) {
+export function isOverstocked (sku, buying, diff) {
     return exports.amountCanTrade(sku, buying) + (buying ? -diff : diff) < 0;
 };
 
@@ -184,7 +184,7 @@ exports.isOverstocked = function (sku, buying, diff) {
  * @param {Boolean} [amount=false] If you want assetids or counts
  * @return {Object}
  */
-exports.getCurrencies = function (dict, amount = false) {
+export function getCurrencies (dict, amount = false) {
     const currencies = {
         '5021;6': dict['5021;6'] || [],
         '5002;6': dict['5002;6'] || [],
@@ -209,7 +209,7 @@ exports.getCurrencies = function (dict, amount = false) {
  * Removes an item from our cached inventory
  * @param {String} assetid
  */
-exports.removeItem = function (assetid) {
+export function removeItem (assetid) {
     for (const sku in dictionary) {
         if (!Object.prototype.hasOwnProperty.call(dictionary, sku)) {
             continue;
@@ -231,7 +231,7 @@ exports.removeItem = function (assetid) {
  * @param {String} sku
  * @param {String} assetid
  */
-exports.addItem = function (sku, assetid) {
+export function addItem (sku, assetid) {
     (dictionary[sku] = (dictionary[sku] || [])).push(assetid);
 };
 
@@ -240,7 +240,7 @@ exports.addItem = function (sku, assetid) {
  * @param {Array<Object>} items
  * @return {Object}
  */
-exports.createDictionary = function (items) {
+export function createDictionary (items) {
     const dict = {};
 
     for (let i = 0; i < items.length; i++) {

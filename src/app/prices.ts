@@ -18,7 +18,7 @@ let pricelist = [];
 let keyPrices = null;
 const handling = [];
 
-exports.init = function (callback) {
+export function init (callback) {
     log.debug('Setting up pricelist');
 
     socket.removeListener('price', handlePriceChange);
@@ -119,7 +119,7 @@ exports.init = function (callback) {
  * @param {Object} currenciesDict Object containing all pure available
  * @return {Number}
  */
-exports.amountCanAfford = function (buying, useKeys, currencies, currenciesDict) {
+export function amountCanAfford (buying, useKeys, currencies, currenciesDict) {
     const keyPrice = exports.getKeyPrice();
 
     const value = currencies.toValue(keyPrice.metal);
@@ -147,7 +147,7 @@ exports.amountCanAfford = function (buying, useKeys, currencies, currenciesDict)
     return Math.floor(totalValue / value);
 };
 
-exports.setPricelist = function (prices) {
+export function setPricelist (prices) {
     if (!Array.isArray(prices)) {
         throw new Error('Pricelist is not an array');
     }
@@ -167,11 +167,11 @@ exports.setPricelist = function (prices) {
     pricelist = prices;
 };
 
-exports.getPricelist = function () {
+export function getPricelist () {
     return pricelist;
 };
 
-exports.getKeyPrice = function () {
+export function getKeyPrice () {
     return keyPrices.sell;
 };
 
@@ -204,7 +204,7 @@ function handlePriceChange (data) {
  * @param {Boolean} [enabledOnly=true]
  * @return {null|Object|Array<String>}
  */
-exports.searchByName = function (search, enabledOnly = true) {
+export function searchByName (search, enabledOnly = true) {
     search = search.toLowerCase();
 
     const match = [];
@@ -246,14 +246,14 @@ exports.searchByName = function (search, enabledOnly = true) {
     return match.map((entry) => entry.name);
 };
 
-exports.get = function (sku, onlyEnabled = false) {
+export function get (sku, onlyEnabled = false) {
     const name = schemaManager.schema.getName(SKU.fromString(sku));
     const match = pricelist.find((v) => v.name === name);
 
     return match === undefined || (onlyEnabled && match.enabled !== true) ? null : match;
 };
 
-exports.add = function (sku, data, callback) {
+export function add (sku, data, callback) {
     if (sku === undefined) {
         callback(new Error('Missing sku'));
         return;
@@ -360,7 +360,7 @@ function add (entry, emit) {
     }
 }
 
-exports.update = function (sku, data, callback) {
+export function update (sku, data, callback) {
     const match = exports.get(sku, false);
 
     if (match === null) {
@@ -441,7 +441,7 @@ exports.update = function (sku, data, callback) {
     });
 };
 
-exports.remove = function (sku, callback) {
+export function remove (sku, callback) {
     const match = remove(sku, true);
 
     if (match === null) {

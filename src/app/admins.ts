@@ -10,7 +10,7 @@ admins.forEach(function (steamid64) {
     }
 });
 
-exports.message = function (message) {
+export function message (message) {
     if (process.env.ALERTS === 'none') {
         return;
     }
@@ -20,11 +20,11 @@ exports.message = function (message) {
     });
 };
 
-exports.isAdmin = function (steamID) {
+export function isAdmin (steamID) {
     const steamid64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
     return admins.indexOf(steamid64) !== -1;
 };
 
-exports.getAdmins = function () {
+export function getAdmins () {
     return admins;
 };

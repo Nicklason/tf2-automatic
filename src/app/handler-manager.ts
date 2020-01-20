@@ -184,7 +184,7 @@ let exiting = false;
  * Prepares the handler
  * @throw Throws an error if missing handler or if there is a problem with the handler
  */
-exports.setup = function () {
+export function setup () {
     let handlerPath;
 
     if (process.env.HANDLER_PATH !== undefined) {
@@ -227,19 +227,19 @@ exports.setup = function () {
     bindThis();
 };
 
-exports.isReady = function () {
+export function isReady () {
     return isReady;
 };
 
-exports.isShuttingDown = function () {
+export function isShuttingDown () {
     return shutdownCount > 0;
 };
 
-exports.shutdownRequested = function () {
+export function shutdownRequested () {
     return shutdownRequested;
 };
 
-exports.setReady = function () {
+export function setReady () {
     isReady = true;
 };
 
@@ -331,6 +331,6 @@ function noop () {}
  * Gets the handler
  * @return {Object}
  */
-exports.getHandler = function () {
+export function getHandler () {
     return handler;
 };

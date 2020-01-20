@@ -7,7 +7,7 @@ import pjson from 'pjson';
 // Maybe save latest notified version to a file?
 let lastNotifiedVersion = pjson.version;
 
-exports.getLatestVersion = function (callback) {
+export function getLatestVersion (callback) {
     request({
         method: 'GET',
         url: 'https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json',
@@ -21,7 +21,7 @@ exports.getLatestVersion = function (callback) {
     });
 };
 
-exports.checkForUpdates = function (callback) {
+export function checkForUpdates (callback) {
     if (!callback) {
         callback = noop;
     }
@@ -44,7 +44,7 @@ exports.checkForUpdates = function (callback) {
     });
 };
 
-exports.startVersionChecker = function () {
+export function startVersionChecker () {
     exports.checkForUpdates();
 
     // Check for updates every 10 minutes

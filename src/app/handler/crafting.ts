@@ -4,7 +4,7 @@ import * as crafting from '../crafting';
 const minimumScrap = process.env.MINIMUM_SCRAP ? parseInt(process.env.MINIMUM_SCRAP) : 6;
 const minimumReclaimed = process.env.MINIMUM_RECLAIMED ? parseInt(process.env.MINIMUM_RECLAIMED) : 6;
 
-exports.keepMetalSupply = function () {
+export function keepMetalSupply () {
     const dict = inventory.getOwnInventory();
     const currencies = inventory.getCurrencies(dict, true);
 

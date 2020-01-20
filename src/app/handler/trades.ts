@@ -16,7 +16,7 @@ const isAdmin = admin.isAdmin;
 import checkBanned from '../utils/isBanned';
 import communityLoginCallback from '../utils/communityLoginCallback';
 
-exports.getTradesWithPeople = function (steamIDs) {
+export function getTradesWithPeople (steamIDs) {
     // Go through polldata data
 
     const tradesBySteamID = {};
@@ -42,7 +42,7 @@ exports.getTradesWithPeople = function (steamIDs) {
     return tradesBySteamID;
 };
 
-exports.getActiveOffer = function (steamID) {
+export function getActiveOffer (steamID) {
     const pollData = require('../../lib/manager').pollData;
 
     if (!pollData.offerData) {
@@ -73,7 +73,7 @@ exports.getActiveOffer = function (steamID) {
     return null;
 };
 
-exports.createOffer = function (details, callback) {
+export function createOffer (details, callback) {
     const partner = details.steamid;
     const match = prices.get(details.sku, true);
 
@@ -549,7 +549,7 @@ function constructOffer (buyerCurrencies, price, useKeys) {
     };
 }
 
-exports.newOffer = function (offer, done) {
+export function newOffer (offer, done) {
     offer.log('info', 'is being processed...');
 
     const items = {
@@ -830,7 +830,7 @@ function checkEscrow (offer, callback) {
     });
 }
 
-exports.offerChanged = function (offer, oldState) {
+export function offerChanged (offer, oldState) {
     // Not sure if it can go from other states to active
     if (oldState === TradeOfferManager.ETradeOfferState.Accepted) {
         offer.data('switchedState', oldState);

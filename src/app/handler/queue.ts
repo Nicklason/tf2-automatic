@@ -7,17 +7,17 @@ import client from '../../lib/client';
 const queue = [];
 let processingQueue = false;
 
-exports.getQueue = function () {
+export function getQueue () {
     return queue;
 };
 
-exports.getPosition = function (steamID) {
+export function getPosition (steamID) {
     const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
 
     return queue.findIndex((v) => v.steamid === steamID64);
 };
 
-exports.addRequestedTrade = function (steamID, sku, amount, buying) {
+export function addRequestedTrade (steamID, sku, amount, buying) {
     const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
 
     const entry = {
@@ -37,7 +37,7 @@ exports.addRequestedTrade = function (steamID, sku, amount, buying) {
     return queue.length - 1;
 };
 
-exports.handleQueue = function () {
+export function handleQueue () {
     if (processingQueue || queue.length === 0) {
         return;
     }

@@ -243,7 +243,7 @@ function getItemFromParams (steamID, params) {
     return fixItem(item);
 }
 
-exports.handleMessage = function (steamID, message) {
+export function handleMessage (steamID, message) {
     const steamID64 = steamID.getSteamID64();
 
     const isFriend = friends.isFriend(steamID64);

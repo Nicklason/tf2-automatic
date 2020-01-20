@@ -17,7 +17,7 @@ let processingOffer = false;
  * This function is called when polldata is emitted by the manager
  * @param {Object} pollData
  */
-exports.onPollData = function (pollData) {
+export function onPollData (pollData) {
     // Remove data from old offers
 
     const current = Math.round(new Date().getTime() / 1000);
@@ -53,7 +53,7 @@ exports.onPollData = function (pollData) {
     handlerManager.getHandler().onPollData(pollData);
 };
 
-exports.setPollData = function (pollData) {
+export function setPollData (pollData) {
     // Go through sent and received offers
 
     const activeOrCreatedNeedsConfirmation = [];
@@ -102,7 +102,7 @@ exports.setPollData = function (pollData) {
  * @param {Object} offer
  * @param {Number} oldState
  */
-exports.offerChanged = function (offer, oldState) {
+export function offerChanged (offer, oldState) {
     const inventoryManager = require('./inventory');
 
     offer.log('verbose', 'state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
@@ -161,7 +161,7 @@ exports.offerChanged = function (offer, oldState) {
  * Called when a new offer is received
  * @param {Object} offer
  */
-exports.newOffer = function (offer) {
+export function newOffer (offer) {
     if (offer.isGlitched()) {
         // The offer is glitched, skip it
         log.debug('Offer is glitched', { offer_id: offer.id });
@@ -185,7 +185,7 @@ exports.newOffer = function (offer) {
  * Get items that are being traded
  * @return {Array<String>}
  */
-exports.inTrade = function () {
+export function inTrade () {
     return itemsInTrade;
 };
 
@@ -193,7 +193,7 @@ exports.inTrade = function () {
  * Removes an item from the items in trade list
  * @param {String} assetid
  */
-exports.unsetItemInTrade = function (assetid) {
+export function unsetItemInTrade (assetid) {
     const index = itemsInTrade.indexOf(assetid);
 
     if (index !== -1) {
@@ -205,7 +205,7 @@ exports.unsetItemInTrade = function (assetid) {
  * Adds an item to the items in trade list
  * @param {String} assetid
  */
-exports.setItemInTrade = function (assetid) {
+export function setItemInTrade (assetid) {
     const index = itemsInTrade.indexOf(assetid);
 
     if (index === -1) {
@@ -236,7 +236,7 @@ function enqueueOffer (offer) {
  * @param {Object} offer
  * @param {Function} callback
  */
-exports.sendOffer = function (offer, callback) {
+export function sendOffer (offer, callback) {
     if (callback === undefined) {
         callback = noop;
     }
@@ -449,7 +449,7 @@ function mapItem (item) {
     };
 }
 
-exports.acceptOffer = function (offer, callback) {
+export function acceptOffer (offer, callback) {
     if (callback === undefined) {
         callback = noop;
     }
@@ -547,7 +547,7 @@ function acceptOfferRetry (offer, callback, tries = 0) {
     });
 }
 
-exports.declineOffer = function (offer, callback) {
+export function declineOffer (offer, callback) {
     if (callback === undefined) {
         callback = noop;
     }
@@ -566,7 +566,7 @@ exports.declineOffer = function (offer, callback) {
     });
 };
 
-exports.cancelOffer = function (offer, callback) {
+export function cancelOffer (offer, callback) {
     if (callback === undefined) {
         callback = noop;
     }

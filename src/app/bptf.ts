@@ -8,7 +8,7 @@ import * as handlerManager from './handler-manager';
 
 let hasLoggedIn = false;
 
-exports.setup = function (callback) {
+export function setup (callback) {
     async.series([
         function (callback) {
             getAPICredentials(callback);
