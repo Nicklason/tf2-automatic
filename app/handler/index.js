@@ -6,6 +6,7 @@ const packageInfo = require('../../package.json');
 const prices = require('../prices');
 const listingManager = require('../../lib/bptf-listings');
 const log = require('../../lib/logger');
+const client = require('../../lib/client');
 
 exports.onRun = require('../handler/init');
 exports.onShutdown = require('../handler/shutdown');
@@ -13,8 +14,8 @@ exports.onShutdown = require('../handler/shutdown');
 exports.onReady = function () {
     log.info(packageInfo.name + ' v' + packageInfo.version + ' is ready! ' + pluralize('item', prices.getPricelist().length, true) + ' in pricelist, ' + pluralize('listing', listingManager.listings.length, true) + ' on www.backpack.tf (cap: ' + listingManager.cap + ')');
 
-    this.gamesPlayed(packageInfo.name);
-    this.setPersona(SteamUser.EPersonaState.Online);
+    client.gamesPlayed(packageInfo.name);
+    client.setPersona(SteamUser.EPersonaState.Online);
 
     // Smelt metal if needed
     require('../handler/crafting').keepMetalSupply();
@@ -32,14 +33,14 @@ exports.onReady = function () {
 };
 
 exports.onTF2QueueCompleted = function () {
-    this.gamesPlayed(packageInfo.name);
+    client.gamesPlayed(packageInfo.name);
 };
 
 exports.onLogin = function () {
     if (exports.isReady()) {
         // We have relogged, set game and online
-        this.gamesPlayed(packageInfo.name);
-        this.setPersona(SteamUser.EPersonaState.Online);
+        client.gamesPlayed(packageInfo.name);
+        client.setPersona(SteamUser.EPersonaState.Online);
     }
 };
 
