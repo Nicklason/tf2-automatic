@@ -4,6 +4,7 @@ const request = require('@nicklason/request-retry');
 const semver = require('semver');
 const log = require('../lib/logger');
 
+// @ts-ignore
 const package = require('../package.json');
 
 // Maybe save latest notified version to a file?
