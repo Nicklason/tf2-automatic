@@ -918,7 +918,7 @@ exports.handleMessage = function (steamID, message) {
             client.chatMessage(steamID, 'Successfully uploaded new avatar.');
         });
     } else if (isAdmin && command === 'expand') {
-        const assetids = [].concat(inventory.findBySKU('5050;6', false)).concat(inventory.findBySKU('5050;6;uncraftable', false));
+        const assetids = inventory.findBySKU('5050;6', false).concat(inventory.findBySKU('5050;6;uncraftable', false));
 
         if (assetids.length === 0) {
             // No backpack expanders in your inventory.
