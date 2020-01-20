@@ -485,7 +485,7 @@ exports.acceptOffer = function (offer, callback) {
 /**
  * Accepts a confirmation for offer
  * @param {Object} offer
- * @param {Function} callback
+ * @param {Function} [callback]
  */
 function acceptConfirmation (offer, callback) {
     if (callback === undefined) {
