@@ -78,7 +78,7 @@ exports.getActiveOffer = function (steamID) {
 };
 
 exports.addToCart = function (steamID, sku, amount, deposit) {
-    const side = deposit ? 'itemsToReceive' : 'itemsToGive';
+    const side = deposit ? 'their' : 'our';
 
     const name = schemaManager.schema.getName(SKU.fromString(sku));
 
@@ -112,8 +112,8 @@ exports.addToCart = function (steamID, sku, amount, deposit) {
 function _addToCart (steamID, sku, name, amount, side) {
     if (cart[steamID] === undefined) {
         cart[steamID] = {
-            itemsToGive: {},
-            itemsToReceive: {}
+            our: {},
+            their: {}
         };
     }
 
@@ -142,7 +142,7 @@ exports.removeFromCart = function (steamID, name, amount, our, all = false) {
 
     let message;
 
-    const side = our ? 'itemsToGive' : 'itemsToReceive';
+    const side = our ? 'our' : 'their';
 
     if (all) {
         message = 'Your cart has been emptied';
@@ -176,7 +176,7 @@ function _removeFromCart (steamID, name, amount, side, all = false) {
             delete cart[steamID][side][name];
         }
 
-        if (Object.getOwnPropertyNames(cart[steamID]['itemsToGive']).length === 0 && Object.getOwnPropertyNames(cart[steamID]['itemsToReceive']).length === 0) {
+        if (Object.getOwnPropertyNames(cart[steamID].our).length === 0 && Object.getOwnPropertyNames(cart[steamID].their).length === 0) {
             // Remove user's cart if it's empty
             delete cart[steamID];
         }
@@ -191,28 +191,28 @@ exports.customOffer = function (partner, callback) {
         return;
     }
 
-    const alteredItems = { itemsToGive: [], itemsToReceive: [] };
+    const alteredItems = { our: [], their: [] };
     let alteredMessage;
 
     // Check if we have all the items requested
-    for (const name in cart[partner]['itemsToGive']) {
-        if (!Object.prototype.hasOwnProperty.call(cart[partner]['itemsToGive'], name)) {
+    for (const name in cart[partner].our) {
+        if (!Object.prototype.hasOwnProperty.call(cart[partner].our, name)) {
             continue;
         }
 
-        const amountCanTrade = inventory.findBySKU(cart[partner]['itemsToGive'][name].sku, false).length;
+        const amountCanTrade = inventory.findBySKU(cart[partner].our[name].sku, false).length;
 
-        if (cart[partner]['itemsToGive'][name].amount > amountCanTrade) {
+        if (cart[partner].our[name].amount > amountCanTrade) {
             if (amountCanTrade === 0) {
-                delete cart[partner]['itemsToGive'][name];
+                delete cart[partner].our[name];
             } else {
-                cart[partner]['itemsToGive'][name].amount = amountCanTrade;
+                cart[partner].our[name].amount = amountCanTrade;
             }
-            alteredItems['itemsToGive'].push(name);
+            alteredItems.our.push(name);
         }
     }
 
-    if (Object.getOwnPropertyNames(cart[partner]['itemsToGive']).length === 0 && Object.getOwnPropertyNames(cart[partner]['itemsToReceive']).length === 0) {
+    if (Object.getOwnPropertyNames(cart[partner].our).length === 0 && Object.getOwnPropertyNames(cart[partner].their).length === 0) {
         alteredMessage = createAlteredMessage(alteredItems, partner);
         callback(null, alteredMessage);
         return;
@@ -226,13 +226,13 @@ exports.customOffer = function (partner, callback) {
     const itemsDiff = {};
 
     // Add our items to the trade
-    for (const name in cart[partner]['itemsToGive']) {
-        if (!Object.prototype.hasOwnProperty.call(cart[partner]['itemsToGive'], name)) {
+    for (const name in cart[partner].our) {
+        if (!Object.prototype.hasOwnProperty.call(cart[partner].our, name)) {
             continue;
         }
 
-        const sku = cart[partner]['itemsToGive'][name].sku;
-        const amount = cart[partner]['itemsToGive'][name].amount;
+        const sku = cart[partner].our[name].sku;
+        const amount = cart[partner].our[name].amount;
 
         const assetids = inventory.findBySKU(sku, false);
 
@@ -245,16 +245,16 @@ exports.customOffer = function (partner, callback) {
             });
         }
 
-        itemsDict['our'][sku] = amount;
+        itemsDict.our[sku] = amount;
         itemsDiff[sku] = amount*(-1);
     }
 
-    if (Object.getOwnPropertyNames(cart[partner]['itemsToReceive']).length === 0) {
+    if (Object.getOwnPropertyNames(cart[partner].their).length === 0) {
         // We are not taking any items, don't request their inventory
 
         alteredMessage = createAlteredMessage(alteredItems, partner);
 
-        if (Object.getOwnPropertyNames(cart[partner]['itemsToGive']).length === 0) {
+        if (Object.getOwnPropertyNames(cart[partner].our).length === 0) {
             exports.removeFromCart(true, partner);
             callback(null, alteredMessage);
             return;
@@ -305,30 +305,30 @@ exports.customOffer = function (partner, callback) {
             return callback(null, 'Failed to load inventories, Steam might be down');
         }
 
-        for (const name in cart[partner]['itemsToReceive']) {
-            if (!Object.prototype.hasOwnProperty.call(cart[partner]['itemsToReceive'], name)) {
+        for (const name in cart[partner].their) {
+            if (!Object.prototype.hasOwnProperty.call(cart[partner].their, name)) {
                 continue;
             }
 
-            const sku = cart[partner]['itemsToReceive'][name].sku;
+            const sku = cart[partner].their[name].sku;
 
-            const assetids = inventory.findBySKU(sku, true, theirDict);
+            const assetids = (theirDict[sku] || []);
             const amountCanTrade = assetids.length;
 
-            if (cart[partner]['itemsToReceive'][name].amount > amountCanTrade) {
+            if (cart[partner].their[name].amount > amountCanTrade) {
                 if (amountCanTrade === 0) {
-                    delete cart[partner]['itemsToReceive'][name];
+                    delete cart[partner].their[name];
                 } else {
-                    cart[partner]['itemsToReceive'][name].amount = amountCanTrade;
+                    cart[partner].their[name].amount = amountCanTrade;
                 }
-                alteredItems['itemsToReceive'].push(name);
+                alteredItems.their.push(name);
             }
 
-            if (cart[partner]['itemsToReceive'][name] === undefined) {
+            if (cart[partner].their[name] === undefined) {
                 continue;
             }
 
-            const amount = cart[partner]['itemsToReceive'][name].amount;
+            const amount = cart[partner].their[name].amount;
 
             for (let i = 0; i < amount; i++) {
                 offer.addTheirItem({
@@ -339,13 +339,13 @@ exports.customOffer = function (partner, callback) {
                 });
             }
 
-            itemsDict['their'][sku] = amount;
+            itemsDict.their[sku] = amount;
             itemsDiff[sku] = (itemsDiff[sku] || 0) + amount;
         }
 
         alteredMessage = createAlteredMessage(alteredItems, partner);
 
-        if ((Object.getOwnPropertyNames(cart[partner]['itemsToReceive']).length === 0) && (Object.getOwnPropertyNames(cart[partner]['itemsToGive']).length === 0)) {
+        if ((Object.getOwnPropertyNames(cart[partner].their).length === 0) && (Object.getOwnPropertyNames(cart[partner].our).length === 0)) {
             exports.removeFromCart(true, partner);
             callback(null, alteredMessage);
             return;
@@ -399,11 +399,10 @@ function createAlteredMessage (alteredItems, steamID) {
     const none = { our: [], their: [] };
     const some = { our: [], their: [] };
 
-    ['itemsToGive', 'itemsToReceive'].forEach((side, i) => {
-        const whose = i ? 'their' : 'our';
-        alteredItems[side].forEach((name) => {
-            if (cart[steamID][side][name]) {
-                some[whose].push({ name, amount: cart[steamID][side][name].amount });
+    ['our', 'their'].forEach((whose) => {
+        alteredItems[whose].forEach((name) => {
+            if (cart[steamID][whose][name]) {
+                some[whose].push({ name, amount: cart[steamID][whose][name].amount });
             } else {
                 none[whose].push(name);
             }
