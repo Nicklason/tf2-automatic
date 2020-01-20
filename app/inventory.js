@@ -142,22 +142,12 @@ exports.findByAssetid = function (assetid) {
  * Returns all assetids with a matching sku
  * @param {String} sku
  * @param {Boolean} [includeInTrade=true]
- * @param {Object} [dict=undefined] Optional, use when searching different inventory
  * @return {Array<Object>}
  */
-exports.findBySKU = function (sku, includeInTrade = true, dict = undefined) {
-    if (typeof includeInTrade === 'object') {
-        dict = includeInTrade;
-        includeInTrade = true;
-    }
+exports.findBySKU = function (sku, includeInTrade = true) {
+    const assetids = (dictionary[sku] || []);
 
-    if (dict === undefined) {
-        dict = {};
-    }
-
-    const assetids = ((dict[sku] || dictionary[sku]) || []);
-
-    if (includeInTrade || dict !== undefined) {
+    if (includeInTrade) {
         return assetids;
     }
 
