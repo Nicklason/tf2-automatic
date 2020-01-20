@@ -1003,16 +1003,16 @@ function stringifyCart (cart) {
     let message = '== YOUR CART ==';
 
     message += '\n\nMy side (items you will receive):';
-    for (const name in cart['itemsToGive']) {
-        if (Object.prototype.hasOwnProperty.call(cart['itemsToGive'], name)) {
-            message += '\n- ' + cart['itemsToGive'][name].amount + 'x ' + name;
+    for (const name in cart.our) {
+        if (Object.prototype.hasOwnProperty.call(cart.our, name)) {
+            message += '\n- ' + cart.our[name].amount + 'x ' + name;
         }
     }
 
     message += '\n\nYour side (items you will lose):';
-    for (const name in cart['itemsToReceive']) {
-        if (Object.prototype.hasOwnProperty.call(cart['itemsToReceive'], name)) {
-            message += '\n- ' + cart['itemsToReceive'][name].amount + 'x ' + name;
+    for (const name in cart.their) {
+        if (Object.prototype.hasOwnProperty.call(cart.their, name)) {
+            message += '\n- ' + cart.their[name].amount + 'x ' + name;
         }
     }
 
