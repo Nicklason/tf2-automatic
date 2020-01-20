@@ -28,6 +28,11 @@ module.exports = function () {
         item.target = getTarget(this);
     }
 
+    if (this.market_hash_name === 'Unusual A Head Full of Hot Air') {
+        console.log(item);
+        console.log(this);
+    }
+
     // Adds missing properties
     return fixItem(SKU.fromString(SKU.fromObject(item)));
 };
@@ -129,7 +134,7 @@ function getEffect (item) {
         return null;
     }
 
-    const effects = item.descriptions.filter((description) => description.value[0] === '\u2605');
+    const effects = item.descriptions.filter((description) => description.value.startsWith('★ Unusual Effect: '));
 
     if (effects.length !== 1) {
         return null;
