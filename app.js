@@ -1,3 +1,5 @@
+// @ts-check
+
 try {
     require('module-alias/register');
 } catch (err) {
@@ -9,13 +11,13 @@ try {
 const dotenv = require('dotenv');
 dotenv.config();
 
-const log = require('lib/logger');
+const log = require('./lib/logger');
 
 if (process.env.pm_id === undefined) {
     log.warn('You are not running the bot with PM2! If the bot crashes it won\'t start again, see the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
 }
 
-const handlerManager = require('app/handler-manager');
+const handlerManager = require('./app/handler-manager');
 handlerManager.setup();
 
 const handler = handlerManager.getHandler();
@@ -35,7 +37,7 @@ const TradeOffer = require('steam-tradeoffer-manager/lib/classes/TradeOffer');
     TradeOffer.prototype[v] = require('utils/offer/' + v);
 });
 
-const package = require('@root/package.json');
+const package = require('./package.json');
 
 require('death')({ uncaughtException: true })(function (signal, err) {
     const crashed = typeof err !== 'string';
@@ -79,16 +81,16 @@ const SteamUser = require('steam-user');
 const async = require('async');
 
 // Set up node-tf2
-require('lib/tf2');
+require('./lib/tf2');
 
 const pm2 = require('pm2');
 
-const client = require('lib/client');
-const manager = require('lib/manager');
-const community = require('lib/community');
+const client = require('./lib/client');
+const manager = require('./lib/manager');
+const community = require('./lib/community');
 
-const schemaManager = require('lib/tf2-schema');
-const listingManager = require('lib/bptf-listings');
+const schemaManager = require('./lib/tf2-schema');
+const listingManager = require('./lib/bptf-listings');
 
 log.info(package.name + ' v' + package.version + ' is starting...');
 
@@ -121,13 +123,13 @@ function start () {
             log.info('Setting up pricelist...');
 
             // Set up pricelist
-            require('app/prices').init(callback);
+            require('./app/prices').init(callback);
         },
         function (callback) {
             // Sign in to Steam
             log.info('Signing in to Steam...');
 
-            const login = require('app/login');
+            const login = require('./app/login');
 
             const loginKey = opts.loginKey || null;
             let lastLoginFailed = false;
@@ -159,7 +161,7 @@ function start () {
 
             log.verbose('Checking account limitations...');
 
-            require('utils/limitationsCallback')(function (err, limitations) {
+            require('./app/utils/limitationsCallback')(function (err, limitations) {
                 if (err) {
                     return callback(err);
                 }
@@ -182,7 +184,7 @@ function start () {
             log.debug('Waiting for web session...');
 
             // Wait for steamcommunity session
-            require('utils/communityLoginCallback')(false, function (err, v) {
+            require('./app/utils/communityLoginCallback')(false, function (err, v) {
                 if (err) {
                     return callback(err);
                 }
@@ -194,9 +196,9 @@ function start () {
         },
         function (callback) {
             // Sign in to backpack.tf if needed
-            require('lib/bptf-login').setCookies(cookies);
+            require('./lib/bptf-login').setCookies(cookies);
 
-            require('app/bptf').setup(callback);
+            require('./app/bptf').setup(callback);
         },
         function (callback) {
             // Set up tf2-schema
@@ -227,7 +229,7 @@ function start () {
             async.parallel({
                 inventory: function (callback) {
                     // Load inventory
-                    require('app/inventory').getInventory(client.steamID, callback);
+                    require('./app/inventory').getInventory(client.steamID, callback);
                 },
                 listings: function (callback) {
                     // Initialize bptf-listings
@@ -251,13 +253,13 @@ function start () {
             // Create listings
             log.info('Creating listings...');
 
-            require('handler/listings').redoListings(callback);
+            require('./app/handler/listings').redoListings(callback);
         },
         function (callback) {
             // Set up trade offer manager
 
             // Connect to socketio server after creating listings
-            require('lib/ptf-socket').open();
+            require('./lib/ptf-socket').open();
 
             log.info('Getting Steam API key...');
 
@@ -266,7 +268,7 @@ function start () {
         },
         function (callback) {
             // Get friends limit
-            require('handler/friends').getMaxFriends(callback);
+            require('./app/handler/friends').getMaxFriends(callback);
         }
     ], function (item, callback) {
         // Check if we are trying to shut down
@@ -289,6 +291,6 @@ function start () {
         handler.onReady();
 
         // Start version checker
-        require('app/version-check').startVersionChecker();
+        require('./app/version-check').startVersionChecker();
     });
 }
