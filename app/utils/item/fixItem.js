@@ -1,5 +1,3 @@
-// @ts-check
-
 const isObject = require('isobject');
 
 const schemaManager = require('../../../lib/tf2-schema');

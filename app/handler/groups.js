@@ -1,5 +1,3 @@
-// @ts-check
-
 const SteamUser = require('steam-user');
 const SteamID = require('steamid');
 

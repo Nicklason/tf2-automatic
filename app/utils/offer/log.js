@@ -1,5 +1,3 @@
-// @ts-check
-
 const log = require('../../../lib/logger');
 
 module.exports = function (level, message) {

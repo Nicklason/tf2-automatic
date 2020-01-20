@@ -1,5 +1,3 @@
-// @ts-check
-
 const SteamUser = require('steam-user');
 const pluralize = require('pluralize');
 

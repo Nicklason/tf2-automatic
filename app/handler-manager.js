@@ -1,5 +1,3 @@
-// @ts-check
-
 const SteamUser = require('steam-user');
 const path = require('path');
 const isPathInside = require('is-path-inside');

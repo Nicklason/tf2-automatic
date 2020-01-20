@@ -1,5 +1,3 @@
-// @ts-check
-
 const SteamID = require('steamid');
 
 const client = require('../lib/client');

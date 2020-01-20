@@ -1,5 +1,3 @@
-// @ts-check
-
 const log = require('../lib/logger');
 const client = require('../lib/client');
 
