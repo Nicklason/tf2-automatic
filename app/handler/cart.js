@@ -326,7 +326,6 @@ exports.checkout = function (partner, callback) {
                 } else {
                     cart.remove(sku, (amountInCart-amountCanTrade), 'their');
                 }
-                const name = schemaManager.schema.getName(SKU.fromString(sku));
                 alteredItems.their.push(sku);
             }
 
@@ -476,6 +475,10 @@ function createAlteredMessage (steamID, alteredItems) {
 
 exports.stringify = function (steamid) {
     const cart = getCart(steamid);
+
+    if (!cart) {
+        return 'Your cart is empty';
+    }
 
     if (cart.isEmpty()) {
         return 'Your cart is empty';

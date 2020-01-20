@@ -932,6 +932,8 @@ exports.handleMessage = function (steamID, message) {
                 cart.removeFromCart(steamID, true);
             }
         });
+    } else if (isAdmin && command === 'cart') {
+        client.chatMessage(steamID, cart.stringify(steamID));
     } else if (isAdmin && command === 'expand') {
         const assetids = [].concat(inventory.findBySKU('5050;6', false)).concat(inventory.findBySKU('5050;6;uncraftable', false));
 
