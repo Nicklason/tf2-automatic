@@ -6,7 +6,7 @@ let filesBeingSaved = 0;
 /**
  * Reads a file
  * @param {String} p
- * @param {Boolean} [json=false] If what you are reading is JSON and you want to parse it
+ * @param {Boolean} json If what you are reading is JSON and you want to parse it
  * @param {Function} callback
  */
 exports.readFile = function (p, json, callback) {
@@ -48,7 +48,7 @@ exports.readFile = function (p, json, callback) {
  * Writes to file
  * @param {String} p
  * @param {*} data
- * @param {Boolean} [json=false] If you want to stringify the data you are writing
+ * @param {Boolean} json If you want to stringify the data you are writing
  * @param {Function} callback
  */
 exports.writeFile = function (p, data, json, callback) {
