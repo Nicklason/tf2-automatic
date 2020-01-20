@@ -55,7 +55,7 @@ class Cart {
     }
 
     isEmpty () {
-        return Object.getOwnPropertyNames(this.our).length === 0 && Object.getOwnPropertyNames(this.their).length === 0;
+        return Object.keys(this.our).length === 0 && Object.keys(this.their).length === 0;
     }
 
     _exist (name, whose) {
@@ -198,7 +198,7 @@ exports.checkout = function (partner, callback) {
         }
     }
 
-    if (Object.getOwnPropertyNames(cart.our).length === 0 && Object.getOwnPropertyNames(cart.their).length === 0) {
+    if (Object.keys(cart.our).length === 0 && Object.keys(cart.their).length === 0) {
         alteredMessage = createAlteredMessage(partner, alteredItems);
         callback(null, alteredMessage);
         return;
@@ -235,12 +235,12 @@ exports.checkout = function (partner, callback) {
         itemsDiff[sku] = amount*(-1);
     }
 
-    if (Object.getOwnPropertyNames(cart.their).length === 0) {
+    if (Object.keys(cart.their).length === 0) {
         // We are not taking any items, don't request their inventory
 
         alteredMessage = createAlteredMessage(partner, alteredItems);
 
-        if (Object.getOwnPropertyNames(cart.our).length === 0) {
+        if (Object.keys(cart.our).length === 0) {
             exports.removeFromCart(true, partner);
             callback(null, alteredMessage);
             return;
@@ -332,7 +332,7 @@ exports.checkout = function (partner, callback) {
 
         alteredMessage = createAlteredMessage(partner, alteredItems);
 
-        if ((Object.getOwnPropertyNames(cart.their).length === 0) && (Object.getOwnPropertyNames(cart.our).length === 0)) {
+        if ((Object.keys(cart.their).length === 0) && (Object.keys(cart.our).length === 0)) {
             exports.removeFromCart(true, partner);
             callback(null, alteredMessage);
             return;
