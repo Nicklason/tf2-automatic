@@ -17,35 +17,27 @@ class Cart {
         return { our: this.our, their: this.their };
     }
 
-    sku (name, whose) {
-        if (!this._exist(name, whose)) {
-            return undefined;
-        }
-
-        return this[whose][name].sku;
-    }
-
-    amount (name, whose) {
-        if (!this._exist(name, whose)) {
+    amount (sku, whose) {
+        if (!this._exist(sku, whose)) {
             return 0;
         }
 
-        return this[whose][name].amount;
+        return this[whose][sku];
     }
 
-    add (sku, name, amount, whose) {
-        if (!this._exist(name, whose)) {
-            this[whose][name] = { sku, amount };
+    add (sku, amount, whose) {
+        if (!this._exist(sku, whose)) {
+            this[whose][sku] = amount;
         } else {
-            this[whose][name].amount += amount;
+            this[whose][sku] += amount;
         }
     }
 
-    remove (name, amount, whose) {
-        if (this._exist(name, whose)) {
-            this[whose][name].amount -= amount;
-            if (this[whose][name].amount <= 0) {
-                delete this[whose][name];
+    remove (sku, amount, whose) {
+        if (this._exist(sku, whose)) {
+            this[whose][sku] -= amount;
+            if (this[whose][sku] <= 0) {
+                delete this[whose][sku];
             }
         }
     }
@@ -58,16 +50,42 @@ class Cart {
         return Object.keys(this.our).length === 0 && Object.keys(this.their).length === 0;
     }
 
-    _exist (name, whose) {
-        return this[whose][name] ? true : false;
+    toString () {
+        let message = '== YOUR CART ==';
+
+        message += '\n\nMy side (items you will receive):';
+        for (const sku in this.our) {
+            if (!Object.prototype.hasOwnProperty.call(this.our, sku)) {
+                continue;
+            }
+
+            const name = schemaManager.schema.getName(SKU.fromString(sku));
+            message += '\n- ' + this.our[sku] + 'x ' + name;
+        }
+
+        message += '\n\nYour side (items you will lose):';
+        for (const sku in this.their) {
+            if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
+                continue;
+            }
+
+            const name = schemaManager.schema.getName(SKU.fromString(sku));
+            message += '\n- ' + this.their[sku] + 'x ' + name;
+        }
+
+        return message;
+    }
+
+    _exist (sku, whose) {
+        return this[whose][sku] ? true : false;
     }
 }
 
 
 const carts = {};
 
-function createCart (steamid) {
-    carts[steamid] = new Cart();
+function createCart (steamid, our, their) {
+    carts[steamid] = new Cart(our, their);
 }
 
 function cartExists (steamid) {
@@ -99,7 +117,7 @@ exports.addToCart = function (steamID, sku, amount, deposit) {
         message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
     } else {
         // Get all items in inventory, we don't need to check stock limits for withdrawals
-        const amountCanTrade = inventory.getAmount(sku) - (cartExists(steamID) ? getCart(steamID).amount(name, side) : 0);
+        const amountCanTrade = inventory.getAmount(sku) - (cartExists(steamID) ? getCart(steamID).amount(sku, side) : 0);
 
         // Correct trade if needed
         if (amountCanTrade <= 0) {
@@ -118,22 +136,25 @@ exports.addToCart = function (steamID, sku, amount, deposit) {
             createCart(steamID);
         }
 
-        getCart(steamID).add(sku, name, amount, side);
+        getCart(steamID).add(sku, amount, side);
     }
 
     return { cart: getCart(steamID).get(), message };
 };
 
-exports.removeFromCart = function (steamID, name, amount, our, all = false) {
+exports.removeFromCart = function (steamID, sku, amount, our, all = false) {
     if (!cartExists(steamID)) {
         return { cart: undefined, message: 'Your cart is empty' };
     }
 
-    if (typeof name === 'boolean') {
-        all = name;
+    if (typeof sku === 'boolean') {
+        all = sku;
+        sku = undefined;
     }
 
     let message;
+
+    const name = sku ? schemaManager.schema.getName(SKU.fromString(sku)) : undefined;
 
     const side = our ? 'our' : 'their';
 
@@ -143,7 +164,7 @@ exports.removeFromCart = function (steamID, name, amount, our, all = false) {
     } else {
         const whose = our ? 'my' : 'your';
 
-        const inCart = getCart(steamID).amount(name, side);
+        const inCart = getCart(steamID).amount(sku, side);
 
         if (inCart === 0) {
             amount = inCart;
@@ -156,7 +177,7 @@ exports.removeFromCart = function (steamID, name, amount, our, all = false) {
         }
     }
 
-    getCart(steamID).remove(name, amount, side);
+    getCart(steamID).remove(sku, amount, side);
 
     if (getCart(steamID).isEmpty()) {
         deleteCart(steamID);
@@ -180,21 +201,21 @@ exports.checkout = function (partner, callback) {
     const cart = getCart(partner);
 
     // Check if we have all the items requested
-    for (const name in cart.our) {
-        if (!Object.prototype.hasOwnProperty.call(cart.our, name)) {
+    for (const sku in cart.our) {
+        if (!Object.prototype.hasOwnProperty.call(cart.our, sku)) {
             continue;
         }
 
-        const amountCanTrade = inventory.findBySKU(cart.sku(name, 'our'), false).length;
-        const amountInCart = cart.amount(name, 'our');
+        const amountCanTrade = inventory.findBySKU(sku, false).length;
+        const amountInCart = cart.amount(sku, 'our');
 
         if (amountInCart > amountCanTrade) {
             if (amountCanTrade === 0) {
-                cart.remove(name, amountInCart, 'our');
+                cart.remove(sku, amountInCart, 'our');
             } else {
-                cart.remove(name, (amountInCart-amountCanTrade), 'our');
+                cart.remove(sku, (amountInCart-amountCanTrade), 'our');
             }
-            alteredItems.our.push(name);
+            alteredItems.our.push(sku);
         }
     }
 
@@ -212,13 +233,12 @@ exports.checkout = function (partner, callback) {
     const itemsDiff = {};
 
     // Add our items to the trade
-    for (const name in cart.our) {
-        if (!Object.prototype.hasOwnProperty.call(cart.our, name)) {
+    for (const sku in cart.our) {
+        if (!Object.prototype.hasOwnProperty.call(cart.our, sku)) {
             continue;
         }
 
-        const sku = cart.sku(name, 'our');
-        const amount = cart.amount(name, 'our');
+        const amount = cart.amount(sku, 'our');
 
         const assetids = inventory.findBySKU(sku, false);
 
@@ -291,31 +311,30 @@ exports.checkout = function (partner, callback) {
             return callback(null, 'Failed to load inventories, Steam might be down');
         }
 
-        for (const name in cart.their) {
-            if (!Object.prototype.hasOwnProperty.call(cart.their, name)) {
+        for (const sku in cart.their) {
+            if (!Object.prototype.hasOwnProperty.call(cart.their, sku)) {
                 continue;
             }
-
-            const sku = cart.sku(name, 'their');
 
             const assetids = (theirDict[sku] || []);
             const amountCanTrade = assetids.length;
-            const amountInCart = cart.amount(name, 'their');
+            const amountInCart = cart.amount(sku, 'their');
 
             if (amountInCart > amountCanTrade) {
                 if (amountCanTrade === 0) {
-                    cart.remove(name, amountInCart, 'their');
+                    cart.remove(sku, amountInCart, 'their');
                 } else {
-                    cart.remove(name, (amountInCart-amountCanTrade), 'their');
+                    cart.remove(sku, (amountInCart-amountCanTrade), 'their');
                 }
-                alteredItems.their.push(name);
+                const name = schemaManager.schema.getName(SKU.fromString(sku));
+                alteredItems.their.push(sku);
             }
 
-            if (!cart.amount(name, 'their')) {
+            if (!cart.amount(sku, 'their')) {
                 continue;
             }
 
-            const amount = cart.amount(name, 'their');
+            const amount = cart.amount(sku, 'their');
 
             for (let i = 0; i < amount; i++) {
                 offer.addTheirItem({
@@ -389,9 +408,10 @@ function createAlteredMessage (steamID, alteredItems) {
     const cart = getCart(steamID);
 
     ['our', 'their'].forEach((whose) => {
-        alteredItems[whose].forEach((name) => {
-            if (cart.amount(name, whose)) {
-                some[whose].push({ name, amount: cart.amount(name, whose) });
+        alteredItems[whose].forEach((sku) => {
+            const name = schemaManager.schema.getName(SKU.fromString(sku));
+            if (cart.amount(sku, whose)) {
+                some[whose].push({ name, amount: cart.amount(sku, whose) });
             } else {
                 none[whose].push(name);
             }
@@ -453,3 +473,13 @@ function createAlteredMessage (steamID, alteredItems) {
 
     return message;
 }
+
+exports.stringify = function (steamid) {
+    const cart = getCart(steamid);
+
+    if (cart.isEmpty()) {
+        return 'Your cart is empty';
+    }
+
+    return cart.toString();
+};
