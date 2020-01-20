@@ -394,8 +394,8 @@ function getDetails (intent, pricelistEntry) {
         .replace(/%price%/g, pricelistEntry[key].toString())
         .replace(/%name%/g, pricelistEntry.name)
         .replace(/%max_stock%/g, pricelistEntry.max)
-        .replace(/%current_stock%/g, inventory.getAmount(pricelistEntry.sku))
-        .replace(/%amount_trade%/g, inventory.amountCanTrade(pricelistEntry.sku, buying));
+        .replace(/%current_stock%/g, inventory.getAmount(pricelistEntry.sku).toString())
+        .replace(/%amount_trade%/g, inventory.amountCanTrade(pricelistEntry.sku, buying).toString());
 
     return details;
 }

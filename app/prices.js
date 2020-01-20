@@ -12,7 +12,7 @@ const socket = require('../lib/ptf-socket');
 const handlerManager = require('./handler-manager');
 
 // Max age of a price in seconds
-const maxPriceAge = parseInt(process.env.MAX_PRICE_AGE) || 8 * 60 * 60;
+const maxPriceAge = process.env.MAX_PRICE_AGE ? parseInt(process.env.MAX_PRICE_AGE) : 8 * 60 * 60;
 
 let pricelist = [];
 let keyPrices = null;

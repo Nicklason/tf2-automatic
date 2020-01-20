@@ -6,7 +6,7 @@ const handlerManager = require('./handler-manager');
 
 /**
  * Signs in to Steam and catches login error
- * @param {String} loginKey
+ * @param {String|null} loginKey
  * @param {Function} callback
  */
 module.exports = function (loginKey, callback) {
