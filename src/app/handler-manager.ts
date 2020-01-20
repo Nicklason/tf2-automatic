@@ -49,7 +49,7 @@ const EXPORTED_FUNCTIONS = {
     shutdown: function (err=null, checkIfReady=true, rudely=false) {
         log.debug('Shutdown has been initialized, stopping...', { err: err });
 
-        shutdownRequested = true;
+        hasRequestedShutdown = true;
         shutdownCount++;
 
         if (shutdownCount >= 10) {
@@ -110,7 +110,7 @@ const EXPORTED_FUNCTIONS = {
         log.debug('Cleaning up');
 
         // This will disable the reciving of messages and other friend related events
-        isReady = false;
+        hasStarted = false;
 
         // Make the bot snooze on Steam, that way people will know it is not running
         require('../lib/client').setPersona(SteamUser.EPersonaState.Snooze);
@@ -165,7 +165,7 @@ const EXPORTED_FUNCTIONS = {
         require('./crafting').useItem(assetid);
     },
     isReady () {
-        return exports.isReady();
+        return isReady();
     },
     isShuttingDown () {
         return isShuttingDown();
@@ -174,10 +174,10 @@ const EXPORTED_FUNCTIONS = {
 
 let handler;
 
-let isReady = false;
+let hasStarted = false;
 let shuttingDown = false;
 let shutdownCount = 0;
-let shutdownRequested = false;
+let hasRequestedShutdown = false;
 let exiting = false;
 
 /**
@@ -228,7 +228,7 @@ export function setup () {
 };
 
 export function isReady () {
-    return isReady;
+    return hasStarted;
 };
 
 export function isShuttingDown () {
@@ -236,11 +236,11 @@ export function isShuttingDown () {
 };
 
 export function shutdownRequested () {
-    return shutdownRequested;
+    return hasRequestedShutdown;
 };
 
 export function setReady () {
-    isReady = true;
+    hasStarted = true;
 };
 
 /**
