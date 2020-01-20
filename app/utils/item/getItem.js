@@ -6,6 +6,7 @@ const schemaManager = require('../../../lib/tf2-schema');
 const fixItem = require('../../utils/item/fixItem');
 
 module.exports = function () {
+    // @ts-ignore
     if (this.appid != 440) {
         return null;
     }
@@ -34,7 +35,7 @@ module.exports = function () {
 /**
  * Gets the defindex of an item
  * @param {Object} item
- * @return {Number}
+ * @return {Number|null}
  */
 function getDefindex (item) {
     if (item.app_data !== undefined) {
@@ -55,7 +56,7 @@ function getDefindex (item) {
 /**
  * Gets the quality of an item
  * @param {Object} item
- * @return {Number}
+ * @return {Number|null}
  */
 function getQuality (item) {
     if (item.app_data !== undefined) {
@@ -117,7 +118,7 @@ function isFestive (item) {
 /**
  * Gets the effect of an item
  * @param {Object} item
- * @return {String}
+ * @return {String|null}
  */
 function getEffect (item) {
     if (!Array.isArray(item.descriptions)) {
@@ -140,7 +141,7 @@ function getEffect (item) {
 /**
  * Gets the wear of an item
  * @param {Object} item
- * @return {Number}
+ * @return {Number|null}
  */
 function getWear (item) {
     const wear = ['Factory New', 'Minimal Wear', 'Field-Tested', 'Well-Worn', 'Battle Scarred'].indexOf(item.getTag('Exterior'));
@@ -151,7 +152,7 @@ function getWear (item) {
 /**
  * Get skin from item
  * @param {Object} item
- * @return {Number}
+ * @return {Number|null}
  */
 function getPaintKit (item) {
     if (getWear(item) === null) {
@@ -191,7 +192,7 @@ function getPaintKit (item) {
 /**
  * Gets the elevated quality of an item
  * @param {Object} item
- * @return {Number}
+ * @return {Number|null}
  */
 function getElevatedQuality (item) {
     if (item.hasDescription('Strange Stat Clock Attached')) {

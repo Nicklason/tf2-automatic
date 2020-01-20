@@ -57,6 +57,7 @@ module.exports = function (item) {
             const itemsGameItem = schemaManager.schema.raw.items_game.items[item.defindex];
 
             if (itemsGameItem.static_attrs !== undefined && itemsGameItem.static_attrs['set supply crate series'] !== undefined) {
+                // @ts-ignore
                 if (isObject(itemsGameItem.static_attrs['set supply crate series'])) {
                     series = itemsGameItem.static_attrs['set supply crate series'].value;
                 } else {
