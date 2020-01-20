@@ -9,7 +9,7 @@ const handlerManager = require('./handler-manager');
  * @param {String|null} loginKey
  * @param {Function} callback
  */
-module.exports = function (loginKey, callback) {
+export default function (loginKey, callback) {
     log.debug('Starting login attempt', { login_key: loginKey, private: true });
 
     const wait = loginAttempts.wait();

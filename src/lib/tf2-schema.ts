@@ -56,4 +56,4 @@ schemaManager.getSchema = function (callback) {
     });
 };
 
-module.exports = schemaManager;
+export default schemaManager;

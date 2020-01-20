@@ -17,4 +17,4 @@ tf2.on('disconnectedFromGC', function (reason) {
     log.debug(message, { event: 'debug', from: 'node-tf2' });
 }); */
 
-module.exports = tf2;
+export default tf2;

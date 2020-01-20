@@ -160,4 +160,4 @@ function errorEvent (err) {
     }
 }
 
-module.exports = client;
+export default client;

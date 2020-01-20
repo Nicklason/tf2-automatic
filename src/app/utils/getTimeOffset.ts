@@ -6,7 +6,7 @@ let timeOffset = null;
  * Gets time offset from Steam API and saves result for future reference
  * @param {Function} callback
  */
-module.exports = function (callback) {
+export default function (callback) {
     if (timeOffset !== null) {
         callback(null, timeOffset);
         return;

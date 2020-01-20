@@ -7,7 +7,7 @@ v.addSchema(require('../schemas/currencies'));
 v.addSchema(require('../schemas/pricelist'));
 v.addSchema(require('../schemas/add'));
 
-module.exports = function (...args) {
+export default function (...args) {
     // @ts-ignore
     const validated = v.validate(...args);
     if (validated.valid === true) {

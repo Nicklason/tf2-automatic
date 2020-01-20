@@ -1,7 +1,7 @@
 const async = require('async');
 const request = require('@nicklason/request-retry');
 
-module.exports = function (steamid64, callback) {
+export default function (steamid64, callback) {
     async.parallel({
         bptf: function (callback) {
             isBptfBanned(steamid64, callback);

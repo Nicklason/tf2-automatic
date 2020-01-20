@@ -38,4 +38,4 @@ socket.on('error', function (err) {
     log.debug('An error was emitted', { event: 'error', from: 'socket.io-client', error: err });
 });
 
-module.exports = socket;
+export default socket;

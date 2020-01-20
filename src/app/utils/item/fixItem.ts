@@ -2,7 +2,7 @@ const isObject = require('isobject');
 
 const schemaManager = require('../../../lib/tf2-schema');
 
-module.exports = function (item) {
+export default function (item) {
     const schemaItem = schemaManager.schema.getItemByDefindex(item.defindex);
 
     if (schemaItem === null) {

@@ -23,4 +23,4 @@ function confKeyNeededEvent (tag, callback) {
     callback(null, time, confKey);
 }
 
-module.exports = community;
+export default community;

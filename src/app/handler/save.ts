@@ -10,7 +10,7 @@ const paths = require('../resources/paths');
  * @param {Boolean} opts.json If the data should be stringified
  * @param {*} data
  */
-module.exports = function (opts, data) {
+export default function (opts, data) {
     // onLoginKey -> loginKey
     const pathKey = opts.event.charAt(2).toLowerCase() + opts.event.substring(3);
 

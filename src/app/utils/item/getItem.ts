@@ -5,7 +5,7 @@ const schemaManager = require('../../../lib/tf2-schema');
 
 const fixItem = require('../../utils/item/fixItem');
 
-module.exports = function () {
+export default function () {
     // @ts-ignore
     if (this.appid != 440) {
         return null;

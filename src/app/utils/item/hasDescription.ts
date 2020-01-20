@@ -3,7 +3,7 @@
  * @param {String} description
  * @return {Boolean}
  */
-module.exports = function (description) {
+export default function (description) {
     // @ts-ignore
     if (!Array.isArray(this.descriptions)) {
         return false;

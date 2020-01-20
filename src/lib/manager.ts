@@ -38,4 +38,4 @@ function debugEvent (message) {
     }
 }
 
-module.exports = manager;
+export default manager;

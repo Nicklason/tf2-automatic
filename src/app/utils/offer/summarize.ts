@@ -3,7 +3,7 @@ const SKU = require('tf2-sku');
 
 const schemaManager = require('../../../lib/tf2-schema');
 
-module.exports = function () {
+export default function () {
     // @ts-ignore
     const value = this.data('value');
     // @ts-ignore

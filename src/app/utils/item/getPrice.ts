@@ -1,6 +1,6 @@
 const prices = require('../../prices');
 
-module.exports = function () {
+export default function () {
     // @ts-ignore
     return prices.get(this.getSKU());
 };

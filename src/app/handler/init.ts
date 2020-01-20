@@ -6,7 +6,7 @@ const paths = require('../resources/paths');
 
 const handlerManager = require('../handler-manager');
 
-module.exports = function (done) {
+export default function (done) {
     async.parallel({
         loginKey: function (callback) {
             files.readFile(paths.files.loginKey, false, callback);

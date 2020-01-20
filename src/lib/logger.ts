@@ -130,4 +130,4 @@ transports.forEach(function (transport) {
     logger.add(new (winston.transports[type])(transport));
 });
 
-module.exports = logger;
+export default logger;

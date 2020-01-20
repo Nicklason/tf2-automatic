@@ -3,7 +3,7 @@
  * @param {String} action
  * @return {String|null}
  */
-module.exports = function (action) {
+export default function (action) {
     // @ts-ignore
     if (!Array.isArray(this.actions)) {
         return null;

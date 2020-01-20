@@ -1,6 +1,6 @@
 const schemaManager = require('../../lib/tf2-schema');
 
-module.exports = function (name) {
+export default function (name) {
     const match = [];
 
     const originalSchemaItem = schemaManager.schema.getItemByItemName(name);

@@ -26,4 +26,4 @@ function errorEvent (err) {
     log.warn(err.message, { event: 'error', from: 'bptf-listings' });
 }
 
-module.exports = listingManager;
+export default listingManager;

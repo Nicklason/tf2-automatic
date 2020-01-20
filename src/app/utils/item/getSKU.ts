@@ -1,6 +1,6 @@
 const SKU = require('tf2-sku');
 
-module.exports = function () {
+export default function () {
     // @ts-ignore
     const item = this.getItem();
 

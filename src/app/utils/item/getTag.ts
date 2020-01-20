@@ -3,7 +3,7 @@
  * @param {String} category
  * @return {String|null}
  */
-module.exports = function (category) {
+export default function (category) {
     // @ts-ignore
     if (!Array.isArray(this.tags)) {
         return null;

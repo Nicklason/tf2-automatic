@@ -4,7 +4,7 @@ const client = require('../../lib/client');
  * Waits for accountLimitations event to fire
  * @param {function} callback
  */
-module.exports = function (callback) {
+export default function (callback) {
     if (client.limitations !== null) {
         callback(null, client.limitations);
         return;

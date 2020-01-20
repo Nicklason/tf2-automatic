@@ -6,7 +6,7 @@ const community = require('../../lib/community');
  * @param {Boolean} eventOnly If you only look for the event
  * @param {function} callback
  */
-module.exports = function (eventOnly, callback) {
+export default function (eventOnly, callback) {
     if (!eventOnly) {
         const cookies = getCookies();
         if (cookies.length !== 0) {

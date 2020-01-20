@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     id: 'pricelist',
     type: 'object',
     properties: {
