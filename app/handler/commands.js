@@ -921,7 +921,7 @@ exports.handleMessage = function (steamID, message) {
     } else if (isAdmin && command === 'clearcart') {
         client.chatMessage(steamID, cart.removeFromCart(steamID, true).message);
     } else if (isAdmin && command === 'checkout') {
-        trades.customOffer(steamID, function (err, failedMessage) {
+        cart.checkout(steamID, function (err, failedMessage) {
             if (err) {
                 client.chatMessage(steamID, 'Error sending offer: ' + err.message);
             }
@@ -929,7 +929,7 @@ exports.handleMessage = function (steamID, message) {
             if (failedMessage) {
                 client.chatMessage(steamID, failedMessage);
             } else {
-                trades.removeFromCart(true, steamID);
+                cart.removeFromCart(steamID, true);
             }
         });
     } else if (isAdmin && command === 'expand') {
