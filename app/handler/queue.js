@@ -48,7 +48,7 @@ exports.handleQueue = function () {
 
     const entry = queue[0];
 
-    require('handler/trades').createOffer(entry, function (err, failedMessage) {
+    require('./trades').createOffer(entry, function (err, failedMessage) {
         queue.splice(0, 1);
         if (err) {
             log.debug('Failed to create offer: ', err);
