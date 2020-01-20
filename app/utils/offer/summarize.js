@@ -4,7 +4,9 @@ const SKU = require('tf2-sku');
 const schemaManager = require('../../../lib/tf2-schema');
 
 module.exports = function () {
+    // @ts-ignore
     const value = this.data('value');
+    // @ts-ignore
     const items = this.data('dict') || { our: null, their: null };
 
     if (!value) {
