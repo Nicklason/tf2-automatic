@@ -1,13 +1,15 @@
 /**
  * Gets a tag by category
  * @param {String} category
- * @return {String}
+ * @return {String|null}
  */
 module.exports = function (category) {
+    // @ts-ignore
     if (!Array.isArray(this.tags)) {
         return null;
     }
 
+    // @ts-ignore
     const match = this.tags.find((v) => v.category === category);
 
     if (match === undefined) {
