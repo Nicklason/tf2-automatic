@@ -878,14 +878,14 @@ exports.handleMessage = function (steamID, message) {
             client.chatMessage(steamID, 'Successfully uploaded new avatar.');
         });
     } else if (isAdmin && (command === 'withdraw' || command === 'deposit')) {
-        message = removeCommandFromMessage(message, command);
+        const info = removeCommandFromMessage(message, command);
 
         let sku;
         let amount;
 
-        if (message.includes('=')) {
+        if (info.includes('=')) {
             // Using params
-            const params = getParams(message);
+            const params = getParams(info);
 
             if (params.sku === undefined) {
                 const item = getItemFromParams(steamID, params);
@@ -930,6 +930,7 @@ exports.handleMessage = function (steamID, message) {
             } else {
                 trades.removeFromCart(true, steamID);
             }
+        });
     } else if (isAdmin && command === 'expand') {
         const assetids = [].concat(inventory.findBySKU('5050;6', false)).concat(inventory.findBySKU('5050;6;uncraftable', false));
 
