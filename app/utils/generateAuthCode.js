@@ -1,4 +1,4 @@
-//@ts-check
+// @ts-check
 
 const SteamTotp = require('steam-totp');
 

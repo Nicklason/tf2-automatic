@@ -1,4 +1,4 @@
-//@ts-check
+// @ts-check
 
 const inventory = require('../inventory');
 const crafting = require('../crafting');

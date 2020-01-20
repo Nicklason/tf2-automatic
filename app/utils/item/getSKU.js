@@ -1,4 +1,4 @@
-//@ts-check
+// @ts-check
 
 const SKU = require('tf2-sku');
 

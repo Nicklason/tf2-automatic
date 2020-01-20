@@ -1,4 +1,4 @@
-//@ts-check
+// @ts-check
 
 /**
  * Gets a tag by category

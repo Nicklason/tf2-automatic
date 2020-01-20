@@ -1,4 +1,4 @@
-//@ts-check
+// @ts-check
 
 const Currencies = require('tf2-currencies');
 const SKU = require('tf2-sku');

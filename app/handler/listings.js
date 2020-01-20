@@ -1,4 +1,4 @@
-//@ts-check
+// @ts-check
 
 const pluralize = require('pluralize');
 const SKU = require('tf2-sku');
