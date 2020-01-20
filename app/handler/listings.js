@@ -187,7 +187,7 @@ exports.checkBySKU = function (sku, data) {
                 // Listing details don't match, update listing with new details and price
                 const currencies = match[listing.intent === 0 ? 'buy' : 'sell'];
                 listing.update({
-                    time: match.time || moment.unix(),
+                    time: match.time || moment().unix(),
                     details: getDetails(listing.intent, match),
                     currencies: currencies
                 });
@@ -202,7 +202,7 @@ exports.checkBySKU = function (sku, data) {
 
         if (!hasBuyListing && (match.intent === 0 || match.intent === 2) && amountCanBuy > 0) {
             listingManager.createListing({
-                time: match.time || moment.unix(),
+                time: match.time || moment().unix(),
                 sku: sku,
                 intent: 0,
                 details: getDetails(0, match),
@@ -212,7 +212,7 @@ exports.checkBySKU = function (sku, data) {
 
         if (!hasSellListing && (match.intent === 1 || match.intent === 2) && amountCanSell > 0) {
             listingManager.createListing({
-                time: match.time || moment.unix(),
+                time: match.time || moment().unix(),
                 id: items[items.length - 1],
                 intent: 1,
                 details: getDetails(1, match),
