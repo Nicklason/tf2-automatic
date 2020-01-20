@@ -486,10 +486,6 @@ exports.acceptOffer = function (offer, callback) {
  * @param {Function} [callback]
  */
 function acceptConfirmation (offer, callback) {
-    if (callback === undefined) {
-        callback = noop;
-    }
-
     // TODO: Add retrying / error handling
 
     log.debug('Accepting mobile confirmation...', { offer_id: offer.id });
@@ -515,7 +511,9 @@ function acceptConfirmation (offer, callback) {
             handler.onConfirmationAccepted(offer.id);
         }
 
-        callback(err);
+        if (callback) {
+            callback(err);
+        }
     });
 }
 
