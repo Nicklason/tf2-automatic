@@ -28,11 +28,6 @@ module.exports = function () {
         item.target = getTarget(this);
     }
 
-    if (this.market_hash_name === 'Unusual A Head Full of Hot Air') {
-        console.log(item);
-        console.log(this);
-    }
-
     // Adds missing properties
     return fixItem(SKU.fromString(SKU.fromObject(item)));
 };
