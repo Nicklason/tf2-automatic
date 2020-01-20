@@ -104,7 +104,7 @@ const transports = [{
     level: debugConsole ? 'debug' : 'verbose'
 }];
 
-transports.forEach(function (transport) {
+transports.forEach(function (transport: any) {
     const type = transport.type;
 
     delete transport.type;

@@ -31,6 +31,7 @@ function apiRequest (httpMethod, path, input, callback) {
     };
 
     if (process.env.PRICESTF_API_KEY) {
+        //@ts-ignore
         options.headers.Authorization = `Token ${process.env.PRICESTF_API_KEY}`;
     }
 

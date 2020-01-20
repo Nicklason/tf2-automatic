@@ -21,7 +21,7 @@ export function getLatestVersion (callback) {
     });
 };
 
-export function checkForUpdates (callback) {
+export function checkForUpdates (callback = undefined) {
     if (!callback) {
         callback = noop;
     }

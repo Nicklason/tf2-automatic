@@ -5,7 +5,7 @@ import * as handlerManager from './handler-manager';
 const maxLoginAttemptsWithinPeriod = 3;
 const loginPeriodTime = 60 * 1000;
 
-let loginAttempts = [];
+let loginAttempts: any[] = [];
 
 export function setAttempts (attempts) {
     loginAttempts = attempts.sort((a, b) => a - b).map((attempt) => moment.unix(attempt));

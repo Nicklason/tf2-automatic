@@ -150,6 +150,11 @@ export function redoListings (callback) {
     });
 };
 
+/**
+ * 
+ * @param {string} sku
+ * @param {any} [data] 
+ */
 export function checkBySKU (sku, data) {
     const item = SKU.fromString(sku);
 
@@ -300,10 +305,10 @@ export function waitForListings (callback) {
         return;
     }
 
-    waitForListings(next);
+    _waitForListings(next);
 };
 
-function waitForListings (callback) {
+function _waitForListings (callback) {
     let checks = 0;
     check();
 
@@ -346,10 +351,10 @@ export function removeAll (callback) {
         return;
     }
 
-    removeAll(next);
+    _removeAll(next);
 };
 
-function removeAll (callback) {
+function _removeAll (callback) {
     removingAllListings = true;
 
     // Clear create queue

@@ -14,9 +14,9 @@ import * as handlerManager from './handler-manager';
 // Max age of a price in seconds
 const maxPriceAge = process.env.MAX_PRICE_AGE ? parseInt(process.env.MAX_PRICE_AGE) : 8 * 60 * 60;
 
-let pricelist = [];
-let keyPrices = null;
-const handling = [];
+let pricelist: any[] = [];
+let keyPrices: any = null;
+const handling: any[] = [];
 
 export function init (callback) {
     log.debug('Setting up pricelist');
@@ -45,6 +45,7 @@ export function init (callback) {
 
     // Only request pricelist if there are old prices that needs to be updated
     if (oldPrices.length !== 0) {
+        // @ts-ignore
         funcs.pricelist = function (callback) {
             api.getPricelist('bptf', callback);
         };
@@ -207,7 +208,7 @@ function handlePriceChange (data) {
 export function searchByName (search, enabledOnly = true) {
     search = search.toLowerCase();
 
-    const match = [];
+    const match: any[] = [];
 
     const pricelist = getPricelist();
 
@@ -309,7 +310,7 @@ export function add (sku, data, callback) {
             return callback(new Error('Sell must be higher than buy'));
         }
 
-        add(entry, true);
+        _add(entry, true);
         return callback(null, entry);
     }
 
@@ -332,12 +333,12 @@ export function add (sku, data, callback) {
         entry.sell = prices.sell;
         entry.time = prices.time;
 
-        add(entry, true);
+        _add(entry, true);
         return callback(null, entry);
     });
 };
 
-function add (entry, emit) {
+function _add (entry, emit) {
     log.debug('Adding item to pricelist', { entry: entry });
 
     const errors = validator(entry, 'pricelist');
@@ -410,11 +411,11 @@ export function update (sku, data, callback) {
 
         copy.time = null;
         remove(copy.sku, false);
-        add(copy, true);
+        _add(copy, true);
         return callback(null, copy);
     } else if (copy.autoprice === match.autoprice) {
         remove(copy.sku, false);
-        add(copy, true);
+        _add(copy, true);
         return callback(null, copy);
     }
 
@@ -436,13 +437,13 @@ export function update (sku, data, callback) {
         copy.time = prices.time;
 
         remove(copy.sku, false);
-        add(copy, true);
+        _add(copy, true);
         return callback(null, copy);
     });
 };
 
 export function remove (sku, callback) {
-    const match = remove(sku, true);
+    const match = _remove(sku, true);
 
     if (match === null) {
         return callback(new Error('Item is not in the pricelist'));
@@ -451,7 +452,7 @@ export function remove (sku, callback) {
     return callback(null, match);
 };
 
-function remove (sku, emit) {
+function _remove (sku, emit) {
     let index = -1;
     for (let i = 0; i < pricelist.length; i++) {
         if (pricelist[i].sku === sku) {
