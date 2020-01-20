@@ -117,7 +117,6 @@ exports.getAmount = function (sku) {
 /**
  * Returns the sku of the item, null if no match found
  * @param {String} assetid
- * @param {Boolean} [includeInTrade=true]
  * @return {Object}
  */
 exports.findByAssetid = function (assetid) {
@@ -142,7 +141,7 @@ exports.findByAssetid = function (assetid) {
  * Returns all assetids with a matching sku
  * @param {String} sku
  * @param {Boolean} [includeInTrade=true]
- * @return {Array<Object>}
+ * @return {Array<String>}
  */
 exports.findBySKU = function (sku, includeInTrade = true) {
     const assetids = (dictionary[sku] || []);
