@@ -1,6 +1,8 @@
+//@ts-check
+
 const moment = require('moment');
 
-const handlerManager = require('app/handler-manager');
+const handlerManager = require('./handler-manager');
 
 const maxLoginAttemptsWithinPeriod = 3;
 const loginPeriodTime = 60 * 1000;

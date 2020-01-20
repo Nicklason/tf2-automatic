@@ -1,3 +1,5 @@
+//@ts-check
+
 /**
  * Gets an action by name
  * @param {String} action

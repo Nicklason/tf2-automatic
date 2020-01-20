@@ -1,5 +1,7 @@
-const inventory = require('app/inventory');
-const crafting = require('app/crafting');
+//@ts-check
+
+const inventory = require('../inventory');
+const crafting = require('../crafting');
 
 const minimumScrap = process.env.MINIMUM_SCRAP ? parseInt(process.env.MINIMUM_SCRAP) : 6;
 const minimumReclaimed = process.env.MINIMUM_RECLAIMED ? parseInt(process.env.MINIMUM_RECLAIMED) : 6;

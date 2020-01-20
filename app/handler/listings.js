@@ -1,3 +1,5 @@
+//@ts-check
+
 const pluralize = require('pluralize');
 const SKU = require('tf2-sku');
 const moment = require('moment');
@@ -5,14 +7,14 @@ const async = require('async');
 const callbackQueue = require('callback-queue');
 const request = require('@nicklason/request-retry');
 
-const log = require('lib/logger');
-const prices = require('app/prices');
-const inventory = require('app/inventory');
-const listingManager = require('lib/bptf-listings');
-const handlerManager = require('app/handler-manager');
-const client = require('lib/client');
+const log = require('../../lib/logger');
+const prices = require('../prices');
+const inventory = require('../inventory');
+const listingManager = require('../../lib/bptf-listings');
+const handlerManager = require('../handler-manager');
+const client = require('../../lib/client');
 
-const backoff = require('utils/exponentialBackoff');
+const backoff = require('../utils/exponentialBackoff');
 
 const templates = {
     buy: process.env.BPTF_DETAILS_BUY || 'I am buying your %name% for %price%, I have %current_stock% / %max_stock%.',

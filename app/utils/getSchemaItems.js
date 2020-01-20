@@ -1,4 +1,6 @@
-const schemaManager = require('lib/tf2-schema');
+//@ts-check
+
+const schemaManager = require('../../lib/tf2-schema');
 
 module.exports = function (name) {
     const match = [];

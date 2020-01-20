@@ -1,9 +1,11 @@
-const log = require('lib/logger');
-const client = require('lib/client');
-const tf2 = require('lib/tf2');
+//@ts-check
 
-const handlerManager = require('app/handler-manager');
-const inventoryManager = require('app/inventory');
+const log = require('../lib/logger');
+const client = require('../lib/client');
+const tf2 = require('../lib/tf2');
+
+const handlerManager = require('./handler-manager');
+const inventoryManager = require('./inventory');
 
 const jobs = [];
 

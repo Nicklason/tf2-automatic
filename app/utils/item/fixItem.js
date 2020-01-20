@@ -1,6 +1,8 @@
+//@ts-check
+
 const isObject = require('isobject');
 
-const schemaManager = require('lib/tf2-schema');
+const schemaManager = require('../../../lib/tf2-schema');
 
 module.exports = function (item) {
     const schemaItem = schemaManager.schema.getItemByDefindex(item.defindex);

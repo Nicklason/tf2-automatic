@@ -1,7 +1,9 @@
+//@ts-check
+
 const Currencies = require('tf2-currencies');
 const SKU = require('tf2-sku');
 
-const schemaManager = require('lib/tf2-schema');
+const schemaManager = require('../../../lib/tf2-schema');
 
 module.exports = function () {
     const value = this.data('value');

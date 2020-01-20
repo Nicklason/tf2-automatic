@@ -1,4 +1,6 @@
-const prices = require('app/prices');
+//@ts-check
+
+const prices = require('../../prices');
 
 module.exports = function () {
     return prices.get(this.getSKU());

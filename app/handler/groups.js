@@ -1,10 +1,12 @@
+//@ts-check
+
 const SteamUser = require('steam-user');
 const SteamID = require('steamid');
 
-const log = require('lib/logger');
-const client = require('lib/client');
-const community = require('lib/community');
-const friends = require('handler/friends');
+const log = require('../../lib/logger');
+const client = require('../../lib/client');
+const community = require('../../lib/community');
+const friends = require('../handler/friends');
 
 const groups = process.env.GROUPS === undefined ? [] : JSON.parse(process.env.GROUPS);
 

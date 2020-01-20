@@ -1,7 +1,9 @@
-const manager = require('lib/manager');
+//@ts-check
 
-const handlerManager = require('app/handler-manager');
-const prices = require('app/prices');
+const manager = require('../lib/manager');
+
+const handlerManager = require('./handler-manager');
+const prices = require('./prices');
 
 let dictionary = {};
 let nonTradableDictionary = {};
@@ -91,7 +93,7 @@ exports.getOwnInventory = function (onlyTradable = true) {
 exports.filterInTrade = function (dict) {
     const filtered = {};
 
-    const itemsInTrade = require('app/trade').inTrade();
+    const itemsInTrade = require('./trade').inTrade();
 
     for (const sku in dict) {
         if (!Object.prototype.hasOwnProperty.call(dict, sku)) {
@@ -151,7 +153,7 @@ exports.findBySKU = function (sku, includeInTrade = true) {
         return assetids;
     }
 
-    const itemsInTrade = require('app/trade').inTrade();
+    const itemsInTrade = require('./trade').inTrade();
     return assetids.filter((assetid) => itemsInTrade.indexOf(assetid) === -1);
 };
 

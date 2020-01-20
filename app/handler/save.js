@@ -1,7 +1,9 @@
-const log = require('lib/logger');
-const files = require('utils/files');
+//@ts-check
 
-const paths = require('resources/paths');
+const log = require('../../lib/logger');
+const files = require('../utils/files');
+
+const paths = require('../resources/paths');
 
 /**
  * Saves data from events

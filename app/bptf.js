@@ -1,10 +1,12 @@
+//@ts-check
+
 const async = require('async');
 
-const log = require('lib/logger');
-const bptfLogin = require('lib/bptf-login');
-const community = require('lib/community');
+const log = require('../lib/logger');
+const bptfLogin = require('../lib/bptf-login');
+const community = require('../lib/community');
 
-const handlerManager = require('app/handler-manager');
+const handlerManager = require('./handler-manager');
 
 let hasLoggedIn = false;
 
