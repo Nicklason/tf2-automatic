@@ -45,7 +45,7 @@ function getDefindex (item) {
     const link = item.getAction('Item Wiki Page...');
 
     if (link !== null) {
-        return parseInt(url.parse(link, true).query.id, 10);
+        return parseInt(url.parse(link, true).query.id.toString(), 10);
     }
 
     // Last option is to get the name of the item and try and get the defindex that way
@@ -264,6 +264,10 @@ function getOutput (item) {
 
 function getTarget (item) {
     const defindex = getDefindex(item);
+
+    if (defindex === null) {
+        throw new Error('Could not get defindex of item "' + item.market_hash_name + '"');
+    }
 
     if (item.market_hash_name.indexOf('Strangifier') !== -1) {
         // Strangifiers
