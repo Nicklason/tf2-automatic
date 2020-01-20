@@ -1,5 +1,3 @@
-// @ts-check
-
 const request = require('@nicklason/request-retry');
 const semver = require('semver');
 const log = require('../lib/logger');

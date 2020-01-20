@@ -1,5 +1,3 @@
-// @ts-check
-
 const moment = require('moment');
 
 const handlerManager = require('./handler-manager');

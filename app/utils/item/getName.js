@@ -1,5 +1,3 @@
-// @ts-check
-
 const schemaManager = require('../../../lib/tf2-schema');
 
 module.exports = function () {

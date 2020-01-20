@@ -1,5 +1,3 @@
-// @ts-check
-
 const fs = require('graceful-fs');
 const path = require('path');
 

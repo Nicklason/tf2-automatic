@@ -1,5 +1,3 @@
-// @ts-check
-
 const manager = require('../lib/manager');
 
 const handlerManager = require('./handler-manager');

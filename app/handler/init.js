@@ -1,5 +1,3 @@
-// @ts-check
-
 const async = require('async');
 
 const files = require('../utils/files');

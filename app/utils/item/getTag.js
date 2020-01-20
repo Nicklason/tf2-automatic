@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * Gets a tag by category
  * @param {String} category

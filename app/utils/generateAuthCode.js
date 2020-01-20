@@ -1,5 +1,3 @@
-// @ts-check
-
 const SteamTotp = require('steam-totp');
 
 const getTimeOffset = require('./getTimeOffset');

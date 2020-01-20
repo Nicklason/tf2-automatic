@@ -1,5 +1,3 @@
-// @ts-check
-
 module.exports = {
     id: 'add',
     type: 'object',

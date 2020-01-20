@@ -1,5 +1,3 @@
-// @ts-check
-
 const TradeOfferManager = require('steam-tradeoffer-manager');
 const Currencies = require('tf2-currencies');
 const pluralize = require('pluralize');

@@ -1,5 +1,3 @@
-// @ts-check
-
 const client = require('../../lib/client');
 const community = require('../../lib/community');
 
