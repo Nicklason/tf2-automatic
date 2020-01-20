@@ -1,4 +1,4 @@
-//@ts-check
+// @ts-check
 
 const async = require('async');
 const moment = require('moment');

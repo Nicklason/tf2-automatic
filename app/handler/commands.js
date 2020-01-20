@@ -1,4 +1,4 @@
-//@ts-check
+// @ts-check
 
 const dotProp = require('dot-prop');
 const pluralize = require('pluralize');

@@ -1,4 +1,4 @@
-//@ts-check
+// @ts-check
 
 /**
  * Checks if an item has a specific description
