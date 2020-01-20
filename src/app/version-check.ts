@@ -26,7 +26,7 @@ export function checkForUpdates (callback) {
         callback = noop;
     }
 
-    exports.getLatestVersion(function (err, latestVersion) {
+    getLatestVersion(function (err, latestVersion) {
         if (err) {
             log.warn('Failed to check for updates: ', err);
             callback(err);
@@ -45,10 +45,10 @@ export function checkForUpdates (callback) {
 };
 
 export function startVersionChecker () {
-    exports.checkForUpdates();
+    checkForUpdates();
 
     // Check for updates every 10 minutes
-    setInterval(exports.checkForUpdates, 10 * 60 * 1000);
+    setInterval(checkForUpdates, 10 * 60 * 1000);
 };
 
 function noop () {}

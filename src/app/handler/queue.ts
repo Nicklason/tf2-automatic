@@ -58,7 +58,7 @@ export function handleQueue () {
         }
 
         processingQueue = false;
-        exports.handleQueue();
+        handleQueue();
     });
 };
 

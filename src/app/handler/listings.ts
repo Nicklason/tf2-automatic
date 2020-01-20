@@ -61,10 +61,10 @@ function checkAccountInfo () {
 
         if (autobumpEnabled && info.premium === true) {
             log.warn('Disabling autobump! - Your account is premium, no need to forcefully bump listings');
-            exports.disableAutobump();
+            disableAutobump();
         } else if (!autobumpEnabled && info.premium !== true) {
             log.warn('Enabling autobump! - Consider paying for backpack.tf premium or donating instead of forcefully autobumping: https://backpack.tf/donate');
-            exports.enableAutobump();
+            enableAutobump();
         }
     });
 }
@@ -87,10 +87,10 @@ export function enableAutobump () {
 
         async.eachSeries([
             function (callback) {
-                exports.redoListings(callback);
+                redoListings(callback);
             },
             function (callback) {
-                exports.waitForListings(callback);
+                waitForListings(callback);
             }
         ], function (item, callback) {
             if (handlerManager.shutdownRequested()) {
@@ -145,8 +145,8 @@ export function redoListings (callback) {
         callback = noop;
     }
 
-    exports.removeAll(function () {
-        exports.checkAll(callback);
+    removeAll(function () {
+        checkAll(callback);
     });
 };
 
@@ -286,7 +286,7 @@ function recursiveCheckPricelist (pricelist, done) {
         }
 
         setImmediate(function () {
-            exports.checkBySKU(pricelist[index].sku, pricelist[index]);
+            checkBySKU(pricelist[index].sku, pricelist[index]);
 
             index++;
             iteration();
@@ -356,7 +356,7 @@ function removeAll (callback) {
     listingManager.actions.create = [];
 
     // Wait for backpack.tf to finish creating / removing listings
-    exports.waitForListings(function (err) {
+    waitForListings(function (err) {
         if (err) {
             return callback(err);
         }

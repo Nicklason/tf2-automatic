@@ -79,7 +79,7 @@ export function checkFriendRequests () {
     }
 
     admin.getAdmins().forEach(function (steamID) {
-        if (!exports.isFriend(steamID)) {
+        if (!isFriend(steamID)) {
             log.info('Not friends with admin ' + steamID + ', sending friend request...');
             client.addFriend(steamID, function (err) {
                 if (err) {
@@ -165,11 +165,11 @@ function onNewFriend (steamID, tries = 0) {
     }
 
     setImmediate(function () {
-        if (!exports.isFriend(steamID)) {
+        if (!isFriend(steamID)) {
             return;
         }
 
-        const friend = exports.getFriend(steamID);
+        const friend = getFriend(steamID);
 
         if (friend === null || friend.player_name === undefined) {
             tries++;

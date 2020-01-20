@@ -168,7 +168,7 @@ const EXPORTED_FUNCTIONS = {
         return exports.isReady();
     },
     isShuttingDown () {
-        return exports.isShuttingDown();
+        return isShuttingDown();
     }
 };
 

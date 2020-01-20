@@ -180,7 +180,7 @@ function handleJobsQueue () {
 
     log.debug('Ensuring TF2 GC connection...');
 
-    exports.connectToGC(function (err) {
+    connectToGC(function (err) {
         if (err) {
             return doneProcessingJob(err);
         }

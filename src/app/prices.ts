@@ -120,7 +120,7 @@ export function init (callback) {
  * @return {Number}
  */
 export function amountCanAfford (buying, useKeys, currencies, currenciesDict) {
-    const keyPrice = exports.getKeyPrice();
+    const keyPrice = getKeyPrice();
 
     const value = currencies.toValue(keyPrice.metal);
 
@@ -183,7 +183,7 @@ function handlePriceChange (data) {
             keyPrices.sell = new Currencies(data.sell);
         }
 
-        const match = exports.get(data.sku);
+        const match = get(data.sku);
         if (match !== null && match.autoprice === true) {
             log.debug('Price of ' + match.name + ' (' + match.sku + ') changed');
 
@@ -209,7 +209,7 @@ export function searchByName (search, enabledOnly = true) {
 
     const match = [];
 
-    const pricelist = exports.getPricelist();
+    const pricelist = getPricelist();
 
     for (let i = 0; i < pricelist.length; i++) {
         const entry = pricelist[i];
@@ -264,7 +264,7 @@ export function add (sku, data, callback) {
 
     log.debug('Handling request to add item to pricelist', { sku: sku, data: data });
 
-    const match = exports.get(sku);
+    const match = get(sku);
 
     if (match !== null) {
         callback(new Error('Item is already in the pricelist'));
@@ -300,7 +300,7 @@ export function add (sku, data, callback) {
             return callback(new Error(errors.join(', ')));
         }
 
-        const keyPrice = exports.getKeyPrice();
+        const keyPrice = getKeyPrice();
 
         const buy = new Currencies(entry.buy);
         const sell = new Currencies(entry.sell);
@@ -361,7 +361,7 @@ function add (entry, emit) {
 }
 
 export function update (sku, data, callback) {
-    const match = exports.get(sku, false);
+    const match = get(sku, false);
 
     if (match === null) {
         callback(new Error('Item is not in the pricelist'));
@@ -399,7 +399,7 @@ export function update (sku, data, callback) {
     copy.time = time;
 
     if (copy.autoprice === false) {
-        const keyPrice = exports.getKeyPrice();
+        const keyPrice = getKeyPrice();
 
         const buy = new Currencies(copy.buy);
         const sell = new Currencies(copy.sell);

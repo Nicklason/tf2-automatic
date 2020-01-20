@@ -49,17 +49,17 @@ export function getDictionary (steamID, includeInTrade, callback) {
         if (includeInTrade) {
             callback(null, Object.assign({}, dictionary));
         } else {
-            callback(null, exports.filterInTrade(Object.assign({}, dictionary)));
+            callback(null, filterInTrade(Object.assign({}, dictionary)));
         }
         return;
     }
 
-    exports.getInventory(steamID, function (err, items) {
+    getInventory(steamID, function (err, items) {
         if (err) {
             return callback(err);
         }
 
-        return callback(null, exports.createDictionary(items));
+        return callback(null, createDictionary(items));
     });
 };
 
@@ -111,7 +111,7 @@ export function filterInTrade (dict) {
  * @return {Number}
  */
 export function getAmount (sku) {
-    return exports.findBySKU(sku).length;
+    return findBySKU(sku).length;
 };
 
 /**
@@ -120,7 +120,7 @@ export function getAmount (sku) {
  * @return {Object}
  */
 export function findByAssetid (assetid) {
-    const inventory = exports.getOwnInventory(false);
+    const inventory = getOwnInventory(false);
 
     for (const sku in inventory) {
         if (!Object.prototype.hasOwnProperty.call(inventory, sku)) {
@@ -155,7 +155,7 @@ export function findBySKU (sku, includeInTrade = true) {
 };
 
 export function amountCanTrade (sku, buy) {
-    const amount = exports.getAmount(sku);
+    const amount = getAmount(sku);
 
     const match = prices.get(sku);
     if (match === null) {
@@ -175,7 +175,7 @@ export function amountCanTrade (sku, buy) {
 };
 
 export function isOverstocked (sku, buying, diff) {
-    return exports.amountCanTrade(sku, buying) + (buying ? -diff : diff) < 0;
+    return amountCanTrade(sku, buying) + (buying ? -diff : diff) < 0;
 };
 
 /**
@@ -258,8 +258,8 @@ export function createDictionary (items) {
  * @param {Array<Object>} nonTradable
  */
 function inventoryUpdated (tradable, nonTradable) {
-    dictionary = exports.createDictionary(tradable);
-    nonTradableDictionary = exports.createDictionary(nonTradable);
+    dictionary = createDictionary(tradable);
+    nonTradableDictionary = createDictionary(nonTradable);
 
     handlerManager.getHandler().onInventoryUpdated(dictionary);
 }

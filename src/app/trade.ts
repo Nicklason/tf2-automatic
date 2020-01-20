@@ -90,7 +90,7 @@ export function setPollData (pollData) {
         const items = offerData.items || [];
 
         for (let i = 0; i < items.length; i++) {
-            exports.setItemInTrade(items[i].assetid);
+            setItemInTrade(items[i].assetid);
         }
     }
 
@@ -112,7 +112,7 @@ export function offerChanged (offer, oldState) {
 
         // Mark items as in trade
         offer.itemsToGive.forEach(function (item) {
-            exports.setItemInTrade(item.id);
+            setItemInTrade(item.id);
         });
 
         // No items saved for sent offer, save them
@@ -122,7 +122,7 @@ export function offerChanged (offer, oldState) {
     } else {
         // Offer is not active and items are not in trade
         offer.itemsToGive.forEach(function (item) {
-            exports.unsetItemInTrade(item.id);
+            unsetItemInTrade(item.id);
         });
 
         // Unset items
@@ -172,7 +172,7 @@ export function newOffer (offer) {
 
     // Offer is active, items are in trade
     offer.itemsToGive.forEach(function (item) {
-        exports.setItemInTrade(item.id);
+        setItemInTrade(item.id);
     });
 
     offer.data('partner', offer.partner.getSteamID64());
@@ -244,7 +244,7 @@ export function sendOffer (offer, callback) {
     const ourItems = [];
 
     offer.itemsToGive.forEach(function (item) {
-        exports.setItemInTrade(item.assetid);
+        setItemInTrade(item.assetid);
         ourItems.push(mapItem(item));
     });
 
@@ -266,7 +266,7 @@ export function sendOffer (offer, callback) {
 
             // Failed to send the offer, the items are no longer in trade
             offer.itemsToGive.forEach(function (item) {
-                exports.unsetItemInTrade(item.id);
+                unsetItemInTrade(item.id);
             });
             return callback(err);
         }
@@ -636,9 +636,9 @@ function handlerProcessOffer (offer) {
         let actionFunc;
 
         if (action === 'accept') {
-            actionFunc = exports.acceptOffer;
+            actionFunc = acceptOffer;
         } else if (action === 'decline') {
-            actionFunc = exports.declineOffer;
+            actionFunc = declineOffer;
         }
 
         if (!actionFunc) {
