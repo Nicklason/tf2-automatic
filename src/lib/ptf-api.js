@@ -1,6 +1,6 @@
 const request = require('@nicklason/request-retry');
 
-const packageInfo = require('../package.json');
+const pjson = require('pjson');
 
 exports.getSchema = function (callback) {
     apiRequest('GET', '/schema', { appid: 440 }, callback);
@@ -23,7 +23,7 @@ function apiRequest (httpMethod, path, input, callback) {
         method: httpMethod,
         url: `https://api.prices.tf${path}`,
         headers: {
-            'User-Agent': packageInfo.name + '@' + packageInfo.version
+            'User-Agent': pjson.name + '@' + pjson.version
         },
         json: true,
         gzip: true,

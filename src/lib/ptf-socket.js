@@ -2,12 +2,12 @@ const io = require('socket.io-client');
 
 const log = require('./logger');
 
-const packageInfo = require('../package.json');
+const pjson = require('pjson');
 
 const socket = io('https://api.prices.tf', {
     forceNew: true,
     extraHeaders: {
-        'User-Agent': packageInfo.name + '@' + packageInfo.version
+        'User-Agent': pjson.name + '@' + pjson.version
     },
     autoConnect: false
 });

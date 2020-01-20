@@ -25,7 +25,7 @@ const admin = require('../admins');
 const fixItem = require('../utils/item/fixItem');
 const versionCheck = require('../version-check');
 
-const packageInfo = require('../../package.json');
+const pjson = require('pjson');
 
 let messages = [];
 
@@ -837,7 +837,7 @@ exports.handleMessage = function (steamID, message) {
             }
         });
     } else if (isAdmin && command === 'version') {
-        client.chatMessage(steamID, 'Currently running ' + packageInfo.name + '@' + packageInfo.version + '. Checking for a new version...');
+        client.chatMessage(steamID, 'Currently running ' + pjson.name + '@' + pjson.version + '. Checking for a new version...');
 
         versionCheck.checkForUpdates(function (err, hasNewVersion, lastNotifiedVersion, latestVersion) {
             if (err) {
@@ -846,9 +846,9 @@ exports.handleMessage = function (steamID, message) {
             }
 
             if (!hasNewVersion) {
-                client.chatMessage(steamID, 'You are running the latest version of ' + packageInfo.name + '!');
+                client.chatMessage(steamID, 'You are running the latest version of ' + pjson.name + '!');
             } else if (lastNotifiedVersion === latestVersion) {
-                client.chatMessage(steamID, `Update available! Current: v${packageInfo.version}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`);
+                client.chatMessage(steamID, `Update available! Current: v${pjson.version}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`);
             }
         });
     } else if (isAdmin && command === 'pricecheck') {
