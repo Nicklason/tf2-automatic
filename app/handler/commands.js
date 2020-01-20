@@ -19,6 +19,7 @@ const validator = require('lib/validator');
 const manager = require('lib/manager');
 const community = require('lib/community');
 const crafting = require('app/crafting');
+const cart = require('./cart');
 
 const parseJSON = require('utils/parseJSON');
 const admin = require('app/admins');
@@ -914,11 +915,11 @@ exports.handleMessage = function (steamID, message) {
 
         const deposit = command.length === 7 ? true : false;
 
-        const response = trades.addToCart(steamID, sku, amount, deposit);
+        const response = cart.addToCart(steamID, sku, amount, deposit);
 
         client.chatMessage(steamID, response.message + '\n' + stringifyCart(response.cart));
     } else if (isAdmin && command === 'clearcart') {
-        client.chatMessage(steamID, trades.removeFromCart(steamID, true).message);
+        client.chatMessage(steamID, cart.removeFromCart(steamID, true).message);
     } else if (isAdmin && command === 'checkout') {
         trades.customOffer(steamID, function (err, failedMessage) {
             if (err) {
