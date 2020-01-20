@@ -382,7 +382,7 @@ function getOffers (includeInactive, callback) {
  * Finds matching offer
  * @param {Object} offer
  * @param {Boolean} isSent Search for sent or received offers
- * @param {Functions} callback
+ * @param {Function} callback
  */
 function findMatchingOffer (offer, isSent, callback) {
     // Get current offers
