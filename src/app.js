@@ -1,3 +1,11 @@
+const fs = require('fs');
+
+if (!fs.existsSync('../node_modules')) {
+    /* eslint-disable-next-line no-console */
+    console.error('Missing dependencies! Install them with `npm install`');
+    process.exit(1);
+}
+
 const dotenv = require('dotenv');
 const path = require('path');
 
