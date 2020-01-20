@@ -37,6 +37,7 @@ exports.onTF2QueueCompleted = function () {
 };
 
 exports.onLogin = function () {
+    // @ts-ignore
     if (exports.isReady()) {
         // We have relogged, set game and online
         client.gamesPlayed(pjson.name);

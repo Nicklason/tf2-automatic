@@ -8,6 +8,7 @@ v.addSchema(require('../schemas/pricelist'));
 v.addSchema(require('../schemas/add'));
 
 module.exports = function (...args) {
+    // @ts-ignore
     const validated = v.validate(...args);
     if (validated.valid === true) {
         return null;
