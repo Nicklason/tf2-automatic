@@ -76,4 +76,4 @@ files/
 logs/
 
 # ignore compiled code
-out/
+dist/

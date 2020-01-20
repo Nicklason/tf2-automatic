@@ -2,10 +2,10 @@ const request = require('@nicklason/request-retry');
 const semver = require('semver');
 const log = require('../lib/logger');
 
-const packageInfo = require('../package.json');
+const pjson = require('pjson');
 
 // Maybe save latest notified version to a file?
-let lastNotifiedVersion = packageInfo.version;
+let lastNotifiedVersion = pjson.version;
 
 exports.getLatestVersion = function (callback) {
     request({
@@ -33,11 +33,11 @@ exports.checkForUpdates = function (callback) {
             return;
         }
 
-        const hasNewVersion = semver.lt(packageInfo.version, latestVersion);
+        const hasNewVersion = semver.lt(pjson.version, latestVersion);
 
         if (lastNotifiedVersion !== latestVersion && hasNewVersion) {
             lastNotifiedVersion = latestVersion;
-            require('./admins').message(`Update available! Current: v${packageInfo.version}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`);
+            require('./admins').message(`Update available! Current: v${pjson.version}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`);
         }
 
         callback(null, hasNewVersion, lastNotifiedVersion, latestVersion);
