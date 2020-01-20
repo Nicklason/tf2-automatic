@@ -1,5 +1,15 @@
+const fs = require('fs');
+const path = require('path');
+
+if (!fs.existsSync(path.join(__dirname, '../node_modules'))) {
+    /* eslint-disable-next-line no-console */
+    console.error('Missing dependencies! Install them with `npm install`');
+    process.exit(1);
+}
+
 const dotenv = require('dotenv');
-dotenv.config();
+
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const log = require('./lib/logger');
 
