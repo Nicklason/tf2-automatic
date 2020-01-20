@@ -19,6 +19,16 @@
     "url": "https://github.com/Nicklason/tf2-automatic/issues"
   },
   "homepage": "https://github.com/Nicklason/tf2-automatic#readme",
+  "_moduleAliases": {
+    "@root": ".",
+    "app": "app",
+    "utils": "app/utils",
+    "resources": "app/resources",
+    "handler": "app/handler",
+    "lib": "lib",
+    "classes": "classes",
+    "schemas": "schemas"
+  },
   "dependencies": {
     "@nicklason/request-retry": "^1.1.2",
     "async": "^3.1.0",
@@ -33,9 +43,9 @@
     "is-path-inside": "^3.0.2",
     "isobject": "^4.0.0",
     "jsonschema": "^1.2.5",
+    "module-alias": "^2.2.2",
     "moment": "^2.24.0",
     "path": "^0.12.7",
-    "pjson": "^1.0.9",
     "pluralize": "^8.0.0",
     "pm2": "^4.2.1",
     "retry": "^0.12.0",
