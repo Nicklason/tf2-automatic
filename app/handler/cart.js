@@ -311,7 +311,7 @@ exports.checkout = function (partner, callback) {
                 alteredItems.their.push(name);
             }
 
-            if (!cart._exist(name, 'their')) {
+            if (!cart.amount(name, 'their')) {
                 continue;
             }
 
@@ -390,7 +390,7 @@ function createAlteredMessage (steamID, alteredItems) {
 
     ['our', 'their'].forEach((whose) => {
         alteredItems[whose].forEach((name) => {
-            if (cart._exist(name, whose)) {
+            if (cart.amount(name, whose)) {
                 some[whose].push({ name, amount: cart.amount(name, whose) });
             } else {
                 none[whose].push(name);
