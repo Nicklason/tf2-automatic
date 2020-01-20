@@ -1,3 +1,5 @@
+//@ts-check
+
 /**
  * Checks if an item has a specific description
  * @param {String} description

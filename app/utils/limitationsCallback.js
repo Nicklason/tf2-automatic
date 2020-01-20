@@ -1,4 +1,6 @@
-const client = require('lib/client');
+//@ts-check
+
+const client = require('../../lib/client');
 
 /**
  * Waits for accountLimitations event to fire

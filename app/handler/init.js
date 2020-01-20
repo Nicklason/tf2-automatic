@@ -1,10 +1,12 @@
+//@ts-check
+
 const async = require('async');
 
-const files = require('utils/files');
+const files = require('../utils/files');
 
-const paths = require('app/resources/paths');
+const paths = require('../resources/paths');
 
-const handlerManager = require('app/handler-manager');
+const handlerManager = require('../handler-manager');
 
 module.exports = function (done) {
     async.parallel({

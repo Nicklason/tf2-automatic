@@ -1,8 +1,10 @@
+//@ts-check
+
 const moment = require('moment');
 
-const log = require('lib/logger');
-const handlerManager = require('app/handler-manager');
-const client = require('lib/client');
+const log = require('../../lib/logger');
+const handlerManager = require('../handler-manager');
+const client = require('../../lib/client');
 
 const queue = [];
 let processingQueue = false;

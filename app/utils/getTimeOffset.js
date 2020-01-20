@@ -1,3 +1,5 @@
+//@ts-check
+
 const SteamTotp = require('steam-totp');
 
 let timeOffset = null;

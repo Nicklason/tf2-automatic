@@ -1,11 +1,13 @@
+//@ts-check
+
 const SteamUser = require('steam-user');
 const path = require('path');
 const isPathInside = require('is-path-inside');
 const pm2 = require('pm2');
 
-const log = require('lib/logger');
-const files = require('utils/files');
-const backoff = require('utils/exponentialBackoff');
+const log = require('../lib/logger');
+const files = require('./utils/files');
+const backoff = require('./utils/exponentialBackoff');
 
 const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SECRET', 'STEAM_IDENTITY_SECRET'];
 const REQUIRED_EVENTS = ['onRun', 'onReady', 'onShutdown', 'onLoginKey', 'onNewTradeOffer', 'onLoginAttempts', 'onPollData', 'onPricelist'];
@@ -89,9 +91,9 @@ const EXPORTED_FUNCTIONS = {
 
             exiting = true;
 
-            require('lib/manager').shutdown();
-            require('lib/bptf-listings').shutdown();
-            require('lib/client').logOff();
+            require('../lib/manager').shutdown();
+            require('../lib/bptf-listings').shutdown();
+            require('../lib/client').logOff();
 
             checkFiles(function () {
                 // Listen for logger to finish
@@ -113,56 +115,56 @@ const EXPORTED_FUNCTIONS = {
         isReady = false;
 
         // Make the bot snooze on Steam, that way people will know it is not running
-        require('lib/client').setPersona(SteamUser.EPersonaState.Snooze);
+        require('../lib/client').setPersona(SteamUser.EPersonaState.Snooze);
 
         // Disable login
-        require('lib/client').autoRelogin = false;
+        require('../lib/client').autoRelogin = false;
 
         // Stop price updates
-        require('lib/ptf-socket').disconnect();
+        require('../lib/ptf-socket').disconnect();
 
         // Stop the polling of trade offers
-        require('lib/manager').pollInterval = -1;
+        require('../lib/manager').pollInterval = -1;
 
         // Stop heartbeat and inventory timers
-        clearInterval(require('lib/bptf-listings')._heartbeatInterval);
-        clearInterval(require('lib/bptf-listings')._inventoryInterval);
+        clearInterval(require('../lib/bptf-listings')._heartbeatInterval);
+        clearInterval(require('../lib/bptf-listings')._inventoryInterval);
     },
     setLoginAttempts (attempts) {
-        require('app/login-attempts').setAttempts(attempts);
+        require('./login-attempts').setAttempts(attempts);
     },
     setPollData: function (pollData) {
-        require('app/trade').setPollData(pollData);
+        require('./trade').setPollData(pollData);
     },
     setPricelist: function (pricelist) {
-        require('app/prices').setPricelist(pricelist);
+        require('./prices').setPricelist(pricelist);
     },
     acceptOffer (offer, callback) {
-        require('app/trade').acceptOffer(offer, callback);
+        require('./trade').acceptOffer(offer, callback);
     },
     declineOffer (offer, callback) {
-        require('app/trade').declineOffer(offer, callback);
+        require('./trade').declineOffer(offer, callback);
     },
     sendOffer (offer, callback) {
-        require('app/trade').sendOffer(offer, callback);
+        require('./trade').sendOffer(offer, callback);
     },
     cancelOffer (offer, callback) {
-        require('app/trade').cancelOffer(offer, callback);
+        require('./trade').cancelOffer(offer, callback);
     },
     getInventory (steamid, callback) {
-        require('app/inventory').getInventory(steamid, callback);
+        require('./inventory').getInventory(steamid, callback);
     },
     getOwnInventory () {
-        return require('app/inventory').getOwnInventory();
+        return require('./inventory').getOwnInventory();
     },
     smeltMetal (defindex, amount) {
-        require('app/crafting').smeltMetal(defindex, amount);
+        require('./crafting').smeltMetal(defindex, amount);
     },
     combineMetal (defindex, amount) {
-        require('app/crafting').combineMetal(defindex, amount);
+        require('./crafting').combineMetal(defindex, amount);
     },
     useItem (assetid) {
-        require('app/crafting').useItem(assetid);
+        require('./crafting').useItem(assetid);
     },
     isReady () {
         return exports.isReady();
@@ -290,7 +292,7 @@ function validate () {
  * Binds client to every event
  */
 function bindThis () {
-    const client = require('lib/client');
+    const client = require('../lib/client');
 
     REQUIRED_EVENTS.forEach(function (event) {
         handler[event] = handler[event].bind(client);

@@ -1,14 +1,16 @@
+//@ts-check
+
 const SteamUser = require('steam-user');
 const request = require('request');
 const SteamID = require('steamid');
 
-const manager = require('lib/manager');
-const client = require('lib/client');
-const log = require('lib/logger');
-const trades = require('handler/trades');
+const manager = require('../../lib/manager');
+const client = require('../../lib/client');
+const log = require('../../lib/logger');
+const trades = require('./trades');
 
-const admin = require('app/admins');
-const backoff = require('utils/exponentialBackoff');
+const admin = require('../admins');
+const backoff = require('../utils/exponentialBackoff');
 
 const friendsToKeep = (process.env.KEEP === undefined ? [] : JSON.parse(process.env.KEEP)).concat(admin.getAdmins());
 

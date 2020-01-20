@@ -1,5 +1,7 @@
-const client = require('lib/client');
-const community = require('lib/community');
+//@ts-check
+
+const client = require('../../lib/client');
+const community = require('../../lib/community');
 
 /**
  * Waits for webSession event to fire

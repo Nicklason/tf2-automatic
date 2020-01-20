@@ -1,6 +1,8 @@
+//@ts-check
+
 const SteamID = require('steamid');
 
-const client = require('lib/client');
+const client = require('../lib/client');
 
 const admins = process.env.ADMINS === undefined ? [] : JSON.parse(process.env.ADMINS);
 

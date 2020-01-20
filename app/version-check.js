@@ -1,8 +1,10 @@
+//@ts-check
+
 const request = require('@nicklason/request-retry');
 const semver = require('semver');
-const log = require('lib/logger');
+const log = require('../lib/logger');
 
-const package = require('@root/package.json');
+const package = require('../package.json');
 
 // Maybe save latest notified version to a file?
 let lastNotifiedVersion = package.version;
@@ -37,7 +39,7 @@ exports.checkForUpdates = function (callback) {
 
         if (lastNotifiedVersion !== latestVersion && hasNewVersion) {
             lastNotifiedVersion = latestVersion;
-            require('app/admins').message(`Update available! Current: v${package.version}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`);
+            require('./admins').message(`Update available! Current: v${package.version}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`);
         }
 
         callback(null, hasNewVersion, lastNotifiedVersion, latestVersion);

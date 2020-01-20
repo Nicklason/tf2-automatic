@@ -1,14 +1,16 @@
+//@ts-check
+
 const SteamUser = require('steam-user');
 const pluralize = require('pluralize');
 
-const package = require('@root/package.json');
+const package = require('../../package.json');
 
-const prices = require('app/prices');
-const listingManager = require('lib/bptf-listings');
-const log = require('lib/logger');
+const prices = require('../prices');
+const listingManager = require('../../lib/bptf-listings');
+const log = require('../../lib/logger');
 
-exports.onRun = require('handler/init');
-exports.onShutdown = require('handler/shutdown');
+exports.onRun = require('../handler/init');
+exports.onShutdown = require('../handler/shutdown');
 
 exports.onReady = function () {
     log.info(package.name + ' v' + package.version + ' is ready! ' + pluralize('item', prices.getPricelist().length, true) + ' in pricelist, ' + pluralize('listing', listingManager.listings.length, true) + ' on www.backpack.tf (cap: ' + listingManager.cap + ')');
@@ -17,18 +19,18 @@ exports.onReady = function () {
     this.setPersona(SteamUser.EPersonaState.Online);
 
     // Smelt metal if needed
-    require('handler/crafting').keepMetalSupply();
+    require('../handler/crafting').keepMetalSupply();
 
     // Sort the inventory after crafting metal
-    require('app/crafting').sortInventory(3);
+    require('../crafting').sortInventory(3);
 
     // Check friend requests that we got while offline
-    require('handler/friends').checkFriendRequests();
+    require('../handler/friends').checkFriendRequests();
 
     // Check group invites that we got while offline
-    require('handler/groups').checkGroupInvites();
+    require('../handler/groups').checkGroupInvites();
 
-    require('handler/listings').setupAutobump();
+    require('../handler/listings').setupAutobump();
 };
 
 exports.onTF2QueueCompleted = function () {
@@ -47,12 +49,12 @@ exports.onHeartbeat = function (bumped) {
     log.debug('Heartbeat sent to www.backpack.tf' + (bumped > 0 ? '; Bumped ' + pluralize('listing', bumped, true) : '') + '.');
 };
 
-exports.onMessage = require('handler/commands').handleMessage;
-exports.onPriceChange = require('handler/listings').checkBySKU;
-exports.onNewTradeOffer = require('handler/trades').newOffer;
-exports.onTradeOfferChanged = require('handler/trades').offerChanged;
-exports.onFriendRelationship = require('handler/friends').friendRelationChanged;
-exports.onGroupRelationship = require('handler/groups').groupRelationChanged;
+exports.onMessage = require('./commands').handleMessage;
+exports.onPriceChange = require('./listings').checkBySKU;
+exports.onNewTradeOffer = require('./trades').newOffer;
+exports.onTradeOfferChanged = require('./trades').offerChanged;
+exports.onFriendRelationship = require('./friends').friendRelationChanged;
+exports.onGroupRelationship = require('./groups').groupRelationChanged;
 
 exports.onBptfAuth = function (bptfAuth) {
     bptfAuth.private = true;
@@ -73,6 +75,6 @@ exports.onBptfAuth = function (bptfAuth) {
     json: true
 }].forEach(function (v) {
     exports[v.event] = function (data) {
-        require('handler/save')(v, data);
+        require('./save')(v, data);
     };
 });

@@ -1,20 +1,22 @@
+//@ts-check
+
 const TradeOfferManager = require('steam-tradeoffer-manager');
 const Currencies = require('tf2-currencies');
 const pluralize = require('pluralize');
 const retry = require('retry');
 
-const log = require('lib/logger');
-const inventory = require('app/inventory');
-const prices = require('app/prices');
-const listings = require('handler/listings');
-const client = require('lib/client');
-const manager = require('lib/manager');
-const admin = require('app/admins');
-const groups = require('handler/groups');
+const log = require('../../lib/logger');
+const inventory = require('../inventory');
+const prices = require('../prices');
+const listings = require('./listings');
+const client = require('../../lib/client');
+const manager = require('../../lib/manager');
+const admin = require('../admins');
+const groups = require('./groups');
 
 const isAdmin = admin.isAdmin;
-const checkBanned = require('utils/isBanned');
-const communityLoginCallback = require('utils/communityLoginCallback');
+const checkBanned = require('../utils/isBanned');
+const communityLoginCallback = require('../utils/communityLoginCallback');
 
 exports.getTradesWithPeople = function (steamIDs) {
     // Go through polldata data
@@ -43,7 +45,7 @@ exports.getTradesWithPeople = function (steamIDs) {
 };
 
 exports.getActiveOffer = function (steamID) {
-    const pollData = require('lib/manager').pollData;
+    const pollData = require('../../lib/manager').pollData;
 
     if (!pollData.offerData) {
         return null;
@@ -372,7 +374,7 @@ exports.createOffer = function (details, callback) {
 
                     offer.setMessage(process.env.OFFER_MESSAGE || 'Powered by TF2 Automatic');
 
-                    require('app/trade').sendOffer(offer, function (err) {
+                    require('../trade').sendOffer(offer, function (err) {
                         if (err) {
                             if (err.message.indexOf('We were unable to contact the game\'s item server') !== -1) {
                                 return callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
@@ -867,10 +869,10 @@ exports.offerChanged = function (offer, oldState) {
         offer.log('trade', 'has been accepted. Summary:\n' + offer.summarize());
 
         // Smelt metal
-        require('handler/crafting').keepMetalSupply();
+        require('./crafting').keepMetalSupply();
 
         // Sort inventory
-        require('app/crafting').sortInventory(3);
+        require('../crafting').sortInventory(3);
 
         // Update listings
         const diff = offer.data('diff') || {};

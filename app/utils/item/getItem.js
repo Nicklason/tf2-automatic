@@ -1,9 +1,11 @@
+//@ts-check
+
 const SKU = require('tf2-sku');
 const url = require('url');
 
-const schemaManager = require('lib/tf2-schema');
+const schemaManager = require('../../../lib/tf2-schema');
 
-const fixItem = require('utils/item/fixItem');
+const fixItem = require('../../utils/item/fixItem');
 
 module.exports = function () {
     if (this.appid != 440) {

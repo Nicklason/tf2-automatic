@@ -1,12 +1,14 @@
+//@ts-check
+
 const TradeOfferManager = require('steam-tradeoffer-manager');
 
-const log = require('lib/logger');
-const community = require('lib/community');
+const log = require('../lib/logger');
+const community = require('../lib/community');
 
-const handlerManager = require('app/handler-manager');
+const handlerManager = require('./handler-manager');
 
-const communityLoginCallback = require('utils/communityLoginCallback');
-const backoff = require('utils/exponentialBackoff');
+const communityLoginCallback = require('./utils/communityLoginCallback');
+const backoff = require('./utils/exponentialBackoff');
 
 const receivedOffers = [];
 const itemsInTrade = [];
@@ -94,7 +96,7 @@ exports.setPollData = function (pollData) {
         }
     }
 
-    require('lib/manager').pollData = pollData;
+    require('../lib/manager').pollData = pollData;
 };
 
 /**
@@ -103,7 +105,7 @@ exports.setPollData = function (pollData) {
  * @param {Number} oldState
  */
 exports.offerChanged = function (offer, oldState) {
-    const inventoryManager = require('app/inventory');
+    const inventoryManager = require('./inventory');
 
     offer.log('verbose', 'state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
 
@@ -298,7 +300,7 @@ function sendOfferRetry (offer, callback, tries = 0) {
             } else if (err.eresult !== undefined) {
                 if (err.eresult === TradeOfferManager.EResult.Revoked) {
                     // One or more of the items does not exist in the inventories, refresh our inventory and return the error
-                    return require('app/inventory').getInventory(community.steamID, function () {
+                    return require('./inventory').getInventory(community.steamID, function () {
                         callback(err);
                     });
                 } else if (err.eresult === TradeOfferManager.EResult.Timeout) {
@@ -373,7 +375,7 @@ function getOffers (includeInactive, callback) {
         includeInactive = false;
     }
 
-    require('lib/manager').getOffers(includeInactive ? TradeOfferManager.EOfferFilter.All : TradeOfferManager.EOfferFilter.ActiveOnly, callback);
+    require('../lib/manager').getOffers(includeInactive ? TradeOfferManager.EOfferFilter.All : TradeOfferManager.EOfferFilter.ActiveOnly, callback);
 }
 
 /**
@@ -675,7 +677,7 @@ function finishedProcessing (offerId) {
  * @param {Number} tries
  */
 function getOfferRetry (offerId, callback, tries = 0) {
-    require('lib/manager').getOffer(offerId, function (err, offer) {
+    require('../lib/manager').getOffer(offerId, function (err, offer) {
         tries++;
 
         if (err) {

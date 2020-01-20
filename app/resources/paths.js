@@ -1,3 +1,5 @@
+//@ts-check
+
 const path = require('path');
 
 const folderName = process.env.FOLDER_NAME || process.env.STEAM_ACCOUNT_NAME;

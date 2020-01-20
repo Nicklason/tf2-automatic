@@ -1,8 +1,10 @@
-const log = require('lib/logger');
-const client = require('lib/client');
+//@ts-check
 
-const loginAttempts = require('app/login-attempts');
-const handlerManager = require('app/handler-manager');
+const log = require('../lib/logger');
+const client = require('../lib/client');
+
+const loginAttempts = require('./login-attempts');
+const handlerManager = require('./handler-manager');
 
 /**
  * Signs in to Steam and catches login error

@@ -1,3 +1,5 @@
+//@ts-check
+
 const dotProp = require('dot-prop');
 const pluralize = require('pluralize');
 const moment = require('moment');
@@ -5,27 +7,27 @@ const SKU = require('tf2-sku');
 const Currencies = require('tf2-currencies');
 const validUrl = require('valid-url');
 
-const prices = require('app/prices');
-const client = require('lib/client');
-const inventory = require('app/inventory');
-const schemaManager = require('lib/tf2-schema');
-const log = require('lib/logger');
-const friends = require('handler/friends');
-const trades = require('handler/trades');
-const queue = require('handler/queue');
-const handlerManager = require('app/handler-manager');
-const api = require('lib/ptf-api');
-const validator = require('lib/validator');
-const manager = require('lib/manager');
-const community = require('lib/community');
-const crafting = require('app/crafting');
+const prices = require('../prices');
+const client = require('../../lib/client');
+const inventory = require('../inventory');
+const schemaManager = require('../../lib/tf2-schema');
+const log = require('../../lib/logger');
+const friends = require('./friends');
+const trades = require('./trades');
+const queue = require('./queue');
+const handlerManager = require('../handler-manager');
+const api = require('../../lib/ptf-api');
+const validator = require('../../lib/validator');
+const manager = require('../../lib/manager');
+const community = require('../../lib/community');
+const crafting = require('../crafting');
 
-const parseJSON = require('utils/parseJSON');
-const admin = require('app/admins');
-const fixItem = require('utils/item/fixItem');
-const versionCheck = require('app/version-check');
+const parseJSON = require('../utils/parseJSON');
+const admin = require('../admins');
+const fixItem = require('../utils/item/fixItem');
+const versionCheck = require('../version-check');
 
-const package = require('@root/package.json');
+const package = require('../../package.json');
 
 let messages = [];
 
@@ -657,14 +659,14 @@ exports.handleMessage = function (steamID, message) {
             if (params.autoprice !== true) {
                 handlerManager.getHandler().onPricelist(pricelist);
                 client.chatMessage(steamID, 'Updated pricelist!');
-                require('handler/listings').redoListings();
+                require('./listings').redoListings();
                 return;
             }
 
             client.chatMessage(steamID, 'Updating prices...');
 
             prices.init(function (err) {
-                require('handler/listings').redoListings();
+                require('./listings').redoListings();
 
                 if (err) {
                     log.warn('Failed to update prices: ', err);
