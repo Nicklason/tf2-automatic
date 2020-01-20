@@ -16,7 +16,7 @@ const EconItem = require('steam-tradeoffer-manager/lib/classes/EconItem.js');
 const CEconItem = require('steamcommunity/classes/CEconItem.js');
 
 ['hasDescription', 'getAction', 'getTag', 'getItem', 'getSKU', 'getName', 'getPrice'].forEach(function (v) {
-    const func = require('utils/item/' + v);
+    const func = require('./app/utils/item/' + v);
     EconItem.prototype[v] = func;
     CEconItem.prototype[v] = func;
 });
@@ -24,7 +24,7 @@ const CEconItem = require('steamcommunity/classes/CEconItem.js');
 const TradeOffer = require('steam-tradeoffer-manager/lib/classes/TradeOffer');
 
 ['log', 'summarize'].forEach(function (v) {
-    TradeOffer.prototype[v] = require('utils/offer/' + v);
+    TradeOffer.prototype[v] = require('./app/utils/offer/' + v);
 });
 
 const package = require('./package.json');
