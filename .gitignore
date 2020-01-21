@@ -74,3 +74,6 @@ files/
 
 # log folder
 logs/
+
+# ignore compiled code
+dist/
