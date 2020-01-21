@@ -7,23 +7,23 @@ declare module 'tf2-schema' {
     }
 
     interface SchemaItem {
-        name: string,
-        defindex: number,
-        item_class: string,
-        item_class_name: string,
-        item_name: string,
-        item_description: string,
-        proper_name: boolean,
-        model_player?: string|null,
-        item_quality: number,
-        image_inventory: string,
-        min_ilevel: number,
-        max_ilevel: number,
-        image_url: string|null,
-        image_url_large: string|null,
+        name: string;
+        defindex: number;
+        item_class: string;
+        item_class_name: string;
+        item_name: string;
+        item_description: string;
+        proper_name: boolean;
+        model_player?: string|null;
+        item_quality: number;
+        image_inventory: string;
+        min_ilevel: number;
+        max_ilevel: number;
+        image_url: string|null;
+        image_url_large: string|null;
         drop_type?: string
-        craft_class?: string,
-        craft_material_type?: string,
+        craft_class?: string;
+        craft_material_type?: string;
         capabilities?: {
             decodeable?: boolean,
             paintable?: boolean,
@@ -40,10 +40,10 @@ declare module 'tf2-schema' {
             can_stringify?: boolean,
             can_killstreakify?: boolean,
             can_consume?: boolean
-        },
+        };
         styles?: [{
             name: string
-        }]
+        }];
         tool?: {
             type: string,
             use_string?: string,
@@ -55,42 +55,42 @@ declare module 'tf2-schema' {
                 can_gift_wrap?: boolean,
                 paintable_team_colors?: boolean
             }
-        },
-        used_by_classes: string[],
+        };
+        used_by_classes: string[];
         attributes: [{
             name: string,
             class: string,
-            value: number
-        }]
+            value: number,
+        }];
     }
 
     interface SchemaAttribute {
-        name: string,
-        defindex: number,
-        attribute_class: string,
-        description_string?: string,
-        description_format?: string,
-        effect_type: string,
-        hidden: boolean,
-        stored_as_integer: boolean
+        name: string;
+        defindex: number;
+        attribute_class: string;
+        description_string?: string;
+        description_format?: string;
+        effect_type: string;
+        hidden: boolean;
+        stored_as_integer: boolean;
     }
 
     interface Item {
-        defindex: number,
-        quality: number,
-        craftable?:  boolean,
-        tradable?: boolean,
-        killstreak?: number,
-        australium?: boolean,
-        festive?: boolean,
-        paintkit?: string|null,
-        wear?: number|null,
-        quality2?: number|null,
-        target?: number|null,
-        craftnumber?: number|null,
-        crateseries?: number|null,
-        output?: number|null,
-        outputQuality?: number|null,
+        defindex: number;
+        quality: number;
+        craftable?:  boolean;
+        tradable?: boolean;
+        killstreak?: number;
+        australium?: boolean;
+        festive?: boolean;
+        paintkit?: string|null;
+        wear?: number|null;
+        quality2?: number|null;
+        target?: number|null;
+        craftnumber?: number|null;
+        crateseries?: number|null;
+        output?: number|null;
+        outputQuality?: number|null;
     }
 
     class SchemaManager extends EventEmitter implements StrictEventEmitter<EventEmitter, Events> {
