@@ -913,9 +913,7 @@ exports.handleMessage = function (steamID, message) {
             return;
         }
 
-        const deposit = command.length === 7 ? true : false;
-
-        const response = cart.addToCart(steamID, sku, amount, deposit);
+        const response = cart.addToCart(steamID, sku, amount, command === 'deposit');
 
         client.chatMessage(steamID, response.message + '\n' + cart.stringify(steamID));
     } else if (isAdmin && command === 'clearcart') {
