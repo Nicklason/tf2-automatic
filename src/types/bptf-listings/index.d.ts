@@ -1,8 +1,9 @@
 declare module 'bptf-listings' {
     import StrictEventEmitter from 'strict-event-emitter-types';
-    import { EventEmitter } from "events";
-    import SchemaManager from "tf2-schema"
-    import SteamID from "steamid";
+    import { EventEmitter } from 'events';
+    import SchemaManager from 'tf2-schema';
+    import SteamID from 'steamid';
+    import TF2Currencies from 'tf2-currencies';
 
     interface Events {
         ready: () => void;
@@ -17,10 +18,6 @@ declare module 'bptf-listings' {
     class ListingManager extends EventEmitter implements StrictEventEmitter<EventEmitter, Events> {
         static EFailiureReason: object;
 
-        /**
-         * Creates a new instance of ListingManager
-         * @param options
-         */
         constructor (options: { token?: string, steamid?: string, waitTime?: number, batchSize?: number, schema?: SchemaManager.Schema });
 
         token: string|undefined;
@@ -117,25 +114,6 @@ declare module 'bptf-listings' {
             output: number|null;
             outputQuality: number|null;
         }
-
-        interface RawListing {
-            id: string;
-            item: object;
-            appid: number;
-            currencies: {
-                keys: number,
-                metal: number
-            };
-            offers: boolean;
-            buyout: boolean;
-            details: string;
-            created: number;
-            bump: number;
-            intent: number;
-            automatic?: number;
-            count?: number;
-            promoted?: number;
-        }
         
         interface CreateListing {
             id?: number;
@@ -145,8 +123,18 @@ declare module 'bptf-listings' {
             time: number;
         }
     
-        export class Listing {
-            constructor (listing: RawListing, manager: ListingManager);
+        class Listing {
+            id: string;
+            steamid: SteamID;
+            intent: number;
+            item: object;
+            appid: number;
+            currencies: TF2Currencies;
+            offers: boolean;
+            buyout: boolean;
+            details: string;
+            created: number;
+            bump: number;
 
             /**
              * Get sku of the item
