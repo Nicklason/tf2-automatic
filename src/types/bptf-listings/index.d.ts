@@ -22,77 +22,24 @@ declare module 'bptf-listings' {
 
         token: string|undefined;
         steamid: SteamID;
-
         waitTime: number;
         batchSize: number;
-
         cap: number|null;
         promotes: number|null;
-
         listings: ListingManager.Listing[];
         actions: { create: object[], remove: string[] };
-
         ready: boolean;
-
         schema: SchemaManager.Schema|null;
 
-        /**
-         * Initializes ListingManager
-         * @param callback
-         */
         init (callback: Function): void;
-
-        /**
-         * Sends a heartbeat to backpack.tf
-         * @param callback 
-         */
         sendHeartbeat (callback: Function): void;
-
-        /**
-         * Gets listings currently on backpack.tf
-         * @param callback 
-         */
         getListings (callback: Function): void;
-
-        /**
-         * Finds a listing from the cached listings
-         * @param search 
-         */
         findListing (search: string|number): ListingManager.Listing|null;
-
-        /**
-         * Finds listings for matching item
-         * @param sku 
-         */
         findListings (sku: string): ListingManager.Listing[];
-
-        /**
-         * Create a listing
-         * @param listing 
-         */
         createListing (listing: ListingManager.CreateListing): void;
-
-        /**
-         * Create many listings
-         * @param listings 
-         */
         createListings (listings: ListingManager.CreateListing[]): void;
-
-        /**
-         * Remove a listing
-         * @param listingId 
-         */
         removeListing (listingId: string): void;
-
-        /**
-         * Remove many listings
-         * @param listingIds 
-         */
         removeListings (listingIds: string[]): void;
-
-        /**
-         * Resets values to default
-         */
         shutdown (): void;
     }
 
@@ -136,30 +83,10 @@ declare module 'bptf-listings' {
             created: number;
             bump: number;
 
-            /**
-             * Get sku of the item
-             */
             getSKU (): string;
-
-            /**
-             * Get item
-             */
             getItem (): Item;
-
-            /**
-             * Get name of the item
-             */
             getName (): string;
-
-            /**
-             * Update this listing
-             * @param properties 
-             */
             update (properties: { currencies?: { keys: number, metal: number }, details?: string, offers?: boolean, buyout?: boolean }): void;
-
-            /**
-             * Remove this listing
-             */
             remove (): void;
         }
     }
