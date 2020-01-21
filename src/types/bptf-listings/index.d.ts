@@ -43,19 +43,19 @@ declare module 'bptf-listings' {
          * Initializes ListingManager
          * @param callback
          */
-        init (callback: Function);
+        init (callback: Function): void;
 
         /**
          * Sends a heartbeat to backpack.tf
          * @param callback 
          */
-        sendHeartbeat (callback: Function);
+        sendHeartbeat (callback: Function): void;
 
         /**
          * Gets listings currently on backpack.tf
          * @param callback 
          */
-        getListings (callback: Function);
+        getListings (callback: Function): void;
 
         /**
          * Finds a listing from the cached listings
@@ -63,9 +63,40 @@ declare module 'bptf-listings' {
          */
         findListing (search: string|number): ListingManager.Listing|null;
 
+        /**
+         * Finds listings for matching item
+         * @param sku 
+         */
         findListings (sku: string): ListingManager.Listing[];
 
-        createListings (listings);
+        /**
+         * Create a listing
+         * @param listing 
+         */
+        createListing (listing: ListingManager.CreateListing): void;
+
+        /**
+         * Create many listings
+         * @param listings 
+         */
+        createListings (listings: ListingManager.CreateListing[]): void;
+
+        /**
+         * Remove a listing
+         * @param listingId 
+         */
+        removeListing (listingId: string): void;
+
+        /**
+         * Remove many listings
+         * @param listingIds 
+         */
+        removeListings (listingIds: string[]): void;
+
+        /**
+         * Resets values to default
+         */
+        shutdown (): void;
     }
 
     namespace ListingManager {
@@ -136,41 +167,12 @@ declare module 'bptf-listings' {
              * Update this listing
              * @param properties 
              */
-            update (properties: { currencies?: { keys: number, metal: number }, details?: string, offers?: boolean, buyout?: boolean });
+            update (properties: { currencies?: { keys: number, metal: number }, details?: string, offers?: boolean, buyout?: boolean }): void;
 
             /**
              * Remove this listing
              */
-            remove ();
-
-            /**
-             * Create a listing
-             * @param listing 
-             */
-            createListing (listing: CreateListing);
-
-            /**
-             * Create many listings
-             * @param listings 
-             */
-            createListings (listings: CreateListing[]);
-
-            /**
-             * Remove a listing
-             * @param listingId 
-             */
-            removeListing (listingId: string);
-
-            /**
-             * Remove many listings
-             * @param listingIds 
-             */
-            removeListings (listingIds: string[]);
-
-            /**
-             * Resets values to default
-             */
-            shutdown ();
+            remove (): void;
         }
     }
 }
