@@ -26,20 +26,20 @@ declare module 'tf2-schema' {
          * Inititalizes SchemaManager
          * @param callback 
          */
-        init (callback: Function);
+        init (callback: Function): void;
 
         /**
          * Set schema
          * @param data
          * @param fromUpdate
          */
-        setSchema (data: object, fromUpdate?: boolean);
+        setSchema (data: object, fromUpdate?: boolean): void;
 
         /**
          * Gets schema data and updates current schema / creates new instance
          * @param callback 
          */
-        getSchema (callback: Function);
+        getSchema (callback: Function): void;
     }
 
     namespace SchemaManager {
@@ -136,26 +136,26 @@ declare module 'tf2-schema' {
              * @param apiKey 
              * @param callback 
              */
-            static getOverview (apiKey: string, callback: Function);
+            static getOverview (apiKey: string, callback: Function): void;
     
             /**
              * Gets schema items
              * @param apiKey 
              * @param callback 
              */
-            static getItems (apiKey: string, callback: Function);
+            static getItems (apiKey: string, callback: Function): void;
     
             /**
              * Gets skins / paintkits
              * @param callback 
              */
-            static getPaintKits (callback: Function);
+            static getPaintKits (callback: Function): void;
     
             /**
              * Gets items_game.txt
              * @param callback 
              */
-            static getItemsGame (callback: Function);
+            static getItemsGame (callback: Function): void;
     
             /**
              * Creates a new instance of Schema
