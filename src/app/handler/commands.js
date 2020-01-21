@@ -286,6 +286,11 @@ exports.handleMessage = function (steamID, message) {
         '!help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
             const adminCommands = [
+                '!deposit - Used to deposit items',
+                '!withdraw - Used to withdraw items',
+                '!cart - See the current cart',
+                '!checkout - Make the bot send you an offer with the items added with deposit and withdraw',
+                '!clearcart - Clears the cart',
                 '!get - Used to see raw pricelist info about an item',
                 '!add - Add an item to the pricelist',
                 '!remove - Remove an item from the pricelist',
