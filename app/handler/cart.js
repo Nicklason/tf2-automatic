@@ -1,6 +1,7 @@
 const TradeOfferManager = require('steam-tradeoffer-manager');
 const pluralize = require('pluralize');
 const SKU = require('tf2-sku');
+const async = require('async');
 
 const inventory = require('../inventory');
 const schemaManager = require('../../lib/tf2-schema');
@@ -232,129 +233,116 @@ exports.checkout = function (partner, callback) {
     const itemsDict = { our: {}, their: {} };
     const itemsDiff = {};
 
-    // Add our items to the trade
-    for (const sku in cart.our) {
-        if (!Object.prototype.hasOwnProperty.call(cart.our, sku)) {
-            continue;
-        }
+    async.parallel({
+        our: function (callback) {
+            for (const sku in cart.our) {
+                if (!Object.prototype.hasOwnProperty.call(cart.our, sku)) {
+                    continue;
+                }
 
-        const amount = cart.amount(sku, 'our');
+                const amount = cart.amount(sku, 'our');
 
-        const assetids = inventory.findBySKU(sku, false);
+                const assetids = inventory.findBySKU(sku, false);
 
-        for (let i = 0; i < amount; i++) {
-            offer.addMyItem({
-                assetid: assetids[i],
-                appid: 440,
-                contextid: 2,
-                amount: 1
-            });
-        }
+                for (let i = 0; i < amount; i++) {
+                    offer.addMyItem({
+                        assetid: assetids[i],
+                        appid: 440,
+                        contextid: 2,
+                        amount: 1
+                    });
+                }
 
-        itemsDict.our[sku] = amount;
-        itemsDiff[sku] = amount*(-1);
-    }
+                itemsDict.our[sku] = amount;
+                itemsDiff[sku] = amount*(-1);
+            }
 
-    if (Object.keys(cart.their).length === 0) {
-        // We are not taking any items, don't request their inventory
+            callback(null);
+        },
 
-        alteredMessage = createAlteredMessage(partner, alteredItems);
+        their: function (callback) {
+            if (Object.keys(cart.their).length === 0) {
+                // We are not taking any items, don't request their inventory
 
-        if (Object.keys(cart.our).length === 0) {
-            exports.removeFromCart(true, partner);
-            callback(null, alteredMessage);
-            return;
-        }
+                alteredMessage = createAlteredMessage(partner, alteredItems);
 
-        offer.data('dict', itemsDict);
-        offer.data('diff', itemsDiff);
-
-        offer.data('handleTimestamp', start);
-
-        offer.setMessage('Powered by TF2 Automatic');
-
-        client.chatMessage(partner, (alteredMessage || 'Please wait while I process your offer...'));
-
-        require('app/trade').sendOffer(offer, function (err) {
-            if (err) {
-                if (err.message.indexOf('We were unable to contact the game\'s item server') !== -1) {
-                    return callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
-                } else if (err.message.indexOf('can only be sent to friends') != -1) {
-                    return callback(err);
-                } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') > -1) {
-                    return callback(null, 'I don\'t have space for more items in my inventory');
-                } else if (err.eresult !== undefined) {
-                    if (err.eresult == 10) {
-                        callback(null, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
-                    } else if (err.eresult == 15) {
-                        callback(null, 'I don\'t, or you don\'t, have space for more items');
-                    } else if (err.eresult == 16) {
-                        // This happens when Steam is already handling an offer (usually big offers), the offer should be made
-                        callback(null, 'An error occurred while sending your trade offer, this is most likely because I\'ve recently accepted a big offer');
-                    } else if (err.eresult == 20) {
-                        callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
-                    } else {
-                        callback(null, 'An error occurred while sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')');
-                    }
+                if (Object.keys(cart.our).length === 0) {
+                    exports.removeFromCart(true, partner);
+                    callback(null, alteredMessage);
                     return;
                 }
+
+                callback(null);
+                return;
             }
 
-            return callback(err);
-        });
-
-        return;
-    }
-
-    inventory.getDictionary(partner, false, function (err, theirDict) {
-        if (err) {
-            return callback(null, 'Failed to load inventories, Steam might be down');
-        }
-
-        for (const sku in cart.their) {
-            if (!Object.prototype.hasOwnProperty.call(cart.their, sku)) {
-                continue;
-            }
-
-            const assetids = (theirDict[sku] || []);
-            const amountCanTrade = assetids.length;
-            const amountInCart = cart.amount(sku, 'their');
-
-            if (amountInCart > amountCanTrade) {
-                if (amountCanTrade === 0) {
-                    cart.remove(sku, amountInCart, 'their');
-                } else {
-                    cart.remove(sku, (amountInCart-amountCanTrade), 'their');
+            inventory.getDictionary(partner, false, function (err, theirDict) {
+                if (err) {
+                    return callback(null, 'Failed to load inventories, Steam might be down');
                 }
-                alteredItems.their.push(sku);
-            }
 
-            if (!cart.amount(sku, 'their')) {
-                continue;
-            }
+                for (const sku in cart.their) {
+                    if (!Object.prototype.hasOwnProperty.call(cart.their, sku)) {
+                        continue;
+                    }
 
-            const amount = cart.amount(sku, 'their');
+                    const assetids = (theirDict[sku] || []);
+                    const amountCanTrade = assetids.length;
+                    const amountInCart = cart.amount(sku, 'their');
 
-            for (let i = 0; i < amount; i++) {
-                offer.addTheirItem({
-                    assetid: assetids[i],
-                    appid: 440,
-                    contextid: 2,
-                    amount: 1
-                });
-            }
+                    if (amountInCart > amountCanTrade) {
+                        if (amountCanTrade === 0) {
+                            cart.remove(sku, amountInCart, 'their');
+                        } else {
+                            cart.remove(sku, (amountInCart-amountCanTrade), 'their');
+                        }
+                        alteredItems.their.push(sku);
+                    }
 
-            itemsDict.their[sku] = amount;
-            itemsDiff[sku] = (itemsDiff[sku] || 0) + amount;
+                    if (!cart.amount(sku, 'their')) {
+                        continue;
+                    }
+
+                    const amount = cart.amount(sku, 'their');
+
+                    for (let i = 0; i < amount; i++) {
+                        offer.addTheirItem({
+                            assetid: assetids[i],
+                            appid: 440,
+                            contextid: 2,
+                            amount: 1
+                        });
+                    }
+
+                    itemsDict.their[sku] = amount;
+                    itemsDiff[sku] = (itemsDiff[sku] || 0) + amount;
+                }
+
+                alteredMessage = createAlteredMessage(partner, alteredItems);
+
+                if ((Object.keys(cart.their).length === 0) && (Object.keys(cart.our).length === 0)) {
+                    exports.removeFromCart(true, partner);
+                    callback(null, alteredMessage);
+                    return;
+                }
+
+                offer.data('dict', itemsDict);
+                offer.data('diff', itemsDiff);
+
+                offer.data('handleTimestamp', start);
+
+                offer.setMessage('Powered by TF2 Automatic');
+
+                callback(null);
+            });
         }
-
-        alteredMessage = createAlteredMessage(partner, alteredItems);
-
-        if ((Object.keys(cart.their).length === 0) && (Object.keys(cart.our).length === 0)) {
-            exports.removeFromCart(true, partner);
-            callback(null, alteredMessage);
-            return;
-        }
+    }, function (err, failedMessage) {
+        ['our', 'their'].forEach((whose) => {
+            if (failedMessage[whose]) {
+                callback(null, failedMessage);
+                return;
+            }
+        });
 
         offer.data('dict', itemsDict);
         offer.data('diff', itemsDiff);
@@ -363,8 +351,6 @@ exports.checkout = function (partner, callback) {
 
         offer.setMessage('Powered by TF2 Automatic');
 
-        // TODO: Send the offer
-        // TODO: Create message if nothing is altered
         client.chatMessage(partner, (alteredMessage || 'Please wait while I process your offer...'));
 
         require('app/trade').sendOffer(offer, function (err) {
