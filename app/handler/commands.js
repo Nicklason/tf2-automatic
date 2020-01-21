@@ -908,8 +908,7 @@ exports.handleMessage = function (steamID, message) {
         } else {
             // Using full name
             // TODO
-            client.chatMessage(steamID, 'Missing item properties');
-
+            client.chatMessage(steamID, 'Missing properties. Example: "!desposit name=Team Captain&amount=1"');
             return;
         }
 
