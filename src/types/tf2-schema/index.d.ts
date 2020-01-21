@@ -9,36 +9,15 @@ declare module 'tf2-schema' {
     export = SchemaManager;
 
     class SchemaManager extends EventEmitter implements StrictEventEmitter<EventEmitter, Events> {
-        /**
-         * Creates a new instance of SchemaManager
-         * @param options
-         */
-        constructor (options: { apiKey?: string, updateTime?: number });
-
         apiKey: string|undefined;
         updateTime: number;
-
         ready: boolean;
-
         schema: SchemaManager.Schema|null;
 
-        /**
-         * Inititalizes SchemaManager
-         * @param callback 
-         */
+        constructor (options: { apiKey?: string, updateTime?: number });
+
         init (callback: Function): void;
-
-        /**
-         * Set schema
-         * @param data
-         * @param fromUpdate
-         */
         setSchema (data: object, fromUpdate?: boolean): void;
-
-        /**
-         * Gets schema data and updates current schema / creates new instance
-         * @param callback 
-         */
         getSchema (callback: Function): void;
     }
 
@@ -131,106 +110,27 @@ declare module 'tf2-schema' {
         }
     
         export class Schema {
-            /**
-             * Gets schema overview
-             * @param apiKey 
-             * @param callback 
-             */
             static getOverview (apiKey: string, callback: Function): void;
-    
-            /**
-             * Gets schema items
-             * @param apiKey 
-             * @param callback 
-             */
             static getItems (apiKey: string, callback: Function): void;
-    
-            /**
-             * Gets skins / paintkits
-             * @param callback 
-             */
             static getPaintKits (callback: Function): void;
-    
-            /**
-             * Gets items_game.txt
-             * @param callback 
-             */
             static getItemsGame (callback: Function): void;
-    
-            /**
-             * Creates a new instance of Schema
-             * @param data
-             */
-            constructor (data: { version: string, raw: object, time: number });
-    
+            
             version: string;
             raw: object;
             time: number
     
-            /**
-             * Gets schema item by defindex
-             * @param defindex 
-             */
+            constructor (data: { version: string, raw: object, time: number });
+    
             getItemByDefindex (defindex: number): SchemaItem|null;
-    
-            /**
-             * Gets schema item by item name
-             * @param name 
-             */
             getItemByItemName (name: string): SchemaItem|null;
-    
-            /**
-             * Gets attribute by defindex
-             * @param defindex 
-             */
             getAttributeByDefindex (defindex: number): SchemaAttribute|null;
-    
-            /**
-             * Gets quality by id
-             * @param id 
-             */
             getQualityById (id: number): string|null;
-    
-            /**
-             * Gets quality id by name
-             * @param name 
-             */
             getQualityIdByName (name: string): number|null;
-    
-            /**
-             * Gets effect by id
-             * @param id 
-             */
             getEffectById (id: number): string|null;
-    
-            /**
-             * Get effect id by name
-             * @param name 
-             */
             getEffectIdByName (name: string): number|null;
-    
-            /**
-             * Get skin by id
-             * @param id 
-             */
             getSkinById (id: number): string|null;
-    
-            /**
-             * Get skin id by name
-             * @param name 
-             */
             getSkinIdByName (name: string): number|null;
-    
-            /**
-             * Gets name of an item
-             * @param item
-             * @param proper Adds "The" if proper_name of schema item is true
-             */
             getName (item: Item, proper?: boolean): string|null;
-    
-            /**
-             * Returns data used to construct schema
-             */
             toJSON (): { version: string, time: number, raw: object };
         }
     }
