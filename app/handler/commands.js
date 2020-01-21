@@ -906,8 +906,7 @@ exports.handleMessage = function (steamID, message) {
                 amount = params.amount;
             }
         } else {
-            // Using full name
-            // TODO
+            // TODO: Do it like !price / !buy / !sell (!deposit 10 The Team Captain) ???
             client.chatMessage(steamID, 'Missing properties. Example: "!desposit name=Team Captain&amount=1"');
             return;
         }
