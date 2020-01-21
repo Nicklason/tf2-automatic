@@ -59,10 +59,10 @@ function checkAccountInfo () {
 
         log.debug('Got account info');
 
-        if (autobumpEnabled && info.premium === true) {
+        if (autobumpEnabled && info.premium === 1) {
             log.warn('Disabling autobump! - Your account is premium, no need to forcefully bump listings');
             exports.disableAutobump();
-        } else if (!autobumpEnabled && info.premium !== true) {
+        } else if (!autobumpEnabled && info.premium !== 1) {
             log.warn('Enabling autobump! - Consider paying for backpack.tf premium instead of forcefully autobumping: https://backpack.tf/donate');
             exports.enableAutobump();
         }
