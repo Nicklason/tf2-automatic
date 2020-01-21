@@ -216,6 +216,7 @@ exports.checkout = function (partner, callback) {
             } else {
                 cart.remove(sku, (amountInCart-amountCanTrade), 'our');
             }
+            // @ts-ignore
             alteredItems.our.push(sku);
         }
     }
@@ -296,6 +297,7 @@ exports.checkout = function (partner, callback) {
                         } else {
                             cart.remove(sku, (amountInCart-amountCanTrade), 'their');
                         }
+                        // @ts-ignore
                         alteredItems.their.push(sku);
                     }
 
@@ -353,7 +355,7 @@ exports.checkout = function (partner, callback) {
 
         client.chatMessage(partner, (alteredMessage || 'Please wait while I process your offer...'));
 
-        require('app/trade').sendOffer(offer, function (err) {
+        require('../trade').sendOffer(offer, function (err) {
             if (err) {
                 if (err.message.indexOf('We were unable to contact the game\'s item server') !== -1) {
                     return callback(null, 'Team Fortress 2\'s item server may be down or Steam may be experiencing temporary connectivity issues');
