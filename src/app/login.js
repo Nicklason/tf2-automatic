@@ -63,6 +63,7 @@ module.exports = function (loginKey, callback) {
 
         function gotEvent (err) {
             listeners.forEach(function (listener) {
+                // @ts-ignore
                 client.on('error', listener);
             });
 
