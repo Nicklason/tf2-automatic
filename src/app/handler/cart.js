@@ -90,7 +90,7 @@ function createCart (steamid, our, their) {
 }
 
 function cartExists (steamid) {
-    return !(carts[steamid] === undefined);
+    return carts[steamid] !== undefined;
 }
 
 function deleteCart (steamid) {
@@ -101,7 +101,7 @@ function deleteCart (steamid) {
 
 function getCart (steamid) {
     if (!cartExists(steamid)) {
-        return undefined;
+        return null;
     }
 
     return carts[steamid];
@@ -145,7 +145,7 @@ exports.addToCart = function (steamID, sku, amount, deposit) {
 
 exports.removeFromCart = function (steamID, sku, amount, our, all = false) {
     if (!cartExists(steamID)) {
-        return { cart: undefined, message: 'Your cart is empty' };
+        return { cart: null, message: 'Your cart is empty' };
     }
 
     if (typeof sku === 'boolean') {
@@ -182,7 +182,7 @@ exports.removeFromCart = function (steamID, sku, amount, our, all = false) {
 
     if (getCart(steamID).isEmpty()) {
         deleteCart(steamID);
-        return { cart: undefined, message };
+        return { cart: null, message };
     }
 
     return { cart: getCart(steamID).get(), message };
@@ -192,7 +192,7 @@ exports.checkout = function (partner, callback) {
     const start = new Date().getTime();
 
     if (!cartExists(partner)) {
-        callback(null, 'Failed to send offer, your cart is empty');
+        callback(null, 'Failed to send offer: Your cart is empty');
         return;
     }
 
@@ -225,7 +225,7 @@ exports.checkout = function (partner, callback) {
 
     if (Object.keys(cart.our).length === 0 && Object.keys(cart.their).length === 0) {
         alteredMessage = createAlteredMessage(partner, alteredItems);
-        callback(null, 'Failed to send offer. ' + alteredMessage);
+        callback(null, 'Failed to send offer: ' + alteredMessage);
         return;
     }
 
@@ -284,8 +284,8 @@ exports.checkout = function (partner, callback) {
             alteredMessage = createAlteredMessage(partner, alteredItems);
 
             if (Object.keys(cart.our).length === 0) {
-                exports.removeFromCart(true, partner);
-                callback(null, 'Failed to send offer. ' + alteredMessage);
+                exports.removeFromCart(partner, true);
+                callback(null, 'Failed to send offer: ' + alteredMessage);
                 return;
             }
         }
@@ -331,8 +331,8 @@ exports.checkout = function (partner, callback) {
         alteredMessage = createAlteredMessage(partner, alteredItems);
 
         if ((Object.keys(cart.their).length === 0) && (Object.keys(cart.our).length === 0)) {
-            exports.removeFromCart(true, partner);
-            callback(null, 'Failed to send offer. ' + alteredMessage);
+            exports.removeFromCart(partner, true);
+            callback(null, 'Failed to send offer: ' + alteredMessage);
             return;
         }
 
