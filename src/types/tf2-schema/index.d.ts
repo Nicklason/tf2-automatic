@@ -116,7 +116,14 @@ declare module 'tf2-schema' {
             static getItemsGame (callback: Function): void;
             
             version: string;
-            raw: object;
+            raw: {
+                schema: {
+                    items: SchemaItem[]
+                },
+                items_game: {
+                    items: object
+                }
+            };
             time: number
     
             constructor (data: { version: string, raw: object, time: number });
