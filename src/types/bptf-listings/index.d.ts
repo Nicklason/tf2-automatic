@@ -45,6 +45,8 @@ declare module 'bptf-listings' {
         removeListing (listingId: string): void;
         removeListings (listingIds: string[]): void;
         shutdown (): void;
+
+        _processActions: (callback: (err: Error|null) => void) => void;
     }
 
     namespace ListingManager {
