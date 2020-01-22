@@ -42,7 +42,7 @@ declare module 'steam-user' {
         gamesPlayed(apps: any[]|object|string|number, force?: boolean): void;
         chatMessage(recipient: SteamID|string, message: string): void;
         addFriend(steamID: SteamID|string, callback?: (err: Error|null, personaName?: string) => void): void;
-        removeFriend(steamID: SteamID|string);
+        removeFriend(steamID: SteamID|string): void;
         respondToGroupInvite(groupSteamID: SteamID|string, accept: boolean): void;
         logOff(): void;
     }
