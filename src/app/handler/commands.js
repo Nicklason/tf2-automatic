@@ -160,7 +160,7 @@ function getItemFromParams (steamID, params) {
     }
 
     if (item.paintkit !== null) {
-        const paintkit = schemaManager.schema.getSkinByName(item.paintkit);
+        const paintkit = schemaManager.schema.getSkinIdByName(item.paintkit);
         if (paintkit === null) {
             client.chatMessage(steamID, 'Could not find a skin in the schema with the name "' + item.paintkit + '"');
             return null;
