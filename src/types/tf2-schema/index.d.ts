@@ -26,7 +26,7 @@ declare module 'tf2-schema' {
             name: string;
             defindex: number;
             item_class: string;
-            item_class_name: string;
+            item_type_name: string;
             item_name: string;
             item_description: string;
             proper_name: boolean;
