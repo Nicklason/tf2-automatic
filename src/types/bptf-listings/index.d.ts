@@ -67,10 +67,11 @@ declare module 'bptf-listings' {
         }
         
         interface CreateListing {
-            id?: number;
+            id?: string;
             sku?: string;
             intent: number;
             details?: string;
+            currencies: object;
             time: number;
         }
     
