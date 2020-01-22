@@ -456,11 +456,7 @@ function createAlteredMessage (steamID, alteredItems) {
 exports.stringify = function (steamid) {
     const cart = getCart(steamid);
 
-    if (!cart) {
-        return 'Your cart is empty';
-    }
-
-    if (cart.isEmpty()) {
+    if (cart === null || cart.isEmpty()) {
         return 'Your cart is empty';
     }
 
