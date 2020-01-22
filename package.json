@@ -4,9 +4,8 @@
   "description": "Fully automated TF2 trading bot advertising on www.backpack.tf using prices from www.prices.tf",
   "main": "app.js",
   "scripts": {
-    "preinstall": "npm install typescript@latest -g",
-    "start": "cd dist && node app.js",
-    "postinstall": "tsc -p .",
+    "start": "node dist/app.js",
+    "compile": "tsc -p .",
     "lint": "eslint ./",
     "release": "np --no-cleanup --no-publish"
   },
