@@ -231,7 +231,7 @@ exports.checkout = function (partner, callback) {
 
     const offer = manager.createOffer(partner);
 
-    offer.data('partner', partner);
+    offer.data('partner', partner.getSteamID64());
 
     const itemsDict = { our: {}, their: {} };
     const itemsDiff = {};
