@@ -31,6 +31,10 @@ declare module 'bptf-listings' {
         ready: boolean;
         schema: SchemaManager.Schema|null;
 
+        _timeout: ReturnType<typeof setTimeout>;
+        _heartbeatInterval: ReturnType<typeof setInterval>;
+        _inventoryInterval: ReturnType<typeof setInterval>;
+
         init (callback: Function): void;
         sendHeartbeat (callback: Function): void;
         getListings (callback: Function): void;
@@ -86,7 +90,7 @@ declare module 'bptf-listings' {
             getSKU (): string;
             getItem (): Item;
             getName (): string;
-            update (properties: { currencies?: { keys: number, metal: number }, details?: string, offers?: boolean, buyout?: boolean }): void;
+            update (properties: { time: number, currencies?: { keys: number, metal: number }, details?: string, offers?: boolean, buyout?: boolean }): void;
             remove (): void;
         }
     }
