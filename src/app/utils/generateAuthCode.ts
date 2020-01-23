@@ -1,13 +1,13 @@
-const SteamTotp = require('steam-totp');
+import SteamTotp from 'steam-totp';
 
-const getTimeOffset = require('./getTimeOffset');
+import getTimeOffset from './getTimeOffset';
 
 /**
  * Generates Steam authentication code
  * @param {Function} callback
  */
-module.exports = function (callback) {
+export = function (callback) {
     getTimeOffset(function (err, offset) {
         callback(err, SteamTotp.generateAuthCode(process.env.STEAM_SHARED_SECRET, offset));
     });
-};
+}

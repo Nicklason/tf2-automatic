@@ -65,7 +65,7 @@ exports.setPollData = function (pollData) {
 
         const state = pollData.sent[id];
 
-        if (state === TradeOfferManager.ETradeOfferState.Active || state === TradeOfferManager.EConfirmationMethod.CreatedNeedsConfirmation) {
+        if (state === TradeOfferManager.ETradeOfferState.Active || state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
             activeOrCreatedNeedsConfirmation.push(id);
         }
     }

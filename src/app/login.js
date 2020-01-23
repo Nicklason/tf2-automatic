@@ -25,7 +25,9 @@ module.exports = function (loginKey, callback) {
         client.removeAllListeners('error');
 
         const opts = {
-            accountName: process.env.STEAM_ACCOUNT_NAME
+            accountName: process.env.STEAM_ACCOUNT_NAME,
+            logonID: 69420,
+            rememberPassword: true
         };
 
         if (loginKey !== null) {
@@ -35,9 +37,6 @@ module.exports = function (loginKey, callback) {
             log.debug('Signing in using password');
             opts.password = process.env.STEAM_PASSWORD;
         }
-
-        opts.logonID = 69420;
-        opts.rememberPassword = true;
 
         loginAttempts.newAttempt();
 
@@ -64,6 +63,7 @@ module.exports = function (loginKey, callback) {
 
         function gotEvent (err) {
             listeners.forEach(function (listener) {
+                // @ts-ignore
                 client.on('error', listener);
             });
 

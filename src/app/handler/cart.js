@@ -242,14 +242,13 @@ exports.checkout = function (partner, callback) {
         }
 
         const amount = cart.amount(sku, 'our');
-
         const assetids = inventory.findBySKU(sku, false);
 
         for (let i = 0; i < amount; i++) {
             offer.addMyItem({
                 assetid: assetids[i],
                 appid: 440,
-                contextid: 2,
+                contextid: '2',
                 amount: 1
             });
         }
@@ -319,7 +318,7 @@ exports.checkout = function (partner, callback) {
                 offer.addTheirItem({
                     assetid: assetids[i],
                     appid: 440,
-                    contextid: 2,
+                    contextid: '2',
                     amount: 1
                 });
             }

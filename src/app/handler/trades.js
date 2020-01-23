@@ -206,7 +206,7 @@ exports.createOffer = function (details, callback) {
                 if (offer[details.buying ? 'addTheirItem' : 'addMyItem']({
                     assetid: sellerItems[i],
                     appid: 440,
-                    contextid: 2,
+                    contextid: '2',
                     amount: 1
                 })) {
                     remainingItems--;
@@ -257,7 +257,7 @@ exports.createOffer = function (details, callback) {
                             if (offer[details.buying ? 'addTheirItem' : 'addMyItem']({
                                 assetid: currencies[sku][i],
                                 appid: 440,
-                                contextid: 2,
+                                contextid: '2',
                                 amount: 1
                             })) {
                                 itemsDict[whose][sku] = (itemsDict[whose][sku] || 0) + 1;
@@ -288,7 +288,7 @@ exports.createOffer = function (details, callback) {
                     if (offer[details.buying ? 'addMyItem' : 'addTheirItem']({
                         assetid: buyerCurrenciesWithAssetids[sku][i],
                         appid: 440,
-                        contextid: 2,
+                        contextid: '2',
                         amount: 1
                     })) {
                         requiredCurrencies[sku]--;
