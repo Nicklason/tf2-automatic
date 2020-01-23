@@ -90,7 +90,7 @@ function createCart (steamid, our, their) {
 }
 
 function cartExists (steamid) {
-    return !(carts[steamid] === undefined);
+    return carts[steamid] !== undefined;
 }
 
 function deleteCart (steamid) {
@@ -101,7 +101,7 @@ function deleteCart (steamid) {
 
 function getCart (steamid) {
     if (!cartExists(steamid)) {
-        return undefined;
+        return null;
     }
 
     return carts[steamid];
@@ -145,7 +145,7 @@ exports.addToCart = function (steamID, sku, amount, deposit) {
 
 exports.removeFromCart = function (steamID, sku, amount, our, all = false) {
     if (!cartExists(steamID)) {
-        return { cart: undefined, message: 'Your cart is empty' };
+        return { cart: null, message: 'Your cart is empty' };
     }
 
     if (typeof sku === 'boolean') {
@@ -182,7 +182,7 @@ exports.removeFromCart = function (steamID, sku, amount, our, all = false) {
 
     if (getCart(steamID).isEmpty()) {
         deleteCart(steamID);
-        return { cart: undefined, message };
+        return { cart: null, message };
     }
 
     return { cart: getCart(steamID).get(), message };
@@ -192,9 +192,11 @@ exports.checkout = function (partner, callback) {
     const start = new Date().getTime();
 
     if (!cartExists(partner)) {
-        callback(null, 'Failed to send offer, your cart is empty');
+        callback(null, 'Failed to send offer: Your cart is empty');
         return;
     }
+
+    client.chatMessage(partner, 'Please wait while I process your offer...');
 
     const alteredItems = { our: [], their: [] };
     let alteredMessage;
@@ -223,137 +225,125 @@ exports.checkout = function (partner, callback) {
 
     if (Object.keys(cart.our).length === 0 && Object.keys(cart.their).length === 0) {
         alteredMessage = createAlteredMessage(partner, alteredItems);
-        callback(null, alteredMessage);
+        callback(null, 'Failed to send offer: ' + alteredMessage);
         return;
     }
 
     const offer = manager.createOffer(partner);
 
-    offer.data('partner', partner);
+    offer.data('partner', partner.getSteamID64());
 
     const itemsDict = { our: {}, their: {} };
     const itemsDiff = {};
 
+    for (const sku in cart.our) {
+        if (!Object.prototype.hasOwnProperty.call(cart.our, sku)) {
+            continue;
+        }
+
+        const amount = cart.amount(sku, 'our');
+
+        for (let i = 0; i < amount; i++) {
+            offer.addMyItem({
+                assetid: assetids[i],
+                appid: 440,
+                contextid: '2',
+                amount: 1
+            });
+        }
+
+        itemsDict.our[sku] = amount;
+        itemsDiff[sku] = amount*(-1);
+    }
+
     async.parallel({
-        our: function (callback) {
-            for (const sku in cart.our) {
-                if (!Object.prototype.hasOwnProperty.call(cart.our, sku)) {
-                    continue;
-                }
-
-                const amount = cart.amount(sku, 'our');
-
-                const assetids = inventory.findBySKU(sku, false);
-
-                for (let i = 0; i < amount; i++) {
-                    offer.addMyItem({
-                        assetid: assetids[i],
-                        appid: 440,
-                        contextid: '2',
-                        amount: 1
-                    });
-                }
-
-                itemsDict.our[sku] = amount;
-                itemsDiff[sku] = amount*(-1);
-            }
-
-            callback(null);
-        },
-
         their: function (callback) {
             if (Object.keys(cart.their).length === 0) {
                 // We are not taking any items, don't request their inventory
-
-                alteredMessage = createAlteredMessage(partner, alteredItems);
-
-                if (Object.keys(cart.our).length === 0) {
-                    exports.removeFromCart(true, partner);
-                    callback(null, alteredMessage);
-                    return;
-                }
-
                 callback(null);
                 return;
             }
 
             inventory.getDictionary(partner, false, function (err, theirDict) {
                 if (err) {
-                    return callback(null, 'Failed to load inventories, Steam might be down');
+                    return callback('Failed to load inventories, Steam might be down');
                 }
 
-                for (const sku in cart.their) {
-                    if (!Object.prototype.hasOwnProperty.call(cart.their, sku)) {
-                        continue;
-                    }
-
-                    const assetids = (theirDict[sku] || []);
-                    const amountCanTrade = assetids.length;
-                    const amountInCart = cart.amount(sku, 'their');
-
-                    if (amountInCart > amountCanTrade) {
-                        if (amountCanTrade === 0) {
-                            cart.remove(sku, amountInCart, 'their');
-                        } else {
-                            cart.remove(sku, (amountInCart-amountCanTrade), 'their');
-                        }
-                        // @ts-ignore
-                        alteredItems.their.push(sku);
-                    }
-
-                    if (!cart.amount(sku, 'their')) {
-                        continue;
-                    }
-
-                    const amount = cart.amount(sku, 'their');
-
-                    for (let i = 0; i < amount; i++) {
-                        offer.addTheirItem({
-                            assetid: assetids[i],
-                            appid: 440,
-                            contextid: '2',
-                            amount: 1
-                        });
-                    }
-
-                    itemsDict.their[sku] = amount;
-                    itemsDiff[sku] = (itemsDiff[sku] || 0) + amount;
-                }
-
-                alteredMessage = createAlteredMessage(partner, alteredItems);
-
-                if ((Object.keys(cart.their).length === 0) && (Object.keys(cart.our).length === 0)) {
-                    exports.removeFromCart(true, partner);
-                    callback(null, alteredMessage);
-                    return;
-                }
-
-                offer.data('dict', itemsDict);
-                offer.data('diff', itemsDiff);
-
-                offer.data('handleTimestamp', start);
-
-                offer.setMessage('Powered by TF2 Automatic');
-
-                callback(null);
+                callback(null, theirDict);
             });
         }
-    }, function (err, failedMessage) {
-        ['our', 'their'].forEach((whose) => {
-            if (failedMessage[whose]) {
-                callback(null, failedMessage);
+    }, function (err, inventories) {
+        if (err) {
+            callback(null, err);
+            return;
+        }
+
+        if (!inventories.their) {
+            alteredMessage = createAlteredMessage(partner, alteredItems);
+
+            if (Object.keys(cart.our).length === 0) {
+                exports.removeFromCart(partner, true);
+                callback(null, 'Failed to send offer: ' + alteredMessage);
                 return;
             }
-        });
+        }
+
+        for (const sku in cart.their) {
+            if (!Object.prototype.hasOwnProperty.call(cart.their, sku)) {
+                continue;
+            }
+
+            const assetids = (inventories.their[sku] || []);
+            const amountCanTrade = assetids.length;
+            const amountInCart = cart.amount(sku, 'their');
+
+            if (amountInCart > amountCanTrade) {
+                if (amountCanTrade === 0) {
+                    cart.remove(sku, amountInCart, 'their');
+                } else {
+                    cart.remove(sku, (amountInCart-amountCanTrade), 'their');
+                }
+                // @ts-ignore
+                alteredItems.their.push(sku);
+            }
+
+            if (!cart.amount(sku, 'their')) {
+                continue;
+            }
+
+            const amount = cart.amount(sku, 'their');
+
+            for (let i = 0; i < amount; i++) {
+                offer.addTheirItem({
+                    assetid: assetids[i],
+                    appid: 440,
+                    contextid: '2',
+                    amount: 1
+                });
+            }
+
+            itemsDict.their[sku] = amount;
+            itemsDiff[sku] = (itemsDiff[sku] || 0) + amount;
+        }
+
+        alteredMessage = createAlteredMessage(partner, alteredItems);
+
+        if ((Object.keys(cart.their).length === 0) && (Object.keys(cart.our).length === 0)) {
+            exports.removeFromCart(partner, true);
+            callback(null, 'Failed to send offer: ' + alteredMessage);
+            return;
+        }
 
         offer.data('dict', itemsDict);
         offer.data('diff', itemsDiff);
 
         offer.data('handleTimestamp', start);
 
-        offer.setMessage('Powered by TF2 Automatic');
+        offer.setMessage(process.env.OFFER_MESSAGE || 'Powered by TF2 Automatic');
 
-        client.chatMessage(partner, (alteredMessage || 'Please wait while I process your offer...'));
+        if (alteredMessage) {
+            client.chatMessage(partner, alteredMessage);
+        }
 
         require('../trade').sendOffer(offer, function (err) {
             if (err) {
@@ -464,11 +454,7 @@ function createAlteredMessage (steamID, alteredItems) {
 exports.stringify = function (steamid) {
     const cart = getCart(steamid);
 
-    if (!cart) {
-        return 'Your cart is empty';
-    }
-
-    if (cart.isEmpty()) {
+    if (cart === null || cart.isEmpty()) {
         return 'Your cart is empty';
     }
 
