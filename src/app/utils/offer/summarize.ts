@@ -1,4 +1,5 @@
-import { Currency as TF2Currency } from '../../../types/TeamFortress2';
+import { TradeOffer } from 'steam-tradeoffer-manager';
+import { Currency } from '../../../types/TeamFortress2';
 import { UnknownDictionary } from '../../../types/common';
 
 import Currencies from 'tf2-currencies';
@@ -7,12 +8,12 @@ import SKU from 'tf2-sku';
 const schemaManager = require('../../../lib/tf2-schema');
 
 export = function (): string {
-    // Cast "this" as a TradeOffer?
+    // @ts-ignore
+    const self = <EconItem>this;
 
-    // @ts-ignore
-    const value: { our: TF2Currency, their: TF2Currency } = this.data('value');
-    // @ts-ignore
-    const items: { our: UnknownDictionary<number>, their: UnknownDictionary<number> } = this.data('dict') || { our: null, their: null };
+    const value: { our: Currency, their: Currency } = self.data('value');
+
+    const items: { our: UnknownDictionary<number>, their: UnknownDictionary<number> } = self.data('dict') || { our: null, their: null };
 
     if (!value) {
         return 'Asked: ' + summarizeItems(items.our) + '\nOffered: ' + summarizeItems(items.their);
