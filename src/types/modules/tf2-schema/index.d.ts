@@ -98,16 +98,16 @@ declare module 'tf2-schema' {
             tradable?: boolean;
             killstreak?: number;
             australium?: boolean;
-            effect?: number|null;
+            effect?: number;
             festive?: boolean;
-            paintkit?: string|null;
-            wear?: number|null;
-            quality2?: number|null;
-            target?: number|null;
-            craftnumber?: number|null;
-            crateseries?: number|null;
-            output?: number|null;
-            outputQuality?: number|null;
+            paintkit?: number;
+            wear?: number;
+            quality2?: number;
+            target?: number;
+            craftnumber?: number;
+            crateseries?: number;
+            output?: number;
+            outputQuality?: number;
         }
     
         export class Schema {
