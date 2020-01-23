@@ -1,9 +1,9 @@
-const path = require('path');
+import path from 'path';
 
 const folderName = process.env.FOLDER_NAME || process.env.STEAM_ACCOUNT_NAME;
 const filePrefix = process.env.FILE_PREFIX || process.env.STEAM_ACCOUNT_NAME;
 
-module.exports = {
+export = {
     files: {
         loginKey: path.join(__dirname, `../../../files/${folderName}/loginkey.txt`),
         pollData: path.join(__dirname, `../../../files/${folderName}/polldata.json`),
