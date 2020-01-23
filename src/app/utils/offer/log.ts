@@ -1,6 +1,10 @@
+import { TradeOffer } from 'steam-tradeoffer-manager';
+
 import log from '../../../lib/logger';
 
 export = function (level: string, message: string) {
     // @ts-ignore
-    log[level]('Offer' + (this.id ? ' #' + this.id : '') + ' with ' + this.partner.getSteamID64() + ' ' + message);
+    const self = <TradeOffer>this;
+
+    log[level]('Offer' + (self.id ? ' #' + self.id : '') + ' with ' + self.partner.getSteamID64() + ' ' + message);
 };
