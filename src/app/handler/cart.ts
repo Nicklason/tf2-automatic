@@ -89,8 +89,7 @@ class Cart {
     }
 }
 
-
-const carts = {};
+const carts: UnknownDictionary<Cart> = {};
 
 function createCart (steamID: SteamID|string, our?: UnknownDictionary<number>, their?: UnknownDictionary<number>): void {
     carts[steamID.toString()] = new Cart(our, their);
