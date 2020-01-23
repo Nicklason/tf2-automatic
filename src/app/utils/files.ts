@@ -9,7 +9,7 @@ let filesBeingSaved = 0;
  * @param json
  * @param callback
  */
-export function readFile (p: string, json: boolean, callback: (err: Error|null, data?: object|null) => void): void {
+export function readFile (p: string, json: boolean, callback: (err?: Error, data?: object|null) => void): void {
     if (typeof json === 'function') {
         callback = json;
         json = false;
@@ -51,7 +51,7 @@ export function readFile (p: string, json: boolean, callback: (err: Error|null, 
  * @param json
  * @param callback
  */
-export function writeFile (p: string, data: any, json: boolean, callback: (err: Error|null) => void): void {
+export function writeFile (p: string, data: any, json: boolean, callback: (err?: Error) => void): void {
     if (typeof json === 'function') {
         callback = json;
         json = false;

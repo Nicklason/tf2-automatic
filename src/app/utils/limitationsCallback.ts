@@ -1,10 +1,10 @@
-const client = require('../../lib/client');
+import client from '../../lib/client';
 
 /**
  * Waits for accountLimitations event to fire
- * @param {function} callback
+ * @param callback
  */
-module.exports = function (callback) {
+export = function (callback: (err?: Error, limitations?: { limited: boolean, communityBanned: boolean, locked: boolean, canInviteFriends: boolean }) => void): void {
     if (client.limitations !== null) {
         callback(null, client.limitations);
         return;

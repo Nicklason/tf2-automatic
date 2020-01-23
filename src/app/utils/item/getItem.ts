@@ -1,31 +1,36 @@
-const SKU = require('tf2-sku');
-const url = require('url');
+import { EconItem } from 'steam-tradeoffer-manager';
+import { Item as TF2Item } from '../../../types/TeamFortress2';
 
-const schemaManager = require('../../../lib/tf2-schema');
+import SKU from 'tf2-sku';
+import url from 'url';
 
-const fixItem = require('../../utils/item/fixItem');
+import schemaManager from '../../../lib/tf2-schema';
 
-module.exports = function () {
+import fixItem from './fixItem';
+
+export = function () {
     // @ts-ignore
-    if (this.appid != 440) {
+    const self = <EconItem>this;
+
+    if (self.appid != 440) {
         return null;
     }
 
     const item = Object.assign({
-        defindex: getDefindex(this),
-        quality: getQuality(this),
-        craftable: isCraftable(this),
-        killstreak: getKillstreak(this),
-        australium: isAustralium(this),
-        festive: isFestive(this),
-        effect: getEffect(this),
-        wear: getWear(this),
-        paintkit: getPaintKit(this),
-        quality2: getElevatedQuality(this)
-    }, getOutput(this));
+        defindex: getDefindex(self),
+        quality: getQuality(self),
+        craftable: isCraftable(self),
+        killstreak: getKillstreak(self),
+        australium: isAustralium(self),
+        festive: isFestive(self),
+        effect: getEffect(self),
+        wear: getWear(self),
+        paintkit: getPaintKit(self),
+        quality2: getElevatedQuality(self)
+    }, getOutput(self));
 
     if (item.target === null) {
-        item.target = getTarget(this);
+        item.target = getTarget(self);
     }
 
     // Adds missing properties
@@ -34,10 +39,9 @@ module.exports = function () {
 
 /**
  * Gets the defindex of an item
- * @param {Object} item
- * @return {Number|null}
+ * @param item
  */
-function getDefindex (item) {
+function getDefindex (item: EconItem): number {
     if (item.app_data !== undefined) {
         return parseInt(item.app_data.def_index, 10);
     }
@@ -55,10 +59,9 @@ function getDefindex (item) {
 
 /**
  * Gets the quality of an item
- * @param {Object} item
- * @return {Number|null}
+ * @param item
  */
-function getQuality (item) {
+function getQuality (item: EconItem): number {
     if (item.app_data !== undefined) {
         return parseInt(item.app_data.quality, 10);
     }
@@ -73,19 +76,17 @@ function getQuality (item) {
 
 /**
  * Determines if the item is craftable
- * @param {Object} item
- * @return {Boolean}
+ * @param item
  */
-function isCraftable (item) {
+function isCraftable (item: EconItem): boolean {
     return !item.hasDescription('( Not Usable in Crafting )');
 }
 
 /**
  * Gets the killstreak tier of an item
- * @param {Object} item
- * @return {Number}
+ * @param item
  */
-function getKillstreak (item) {
+function getKillstreak (item: EconItem): number {
     const killstreaks = ['Professional ', 'Specialized ', ''];
 
     const index = killstreaks.findIndex((killstreak) => item.market_hash_name.indexOf(killstreak + 'Killstreak') !== -1);
@@ -95,10 +96,9 @@ function getKillstreak (item) {
 
 /**
  * Determines if the item is australium
- * @param {Object} item
- * @return {Boolean}
+ * @param item
  */
-function isAustralium (item) {
+function isAustralium (item: EconItem): boolean {
     if (item.getTag('Quality') !== 'Strange') {
         return false;
     }
@@ -108,19 +108,17 @@ function isAustralium (item) {
 
 /**
  * Determines if thje item is festivized
- * @param {Object} item
- * @return {Boolean}
+ * @param item
  */
-function isFestive (item) {
+function isFestive (item: EconItem): boolean {
     return item.market_hash_name.indexOf('Festivized ') !== -1;
 }
 
 /**
  * Gets the effect of an item
- * @param {Object} item
- * @return {number|null}
+ * @param item
  */
-function getEffect (item) {
+function getEffect (item: EconItem): number {
     if (!Array.isArray(item.descriptions)) {
         return null;
     }
@@ -140,10 +138,9 @@ function getEffect (item) {
 
 /**
  * Gets the wear of an item
- * @param {Object} item
- * @return {Number|null}
+ * @param item
  */
-function getWear (item) {
+function getWear (item: EconItem): number {
     const wear = ['Factory New', 'Minimal Wear', 'Field-Tested', 'Well-Worn', 'Battle Scarred'].indexOf(item.getTag('Exterior'));
 
     return wear === -1 ? null : wear + 1;
@@ -151,10 +148,9 @@ function getWear (item) {
 
 /**
  * Get skin from item
- * @param {Object} item
- * @return {Number|null}
+ * @param item
  */
-function getPaintKit (item) {
+function getPaintKit (item: EconItem): number {
     if (getWear(item) === null) {
         return null;
     }
@@ -191,10 +187,9 @@ function getPaintKit (item) {
 
 /**
  * Gets the elevated quality of an item
- * @param {Object} item
- * @return {Number|null}
+ * @param item
  */
-function getElevatedQuality (item) {
+function getElevatedQuality (item: EconItem): number {
     if (item.hasDescription('Strange Stat Clock Attached')) {
         return 11;
     } else {
@@ -202,7 +197,7 @@ function getElevatedQuality (item) {
     }
 }
 
-function getOutput (item) {
+function getOutput (item: EconItem): { target: number, output: number, outputQuality: number } {
     let index = -1;
 
     for (let i = 0; i < item.descriptions.length; i++) {
@@ -262,7 +257,7 @@ function getOutput (item) {
     };
 }
 
-function getTarget (item) {
+function getTarget (item: EconItem): number {
     const defindex = getDefindex(item);
 
     if (defindex === null) {

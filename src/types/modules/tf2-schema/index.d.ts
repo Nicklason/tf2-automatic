@@ -22,7 +22,7 @@ declare module 'tf2-schema' {
     }
 
     namespace SchemaManager {
-        interface SchemaItem {
+        export interface SchemaItem {
             name: string;
             defindex: number;
             item_class: string;
@@ -98,6 +98,7 @@ declare module 'tf2-schema' {
             tradable?: boolean;
             killstreak?: number;
             australium?: boolean;
+            effect?: number|null;
             festive?: boolean;
             paintkit?: string|null;
             wear?: number|null;

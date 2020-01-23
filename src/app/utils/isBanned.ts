@@ -1,12 +1,12 @@
-const async = require('async');
-const request = require('@nicklason/request-retry');
+import { parallel } from 'async';
+import request from '@nicklason/request-retry';
 
-module.exports = function (steamid64, callback) {
-    async.parallel({
-        bptf: function (callback) {
+export = function (steamid64: string, callback: (err?: Error, isBanned?: boolean) => void): void {
+    parallel({
+        bptf: function (callback: (err?: Error, result?: boolean) => void) {
             isBptfBanned(steamid64, callback);
         },
-        steamrep: function (callback) {
+        steamrep: function (callback: (err?: Error, result?: boolean) => void) {
             isSteamRepMarked(steamid64, callback);
         }
     }, function (err, result) {
@@ -18,7 +18,7 @@ module.exports = function (steamid64, callback) {
     });
 };
 
-function isBptfBanned (steamid64, callback) {
+function isBptfBanned (steamid64: string, callback: (err?: Error, isBanned?: boolean) => void): void {
     request({
         url: 'https://backpack.tf/api/users/info/v1',
         qs: {
@@ -38,7 +38,7 @@ function isBptfBanned (steamid64, callback) {
     });
 }
 
-function isSteamRepMarked (steamid64, callback) {
+function isSteamRepMarked (steamid64: string, callback: (err?: Error, isBanned?: boolean) => void): void {
     request({
         url: 'http://steamrep.com/api/beta4/reputation/' + steamid64,
         qs: {

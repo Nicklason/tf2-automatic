@@ -1,13 +1,18 @@
-const Currencies = require('tf2-currencies');
-const SKU = require('tf2-sku');
+import { Currency as TF2Currency } from '../../../types/TeamFortress2';
+import { UnknownDictionary } from '../../../types/common';
+
+import Currencies from 'tf2-currencies';
+import SKU from 'tf2-sku';
 
 const schemaManager = require('../../../lib/tf2-schema');
 
-module.exports = function () {
+export = function (): string {
+    // Cast "this" as a TradeOffer?
+
     // @ts-ignore
-    const value = this.data('value');
+    const value: { our: TF2Currency, their: TF2Currency } = this.data('value');
     // @ts-ignore
-    const items = this.data('dict') || { our: null, their: null };
+    const items: { our: UnknownDictionary<number>, their: UnknownDictionary<number> } = this.data('dict') || { our: null, their: null };
 
     if (!value) {
         return 'Asked: ' + summarizeItems(items.our) + '\nOffered: ' + summarizeItems(items.their);
@@ -16,12 +21,12 @@ module.exports = function () {
     }
 };
 
-function summarizeItems (dict) {
+function summarizeItems (dict: UnknownDictionary<number>): string {
     if (dict === null) {
         return 'unknown items';
     }
 
-    const summary = [];
+    const summary: string[] = [];
 
     for (const sku in dict) {
         if (!Object.prototype.hasOwnProperty.call(dict, sku)) {
