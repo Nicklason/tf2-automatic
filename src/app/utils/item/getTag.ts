@@ -1,16 +1,18 @@
+import { EconItem } from "steam-tradeoffer-manager";
+
 /**
  * Gets a tag by category
- * @param {String} category
- * @return {String|null}
+ * @param category
  */
-module.exports = function (category) {
+export = function (category: string): string {
     // @ts-ignore
-    if (!Array.isArray(this.tags)) {
+    const self = <EconItem>this;
+
+    if (!Array.isArray(self.tags)) {
         return null;
     }
 
-    // @ts-ignore
-    const match = this.tags.find((v) => v.category === category);
+    const match = self.tags.find((v) => v.category === category);
 
     if (match === undefined) {
         return null;
