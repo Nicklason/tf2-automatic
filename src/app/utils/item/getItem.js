@@ -118,7 +118,7 @@ function isFestive (item) {
 /**
  * Gets the effect of an item
  * @param {Object} item
- * @return {String|null}
+ * @return {number|null}
  */
 function getEffect (item) {
     if (!Array.isArray(item.descriptions)) {

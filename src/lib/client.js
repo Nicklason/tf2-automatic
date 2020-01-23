@@ -85,7 +85,7 @@ function webSessionEvent (sessionID, cookies) {
 
     if (hasCookies) {
         // First time the event is fired we won't set the cookies
-        require('./manager').setCookies(cookies, function (err) {
+        require('./manager').setCookies(cookies, undefined, function (err) {
             if (err) {
                 throw err;
             }
