@@ -1,5 +1,7 @@
 import { UnknownDictionary, UnknownDictionaryKnownValues } from '../../types/common';
+import { Item } from '../../types/TeamFortress2';
 import SteamID from 'steamid';
+import { SchemaItem } from 'tf2-schema';
 
 import dotProp from 'dot-prop';
 import pluralize from 'pluralize';
@@ -32,13 +34,13 @@ import listingHandler from './listings';
 
 import pjson from 'pjson';
 
-let messages = [];
+let messages: string[] = [];
 
 setInterval(function () {
     messages = [];
 }, 1000);
 
-function getCommand (string) {
+function getCommand (string: string): string|null {
     if (string.startsWith('!')) {
         const command = string.toLowerCase().split(' ')[0].substr(1);
         return command;
@@ -80,7 +82,7 @@ function getParams (str: string): UnknownDictionary<number|boolean|string|Unknow
     return parsed;
 }
 
-function getItemFromParams (steamID: SteamID|string, params: UnknownDictionaryKnownValues) {
+function getItemFromParams (steamID: SteamID|string, params: UnknownDictionaryKnownValues): Item {
     const item = SKU.fromString('');
 
     delete item.paint;
@@ -92,7 +94,7 @@ function getItemFromParams (steamID: SteamID|string, params: UnknownDictionaryKn
         foundSomething = true;
         // Look for all items that have the same name
 
-        const match = [];
+        const match: SchemaItem[] = [];
 
         for (let i = 0; i < schemaManager.schema.raw.schema.items.length; i++) {
             const schemaItem = schemaManager.schema.raw.schema.items[i];
@@ -130,8 +132,6 @@ function getItemFromParams (steamID: SteamID|string, params: UnknownDictionaryKn
 
         if (item[key] !== undefined) {
             foundSomething = true;
-            item[key] = params[key];
-            delete params[key];
         }
     }
 
@@ -140,82 +140,81 @@ function getItemFromParams (steamID: SteamID|string, params: UnknownDictionaryKn
         return null;
     }
 
-    if (item.defindex !== 0) {
-        const schemaItem = schemaManager.schema.getItemByDefindex(item.defindex);
+    if (params.defindex) {
+        const schemaItem = schemaManager.schema.getItemByDefindex(<number>params.defindex);
 
         if (schemaItem === null) {
-            client.chatMessage(steamID, 'Could not find an item in the schema with the defindex "' + item.defindex + '"');
+            client.chatMessage(steamID, 'Could not find an item in the schema with the defindex "' + params.defindex + '"');
             return null;
         }
 
-        if (item.quality === 0) {
-            item.quality = schemaItem.item_quality;
-        }
+        item.defindex = <number>params.defindex;
+        item.quality = schemaItem.item_quality;
     }
 
-    if (typeof item.quality !== 'number') {
-        const quality = schemaManager.schema.getQualityIdByName(item.quality);
+    if (params.quality !== undefined && typeof params.quality !== 'number') {
+        const quality = schemaManager.schema.getQualityIdByName(params.quality.toString());
         if (quality === null) {
-            client.chatMessage(steamID, 'Could not find a quality in the schema with the name "' + item.quality + '"');
+            client.chatMessage(steamID, 'Could not find a quality in the schema with the name "' + params.quality + '"');
             return null;
         }
 
         item.quality = quality;
     }
 
-    if (item.paintkit !== null) {
-        const paintkit = schemaManager.schema.getSkinIdByName(item.paintkit);
+    if (params.paintkit) {
+        const paintkit = schemaManager.schema.getSkinIdByName(params.paintkit.toString());
         if (paintkit === null) {
-            client.chatMessage(steamID, 'Could not find a skin in the schema with the name "' + item.paintkit + '"');
+            client.chatMessage(steamID, 'Could not find a skin in the schema with the name "' + params.paintkit + '"');
             return null;
         }
 
         item.paintkit = paintkit;
     }
 
-    if (item.effect !== null) {
-        const effect = schemaManager.schema.getEffectIdByName(item.effect);
+    if (params.effect) {
+        const effect = schemaManager.schema.getEffectIdByName(params.effect.toString());
 
         if (effect === null) {
-            client.chatMessage(steamID, 'Could not find an unusual effect in the schema with the name "' + item.effect + '"');
+            client.chatMessage(steamID, 'Could not find an unusual effect in the schema with the name "' + params.effect + '"');
             return null;
         }
 
         item.effect = effect;
     }
 
-    if (typeof item.output === 'number') {
+    if (typeof params.output === 'number') {
         // User gave defindex
 
-        const schemaItem = schemaManager.schema.getItemByDefindex(item.output);
+        const schemaItem = schemaManager.schema.getItemByDefindex(params.output);
 
         if (schemaItem === null) {
-            client.chatMessage(steamID, 'Could not find an item in the schema with the defindex "' + item.defindex + '"');
+            client.chatMessage(steamID, 'Could not find an item in the schema with the defindex "' + params.output + '"');
             return null;
         }
 
         if (item.quality === 0) {
             item.quality = schemaItem.item_quality;
         }
-    } else if (item.output !== null) {
+    } else if (params.output !== undefined) {
         // Look for all items that have the same name
 
         const match = [];
 
         for (let i = 0; i < schemaManager.schema.raw.schema.items.length; i++) {
             const schemaItem = schemaManager.schema.raw.schema.items[i];
-            if (schemaItem.item_name === params.name) {
+            if (schemaItem.item_name === params.output) {
                 match.push(schemaItem);
             }
         }
 
         if (match.length === 0) {
-            client.chatMessage(steamID, 'Could not find an item in the schema with the name "' + params.name + '"');
+            client.chatMessage(steamID, 'Could not find an item in the schema with the name "' + params.output + '"');
             return null;
         } else if (match.length !== 1) {
             const matchCount = match.length;
 
-            const parsed = match.splice(0, 20).map((schemaItem) => schemaItem.defindex + ' (' + schemaItem.name + ')');
+            const parsed = match.splice(0, 20).map((schemaItem: SchemaItem) => schemaItem.defindex + ' (' + schemaItem.name + ')');
 
             let reply = 'I\'ve found ' + matchCount + ' items with a matching name. Please use one of the defindexes below as "output":\n' + parsed.join(',\n');
             if (matchCount > parsed.length) {
@@ -234,11 +233,11 @@ function getItemFromParams (steamID: SteamID|string, params: UnknownDictionaryKn
         }
     }
 
-    if (item.outputQuality !== null) {
-        const quality = schemaManager.schema.getQualityIdByName(item.outputQuality);
+    if (params.outputQuality) {
+        const quality = schemaManager.schema.getQualityIdByName(<string>params.outputQuality);
 
         if (quality === null) {
-            client.chatMessage(steamID, 'Could not find a quality in the schema with the name "' + item.outputQuality + '"');
+            client.chatMessage(steamID, 'Could not find a quality in the schema with the name "' + params.outputQuality + '"');
             return null;
         }
 
@@ -589,7 +588,7 @@ export function handleMessage (steamID: SteamID, message: string): void {
             params.sku = SKU.fromObject(item);
         }
 
-        params.sku = SKU.fromObject(fixItem(SKU.fromString(params.sku)));
+        params.sku = SKU.fromObject(fixItem(SKU.fromString(<string>params.sku)));
 
         prices.add(params.sku, params, function (err, entry) {
             if (err) {
@@ -874,7 +873,7 @@ export function handleMessage (steamID: SteamID, message: string): void {
             params.sku = SKU.fromObject(item);
         }
 
-        params.sku = SKU.fromObject(fixItem(SKU.fromString(params.sku)));
+        params.sku = SKU.fromObject(fixItem(SKU.fromString(<string>params.sku)));
 
         api.requestCheck(params.sku, 'bptf', function (err) {
             if (err) {
@@ -930,8 +929,8 @@ export function handleMessage (steamID: SteamID, message: string): void {
     } else if (isAdmin && (command === 'withdraw' || command === 'deposit')) {
         const info = removeCommandFromMessage(message, command);
 
-        let sku;
-        let amount;
+        let sku: string;
+        let amount: number;
 
         if (info.includes('=')) {
             // Using params
@@ -947,9 +946,9 @@ export function handleMessage (steamID: SteamID, message: string): void {
                 params.sku = SKU.fromObject(item);
             }
 
-            sku = SKU.fromObject(fixItem(SKU.fromString(params.sku)));
+            sku = SKU.fromObject(fixItem(SKU.fromString(<string>params.sku)));
 
-            if (params.amount === undefined || params.amount < 1) {
+            if (typeof params.amount !== 'number' || params.amount < 1) {
                 amount = 1;
             } else {
                 amount = params.amount;
@@ -962,7 +961,7 @@ export function handleMessage (steamID: SteamID, message: string): void {
 
         const response = cart.addToCart(steamID, sku, amount, command === 'deposit');
 
-        client.chatMessage(steamID, response.message + '\n' + cart.stringify(steamID));
+        client.chatMessage(steamID, response.message + '\n\n' + cart.stringify(steamID));
     } else if (isAdmin && command === 'clearcart') {
         client.chatMessage(steamID, cart.removeAllFromCart(steamID).message);
     } else if (isAdmin && command === 'checkout') {
@@ -1000,14 +999,14 @@ export function handleMessage (steamID: SteamID, message: string): void {
     }
 };
 
-function getItemAndAmount (steamID, message) {
+function getItemAndAmount (steamID: SteamID|string, message: string): { amount: number, match: any }|null {
     let name = message;
     let amount = 1;
 
     if (/^[-]?\d+$/.test(name.split(' ')[0])) {
         // Check if the first part of the name is a number, if so, then that is the amount the user wants to trade
         amount = parseInt(name.split(' ')[0]);
-        name = name.replace(amount, '').trim();
+        name = name.replace(amount.toString(), '').trim();
     }
 
     if (1 > amount) {

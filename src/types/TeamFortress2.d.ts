@@ -12,18 +12,18 @@ export interface Currency {
 export interface Item {
     defindex: number;
     quality: number;
-    craftable?:  boolean;
+    craftable?: boolean;
     tradable?: boolean;
     killstreak?: number;
     australium?: boolean;
-    effect?: number|null;
+    effect?: number;
     festive?: boolean;
-    paintkit?: string|null;
-    wear?: number|null;
-    quality2?: number|null;
-    target?: number|null;
-    craftnumber?: number|null;
-    crateseries?: number|null;
-    output?: number|null;
-    outputQuality?: number|null;
+    paintkit?: number;
+    wear?: number;
+    quality2?: number;
+    craftnumber?: number;
+    crateseries?: number;
+    target?: number;
+    output?: number;
+    outputQuality?: number;
 }

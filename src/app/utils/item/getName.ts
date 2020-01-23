@@ -1,5 +1,5 @@
 import { EconItem } from 'steam-tradeoffer-manager';
-import { Item as TF2Item } from '../../../types/TeamFortress2';
+import { Item } from '../../../types/TeamFortress2';
 
 import schemaManager from '../../../lib/tf2-schema';
 
@@ -7,7 +7,7 @@ export = function (): string {
     // @ts-ignore
     const self = <EconItem>this;
 
-    const item = <TF2Item>self.getItem();
+    const item = <Item>self.getItem();
 
     if (item === null) {
         return null;

@@ -20,10 +20,6 @@ class Cart {
         this.their = (their || {});
     }
 
-    get () {
-        return { our: this.our, their: this.their };
-    }
-
     amount (sku: string, whose: 'our' | 'their'): number {
         if (!this._exist(sku, whose)) {
             return 0;
@@ -91,23 +87,25 @@ class Cart {
 
 const carts: UnknownDictionary<Cart> = {};
 
-function createCart (steamID: SteamID|string, our?: UnknownDictionary<number>, their?: UnknownDictionary<number>): void {
-    carts[steamID.toString()] = new Cart(our, their);
+function createCart (steamID: SteamID|string, our?: UnknownDictionary<number>, their?: UnknownDictionary<number>): Cart {
+    const cart = new Cart(our, their);
+    carts[steamID.toString()] = cart;
+    return cart;
 }
 
 function cartExists (steamID: SteamID|string): boolean {
     return getCart(steamID) !== null;
 }
 
-function deleteCart (steamID: SteamID|string) {
+function deleteCart (steamID: SteamID|string): void {
     delete carts[steamID.toString()];
 }
 
-function getCart (steamID: SteamID|string): Cart {
+function getCart (steamID: SteamID|string): Cart|null {
     return carts[steamID.toString()] || null;
 }
 
-export function addToCart (steamID: SteamID|string, sku: string, amount: number, deposit: boolean) {
+export function addToCart (steamID: SteamID|string, sku: string, amount: number, deposit: boolean): { cart: Cart, message: string } {
     const side = deposit ? 'their' : 'our';
 
     const name = schemaManager.schema.getName(SKU.fromString(sku));
@@ -143,7 +141,7 @@ export function addToCart (steamID: SteamID|string, sku: string, amount: number,
     return { cart: getCart(steamID), message };
 };
 
-export function removeAllFromCart (steamID: SteamID|string) {
+export function removeAllFromCart (steamID: SteamID|string): { cart: null, message: string } {
     if (!cartExists(steamID)) {
         return { cart: null, message: 'Your cart is empty' };
     }
@@ -157,7 +155,7 @@ export function removeAllFromCart (steamID: SteamID|string) {
     return { cart: null, message: 'Your cart is empty' };
 }
 
-export function removeFromCart (steamID: SteamID|string, sku: string, amount: number, our: boolean) {
+export function removeFromCart (steamID: SteamID|string, sku: string, amount: number, our: boolean): { cart: Cart, message: string } {
     if (!cartExists(steamID)) {
         return { cart: null, message: 'Your cart is empty' };
     }
@@ -381,7 +379,7 @@ export function checkout (partner: SteamID|string, callback: (err?: Error, faile
     });
 };
 
-function createAlteredMessage (steamID: SteamID|string, alteredItems) {
+function createAlteredMessage (steamID: SteamID|string, alteredItems): string {
     const noneAvailable = { our: 'I don\'t have any', their: 'You don\'t have any' };
     const someAvailable = { our: 'I only have', their: 'You only have' };
 
@@ -459,7 +457,7 @@ function createAlteredMessage (steamID: SteamID|string, alteredItems) {
     return message;
 }
 
-export function stringify (steamID: SteamID|string) {
+export function stringify (steamID: SteamID|string): string {
     const cart = getCart(steamID);
 
     if (cart === null || cart.isEmpty()) {
