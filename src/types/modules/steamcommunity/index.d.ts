@@ -6,7 +6,7 @@ declare module 'steamcommunity' {
 
     interface Events {
         sessionExpired: () => void;
-        confKeyNeeded: (tag: string, callback: (err: Error|null, time: number, confKey: string) => void) => void;
+        confKeyNeeded: (tag: string, callback: (err?: Error, time?: number, confKey?: string) => void) => void;
     }
 
     export = SteamCommunity;
@@ -17,19 +17,17 @@ declare module 'steamcommunity' {
         steamID: SteamID|null;
         _jar: CookieJar;
 
-        /* login (details: { accountName: string, password: string, steamguard?: string, authCode?: string, twoFactorCode?: string, captcha?: string, disableMobile?: boolean }, callback: Function): void;
-        oAuthLogin (steamguard: string, oAuthToken: string, callback: Function): void;
         loggedIn (callback: Function): void;
         getSessionID (): string;
-        getWebAPIKey (domain: string, callback: (err: Error|null, key?: string) => void); */
+        getWebAPIKey (domain: string, callback: (err?: Error, key?: string) => void);
         setCookies (cookies: string): void;
-        editProfile (settings: { name?: string, realName?: string, summary?: string, country?: string, state?: string, city?: string, customURL?: string, featuredBadge?: number, primaryGroup?: SteamID|string }, callback?: (err: Error|null) => void): void;
-        profileSettings (settings: { profile?: number, comments?: number, inventory?: number, inventoryGifts?: boolean, gameDetails?: number, playTime?: boolean, friendsList?: number }, callback?: (err: Error|null) => void): void;
-        uploadAvatar (image: Buffer|string/* , format?: string */, callback?: (err: Error|null, url?: string) => void): void;
-        inviteUserToGroup (userID: SteamID|string, groupID: SteamID|string, callback?: (err: Error|null) => void): void;
-        getSteamGroup (id: SteamID|string, callback: (err: Error|null, group?: SteamCommunity.Group) => void): void;
-        getTradeURL (callback: (err: Error|null, url?: string, token?: string) => void): void;
-        acceptConfirmationForObject (identitySecret: string, objectID: number, callback: (err: Error|null) => void): void;
+        editProfile (settings: { name?: string, realName?: string, summary?: string, country?: string, state?: string, city?: string, customURL?: string, featuredBadge?: number, primaryGroup?: SteamID|string }, callback?: (err?: Error) => void): void;
+        profileSettings (settings: { profile?: number, comments?: number, inventory?: number, inventoryGifts?: boolean, gameDetails?: number, playTime?: boolean, friendsList?: number }, callback?: (err?: Error) => void): void;
+        uploadAvatar (image: Buffer|string/* , format?: string */, callback?: (err?: Error, url?: string) => void): void;
+        inviteUserToGroup (userID: SteamID|string, groupID: SteamID|string, callback?: (err?: Error) => void): void;
+        getSteamGroup (id: SteamID|string, callback: (err?: Error, group?: SteamCommunity.Group) => void): void;
+        getTradeURL (callback: (err?: Error, url?: string, token?: string) => void): void;
+        acceptConfirmationForObject (identitySecret: string, objectID: number, callback: (err?: Error) => void): void;
     }
 
     namespace SteamCommunity {
@@ -45,7 +43,7 @@ declare module 'steamcommunity' {
             membersInGame: number;
             membersOnline: number;
 
-            join: (callback?: (err: Error|null) => void) => void;
+            join: (callback?: (err?: Error) => void) => void;
         }
     }
 }
