@@ -19,6 +19,7 @@ const validator = require('../../lib/validator');
 const manager = require('../../lib/manager');
 const community = require('../../lib/community');
 const crafting = require('../crafting');
+const cart = require('./cart');
 
 const parseJSON = require('../utils/parseJSON');
 const admin = require('../admins');
@@ -285,6 +286,11 @@ exports.handleMessage = function (steamID, message) {
         '!help, !how2trade, !rate, !price [amount] <name>, !stock, !buy [amount] <name>, !sell [amount] <name>';
         if (isAdmin) {
             const adminCommands = [
+                '!deposit - Used to deposit items',
+                '!withdraw - Used to withdraw items',
+                '!cart - See the current cart',
+                '!checkout - Make the bot send you an offer with the items added with deposit and withdraw',
+                '!clearcart - Clears the cart',
                 '!get - Used to see raw pricelist info about an item',
                 '!add - Add an item to the pricelist',
                 '!remove - Remove an item from the pricelist',
@@ -917,6 +923,58 @@ exports.handleMessage = function (steamID, message) {
 
             client.chatMessage(steamID, 'Successfully uploaded new avatar.');
         });
+    } else if (isAdmin && (command === 'withdraw' || command === 'deposit')) {
+        const info = removeCommandFromMessage(message, command);
+
+        let sku;
+        let amount;
+
+        if (info.includes('=')) {
+            // Using params
+            const params = getParams(info);
+
+            if (params.sku === undefined) {
+                const item = getItemFromParams(steamID, params);
+
+                if (item === null) {
+                    return;
+                }
+
+                params.sku = SKU.fromObject(item);
+            }
+
+            sku = SKU.fromObject(fixItem(SKU.fromString(params.sku)));
+
+            if (params.amount === undefined || params.amount < 1) {
+                amount = 1;
+            } else {
+                amount = params.amount;
+            }
+        } else {
+            // TODO: Do it like !price / !buy / !sell (!deposit 10 The Team Captain) ???
+            client.chatMessage(steamID, 'Missing properties. Example: "!desposit name=Team Captain&amount=1"');
+            return;
+        }
+
+        const response = cart.addToCart(steamID, sku, amount, command === 'deposit');
+
+        client.chatMessage(steamID, response.message + '\n' + cart.stringify(steamID));
+    } else if (isAdmin && command === 'clearcart') {
+        client.chatMessage(steamID, cart.removeFromCart(steamID, true).message);
+    } else if (isAdmin && command === 'checkout') {
+        cart.checkout(steamID, function (err, failedMessage) {
+            if (err) {
+                client.chatMessage(steamID, 'Error sending offer: ' + err.message);
+            }
+
+            if (failedMessage) {
+                client.chatMessage(steamID, failedMessage);
+            } else {
+                cart.removeFromCart(steamID, true);
+            }
+        });
+    } else if (isAdmin && command === 'cart') {
+        client.chatMessage(steamID, cart.stringify(steamID));
     } else if (isAdmin && command === 'expand') {
         const assetids = inventory.findBySKU('5050;6', false).concat(inventory.findBySKU('5050;6;uncraftable', false));
 
