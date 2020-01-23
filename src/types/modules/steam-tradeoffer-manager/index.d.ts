@@ -78,10 +78,12 @@ declare module 'steam-tradeoffer-manager' {
             marketable: boolean;
             tags: [{
                 internal_name: string,
-                name: string,
                 category: string,
+                name: string,
+                localized_tag_name: string,
                 color: string,
-                category_name: string
+                category_name: string,
+                localized_category_name: string
             }];
             is_currency: boolean;
             fraudwarnings: any[];
