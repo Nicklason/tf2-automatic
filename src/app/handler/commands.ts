@@ -1,32 +1,36 @@
-const dotProp = require('dot-prop');
-const pluralize = require('pluralize');
-const moment = require('moment');
-const SKU = require('tf2-sku');
-const Currencies = require('tf2-currencies');
-const validUrl = require('valid-url');
+import { UnknownDictionary, UnknownDictionaryKnownValues } from '../../types/common';
+import SteamID from 'steamid';
 
-const prices = require('../prices');
-const client = require('../../lib/client');
-const inventory = require('../inventory');
-const schemaManager = require('../../lib/tf2-schema');
-const log = require('../../lib/logger');
-const friends = require('./friends');
-const trades = require('./trades');
-const queue = require('./queue');
-const handlerManager = require('../handler-manager');
-const api = require('../../lib/ptf-api');
-const validator = require('../../lib/validator');
-const manager = require('../../lib/manager');
-const community = require('../../lib/community');
-const crafting = require('../crafting');
-const cart = require('./cart');
+import dotProp from 'dot-prop';
+import pluralize from 'pluralize';
+import moment from 'moment';
+import SKU from 'tf2-sku';
+import Currencies from 'tf2-currencies';
+import validUrl from 'valid-url';
 
-const parseJSON = require('../utils/parseJSON');
-const admin = require('../admins');
-const fixItem = require('../utils/item/fixItem');
-const versionCheck = require('../version-check');
+import prices from '../prices';
+import client from '../../lib/client';
+import inventory from '../inventory';
+import schemaManager from '../../lib/tf2-schema';
+import log from '../../lib/logger';
+import friends from './friends';
+import trades from './trades';
+import queue from './queue';
+import handlerManager from '../handler-manager';
+import api from '../../lib/ptf-api';
+import validator from '../../lib/validator';
+import manager from '../../lib/manager';
+import community from '../../lib/community';
+import crafting from '../crafting';
+import * as cart from './cart';
 
-const pjson = require('pjson');
+import parseJSON from '../utils/parseJSON';
+import admin from '../admins';
+import fixItem from '../utils/item/fixItem';
+import versionCheck from '../version-check';
+import listingHandler from './listings';
+
+import pjson from 'pjson';
 
 let messages = [];
 
@@ -43,10 +47,10 @@ function getCommand (string) {
     }
 }
 
-function getParams (string) {
-    const params = parseJSON('{"' + string.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"') + '"}');
+function getParams (str: string): UnknownDictionary<number|boolean|string|UnknownDictionary<any>> {
+    const params = parseJSON('{"' + str.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"') + '"}');
 
-    const parsed = {};
+    const parsed: UnknownDictionary<number|boolean|string|UnknownDictionary<any>> = {};
 
     if (params !== null) {
         for (const key in params) {
@@ -76,7 +80,7 @@ function getParams (string) {
     return parsed;
 }
 
-function getItemFromParams (steamID, params) {
+function getItemFromParams (steamID: SteamID|string, params: UnknownDictionaryKnownValues) {
     const item = SKU.fromString('');
 
     delete item.paint;
@@ -244,7 +248,7 @@ function getItemFromParams (steamID, params) {
     return fixItem(item);
 }
 
-exports.handleMessage = function (steamID, message) {
+export function handleMessage (steamID: SteamID, message: string): void {
     const steamID64 = steamID.getSteamID64();
 
     const isFriend = friends.isFriend(steamID64);
@@ -488,7 +492,7 @@ exports.handleMessage = function (steamID, message) {
 
         if (params.item !== undefined) {
             // Remove by full name
-            let match = prices.searchByName(params.item, false);
+            let match = prices.searchByName(<string>params.item, false);
 
             if (match === null) {
                 client.chatMessage(steamID, 'I could not find any items in my pricelist that contains "' + params.item + '"');
@@ -663,14 +667,14 @@ exports.handleMessage = function (steamID, message) {
             if (params.autoprice !== true) {
                 handlerManager.getHandler().onPricelist(pricelist);
                 client.chatMessage(steamID, 'Updated pricelist!');
-                require('./listings').redoListings();
+                listingHandler.redoListings();
                 return;
             }
 
             client.chatMessage(steamID, 'Updating prices...');
 
             prices.init(function (err) {
-                require('./listings').redoListings();
+                listingHandler.redoListings();
 
                 if (err) {
                     log.warn('Failed to update prices: ', err);
@@ -702,7 +706,7 @@ exports.handleMessage = function (steamID, message) {
 
         if (params.item !== undefined) {
             // Remove by full name
-            let match = prices.searchByName(params.item, false);
+            let match = prices.searchByName(<string>params.item, false);
 
             if (match === null) {
                 client.chatMessage(steamID, 'I could not find any items in my pricelist that contains "' + params.item + '"');
@@ -747,7 +751,7 @@ exports.handleMessage = function (steamID, message) {
 
         if (params.item !== undefined) {
             // Remove by full name
-            let match = prices.searchByName(params.item, false);
+            let match = prices.searchByName(<string>params.item, false);
 
             if (match === null) {
                 client.chatMessage(steamID, 'I could not find any items in my pricelist that contains "' + params.item + '"');
@@ -960,7 +964,7 @@ exports.handleMessage = function (steamID, message) {
 
         client.chatMessage(steamID, response.message + '\n' + cart.stringify(steamID));
     } else if (isAdmin && command === 'clearcart') {
-        client.chatMessage(steamID, cart.removeFromCart(steamID, true).message);
+        client.chatMessage(steamID, cart.removeAllFromCart(steamID).message);
     } else if (isAdmin && command === 'checkout') {
         cart.checkout(steamID, function (err, failedMessage) {
             if (err) {
@@ -969,8 +973,6 @@ exports.handleMessage = function (steamID, message) {
 
             if (failedMessage) {
                 client.chatMessage(steamID, failedMessage);
-            } else {
-                cart.removeFromCart(steamID, true);
             }
         });
     } else if (isAdmin && command === 'cart') {
@@ -1043,6 +1045,6 @@ function getItemAndAmount (steamID, message) {
     };
 }
 
-function removeCommandFromMessage (message, command) {
+function removeCommandFromMessage (message: string, command: string): string {
     return message.substring(command.length + 1).trim();
 }

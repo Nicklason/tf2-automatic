@@ -1,15 +1,21 @@
-const TradeOfferManager = require('steam-tradeoffer-manager');
-const pluralize = require('pluralize');
-const SKU = require('tf2-sku');
-const async = require('async');
+import { UnknownDictionary } from '../../types/common';
+import SteamID from 'steamid';
 
-const inventory = require('../inventory');
-const schemaManager = require('../../lib/tf2-schema');
-const manager = require('../../lib/manager');
-const client = require('../../lib/client');
+import TradeOfferManager from 'steam-tradeoffer-manager';
+import pluralize from 'pluralize';
+import SKU from 'tf2-sku';
+import async from 'async';
+
+import inventory from '../inventory';
+import schemaManager from '../../lib/tf2-schema';
+import manager from '../../lib/manager';
+import client from '../../lib/client';
 
 class Cart {
-    constructor (our, their) {
+    our: UnknownDictionary<number>;
+    their: UnknownDictionary<number>;
+
+    constructor (our?: UnknownDictionary<number>, their?: UnknownDictionary<number>) {
         this.our = (our || {});
         this.their = (their || {});
     }
@@ -18,7 +24,7 @@ class Cart {
         return { our: this.our, their: this.their };
     }
 
-    amount (sku, whose) {
+    amount (sku: string, whose: 'our' | 'their'): number {
         if (!this._exist(sku, whose)) {
             return 0;
         }
@@ -26,7 +32,7 @@ class Cart {
         return this[whose][sku];
     }
 
-    add (sku, amount, whose) {
+    add (sku: string, amount: number, whose: 'our' | 'their'): void {
         if (!this._exist(sku, whose)) {
             this[whose][sku] = amount;
         } else {
@@ -34,7 +40,7 @@ class Cart {
         }
     }
 
-    remove (sku, amount, whose) {
+    remove (sku: string, amount: number, whose: 'our' | 'their'): void {
         if (this._exist(sku, whose)) {
             this[whose][sku] -= amount;
             if (this[whose][sku] <= 0) {
@@ -43,15 +49,16 @@ class Cart {
         }
     }
 
-    clear () {
-        ['our', 'their'].forEach((whose) => this[whose] = {});
+    clear (): void {
+        this.our = {};
+        this.their = {};
     }
 
-    isEmpty () {
+    isEmpty (): boolean {
         return Object.keys(this.our).length === 0 && Object.keys(this.their).length === 0;
     }
 
-    toString () {
+    toString (): string {
         let message = '== YOUR CART ==';
 
         message += '\n\nMy side (items you will receive):';
@@ -77,7 +84,7 @@ class Cart {
         return message;
     }
 
-    _exist (sku, whose) {
+    _exist (sku: string, whose: string): boolean {
         return this[whose][sku] ? true : false;
     }
 }
@@ -85,34 +92,28 @@ class Cart {
 
 const carts = {};
 
-function createCart (steamid, our, their) {
-    carts[steamid] = new Cart(our, their);
+function createCart (steamID: SteamID|string, our?: UnknownDictionary<number>, their?: UnknownDictionary<number>): void {
+    carts[steamID.toString()] = new Cart(our, their);
 }
 
-function cartExists (steamid) {
-    return carts[steamid] !== undefined;
+function cartExists (steamID: SteamID|string): boolean {
+    return getCart(steamID) !== null;
 }
 
-function deleteCart (steamid) {
-    if (carts[steamid]) {
-        delete carts[steamid];
-    }
+function deleteCart (steamID: SteamID|string) {
+    delete carts[steamID.toString()];
 }
 
-function getCart (steamid) {
-    if (!cartExists(steamid)) {
-        return null;
-    }
-
-    return carts[steamid];
+function getCart (steamID: SteamID|string): Cart {
+    return carts[steamID.toString()] || null;
 }
 
-exports.addToCart = function (steamID, sku, amount, deposit) {
+export function addToCart (steamID: SteamID|string, sku: string, amount: number, deposit: boolean) {
     const side = deposit ? 'their' : 'our';
 
     const name = schemaManager.schema.getName(SKU.fromString(sku));
 
-    let message;
+    let message: string;
 
     if (deposit) {
         message = pluralize(name, amount, true) + ' ' + (amount > 1 ? 'have' : 'has') + ' been added to your cart';
@@ -140,55 +141,59 @@ exports.addToCart = function (steamID, sku, amount, deposit) {
         getCart(steamID).add(sku, amount, side);
     }
 
-    return { cart: getCart(steamID).get(), message };
+    return { cart: getCart(steamID), message };
 };
 
-exports.removeFromCart = function (steamID, sku, amount, our, all = false) {
+export function removeAllFromCart (steamID: SteamID|string) {
     if (!cartExists(steamID)) {
         return { cart: null, message: 'Your cart is empty' };
     }
 
-    if (typeof sku === 'boolean') {
-        all = sku;
-        sku = undefined;
+    getCart(steamID).clear();
+
+    if (getCart(steamID).isEmpty()) {
+        deleteCart(steamID);
     }
 
-    let message;
+    return { cart: null, message: 'Your cart is empty' };
+}
+
+export function removeFromCart (steamID: SteamID|string, sku: string, amount: number, our: boolean) {
+    if (!cartExists(steamID)) {
+        return { cart: null, message: 'Your cart is empty' };
+    }
+
+    let message: string;
 
     const name = sku ? schemaManager.schema.getName(SKU.fromString(sku)) : undefined;
 
-    const side = our ? 'our' : 'their';
+    const whose = our ? 'our' : 'their';
 
-    if (all) {
-        message = 'Your cart has been emptied';
-        getCart(steamID).clear();
+    const sideString = our ? 'my' : 'your';
+
+    const inCart = getCart(steamID).amount(sku, whose);
+
+    if (inCart === 0) {
+        amount = inCart;
+        message = 'There are no ' + pluralize(name, amount) + ' on ' + sideString + ' side of the cart';
+    } else if (amount > inCart) {
+        amount = inCart;
+        message = 'There were only ' + pluralize(name, amount, true) + ' on ' + sideString + ' side of the cart. ' + (amount > 1 ? 'They have' : 'It has') + ' been removed';
     } else {
-        const whose = our ? 'my' : 'your';
-
-        const inCart = getCart(steamID).amount(sku, side);
-
-        if (inCart === 0) {
-            amount = inCart;
-            message = 'There are no ' + pluralize(name, amount) + ' on ' + whose + ' side of the cart';
-        } else if (amount > inCart) {
-            amount = inCart;
-            message = 'There were only ' + pluralize(name, amount, true) + ' on ' + whose + ' side of the cart. ' + (amount > 1 ? 'They have' : 'It has') + ' been removed';
-        } else {
-            message = pluralize(name, amount, true) + (amount > 1 ? ' have' : ' has') + ' been removed from ' + whose + ' side of the cart';
-        }
+        message = pluralize(name, amount, true) + (amount > 1 ? ' have' : ' has') + ' been removed from ' + sideString + ' side of the cart';
     }
 
-    getCart(steamID).remove(sku, amount, side);
+    getCart(steamID).remove(sku, amount, whose);
 
     if (getCart(steamID).isEmpty()) {
         deleteCart(steamID);
         return { cart: null, message };
     }
 
-    return { cart: getCart(steamID).get(), message };
+    return { cart: getCart(steamID), message };
 };
 
-exports.checkout = function (partner, callback) {
+export function checkout (partner: SteamID|string, callback: (err?: Error, failedMessage?: string) => void): void {
     const start = new Date().getTime();
 
     if (!cartExists(partner)) {
@@ -198,8 +203,8 @@ exports.checkout = function (partner, callback) {
 
     client.chatMessage(partner, 'Please wait while I process your offer...');
 
-    const alteredItems = { our: [], their: [] };
-    let alteredMessage;
+    const alteredItems: { our: string[], their: string[] } = { our: [], their: [] };
+    let alteredMessage: string;
 
     const cart = getCart(partner);
 
@@ -231,10 +236,10 @@ exports.checkout = function (partner, callback) {
 
     const offer = manager.createOffer(partner);
 
-    offer.data('partner', partner.getSteamID64());
+    offer.data('partner', partner);
 
-    const itemsDict = { our: {}, their: {} };
-    const itemsDiff = {};
+    const itemsDict: { our: UnknownDictionary<number>, their: UnknownDictionary<number> } = { our: {}, their: {} };
+    const itemsDiff: UnknownDictionary<number> = {};
 
     for (const sku in cart.our) {
         if (!Object.prototype.hasOwnProperty.call(cart.our, sku)) {
@@ -273,7 +278,7 @@ exports.checkout = function (partner, callback) {
                 callback(null, theirDict);
             });
         }
-    }, function (err, inventories) {
+    }, function (err, inventories: { their: UnknownDictionary<string[]> }) {
         if (err) {
             callback(null, err);
             return;
@@ -283,7 +288,7 @@ exports.checkout = function (partner, callback) {
             alteredMessage = createAlteredMessage(partner, alteredItems);
 
             if (Object.keys(cart.our).length === 0) {
-                exports.removeFromCart(partner, true);
+                deleteCart(partner);
                 callback(null, 'Failed to send offer: ' + alteredMessage);
                 return;
             }
@@ -304,7 +309,6 @@ exports.checkout = function (partner, callback) {
                 } else {
                     cart.remove(sku, (amountInCart-amountCanTrade), 'their');
                 }
-                // @ts-ignore
                 alteredItems.their.push(sku);
             }
 
@@ -330,7 +334,7 @@ exports.checkout = function (partner, callback) {
         alteredMessage = createAlteredMessage(partner, alteredItems);
 
         if ((Object.keys(cart.their).length === 0) && (Object.keys(cart.our).length === 0)) {
-            exports.removeFromCart(partner, true);
+            deleteCart(partner);
             callback(null, 'Failed to send offer: ' + alteredMessage);
             return;
         }
@@ -345,6 +349,8 @@ exports.checkout = function (partner, callback) {
         if (alteredMessage) {
             client.chatMessage(partner, alteredMessage);
         }
+
+        removeAllFromCart(partner);
 
         require('../trade').sendOffer(offer, function (err) {
             if (err) {
@@ -376,19 +382,21 @@ exports.checkout = function (partner, callback) {
     });
 };
 
-function createAlteredMessage (steamID, alteredItems) {
+function createAlteredMessage (steamID: SteamID|string, alteredItems) {
     const noneAvailable = { our: 'I don\'t have any', their: 'You don\'t have any' };
     const someAvailable = { our: 'I only have', their: 'You only have' };
 
     const none = { our: [], their: [] };
-    const some = { our: [], their: [] };
+    const some: { our: [{ name: string, amount: number }?], their: [{ name: string, amount: number }?] } = { our: [], their: [] };
 
     const cart = getCart(steamID);
 
     ['our', 'their'].forEach((whose) => {
         alteredItems[whose].forEach((sku) => {
             const name = schemaManager.schema.getName(SKU.fromString(sku));
+            // @ts-ignore
             if (cart.amount(sku, whose)) {
+                // @ts-ignore
                 some[whose].push({ name, amount: cart.amount(sku, whose) });
             } else {
                 none[whose].push(name);
@@ -452,8 +460,8 @@ function createAlteredMessage (steamID, alteredItems) {
     return message;
 }
 
-exports.stringify = function (steamid) {
-    const cart = getCart(steamid);
+export function stringify (steamID: SteamID|string) {
+    const cart = getCart(steamID);
 
     if (cart === null || cart.isEmpty()) {
         return 'Your cart is empty';

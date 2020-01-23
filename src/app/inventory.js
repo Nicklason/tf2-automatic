@@ -15,7 +15,7 @@ exports.getInventory = function (steamID, callback) {
     const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
     const isOurInv = manager.steamID.getSteamID64() === steamID64;
 
-    manager.getUserInventoryContents(steamID, 440, 2, !isOurInv, function (err, items) {
+    manager.getUserInventoryContents(steamID, 440, '2', !isOurInv, function (err, items) {
         if (err) {
             return callback(err);
         }
