@@ -33,15 +33,17 @@ declare module 'steam-tradeoffer-manager' {
         apiKey: string|null;
         pollInterval: number;
 
-        createOffer(partner: SteamID|string, token?: string): SteamTradeOfferManager.TradeOffer;
-        getInventoryContents(appid: any, contextid: any, tradableOnly: any, callback: any): void;
-        getOffer(id: any, callback: any): void;
-        getOfferToken(callback: any): void;
-        getOffers(filter: any, historicalCutoff: any, callback: any): void;
-        getUserInventoryContents(sid: any, appid: any, contextid: any, tradableOnly: any, callback: any): void;
-        loadInventory(appid: any, contextid: any, tradableOnly: any, callback: any): void;
-        loadUserInventory(sid: any, appid: any, contextid: any, tradableOnly: any, callback: any): void;
-        setCookies(cookies: string[], familyViewPin?: string, callback?: (err: Error|null) => void): void;
+        getUserInventoryContents (steamID: SteamID|string, appid: number, contextid: string, callback: (err?: Error, inventory?: SteamTradeOfferManager.EconItem[], currency?: SteamTradeOfferManager.EconItem[]) => void): void;
+        getUserInventoryContents (steamID: SteamID|string, appid: number, contextid: string, tradeableOnly: boolean, callback: (err?: Error, inventory?: SteamTradeOfferManager.EconItem[], currency?: SteamTradeOfferManager.EconItem[]) => void): void;
+
+        createOffer (partner: SteamID|string, token?: string): SteamTradeOfferManager.TradeOffer;
+
+        getOffer (id: string, callback: (err?: Error, offer?: SteamTradeOfferManager.TradeOffer) => void): void;
+
+        getOffers (filter: number, callback: (err?: Error, offers?: SteamTradeOfferManager.TradeOffer[]) => void): void;
+        getOffers (filter: number, historicalCutoff: Date, callback: (err?: Error, sent?: SteamTradeOfferManager.TradeOffer[], received?: SteamTradeOfferManager.TradeOffer[]) => void): void;
+
+        setCookies(cookies: string[], familyViewPin?: string, callback?: (err?: Error) => void): void;
         shutdown(): void;
 
         static EOfferFilter: any;
