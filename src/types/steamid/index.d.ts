@@ -11,5 +11,6 @@ declare module 'steamid' {
 
         isValid(): boolean;
         getSteamID64 (): string;
+        toString (): string;
     }
 }
