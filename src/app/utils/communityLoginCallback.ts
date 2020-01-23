@@ -3,10 +3,10 @@ const community = require('../../lib/community');
 
 /**
  * Waits for webSession event to fire
- * @param {Boolean} eventOnly If you only look for the event
- * @param {function} callback
+ * @param eventOnly If you only look for the event
+ * @param callback
  */
-module.exports = function (eventOnly, callback) {
+export = function (eventOnly: boolean, callback: (err: Error|null, cookies?: string[]) => void): void {
     if (!eventOnly) {
         const cookies = getCookies();
         if (cookies.length !== 0) {
@@ -34,7 +34,7 @@ module.exports = function (eventOnly, callback) {
     }
 };
 
-function getCookies () {
+function getCookies (): string[] {
     return community._jar.getCookies('https://steamcommunity.com').filter((cookie) => ['sessionid', 'steamLogin', 'steamLoginSecure'].indexOf(cookie.key) !== -1).map(function (cookie) {
         return `${cookie.key}=${cookie.value}`;
     });
