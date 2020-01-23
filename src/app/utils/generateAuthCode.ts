@@ -8,6 +8,6 @@ import getTimeOffset from './getTimeOffset';
  */
 export = function (callback: (err?: Error, authCode?: string) => void): void {
     getTimeOffset(function (err, offset) {
-        callback(err, <string>SteamTotp.generateAuthCode(<string>process.env.STEAM_SHARED_SECRET, offset));
+        callback(err, SteamTotp.generateAuthCode(process.env.STEAM_SHARED_SECRET, offset));
     });
 }
