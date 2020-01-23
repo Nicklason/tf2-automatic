@@ -89,6 +89,7 @@ declare module 'steam-tradeoffer-manager' {
                 value: string,
                 color?: string
             }];
+            app_data: any;
 
             // Custom functions added to prototype
             hasDescription (description: string): boolean;

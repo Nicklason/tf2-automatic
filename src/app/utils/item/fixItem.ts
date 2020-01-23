@@ -1,8 +1,11 @@
-const isObject = require('isobject');
+import { Item as TF2Item } from '../../../types/TeamFortress2';
+import { SchemaItem } from 'tf2-schema';
 
-const schemaManager = require('../../../lib/tf2-schema');
+import isObject from 'isobject';
 
-module.exports = function (item) {
+import schemaManager from '../../../lib/tf2-schema';
+
+export = function (item: TF2Item): TF2Item {
     const schemaItem = schemaManager.schema.getItemByDefindex(item.defindex);
 
     if (schemaItem === null) {
@@ -109,6 +112,6 @@ module.exports = function (item) {
     return item;
 };
 
-function _isPromo (schemaItem) {
-    return schemaItem.name.startsWith('Promo ') && schemaItem.craft_class == '';
+function _isPromo (schemaItem: SchemaItem): boolean {
+    return schemaItem.name.startsWith('Promo ') && schemaItem.craft_class === '';
 }

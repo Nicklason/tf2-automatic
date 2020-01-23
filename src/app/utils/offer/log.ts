@@ -1,6 +1,6 @@
-const log = require('../../../lib/logger');
+import log from '../../../lib/logger';
 
-module.exports = function (level, message) {
+export = function (level: string, message: string) {
     // @ts-ignore
     log[level]('Offer' + (this.id ? ' #' + this.id : '') + ' with ' + this.partner.getSteamID64() + ' ' + message);
 };

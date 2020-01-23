@@ -1,16 +1,15 @@
 /**
  * Gets an action by name
- * @param {String} action
- * @return {String|null}
+ * @param action
  */
-module.exports = function (action) {
+export = function (action: string): string {
     // @ts-ignore
     if (!Array.isArray(this.actions)) {
         return null;
     }
 
     // @ts-ignore
-    const match = this.actions.find((v) => v.name === action);
+    const match: { link: string, name: string } = this.actions.find((v) => v.name === action);
 
     if (match === undefined) {
         return null;

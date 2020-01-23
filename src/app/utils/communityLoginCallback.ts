@@ -6,7 +6,7 @@ const community = require('../../lib/community');
  * @param eventOnly If you only look for the event
  * @param callback
  */
-export = function (eventOnly: boolean, callback: (err: Error|null, cookies?: string[]) => void): void {
+export = function (eventOnly: boolean, callback: (err?: Error, cookies?: string[]) => void): void {
     if (!eventOnly) {
         const cookies = getCookies();
         if (cookies.length !== 0) {
@@ -26,7 +26,7 @@ export = function (eventOnly: boolean, callback: (err: Error|null, cookies?: str
         return callback(new Error('Could not sign in to steamcommunity'));
     }, 10000);
 
-    function webSessionEvent (sessionID, cookies) {
+    function webSessionEvent (sessionID: string, cookies: string[]) {
         // Signed in, stop timeout and return
         clearTimeout(timeout);
 

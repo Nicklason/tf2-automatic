@@ -1,7 +1,12 @@
-const schemaManager = require('../../lib/tf2-schema');
+import SchemaManager from 'tf2-schema';
+import schemaManager from '../../lib/tf2-schema';
 
-module.exports = function (name) {
-    const match = [];
+/**
+ * Get schema items by name
+ * @param name
+ */
+export = function (name: string): SchemaManager.SchemaItem[] {
+    const match: SchemaManager.SchemaItem[] = [];
 
     const originalSchemaItem = schemaManager.schema.getItemByItemName(name);
 
@@ -25,4 +30,3 @@ module.exports = function (name) {
 
     return match;
 };
-
