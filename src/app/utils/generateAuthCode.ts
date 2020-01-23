@@ -4,10 +4,10 @@ import getTimeOffset from './getTimeOffset';
 
 /**
  * Generates Steam authentication code
- * @param {Function} callback
+ * @param callback
  */
-export = function (callback) {
+export = function (callback: (err: Error|null, authCode: string) => void): void {
     getTimeOffset(function (err, offset) {
-        callback(err, SteamTotp.generateAuthCode(<string>process.env.STEAM_SHARED_SECRET, offset));
+        callback(err, <string>SteamTotp.generateAuthCode(<string>process.env.STEAM_SHARED_SECRET, offset));
     });
 }

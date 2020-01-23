@@ -1,15 +1,15 @@
-const fs = require('graceful-fs');
-const path = require('path');
+import fs from 'graceful-fs';
+import path from 'path';
 
 let filesBeingSaved = 0;
 
 /**
  * Reads a file
- * @param {String} p
- * @param {Boolean} json If what you are reading is JSON and you want to parse it
- * @param {Function} callback
+ * @param p
+ * @param json
+ * @param callback
  */
-exports.readFile = function (p, json, callback) {
+export function readFile (p: string, json: boolean, callback: (err: Error|null, data?: object|null) => void): void {
     if (typeof json === 'function') {
         callback = json;
         json = false;
@@ -45,13 +45,13 @@ exports.readFile = function (p, json, callback) {
 };
 
 /**
- * Writes to file
- * @param {String} p
- * @param {*} data
- * @param {Boolean} json If you want to stringify the data you are writing
- * @param {Function} callback
+ * Writes a file
+ * @param p
+ * @param data
+ * @param json
+ * @param callback
  */
-exports.writeFile = function (p, data, json, callback) {
+export function writeFile (p: string, data: any, json: boolean, callback: (err: Error|null) => void): void {
     if (typeof json === 'function') {
         callback = json;
         json = false;
@@ -66,6 +66,8 @@ exports.writeFile = function (p, data, json, callback) {
 
     const dir = path.dirname(p);
 
+    filesBeingSaved++;
+
     if (fs.existsSync(dir)) {
         writeFile();
     } else {
@@ -79,7 +81,6 @@ exports.writeFile = function (p, data, json, callback) {
     }
 
     function writeFile () {
-        filesBeingSaved++;
         fs.writeFile(p, write, { encoding: 'utf8' }, function (err) {
             filesBeingSaved--;
             callback(err);
@@ -87,7 +88,9 @@ exports.writeFile = function (p, data, json, callback) {
     }
 };
 
-exports.isWritingToFiles = function () {
+/**
+ * Check if we are writing any files
+ */
+export function isWritingToFiles (): boolean {
     return filesBeingSaved !== 0;
 };
-
