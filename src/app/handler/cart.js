@@ -267,7 +267,7 @@ exports.checkout = function (partner, callback) {
 
             inventory.getDictionary(partner, false, function (err, theirDict) {
                 if (err) {
-                    return callback('Failed to load inventories, Steam might be down');
+                    return callback(err);
                 }
 
                 callback(null, theirDict);
