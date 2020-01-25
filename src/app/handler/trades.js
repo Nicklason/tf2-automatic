@@ -2,7 +2,7 @@ const TradeOfferManager = require('steam-tradeoffer-manager');
 const Currencies = require('tf2-currencies');
 const pluralize = require('pluralize');
 const retry = require('retry');
- 
+
 const log = require('../../lib/logger');
 const inventory = require('../inventory');
 const prices = require('../prices');
