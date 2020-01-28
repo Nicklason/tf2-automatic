@@ -6,5 +6,5 @@ export = function (level: string, message: string) {
     // @ts-ignore
     const self = <TradeOffer>this;
 
-    log[level]('Offer' + (self.id ? ' #' + self.id : '') + ' with ' + self.partner.getSteamID64() + ' ' + message);
+    log[level]('Offer' + (self.id ? ' #' + self.id : '') + (self.isOurOffer ? ' with ' : ' from ') + self.partner.getSteamID64() + ' ' + message);
 };
