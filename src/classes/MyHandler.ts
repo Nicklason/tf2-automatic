@@ -1,6 +1,6 @@
 import Handler from './Handler';
 import Bot from './Bot';
-import { EntryData } from './Pricelist';
+import { Entry, EntryData } from './Pricelist';
 
 import SteamUser from 'steam-user';
 import { TradeOffer, PollData } from 'steam-tradeoffer-manager';
@@ -60,6 +60,8 @@ class MyHandler extends Handler {
     }
 
     onLoginAttempts (attempts: number[]): void {
+        log.debug('Login attempts changed');
+
         files.writeFile(paths.files.loginAttempts, attempts, true).catch(function (err) {
             log.warn('Failed to save login attempts: ', err);
         });
@@ -73,10 +75,25 @@ class MyHandler extends Handler {
         
     }
 
-    onPollData (pollData: PollData) {
+    onPollData (pollData: PollData): void {
+        log.debug('Polldata changed');
+
         files.writeFile(paths.files.pollData, pollData, true).catch(function (err) {
             log.warn('Failed to save polldata: ', err);
         });
+    }
+
+    onPricelist (pricelist: Entry[]): void {
+        log.debug('Pricelist changed');
+        // TODO: Emit pricelist change when the price of an item changes
+
+        files.writeFile(paths.files.pricelist, pricelist, true).catch(function (err) {
+            log.warn('Failed to save pricelist: ', err);
+        });
+    }
+
+    onPriceChange (sku: string, entry: Entry): void {
+        // TODO: Update backpack.tf listings
     }
 
     onLoginThrottle (wait: number): void {

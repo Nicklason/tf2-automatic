@@ -199,7 +199,7 @@ export default class Pricelist extends EventEmitter {
             }
 
             if (pricesChanged) {
-                // TODO: Emit pricelist change
+                this.emit('pricelist', this.prices);
             }
 
             return resolve();

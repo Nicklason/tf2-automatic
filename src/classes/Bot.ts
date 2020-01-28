@@ -78,6 +78,8 @@ export = class Bot {
         this.pricelist = new Pricelist(this.schema, this.socket);
         this.inventoryManager = new InventoryManager(this.pricelist);
 
+        this.addListener(this.pricelist, 'pricelist', this.handler.onPricelist, this.pricelist, true);
+        this.addListener(this.pricelist, 'price', this.handler.onPriceChange, this.pricelist, true);
         this.addListener(this.client, 'loggedOn', this.onLoggedOn, this, false);
         this.addListener(this.client, 'friendMessage', this.onMessage, this, true);
         this.addListener(this.client, 'friendRelationship', this.onFriendRelationship, this, true);
