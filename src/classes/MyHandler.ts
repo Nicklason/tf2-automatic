@@ -52,11 +52,16 @@ class MyHandler extends Handler {
     }
 
     onLoginKey (loginKey: string): void {
-        
+        log.debug('New login key');
+        files.writeFile(paths.files.loginKey, loginKey, false).catch(function (err) {
+            log.warn('Failed to save login key: ', err);
+        });
     }
 
     onLoginAttempts (attempts: number[]): void {
-
+        files.writeFile(paths.files.loginAttempts, attempts, true).catch(function (err) {
+            log.warn('Failed to save login attempts: ', err);
+        });
     }
 
     onNewTradeOffer (offer: TradeOffer, done: (action?: 'accept'|'decline') => void): void {
@@ -68,7 +73,9 @@ class MyHandler extends Handler {
     }
 
     onPollData (pollData: PollData) {
-
+        files.writeFile(paths.files.pollData, pollData, true).catch(function (err) {
+            log.warn('Failed to save polldata: ', err);
+        });
     }
 
     onLoginThrottle (wait: number): void {

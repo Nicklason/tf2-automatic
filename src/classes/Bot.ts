@@ -86,6 +86,8 @@ export = class Bot {
         this.addListener(this.community, 'sessionExpired', this.onSessionExpired, this, false);
         this.addListener(this.community, 'confKeyNeeded', this.onConfKeyNeeded, this, false);
         this.addListener(this.client, 'steamGuard', this.onSteamGuard, this, false);
+        this.addListener(this.client, 'loginKey', this.handler.onLoginKey, this.handler, true);
+        this.addListener(this.manager, 'pollData', this.handler.onPollData, this.handler, true);
         this.addListener(this.listingManager, 'heartbeat', this.onHeartbeat, this, true);
         this.addListener(this.client, 'error', this.onError, this, false);
     }
