@@ -32,7 +32,7 @@ declare module 'steam-tradeoffer-manager' {
 
         getOffer (id: string|number, callback: (err?: Error, offer?: SteamTradeOfferManager.TradeOffer) => void): void;
 
-        getOffers (filter: number, callback: (err?: Error, offers?: SteamTradeOfferManager.TradeOffer[]) => void): void;
+        getOffers (filter: number, callback: (err?: Error, sent?: SteamTradeOfferManager.TradeOffer[], received?: SteamTradeOfferManager.TradeOffer[]) => void): void;
         getOffers (filter: number, historicalCutoff: Date, callback: (err?: Error, sent?: SteamTradeOfferManager.TradeOffer[], received?: SteamTradeOfferManager.TradeOffer[]) => void): void;
 
         doPoll (): void;

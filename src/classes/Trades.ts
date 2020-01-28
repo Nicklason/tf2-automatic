@@ -102,6 +102,26 @@ export = class Trades {
         activeReceived.filter((offer) => offer.data('handledByUs') !== true).forEach((offer) => this.enqueueOffer(offer));
     }
 
+    getOffers (includeInactive = false): Promise<{ sent: TradeOfferManager.TradeOffer[], received: TradeOfferManager.TradeOffer[] }> {
+        return new Promise((resolve, reject) => {
+            this.bot.manager.getOffers(includeInactive ? TradeOfferManager.EOfferFilter.All : TradeOfferManager.EOfferFilter.ActiveOnly, (err, sent, received) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve({ sent, received });
+            });
+        });
+    }
+
+    findMatchingOffer (offer: TradeOfferManager.TradeOffer, isSent: boolean): Promise<TradeOfferManager.TradeOffer|null> {
+        return this.getOffers().then(({ sent, received }) => {
+            const match = (isSent ? sent : received).find((v) => Trades.offerEquals(offer, v));
+
+            return match;
+        });
+    }
+
     private enqueueOffer (offer: TradeOfferManager.TradeOffer) {
         if (this.receivedOffers.indexOf(offer.id) === -1) {
             this.receivedOffers.push(offer.id);
@@ -358,7 +378,7 @@ export = class Trades {
 
             if (offer.isOurOffer && offer.data('_ourItems') === null) {
                 // Items are not saved for sent offer, save them
-                offer.data('_ourItems', offer.itemsToGive.map((item) => this.mapItem(item)));
+                offer.data('_ourItems', offer.itemsToGive.map((item) => Trades.mapItem(item)));
             }
         } else {
             // Offer is not active and the items are no longer in trade
@@ -389,15 +409,6 @@ export = class Trades {
         });
     }
 
-    private mapItem (item: EconItem): TradeOfferManager.TradeOfferItem {
-        return {
-            appid: item.appid,
-            contextid: item.contextid,
-            assetid: item.assetid,
-            amount: item.amount
-        };
-    }
-
     private setItemInTrade (assetid: string): void {
         const index = this.itemsInTrade.indexOf(assetid);
 
@@ -412,5 +423,45 @@ export = class Trades {
         if (index !== -1) {
             this.itemsInTrade.splice(index, 1);
         }
+    }
+
+    private static offerEquals (a: TradeOfferManager.TradeOffer, b: TradeOfferManager.TradeOffer): boolean {
+        return a.isOurOffer === b.isOurOffer && a.partner.getSteamID64() === b.partner.getSteamID64() && Trades.itemsEquals(a.itemsToGive, b.itemsToGive) && Trades.itemsEquals(a.itemsToReceive, b.itemsToReceive);
+    }
+
+    private static itemsEquals (a: TradeOfferManager.EconItem[], b: TradeOfferManager.EconItem[]): boolean {
+        if (a.length !== b.length) {
+            return false;
+        }
+    
+        const copy = b.concat();
+    
+        for (let i = 0; i < a.length; i++) {
+            // Find index of matching item
+            const index = copy.findIndex((item) => Trades.itemEquals(item, a[i]));
+    
+            if (index === -1) {
+                // Item was not found, offers don't match
+                return false;
+            }
+    
+            // Remove match from list
+            copy.splice(index, 1);
+        }
+    
+        return copy.length === 0;
+    }
+
+    private static itemEquals (a: TradeOfferManager.EconItem, b: TradeOfferManager.EconItem): boolean {
+        return a.appid == b.appid && a.contextid == b.contextid && (a.assetid || a.id) == (b.assetid || b.id);
+    }
+
+    private static mapItem (item: EconItem): TradeOfferManager.TradeOfferItem {
+        return {
+            appid: item.appid,
+            contextid: item.contextid,
+            assetid: item.assetid,
+            amount: item.amount
+        };
     }
 }
