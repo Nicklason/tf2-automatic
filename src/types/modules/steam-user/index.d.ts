@@ -1,5 +1,4 @@
 declare module 'steam-user' {
-    import StrictEventEmitter from 'strict-event-emitter-types';
     import { EventEmitter } from 'events';
     import SteamID from 'steamid';
 
@@ -21,7 +20,7 @@ declare module 'steam-user' {
 
     export = SteamUser;
 
-    class SteamUser extends EventEmitter implements StrictEventEmitter<EventEmitter, Events> {
+    class SteamUser extends EventEmitter {
         static EResult: any;
         static EPersonaState: any;
         static EClanRelationship: any;
@@ -40,7 +39,7 @@ declare module 'steam-user' {
             avater_hash: Buffer,
             last_logoff: Date,
             last_logon: Date,
-            last_seen_online: DataCue,
+            last_seen_online: Date,
             avatar_url_icon: string,
             avatar_url_medium: string,
             avatar_url_full: string

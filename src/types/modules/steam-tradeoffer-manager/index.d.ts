@@ -1,5 +1,4 @@
 declare module 'steam-tradeoffer-manager' {
-    import StrictEventEmitter from 'strict-event-emitter-types';
     import { EventEmitter } from 'events';
     import SteamID from 'steamid';
     import SchemaManager from 'tf2-schema';
@@ -18,7 +17,7 @@ declare module 'steam-tradeoffer-manager' {
 
     export = SteamTradeOfferManager;
 
-    class SteamTradeOfferManager extends EventEmitter implements StrictEventEmitter<EventEmitter, Events> {
+    class SteamTradeOfferManager extends EventEmitter {
         constructor(options: any);
 
         steamID: SteamID|null;
