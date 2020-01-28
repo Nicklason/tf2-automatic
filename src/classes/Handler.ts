@@ -1,5 +1,5 @@
 import Bot from './Bot';
-import { EntryData } from './Pricelist';
+import { Entry, EntryData } from './Pricelist';
 
 import SteamID from 'steamid';
 import SteamTradeOfferManager from 'steam-tradeoffer-manager';
@@ -63,6 +63,19 @@ abstract class Handler {
      * @param pollData 
      */
     abstract onPollData (pollData: SteamTradeOfferManager.PollData): void;
+
+    /**
+     * Called when the pricelist updates
+     * @param pricelist
+     */
+    abstract onPricelist (pricelist: Entry[]): void;
+
+    /**
+     * Called when the price of an item changes
+     * @param sku
+     * @param price
+     */
+    abstract onPriceChange (sku: string, price: Entry|null): void;
 
     /**
      * Called when login attempt has been throttled
