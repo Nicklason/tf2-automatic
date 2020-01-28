@@ -32,8 +32,6 @@ class MyHandler extends Handler {
 
         this.bot.client.gamesPlayed('tf2-automatic');
         this.bot.client.setPersona(SteamUser.EPersonaState.Online);
-
-        console.log(this.bot.inventoryManager.getInventory());
     }
 
     onShutdown (): Promise<void> {
