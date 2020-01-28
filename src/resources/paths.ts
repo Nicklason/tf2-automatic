@@ -7,8 +7,8 @@ export = {
     files: {
         loginKey: path.join(__dirname, `../../files/${folderName}/loginkey.txt`),
         pollData: path.join(__dirname, `../../files/${folderName}/polldata.json`),
-        loginAttempts: path.join(__dirname, `../../../files/${folderName}/loginattempts.json`),
-        pricelist: path.join(__dirname, `../../../files/${folderName}/pricelist.json`)
+        loginAttempts: path.join(__dirname, `../../files/${folderName}/loginattempts.json`),
+        pricelist: path.join(__dirname, `../../files/${folderName}/pricelist.json`)
     },
     logs: {
         log: path.join(__dirname, `../../logs/${filePrefix}-%DATE%.log`),
