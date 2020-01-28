@@ -127,12 +127,8 @@ export = class Bot {
                     });
                 },
                 (callback) => {
-                    if (data.pricelist) {
-                        log.info('Setting up pricelist...');
-                        this.pricelist.setPricelist(data.pricelist).asCallback(callback);
-                    } else {
-                        callback(null);
-                    }
+                    log.info('Setting up pricelist...');
+                    this.pricelist.setPricelist(data.pricelist === undefined ? [] : data.pricelist).asCallback(callback);
                 },
                 (callback) => {
                     if (process.env.SKIP_ACCOUNT_LIMITATIONS === 'true') {
