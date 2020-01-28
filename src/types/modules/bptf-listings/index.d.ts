@@ -1,5 +1,4 @@
 declare module 'bptf-listings' {
-    import StrictEventEmitter from 'strict-event-emitter-types';
     import { EventEmitter } from 'events';
     import SchemaManager from 'tf2-schema';
     import SteamID from 'steamid';
@@ -15,7 +14,7 @@ declare module 'bptf-listings' {
 
     export = ListingManager;
 
-    class ListingManager extends EventEmitter implements StrictEventEmitter<EventEmitter, Events> {
+    class ListingManager extends EventEmitter {
         static EFailiureReason: object;
 
         constructor (options?: { token?: string, steamid?: string, waitTime?: number, batchSize?: number, schema?: SchemaManager.Schema });

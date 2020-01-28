@@ -1,5 +1,4 @@
 declare module 'steamcommunity' {
-    import StrictEventEmitter from 'strict-event-emitter-types';
     import { EventEmitter } from 'events';
     import SteamID from 'steamid';
     import { CookieJar } from 'request';
@@ -11,7 +10,7 @@ declare module 'steamcommunity' {
 
     export = SteamCommunity;
 
-    class SteamCommunity extends EventEmitter implements StrictEventEmitter<EventEmitter, Events> {
+    class SteamCommunity extends EventEmitter {
         constructor (options?: object);
 
         steamID: SteamID|null;

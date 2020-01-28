@@ -1,5 +1,4 @@
 declare module 'tf2-schema' {
-    import StrictEventEmitter from 'strict-event-emitter-types';
     import { EventEmitter } from "events";
 
     interface Events {
@@ -8,7 +7,7 @@ declare module 'tf2-schema' {
 
     export = SchemaManager;
 
-    class SchemaManager extends EventEmitter implements StrictEventEmitter<EventEmitter, Events> {
+    class SchemaManager extends EventEmitter {
         apiKey: string|undefined;
         updateTime: number;
         ready: boolean;
