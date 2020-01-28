@@ -35,10 +35,8 @@ class MyHandler extends Handler {
     }
 
     onShutdown (): Promise<void> {
-        return new Promise((resolve) => {
+        return new Promise(async (resolve) => {
             // TODO: Remove listings
-
-            // TODO: Wait for files to finish being written to
 
             return resolve();
         });

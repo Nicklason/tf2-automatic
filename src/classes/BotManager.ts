@@ -7,7 +7,7 @@ import io from 'socket.io-client';
 import pm2 from 'pm2';
 
 import log from '../lib/logger';
-import { reject, resolve } from 'bluebird';
+import { waitForWriting } from '../lib/files';
 
 export = class BotManager {
     private readonly socket: SocketIOClient.Socket;
@@ -180,18 +180,20 @@ export = class BotManager {
             this.bot.client.logOff();
         }
 
-        log.on('finish', function () {
-            // Logger has finished, exit the process
-            process.exit(err ? 1 : 0);
+        log.debug('Waiting for files to be saved');
+        waitForWriting().then(function () {
+            log.debug('Done waiting for files');
+
+            log.on('finish', function () {
+                // Logger has finished, exit the process
+                process.exit(err ? 1 : 0);
+            });
+    
+            log.warn('Exiting...');
+    
+            // Stop the logger
+            log.end();
         });
-
-        log.warn('Exiting...');
-
-        // Stop the logger
-        log.end();
-
-        // waitForFinishWriting().finally(() => {
-        // });
     }
 
     connectToPM2 (): Promise<void> {

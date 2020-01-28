@@ -7,6 +7,7 @@ import Currencies from 'tf2-currencies';
 import SKU from 'tf2-sku';
 import SchemaManager from 'tf2-schema';
 
+import log from '../lib/logger';
 import { getPricelist, getPrice } from '../lib/ptf-api';
 
 const maxAge = parseInt(process.env.MAX_PRICE_AGE) || 8 * 60 * 60;
@@ -147,7 +148,11 @@ export default class Pricelist extends EventEmitter {
             // @ts-ignore
             this.prices = prices.map((entry) => new Entry(entry));
 
+            // TODO: Get key price and pricelist in parallel
+
+            log.debug('Getting key price...');
             const keyPrices = await getPrice('5021;6', 'bptf');
+            log.debug('Got key price');
 
             this.keyPrices = {
                 buy: new Currencies(keyPrices.buy),
@@ -160,7 +165,9 @@ export default class Pricelist extends EventEmitter {
                 return resolve();
             }
 
+            log.debug('Getting pricelist...');
             const pricelist = <any[]>(await getPricelist('bptf')).items;
+            log.debug('Got pricelist');
 
             const groupedPrices = Pricelist.groupPrices(pricelist);
 

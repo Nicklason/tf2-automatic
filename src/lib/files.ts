@@ -1,6 +1,8 @@
 import fs from 'graceful-fs';
 import path from 'path';
 
+import { exponentialBackoff } from './helpers';
+
 let filesBeingSaved = 0;
 
 export function readFile (p: string, json: boolean): Promise<any> {
@@ -76,4 +78,16 @@ export function writeFile (p: string, data: any, json: boolean): Promise<void> {
 
 export function isWritingToFiles (): boolean {
     return filesBeingSaved !== 0;
+};
+
+export function waitForWriting (checks: number = 0): Promise<void> {
+    if (!isWritingToFiles()) {
+        return Promise.resolve();
+    }
+
+    return new Promise ((resolve) => {
+        Promise.delay(exponentialBackoff(checks, 100)).then(() => {
+            resolve(waitForWriting(checks + 1));
+        });
+    });
 };
