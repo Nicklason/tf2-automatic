@@ -1,20 +1,28 @@
-import SteamID from 'steamid';
-import { TradeOffer, PollData } from 'steam-tradeoffer-manager';
-
 import Bot from './Bot';
+import { EntryData } from './Pricelist';
+
+import SteamID from 'steamid';
+import SteamTradeOfferManager from 'steam-tradeoffer-manager';
+/* import SteamUser from 'steam-user';
+import ListingManager from 'bptf-listings'; */
 
 export = Handler;
 
 abstract class Handler {
-    private readonly bot: Bot;
+    readonly bot: Bot;
+
     constructor (bot: Bot) {
         this.bot = bot;
+    }
+
+    get steamID (): SteamID {
+        return this.bot.client.steamID;
     }
 
     /**
      * Called when the bot is first started
      */
-    abstract onRun (): { loginKey?: string };
+    abstract onRun (): Promise<{ loginAttempts?: number[], pricelist?: EntryData[], loginKey?: string }>;
 
     /**
      * Called when the bot has started
@@ -23,9 +31,13 @@ abstract class Handler {
 
     /**
      * Called when the bot is stopping
-     * @param done Function to call when done stopping the bot
      */
-    abstract onShutdown (done: () => void): void;
+    abstract onShutdown (): Promise<void>;
+
+    /**
+     * Called when the bot has signed in to Steam
+     */
+    abstract onLoggedOn (): void;
 
     /**
      * Called when a new login key has been issued
@@ -38,19 +50,19 @@ abstract class Handler {
      * @param offer
      * @param done Function to call when done processing the offer
      */
-    abstract onNewTradeOffer (offer: TradeOffer, done: (action?: 'accept'|'decline') => void): void;
+    abstract onNewTradeOffer (offer: SteamTradeOfferManager.TradeOffer, done: (action?: 'accept'|'decline') => void): void;
     
     /**
      * Called when a new login attempt has been made
      * @param loginAttempts 
      */
-    abstract onLoginAttempts (loginAttempts: any): void;
+    abstract onLoginAttempts (loginAttempts: number[]): void;
 
     /**
      * Called when polldata changes
      * @param pollData 
      */
-    abstract onPollData (pollData: PollData): void;
+    abstract onPollData (pollData: SteamTradeOfferManager.PollData): void;
 
     /**
      * Called when login attempt has been throttled
@@ -84,7 +96,7 @@ abstract class Handler {
      * @param offer
      * @param oldState
      */
-    onTradeOfferChanged (offer: TradeOffer, oldState: number): void {}
+    onTradeOfferChanged (offer: SteamTradeOfferManager.TradeOffer, oldState: number): void {}
 
     /**
      * Called when a crafting recipe has been completed

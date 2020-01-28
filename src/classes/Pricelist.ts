@@ -5,13 +5,25 @@ import { EventEmitter } from 'events'
 import moment from 'moment';
 import Currencies from 'tf2-currencies';
 import SKU from 'tf2-sku';
+import SchemaManager from 'tf2-schema';
+
 import { getPricelist, getPrice } from '../lib/ptf-api';
-import schemaManager from '../lib/tf2-schema';
-import socket from '../lib/ptf-socket';
 
 const maxAge = parseInt(process.env.MAX_PRICE_AGE) || 8 * 60 * 60;
 
-export class PricelistEntry {
+export interface EntryData {
+    sku: string,
+    enabled: boolean,
+    autoprice: boolean,
+    max: number,
+    min: number,
+    intent: 0|1|2,
+    buy: Currency,
+    sell: Currency,
+    time: number|null
+}
+
+export class Entry {
     sku: string;
     enabled: boolean;
     autoprice: boolean;
@@ -22,7 +34,7 @@ export class PricelistEntry {
     sell: Currencies;
     time: number|null;
 
-    constructor (entry: { sku: string, enabled: boolean, autoprice: boolean, max: number, min: number, intent: 0|1|2, buy: Currency, sell: Currency, time: number|null }) {
+    constructor (entry: EntryData) {
         this.sku = entry.sku;
         this.enabled = entry.enabled;
         this.autoprice = entry.autoprice;
@@ -36,11 +48,16 @@ export class PricelistEntry {
 }
 
 export default class Pricelist extends EventEmitter {
-    private prices: PricelistEntry[];
+    private readonly schema: SchemaManager.Schema;
+    private readonly socket: SocketIOClient.Socket;
+    private prices: Entry[];
     private keyPrices: { buy: Currencies, sell: Currencies };
 
-    constructor () {
+    constructor (schema: SchemaManager.Schema, socket: SocketIOClient.Socket) {
         super();
+        this.schema = schema;
+        this.socket = socket;
+        this.prices = [];
 
         socket.removeListener('price', this.handlePriceChange);
         socket.on('price', this.handlePriceChange);
@@ -54,7 +71,11 @@ export default class Pricelist extends EventEmitter {
         return this.keyPrices.sell;
     }
 
-    getPrice (sku: string, onlyEnabled = false): PricelistEntry|null {
+    getLength (): number {
+        return this.prices.length;
+    }
+
+    getPrice (sku: string, onlyEnabled = false): Entry|null {
         // Index of of item in pricelist
         const index = this.getIndex(sku);
 
@@ -73,7 +94,7 @@ export default class Pricelist extends EventEmitter {
         return match;
     }
 
-    async addPrice (entry: PricelistEntry, emitChange: boolean): Promise<PricelistEntry> {
+    async addPrice (entry: Entry, emitChange: boolean): Promise<Entry> {
         if (entry.autoprice) {
             const price = await getPrice(entry.sku, 'bptf');
 
@@ -116,13 +137,14 @@ export default class Pricelist extends EventEmitter {
 
     private getIndex (sku: string): number {
         // Get name of item
-        const name = schemaManager.schema.getName(SKU.fromString(sku));
+        const name = this.schema.getName(SKU.fromString(sku));
 
-        return this.prices.findIndex((entry) => schemaManager.schema.getName(SKU.fromString(entry.sku)) === name);
+        return this.prices.findIndex((entry) => this.schema.getName(SKU.fromString(entry.sku)) === name);
     }
 
-    async setPricelist (prices: any): Promise<any> {
-        this.prices = prices.map(PricelistEntry);
+    async setPricelist (prices: EntryData[]): Promise<void> {
+        // @ts-ignore
+        this.prices = prices.map(Entry);
 
         const keyPrices = await getPrice('5021;6', 'bptf');
 
@@ -156,7 +178,7 @@ export default class Pricelist extends EventEmitter {
             for (let j = 0; j < groupedPrices[item.quality][item.killstreak].length; j++) {
                 const newestPrice = groupedPrices[item.quality][item.killstreak][j];
 
-                if (schemaManager.schema.getName(item) === newestPrice.name) {
+                if (this.schema.getName(item) === newestPrice.name) {
                     // Found matching items
                     if (currPrice.time < newestPrice.time) {
                         // Times don't match, update our price
@@ -196,11 +218,11 @@ export default class Pricelist extends EventEmitter {
         }
     }
 
-    private priceChanged (entry: PricelistEntry) {
+    private priceChanged (entry: Entry) {
         this.emit('price', entry);
     }
 
-    private getOld (): PricelistEntry[] {
+    private getOld (): Entry[] {
         if (maxAge <= 0) {
             return this.prices;
         }

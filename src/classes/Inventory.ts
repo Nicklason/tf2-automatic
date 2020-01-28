@@ -1,18 +1,18 @@
 import { UnknownDictionary } from '../types/common';
 import SteamID from 'steamid';
-import { EconItem } from 'steam-tradeoffer-manager';
-
-import manager from '../lib/manager';
+import SteamTradeOfferManager, { EconItem } from 'steam-tradeoffer-manager';
 
 export = Inventory;
 
 class Inventory {
-    private steamID: SteamID;
+    private readonly manager: SteamTradeOfferManager;
+    private readonly steamID: SteamID;
     private tradable: UnknownDictionary<string[]>;
     private nonTradable: UnknownDictionary<string[]>;
 
-    constructor (steamID: SteamID|string) {
-        steamID = new SteamID(steamID.toString());
+    constructor (steamID: SteamID|string, manager: SteamTradeOfferManager) {
+        this.manager = manager;
+        this.steamID = new SteamID(steamID.toString());
     }
 
     getSteamID (): SteamID {
@@ -48,9 +48,9 @@ class Inventory {
         }
     }
 
-    async getInventory (): Promise<undefined> {
+    async fetch (): Promise<void> {
         return new Promise ((resolve, reject) => {
-            manager.getUserInventoryContents(this.getSteamID(), 400, '2', (err, items) => {
+            this.manager.getUserInventoryContents(this.getSteamID(), 400, '2', (err, items) => {
                 if (err) {
                     return reject(err);
                 }

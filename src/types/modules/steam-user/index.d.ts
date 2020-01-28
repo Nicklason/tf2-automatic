@@ -3,6 +3,10 @@ declare module 'steam-user' {
     import { EventEmitter } from 'events';
     import SteamID from 'steamid';
 
+    interface UnknownDictionary<T> {
+        [key: string]: T;
+    }
+
     interface Events {
         loggedOn: () => void;
         webSession: (sessionID: string, cookies: string) => void;
@@ -30,9 +34,19 @@ declare module 'steam-user' {
             locked: boolean,
             canInviteFriends: boolean
         }|null;
-        users: object|null;
-        myGroups: object|null;
-        myFriends: object|null;
+        users: UnknownDictionary<{
+            rich_precense: any[],
+            player_name: string,
+            avater_hash: Buffer,
+            last_logoff: Date,
+            last_logon: Date,
+            last_seen_online: DataCue,
+            avatar_url_icon: string,
+            avatar_url_medium: string,
+            avatar_url_full: string
+        }>|null;
+        myGroups: UnknownDictionary<number>|null;
+        myFriends: UnknownDictionary<number>|null;
         autoRelogin: boolean;
         _playingAppIds: number[];
 

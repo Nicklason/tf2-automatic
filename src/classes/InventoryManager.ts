@@ -1,16 +1,25 @@
 import Inventory from './Inventory';
 import Pricelist from './Pricelist';
-import SteamID from 'steamid';
 
 export = InventoryManager;
 
 class InventoryManager {
-    private inventory: Inventory;
-    private pricelist: Pricelist;
+    private inventory: Inventory = null;
+    private readonly pricelist: Pricelist;
 
-    constructor (botSteamID: SteamID, pricelist: Pricelist) {
-        this.inventory = new Inventory(botSteamID);
+    constructor (pricelist: Pricelist, inventory?: Inventory) {
+        if (inventory !== null) {
+            this.inventory = inventory;
+        }
         this.pricelist = pricelist;
+    }
+
+    setInventory (inventory: Inventory): void {
+        this.inventory = inventory;
+    }
+
+    getInventory (): Inventory {
+        return this.inventory;
     }
 
     isOverstocked (sku: string, buying: boolean, diff: number): boolean {
@@ -18,6 +27,10 @@ class InventoryManager {
     }
 
     amountCanTrade (sku: string, buying: boolean): number {
+        if (this.inventory === undefined) {
+            throw new Error('Inventory has not been set yet');
+        }
+
         // Amount in inventory
         const amount = this.inventory.getAmount(sku, true);
 

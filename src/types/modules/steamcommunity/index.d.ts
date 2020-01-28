@@ -20,7 +20,7 @@ declare module 'steamcommunity' {
         loggedIn (callback: Function): void;
         getSessionID (): string;
         getWebAPIKey (domain: string, callback: (err?: Error, key?: string) => void);
-        setCookies (cookies: string): void;
+        setCookies (cookies: string[]): void;
         editProfile (settings: { name?: string, realName?: string, summary?: string, country?: string, state?: string, city?: string, customURL?: string, featuredBadge?: number, primaryGroup?: SteamID|string }, callback?: (err?: Error) => void): void;
         profileSettings (settings: { profile?: number, comments?: number, inventory?: number, inventoryGifts?: boolean, gameDetails?: number, playTime?: boolean, friendsList?: number }, callback?: (err?: Error) => void): void;
         uploadAvatar (image: Buffer|string/* , format?: string */, callback?: (err?: Error, url?: string) => void): void;
