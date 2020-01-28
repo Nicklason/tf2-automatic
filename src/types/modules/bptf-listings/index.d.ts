@@ -18,7 +18,7 @@ declare module 'bptf-listings' {
     class ListingManager extends EventEmitter implements StrictEventEmitter<EventEmitter, Events> {
         static EFailiureReason: object;
 
-        constructor (options: { token?: string, steamid?: string, waitTime?: number, batchSize?: number, schema?: SchemaManager.Schema });
+        constructor (options?: { token?: string, steamid?: string, waitTime?: number, batchSize?: number, schema?: SchemaManager.Schema });
 
         token: string|undefined;
         steamid: SteamID;

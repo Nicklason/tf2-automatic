@@ -14,6 +14,9 @@ declare module 'tf2-schema' {
         ready: boolean;
         schema: SchemaManager.Schema|null;
 
+        _updateTimeout: ReturnType<typeof setTimeout>;
+        _updateInterval: ReturnType<typeof setInterval>;
+
         constructor (options: { apiKey?: string, updateTime?: number });
 
         init (callback: Function): void;

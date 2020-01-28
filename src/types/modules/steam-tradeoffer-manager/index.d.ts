@@ -7,19 +7,11 @@ declare module 'steam-tradeoffer-manager' {
         [key: string]: T;
     }
 
-    type PollData = {
-        sent: UnknownKeys<number>,
-        received: UnknownKeys<number>,
-        timestamps: UnknownKeys<number>,
-        offersSince: number,
-        offerData: UnknownKeys<any>
-    }
-
     interface Events {
         newOffer: (offer: SteamTradeOfferManager.TradeOffer) => void;
         receivedOfferChanged: (offer: SteamTradeOfferManager.TradeOffer, oldState: number) => void;
         sentOfferChanged: (offer: SteamTradeOfferManager.TradeOffer, oldState: number) => void;
-        pollData: (pollData: PollData) => void;
+        pollData: (pollData: SteamTradeOfferManager.PollData) => void;
         debug: (message: string) => void;
     }
 
@@ -29,7 +21,7 @@ declare module 'steam-tradeoffer-manager' {
         constructor(options: any);
 
         steamID: SteamID|null;
-        pollData: PollData;
+        pollData: SteamTradeOfferManager.PollData;
         apiKey: string|null;
         pollInterval: number;
 
@@ -43,7 +35,8 @@ declare module 'steam-tradeoffer-manager' {
         getOffers (filter: number, callback: (err?: Error, offers?: SteamTradeOfferManager.TradeOffer[]) => void): void;
         getOffers (filter: number, historicalCutoff: Date, callback: (err?: Error, sent?: SteamTradeOfferManager.TradeOffer[], received?: SteamTradeOfferManager.TradeOffer[]) => void): void;
 
-        setCookies(cookies: string[], familyViewPin?: string, callback?: (err?: Error) => void): void;
+        setCookies(cookies: string[], callback?: (err?: Error) => void): void;
+        setCookies(cookies: string[], familyViewPin: string, callback?: (err?: Error) => void): void;
         shutdown(): void;
 
         static EOfferFilter: any;
@@ -52,6 +45,14 @@ declare module 'steam-tradeoffer-manager' {
     }
 
     namespace SteamTradeOfferManager {
+        export type PollData = {
+            sent: UnknownKeys<number>,
+            received: UnknownKeys<number>,
+            timestamps: UnknownKeys<number>,
+            offersSince: number,
+            offerData: UnknownKeys<any>
+        }
+
         export class EconItem {
             appid: number;
             contextid: string;
