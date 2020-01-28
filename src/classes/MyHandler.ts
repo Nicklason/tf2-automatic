@@ -53,6 +53,7 @@ class MyHandler extends Handler {
 
     onLoginKey (loginKey: string): void {
         log.debug('New login key');
+
         files.writeFile(paths.files.loginKey, loginKey, false).catch(function (err) {
             log.warn('Failed to save login key: ', err);
         });
