@@ -2,6 +2,7 @@ import InventoryManager from './InventoryManager';
 import Pricelist from './Pricelist';
 import Handler from './Handler';
 import Friends from './Friends';
+import Trades from './Trades';
 import Inventory from './Inventory';
 import BotManager from './BotManager';
 import MyHandler from './MyHandler';
@@ -18,7 +19,6 @@ import moment from 'moment';
 import async from 'async';
 
 import log from '../lib/logger';
-import { resolve } from 'bluebird';
 
 export = class Bot {
     // Modules and classes
@@ -31,6 +31,7 @@ export = class Bot {
     readonly community: SteamCommunity;
     readonly listingManager: ListingManager;
     readonly friends: Friends;
+    readonly trades: Trades;
     readonly handler: Handler;
     readonly inventoryManager: InventoryManager;
     readonly pricelist: Pricelist
@@ -58,7 +59,7 @@ export = class Bot {
             steam: this.client,
             community: this.community,
             language: 'en',
-            pollInterval: 1000,
+            pollInterval: -1,
             cancelTime: 5 * 60 * 1000,
             pendingCancelTime: 10 * 1000
         });
@@ -72,26 +73,39 @@ export = class Bot {
         this.bptf = new BptfLogin();
 
         this.friends = new Friends(this);
+        this.trades = new Trades(this);
 
         this.handler = new MyHandler(this);
 
         this.pricelist = new Pricelist(this.schema, this.socket);
         this.inventoryManager = new InventoryManager(this.pricelist);
 
-        this.addListener(this.pricelist, 'pricelist', this.handler.onPricelist, this.pricelist, true);
-        this.addListener(this.pricelist, 'price', this.handler.onPriceChange, this.pricelist, true);
-        this.addListener(this.client, 'loggedOn', this.onLoggedOn, this, false);
+        this.addListener(this.client, 'loggedOn', this.handler.onLoggedOn, this.handler, true);
         this.addListener(this.client, 'friendMessage', this.onMessage, this, true);
-        this.addListener(this.client, 'friendRelationship', this.onFriendRelationship, this, true);
-        this.addListener(this.client, 'groupRelationship', this.onGroupRelationship, this, true);
+        this.addListener(this.client, 'friendRelationship', this.handler.onFriendRelationship, this, true);
+        this.addListener(this.client, 'groupRelationship', this.handler.onGroupRelationship, this, true);
         this.addListener(this.client, 'webSession', this.onWebSession, this, false);
-        this.addListener(this.community, 'sessionExpired', this.onSessionExpired, this, false);
-        this.addListener(this.community, 'confKeyNeeded', this.onConfKeyNeeded, this, false);
         this.addListener(this.client, 'steamGuard', this.onSteamGuard, this, false);
         this.addListener(this.client, 'loginKey', this.handler.onLoginKey, this.handler, true);
-        this.addListener(this.manager, 'pollData', this.handler.onPollData, this.handler, true);
-        this.addListener(this.listingManager, 'heartbeat', this.onHeartbeat, this, true);
         this.addListener(this.client, 'error', this.onError, this, false);
+
+        this.addListener(this.community, 'sessionExpired', this.onSessionExpired, this, false);
+        this.addListener(this.community, 'confKeyNeeded', this.onConfKeyNeeded, this, false);
+    
+        this.addListener(this.manager, 'pollData', this.handler.onPollData, this.handler, true);
+        this.addListener(this.manager, 'newOffer', this.trades.onNewOffer, this.trades, true);
+        this.addListener(this.manager, 'sentOfferChanged', this.trades.onOfferChanged, this.trades, true);
+        this.addListener(this.manager, 'receivedOfferChanged', this.trades.onOfferChanged, this.trades, true);
+        this.addListener(this.manager, 'offerList', this.trades.onOfferList, this.trades, true);
+
+        this.addListener(this.listingManager, 'heartbeat', this.handler.onHeartbeat, this, true);
+
+        this.addListener(this.pricelist, 'pricelist', this.handler.onPricelist, this.pricelist, true);
+        this.addListener(this.pricelist, 'price', this.handler.onPriceChange, this.pricelist, true);
+    }
+
+    getHandler (): Handler {
+        return this.handler;
     }
 
     setReady () {
@@ -175,6 +189,10 @@ export = class Bot {
                         }
 
                         log.info('Signed in to Steam!');
+
+                        // We now know our SteamID, but we still don't have our Steam API key
+                        const inventory = new Inventory(this.client.steamID, this.manager, this.schema);
+                        this.inventoryManager.setInventory(inventory);
         
                         return callback(null);
                     }
@@ -213,6 +231,9 @@ export = class Bot {
                 (callback) => {
                     log.info('Initializing bptf-listings...');
                     async.parallel([
+                        (callback) => {
+                            this.inventoryManager.getInventory().fetch().asCallback(callback);
+                        },
                         (callback) => {
                             this.listingManager.token = process.env.BPTF_ACCESS_TOKEN;
                             this.listingManager.steamid = this.client.steamID;
@@ -253,8 +274,12 @@ export = class Bot {
                     return reject(err);
                 }
 
+                this.manager.pollInterval = 1000;
+
                 this.setReady();
                 this.handler.onReady();
+
+                this.manager.doPoll();
 
                 // this.startVersionChecker();
                 
@@ -496,38 +521,17 @@ export = class Bot {
         return this.ready || !this.botManager.isStopping();
     }
 
-    private onLoggedOn (): void {
-        if (this.inventoryManager.getInventory() === null) {
-            // Inventory has not been set yet
-            this.inventoryManager.setInventory(new Inventory(this.client.steamID, this.manager));
-        }
-
-        this.handler.onLoggedOn();
-    }
-
     private onMessage (steamID: SteamID, message: string): void {
         if (message.startsWith('[tradeoffer sender=') && message.endsWith('[/tradeoffer]')) {
             return;
         }
 
-        if (this.canSendEvents()) {
-            this.handler.onMessage(steamID, message);
-        }
-    }
-
-    private onFriendRelationship (steamID: SteamID, relationship: number): void {
-        if (this.canSendEvents()) {
-            this.handler.onFriendRelationship(steamID, relationship);
-        }
-    }
-
-    private onGroupRelationship (steamID: SteamID, relationship: number): void {
-        if (this.canSendEvents()) {
-            this.handler.onGroupRelationship(steamID, relationship);
-        }
+        this.handler.onMessage(steamID, message);
     }
 
     private onWebSession (sessionID: string, cookies: string[]): void {
+        log.debug('New web session');
+
         this.setCookies(cookies);
     }
 
@@ -573,12 +577,6 @@ export = class Bot {
 
             callback(authCode);
         });
-    }
-
-    private onHeartbeat (bumped: number): void {
-        if (this.canSendEvents()) {
-            this.handler.onHeartbeat(bumped);
-        }
     }
 
     private onError (err: Error): void {

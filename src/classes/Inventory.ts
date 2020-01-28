@@ -1,18 +1,21 @@
 import { UnknownDictionary } from '../types/common';
 import SteamID from 'steamid';
 import SteamTradeOfferManager, { EconItem } from 'steam-tradeoffer-manager';
+import SchemaManager from 'tf2-schema';
 
 export = Inventory;
 
 class Inventory {
-    private readonly manager: SteamTradeOfferManager;
     private readonly steamID: SteamID;
+    private readonly manager: SteamTradeOfferManager;
+    private readonly schema: SchemaManager.Schema;
     private tradable: UnknownDictionary<string[]>;
     private nonTradable: UnknownDictionary<string[]>;
 
-    constructor (steamID: SteamID|string, manager: SteamTradeOfferManager) {
-        this.manager = manager;
+    constructor (steamID: SteamID|string, manager: SteamTradeOfferManager, schema: SchemaManager.Schema) {
         this.steamID = new SteamID(steamID.toString());
+        this.manager = manager;
+        this.schema = schema;
     }
 
     getSteamID (): SteamID {
@@ -27,7 +30,7 @@ class Inventory {
     removeItem (assetid: string): void;
     removeItem (item: EconItem): void;
     removeItem (): void {
-        const assetid = arguments[0] instanceof EconItem ? arguments[0].id : arguments[0];
+        const assetid = typeof arguments[0] === 'string' ? arguments[0] : arguments[0].id;
 
         const items = this.tradable;
 
@@ -48,9 +51,9 @@ class Inventory {
         }
     }
 
-    async fetch (): Promise<void> {
+    fetch (): Promise<void> {
         return new Promise ((resolve, reject) => {
-            this.manager.getUserInventoryContents(this.getSteamID(), 400, '2', (err, items) => {
+            this.manager.getUserInventoryContents(this.getSteamID(), 440, '2', false, (err, items) => {
                 if (err) {
                     return reject(err);
                 }
@@ -66,8 +69,8 @@ class Inventory {
                     }
                 });
 
-                this.tradable = Inventory.createDictionary(tradable);
-                this.nonTradable = Inventory.createDictionary(nonTradable);
+                this.tradable = Inventory.createDictionary(tradable, this.schema);
+                this.nonTradable = Inventory.createDictionary(nonTradable, this.schema);
 
                 resolve();
             });
@@ -99,12 +102,12 @@ class Inventory {
         };
     }
 
-    private static createDictionary (items: EconItem[]): UnknownDictionary<string[]> {
+    private static createDictionary (items: EconItem[], schema: SchemaManager.Schema): UnknownDictionary<string[]> {
         const dict: UnknownDictionary<string[]> = {};
 
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
-            const sku = item.getSKU();
+            const sku = item.getSKU(schema);
             (dict[sku] = (dict[sku] || [])).push(item.id);
         }
 

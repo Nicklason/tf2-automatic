@@ -48,9 +48,11 @@ abstract class Handler {
     /**
      * Called when a new trade offer is being processed
      * @param offer
-     * @param done Function to call when done processing the offer
      */
-    abstract onNewTradeOffer (offer: SteamTradeOfferManager.TradeOffer, done: (action?: 'accept'|'decline') => void): void;
+    abstract onNewTradeOffer (offer: SteamTradeOfferManager.TradeOffer): Promise<{
+        action: 'accept'|'decline'|null,
+        reason: string|null
+    }>;
     
     /**
      * Called when a new login attempt has been made

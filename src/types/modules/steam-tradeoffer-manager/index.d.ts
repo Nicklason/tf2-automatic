@@ -2,6 +2,7 @@ declare module 'steam-tradeoffer-manager' {
     import StrictEventEmitter from 'strict-event-emitter-types';
     import { EventEmitter } from 'events';
     import SteamID from 'steamid';
+    import SchemaManager from 'tf2-schema';
 
     interface UnknownKeys<T> {
         [key: string]: T;
@@ -25,15 +26,16 @@ declare module 'steam-tradeoffer-manager' {
         apiKey: string|null;
         pollInterval: number;
 
-        getUserInventoryContents (steamID: SteamID|string, appid: number, contextid: string, callback: (err?: Error, inventory?: SteamTradeOfferManager.EconItem[], currency?: SteamTradeOfferManager.EconItem[]) => void): void;
         getUserInventoryContents (steamID: SteamID|string, appid: number, contextid: string, tradeableOnly: boolean, callback: (err?: Error, inventory?: SteamTradeOfferManager.EconItem[], currency?: SteamTradeOfferManager.EconItem[]) => void): void;
 
         createOffer (partner: SteamID|string, token?: string): SteamTradeOfferManager.TradeOffer;
 
-        getOffer (id: string, callback: (err?: Error, offer?: SteamTradeOfferManager.TradeOffer) => void): void;
+        getOffer (id: string|number, callback: (err?: Error, offer?: SteamTradeOfferManager.TradeOffer) => void): void;
 
         getOffers (filter: number, callback: (err?: Error, offers?: SteamTradeOfferManager.TradeOffer[]) => void): void;
         getOffers (filter: number, historicalCutoff: Date, callback: (err?: Error, sent?: SteamTradeOfferManager.TradeOffer[], received?: SteamTradeOfferManager.TradeOffer[]) => void): void;
+
+        doPoll (): void;
 
         setCookies(cookies: string[], callback?: (err?: Error) => void): void;
         setCookies(cookies: string[], familyViewPin: string, callback?: (err?: Error) => void): void;
@@ -59,7 +61,7 @@ declare module 'steam-tradeoffer-manager' {
             assetid: string;
             classid: string;
             instanceid: string;
-            amount: string;
+            amount: number;
             pos: number;
             id: string;
             background_color: string;
@@ -101,12 +103,7 @@ declare module 'steam-tradeoffer-manager' {
             getAction (action: string): string|null;
             // FIXME: Don't overwrite getTag prototype as it already exists
             getTag (category: string): string|null;
-            getSKU (): string|null;
-            // FIXME: Remove getItem function and add logic to getSKU
-            getItem (): any|null;
-            getName (): string|null;
-            // Remove getPrice function as it is not used, will also make for weird types
-            getPrice (): any|null;
+            getSKU (schema: SchemaManager.Schema): string|null;
         }
 
         type TradeOfferItem = {
@@ -133,6 +130,7 @@ declare module 'steam-tradeoffer-manager' {
             state: number;
             itemsToGive: EconItem[];
             itemsToReceive: EconItem[];
+            isOurOffer: boolean;
 
             isGlitched (): boolean;
             data (key: string): any;
@@ -144,12 +142,14 @@ declare module 'steam-tradeoffer-manager' {
             setToken (token: string): void;
             setMessage (message: string): void;
             getUserDetails (callback: (err: Error|null, me?: UserDetails, them?: UserDetails) => void): void;
-            accept (skipStateUpdate?: boolean, callback?: (err: Error|null, status?: string) => void): void;
+            
+            accept (callback?: (err: Error|null, status?: string) => void): void;
+            accept (skipStateUpdate: boolean, callback?: (err: Error|null, status?: string) => void): void;
             send (callback?: (err: Error|null, state?: string) => void): void;
             decline (callback?: (err: Error|null) => void): void;
             
             // Custom function added to prototype
-            log (level: string, message: string);
+            log (level: string, message: string, ...meta: any[]);
         }
     }
 }

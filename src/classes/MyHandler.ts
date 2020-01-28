@@ -32,6 +32,8 @@ class MyHandler extends Handler {
 
         this.bot.client.gamesPlayed('tf2-automatic');
         this.bot.client.setPersona(SteamUser.EPersonaState.Online);
+
+        console.log(this.bot.inventoryManager.getInventory());
     }
 
     onShutdown (): Promise<void> {
@@ -65,8 +67,13 @@ class MyHandler extends Handler {
         });
     }
 
-    onNewTradeOffer (offer: TradeOffer, done: (action?: 'accept'|'decline') => void): void {
+    onNewTradeOffer (offer: TradeOffer): Promise<{
+        action: 'accept'|'decline'|null,
+        reason: string|null
+    }> {
+        offer.log('info', 'is being processed...');
 
+        return Promise.resolve({ action: 'accept', reason: 'TEST' });
     }
 
     onTradeOfferChanged (offer: TradeOffer, oldState: number): void {
@@ -74,8 +81,6 @@ class MyHandler extends Handler {
     }
 
     onPollData (pollData: PollData): void {
-        log.debug('Polldata changed');
-
         files.writeFile(paths.files.pollData, pollData, true).catch(function (err) {
             log.warn('Failed to save polldata: ', err);
         });
