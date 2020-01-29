@@ -408,6 +408,144 @@ export = class Trades {
         });
     }
 
+    sendOffer(offer: TradeOfferManager.TradeOffer): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const ourItems: TradeOfferManager.TradeOfferItem[] = [];
+
+            offer.itemsToGive.forEach(item => {
+                this.setItemInTrade(item.assetid);
+                ourItems.push(Trades.mapItem(item));
+            });
+
+            offer.data('_ourItems', ourItems);
+
+            offer.data('handledByUs', true);
+
+            const start = moment().valueOf();
+            offer.data('actionTimestamp', start);
+
+            log.debug('Sending offer...');
+
+            this.sendOfferRetry(offer).asCallback((err, status) => {
+                const actionTime = moment().valueOf() - start;
+                offer.data('actionTime', actionTime);
+
+                if (err) {
+                    offer.itemsToGive.forEach(item => this.unsetItemInTrade(item.assetid));
+                    return reject(err);
+                }
+
+                offer.log('trade', 'successfully created' + (status === 'pending' ? '; confirmation required' : ''));
+
+                if (status === 'pending') {
+                    // Maybe wait for confirmation to be accepted and then resolve?
+                    this.acceptConfirmation(offer).catch();
+                }
+
+                return resolve(status);
+            });
+        });
+    }
+
+    sendOfferRetry(offer: TradeOfferManager.TradeOffer, attempts = 0): Promise<string> {
+        return new Promise((resolve, reject) => {
+            offer.send((err, status) => {
+                attempts++;
+
+                if (err) {
+                    if (attempts > 5) {
+                        return reject(err);
+                    }
+
+                    if (err.message.indexOf('can only be sent to friends') !== -1) {
+                        return reject(err);
+                    } else if (err.message.indexOf('is not available to trade') !== -1) {
+                        return reject(err);
+                    } else if (
+                        err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') !== -1
+                    ) {
+                        return reject(err);
+                        // @ts-ignore
+                    } else if (err.eresult === TradeOfferManager.EResult.Revoked) {
+                        // One or more of the items does not exist in the inventories, refresh our inventory and return the error
+                        this.bot.inventoryManager
+                            .getInventory()
+                            .fetch()
+                            .asCallback(() => {
+                                reject(err);
+                            });
+                        // @ts-ignore
+                    } else if (err.eresult === TradeOfferManager.EResult.Timeout) {
+                        // The offer may or may not have been made, will wait some time and check if if we can find a matching offer
+                        return Promise.delay(exponentialBackoff(attempts, 4000)).then(() => {
+                            // Done waiting, try and find matching offer
+                            this.findMatchingOffer(offer, true).asCallback((err, match) => {
+                                if (err) {
+                                    // Failed to get offers, return error
+                                    return reject(err);
+                                }
+
+                                if (match === null) {
+                                    // Did not find a matching offer, retry sending the offer
+                                    return this.sendOfferRetry(offer, attempts);
+                                }
+
+                                // Update the offer we attempted to send with the properties from the matching offer
+                                offer.id = match.id;
+                                offer.state = match.state;
+                                offer.created = match.created;
+                                offer.updated = match.updated;
+                                offer.expires = match.expires;
+                                offer.confirmationMethod = match.confirmationMethod;
+
+                                for (const property in offer._tempData) {
+                                    if (Object.prototype.hasOwnProperty.call(offer._tempData, property)) {
+                                        offer.manager.pollData.offerData = offer.manager.pollData.offerData || {};
+                                        offer.manager.pollData.offerData[offer.id] =
+                                            offer.manager.pollData.offerData[offer.id] || {};
+                                        offer.manager.pollData.offerData[offer.id][property] =
+                                            offer._tempData[property];
+                                    }
+                                }
+
+                                delete offer._tempData;
+
+                                offer.manager.emit('pollData', offer.manager.pollData);
+
+                                return resolve(
+                                    offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation
+                                        ? 'pending'
+                                        : 'sent'
+                                );
+                            });
+                        });
+                        // @ts-ignore
+                    } else if (err.eresult !== undefined) {
+                        return reject(err);
+                    }
+
+                    if (err.message !== 'Not Logged In') {
+                        // We got an error getting the offer, retry after some time
+                        Promise.delay(exponentialBackoff(attempts)).then(() => {
+                            resolve(this.sendOfferRetry(offer, attempts));
+                        });
+                        return;
+                    }
+
+                    this.bot.getWebSession(true).asCallback(err => {
+                        // If there is no error when waiting for web session, then attempt to fetch the offer right away
+                        Promise.delay(err !== null ? 0 : exponentialBackoff(attempts)).then(() => {
+                            resolve(this.sendOfferRetry(offer, attempts));
+                        });
+                    });
+                    return;
+                }
+
+                resolve(status);
+            });
+        });
+    }
+
     onOfferChanged(offer: TradeOfferManager.TradeOffer, oldState: number): void {
         offer.log(
             'verbose',

@@ -203,6 +203,18 @@ declare module 'steam-tradeoffer-manager' {
 
             isOurOffer: boolean;
 
+            created: Date;
+
+            updated: Date;
+
+            expires: Date;
+
+            confirmationMethod: number;
+
+            _tempData: UnknownKeys<any>;
+
+            manager: SteamTradeOfferManager;
+
             isGlitched(): boolean;
 
             data(key: string): any;
