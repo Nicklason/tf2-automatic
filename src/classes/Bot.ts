@@ -545,6 +545,7 @@ export = class Bot {
                     gotEvent();
 
                     this.client.removeListener('error', errorEvent);
+                    clearTimeout(timeout);
 
                     resolve(null);
                 };
@@ -553,11 +554,23 @@ export = class Bot {
                     gotEvent();
 
                     this.client.removeListener('loggedOn', loggedOnEvent);
+                    clearTimeout(timeout);
 
                     log.debug('Failed to sign in to Steam: ', err);
 
                     reject(err);
                 };
+
+                const timeout = setTimeout(() => {
+                    gotEvent();
+
+                    this.client.removeListener('loggedOn', loggedOnEvent);
+                    this.client.removeListener('error', errorEvent);
+
+                    log.debug('Did not get login response from Steam');
+
+                    reject(new Error('Did not get login response from Steam'));
+                }, 60 * 1000);
 
                 this.client.once('loggedOn', loggedOnEvent);
                 this.client.once('error', errorEvent);
