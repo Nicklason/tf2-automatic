@@ -46,7 +46,7 @@ export = function(schema: SchemaManager.Schema): string {
 
 /**
  * Gets the defindex of an item
- * @param item
+ * @param item -Item object
  */
 function getDefindex(item: EconItem): number {
     if (item.app_data !== undefined) {
@@ -66,7 +66,7 @@ function getDefindex(item: EconItem): number {
 
 /**
  * Gets the quality of an item
- * @param item
+ * @param item - Item object
  */
 function getQuality(item: EconItem, schema: SchemaManager.Schema): number {
     if (item.app_data !== undefined) {
@@ -83,7 +83,7 @@ function getQuality(item: EconItem, schema: SchemaManager.Schema): number {
 
 /**
  * Determines if the item is craftable
- * @param item
+ * @param item - Item object
  */
 function isCraftable(item: EconItem): boolean {
     return !item.hasDescription('( Not Usable in Crafting )');
@@ -91,7 +91,7 @@ function isCraftable(item: EconItem): boolean {
 
 /**
  * Gets the killstreak tier of an item
- * @param item
+ * @param item - Item object
  */
 function getKillstreak(item: EconItem): number {
     const killstreaks = ['Professional ', 'Specialized ', ''];
@@ -103,7 +103,7 @@ function getKillstreak(item: EconItem): number {
 
 /**
  * Determines if the item is australium
- * @param item
+ * @param item - Item object
  */
 function isAustralium(item: EconItem): boolean {
     if (item.getTag('Quality') !== 'Strange') {
@@ -115,7 +115,7 @@ function isAustralium(item: EconItem): boolean {
 
 /**
  * Determines if thje item is festivized
- * @param item
+ * @param item - Item object
  */
 function isFestive(item: EconItem): boolean {
     return item.market_hash_name.indexOf('Festivized ') !== -1;
@@ -123,7 +123,7 @@ function isFestive(item: EconItem): boolean {
 
 /**
  * Gets the effect of an item
- * @param item
+ * @param item - Item object
  */
 function getEffect(item: EconItem, schema: SchemaManager.Schema): number {
     if (!Array.isArray(item.descriptions)) {
@@ -145,7 +145,7 @@ function getEffect(item: EconItem, schema: SchemaManager.Schema): number {
 
 /**
  * Gets the wear of an item
- * @param item
+ * @param item - Item object
  */
 function getWear(item: EconItem): number {
     const wear = ['Factory New', 'Minimal Wear', 'Field-Tested', 'Well-Worn', 'Battle Scarred'].indexOf(
@@ -157,7 +157,7 @@ function getWear(item: EconItem): number {
 
 /**
  * Get skin from item
- * @param item
+ * @param item - Item object
  */
 function getPaintKit(item: EconItem, schema: SchemaManager.Schema): number {
     if (getWear(item) === null) {
@@ -199,7 +199,7 @@ function getPaintKit(item: EconItem, schema: SchemaManager.Schema): number {
 
 /**
  * Gets the elevated quality of an item
- * @param item
+ * @param item - Item object
  */
 function getElevatedQuality(item: EconItem): number {
     if (item.hasDescription('Strange Stat Clock Attached')) {

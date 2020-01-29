@@ -15,6 +15,7 @@ import SteamTotp from 'steam-totp';
 import ListingManager from 'bptf-listings';
 import SchemaManager from 'tf2-schema';
 import BptfLogin from 'bptf-login';
+import TF2 from 'tf2';
 import moment from 'moment';
 import async from 'async';
 
@@ -29,6 +30,8 @@ export = class Bot {
     readonly socket: SocketIOClient.Socket;
 
     readonly bptf: BptfLogin;
+
+    readonly tf2: TF2;
 
     readonly client: SteamUser;
 
@@ -88,6 +91,7 @@ export = class Bot {
             schema: this.schema
         });
         this.bptf = new BptfLogin();
+        this.tf2 = new TF2(this.client);
 
         this.friends = new Friends(this);
         this.trades = new Trades(this);

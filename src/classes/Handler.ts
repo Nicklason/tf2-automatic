@@ -43,13 +43,13 @@ abstract class Handler {
 
     /**
      * Called when a new login key has been issued
-     * @param loginKey
+     * @param loginKey - The new login key
      */
     abstract onLoginKey(loginKey: string): void;
 
     /**
      * Called when a new trade offer is being processed
-     * @param offer
+     * @param offer - The new trade offer
      */
     abstract onNewTradeOffer(
         offer: SteamTradeOfferManager.TradeOffer
@@ -60,32 +60,32 @@ abstract class Handler {
 
     /**
      * Called when a new login attempt has been made
-     * @param loginAttempts
+     * @param loginAttempts - A list of login attempts
      */
     abstract onLoginAttempts(loginAttempts: number[]): void;
 
     /**
      * Called when polldata changes
-     * @param pollData
+     * @param pollData - The polldata
      */
     abstract onPollData(pollData: SteamTradeOfferManager.PollData): void;
 
     /**
      * Called when the pricelist updates
-     * @param pricelist
+     * @param pricelist - The pricelist
      */
     abstract onPricelist(pricelist: Entry[]): void;
 
     /**
      * Called when the price of an item changes
-     * @param sku
-     * @param price
+     * @param sku - The SKU of the item
+     * @param price - The new price object for the item
      */
     abstract onPriceChange(sku: string, price: Entry | null): void;
 
     /**
      * Called when login attempt has been throttled
-     * @param wait Milliseconds that the bot will wait
+     * @param wait - Milliseconds that the bot will wait
      */
     onLoginThrottle(wait: number): void {
         // empty function
@@ -93,8 +93,8 @@ abstract class Handler {
 
     /**
      * Called when a friend message has been sent to the bot
-     * @param steamID
-     * @param message
+     * @param steamID - SteamID object of the sender
+     * @param message - The message from the sender
      */
     onMessage(steamID: SteamID, message: string): void {
         // empty function
@@ -102,8 +102,8 @@ abstract class Handler {
 
     /**
      * Called when the relation to an account changes
-     * @param steamID
-     * @param relationship
+     * @param steamID - SteamID object of the account
+     * @param relationship - The new relation with the account
      */
     onFriendRelationship(steamID: SteamID, relationship: number): void {
         // empty function
@@ -111,8 +111,8 @@ abstract class Handler {
 
     /**
      * Called when the relation to a group changes
-     * @param steamID
-     * @param relationship
+     * @param steamID - SteamID object of the group
+     * @param relationship - The new relation with the group
      */
     onGroupRelationship(steamID: SteamID, relationship: number): void {
         // empty function
@@ -120,8 +120,8 @@ abstract class Handler {
 
     /**
      * Called when the state of a trade offer changes
-     * @param offer
-     * @param oldState
+     * @param offer - The offer that changed
+     * @param oldState - The old state of the offer
      */
     onTradeOfferChanged(offer: SteamTradeOfferManager.TradeOffer, oldState: number): void {
         // empty function
@@ -157,7 +157,7 @@ abstract class Handler {
 
     /**
      * Called when bptf auth details has been retrieved
-     * @param auth
+     * @param auth - An object containing the backpack.tf auth details
      */
     onBptfAuth(auth: { apiKey: string; accessToken: string }): void {
         // empty function
@@ -165,7 +165,7 @@ abstract class Handler {
 
     /**
      * Called when a heartbeat has been sent to bptf
-     * @param bumped
+     * @param bumped - How many listings were bumped as the result of the heartbeat
      */
     onHeartbeat(bumped: number): void {
         // empty function

@@ -81,11 +81,40 @@ export = class Inventory {
         });
     }
 
+    findByAssetid(assetid: string): string | null {
+        for (const sku in this.tradable) {
+            if (!Object.prototype.hasOwnProperty.call(this.tradable, sku)) {
+                continue;
+            }
+
+            if (this.tradable[sku].indexOf(assetid) === -1) {
+                continue;
+            }
+
+            return sku;
+        }
+
+        for (const sku in this.nonTradable) {
+            if (!Object.prototype.hasOwnProperty.call(this.nonTradable, sku)) {
+                continue;
+            }
+
+            if (this.nonTradable[sku].indexOf(assetid) === -1) {
+                continue;
+            }
+
+            return sku;
+        }
+
+        return null;
+    }
+
     findBySKU(sku: string, tradableOnly = true): string[] {
         const tradable = this.tradable[sku] || [];
 
         if (tradableOnly) {
-            return tradable;
+            // Copies the array
+            return [].concat(tradable);
         }
 
         const nonTradable = this.nonTradable[sku] || [];

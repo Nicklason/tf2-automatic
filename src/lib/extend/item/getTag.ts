@@ -2,7 +2,7 @@ import { EconItem } from 'steam-tradeoffer-manager';
 
 /**
  * Gets a tag by category
- * @param category
+ * @param category - Category to search for
  */
 export = function(category: string): string {
     // @ts-ignore

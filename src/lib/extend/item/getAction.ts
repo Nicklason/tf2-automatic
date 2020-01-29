@@ -1,6 +1,6 @@
 /**
  * Gets an action by name
- * @param action
+ * @param action - Action to search for
  */
 export = function(action: string): string {
     // @ts-ignore

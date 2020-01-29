@@ -126,6 +126,10 @@ export = class Trades {
         activeReceived.filter(offer => offer.data('handledByUs') !== true).forEach(offer => this.enqueueOffer(offer));
     }
 
+    isInTrade(assetid: string): boolean {
+        return this.itemsInTrade.some(v => assetid === v);
+    }
+
     getOffers(
         includeInactive = false
     ): Promise<{
