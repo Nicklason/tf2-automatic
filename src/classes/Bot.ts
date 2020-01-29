@@ -23,36 +23,53 @@ import log from '../lib/logger';
 export = class Bot {
     // Modules and classes
     readonly botManager: BotManager;
+
     readonly schema: SchemaManager.Schema;
+
     readonly socket: SocketIOClient.Socket;
+
     readonly bptf: BptfLogin;
+
     readonly client: SteamUser;
+
     readonly manager: SteamTradeOfferManager;
+
     readonly community: SteamCommunity;
+
     readonly listingManager: ListingManager;
+
     readonly friends: Friends;
+
     readonly trades: Trades;
+
     readonly handler: Handler;
+
     readonly inventoryManager: InventoryManager;
-    readonly pricelist: Pricelist
+
+    readonly pricelist: Pricelist;
 
     // Settings
     private readonly maxLoginAttemptsWithinPeriod: number = 3;
+
     private readonly loginPeriodTime: number = 60 * 1000;
 
     // Values
     private sessionReplaceCount = 0;
-    private consecutiveSteamGuardCodesWrong = 0;
-    private timeOffset: number = null;
-    private loginAttempts: moment.Moment[] = [];
-    private ready: boolean = false;
 
-    constructor (botManager: BotManager) {
+    private consecutiveSteamGuardCodesWrong = 0;
+
+    private timeOffset: number = null;
+
+    private loginAttempts: moment.Moment[] = [];
+
+    private ready = false;
+
+    constructor(botManager: BotManager) {
         this.botManager = botManager;
 
         this.schema = this.botManager.getSchema();
         this.socket = this.botManager.getSocket();
-        
+
         this.client = new SteamUser();
         this.community = new SteamCommunity();
         this.manager = new SteamTradeOfferManager({
@@ -91,7 +108,7 @@ export = class Bot {
 
         this.addListener(this.community, 'sessionExpired', this.onSessionExpired, this, false);
         this.addListener(this.community, 'confKeyNeeded', this.onConfKeyNeeded, this, false);
-    
+
         this.addListener(this.manager, 'pollData', this.handler.onPollData, this.handler, true);
         this.addListener(this.manager, 'newOffer', this.trades.onNewOffer, this.trades, true);
         this.addListener(this.manager, 'sentOfferChanged', this.trades.onOfferChanged, this.trades, true);
@@ -104,19 +121,19 @@ export = class Bot {
         this.addListener(this.pricelist, 'price', this.handler.onPriceChange, this.pricelist, true);
     }
 
-    getHandler (): Handler {
+    getHandler(): Handler {
         return this.handler;
     }
 
-    setReady () {
+    setReady(): void {
         this.ready = true;
     }
 
-    isReady (): boolean {
+    isReady(): boolean {
         return this.ready;
     }
 
-    private addListener (emitter: any, event: string, listener: Function, context: any, checkCanEmit: boolean): void {
+    private addListener(emitter: any, event: string, listener: Function, context: any, checkCanEmit: boolean): void {
         emitter.on(event, (...args: any[]) => {
             if (!checkCanEmit || this.canSendEvents()) {
                 listener.call(context, ...args);
@@ -124,177 +141,199 @@ export = class Bot {
         });
     }
 
-    start (): Promise<void> {
+    start(): Promise<void> {
         let data;
         let cookies;
 
         return new Promise((resolve, reject) => {
-            async.eachSeries([
-                (callback) => {
-                    log.debug('Calling onRun');
-                    this.handler.onRun().asCallback(function (err, v) {
-                        if (err) {
-                            return callback(err);
-                        }
-
-                        data = v;
-
-                        return callback(null);
-                    });
-                },
-                (callback) => {
-                    log.info('Setting up pricelist...');
-                    this.pricelist.setPricelist(data.pricelist === undefined ? [] : data.pricelist).asCallback(callback);
-                },
-                (callback) => {
-                    if (process.env.SKIP_ACCOUNT_LIMITATIONS === 'true') {
-                        return callback(null);
-                    }
-
-                    log.verbose('Checking account limitations...');
-                    this.getAccountLimitations().asCallback(function (err, limitations) {
-                        if (err) {
-                            return callback(err);
-                        }
-
-                        if (limitations.limited) {
-                            throw new Error('The account is limited');
-                        } else if (limitations.communityBanned) {
-                            throw new Error('The account is community banned');
-                        } else if (limitations.locked) {
-                            throw new Error('The account is locked');
-                        }
-        
-                        log.verbose('Account limitations check completed!');
-    
-                        return callback(null);
-                    });
-                },
-                (callback) => {
-                    log.info('Signing in to Steam...');
-
-                    let lastLoginFailed = false;
-
-                    const loginResponse = (err) => {
-                        if (err) {
-                            if (!lastLoginFailed && err.eresult !== SteamUser.EFriendRelationship.RateLimitExceeded && err.eresult !== SteamUser.EFriendRelationship.InvalidPassword) {
-                                lastLoginFailed = true;
-                                // Try and sign in without login key
-                                log.warn('Failed to sign in to Steam, retrying without login key...');
-                                return this.login(null).asCallback(loginResponse);
-                            } else {
-                                log.warn('Failed to sign in to Steam: ', err);
+            async.eachSeries(
+                [
+                    (callback): void => {
+                        log.debug('Calling onRun');
+                        this.handler.onRun().asCallback(function(err, v) {
+                            if (err) {
                                 return callback(err);
                             }
+
+                            data = v;
+
+                            return callback(null);
+                        });
+                    },
+                    (callback): void => {
+                        log.info('Setting up pricelist...');
+                        this.pricelist
+                            .setPricelist(data.pricelist === undefined ? [] : data.pricelist)
+                            .asCallback(callback);
+                    },
+                    (callback): void => {
+                        if (process.env.SKIP_ACCOUNT_LIMITATIONS === 'true') {
+                            return callback(null);
                         }
 
-                        log.info('Signed in to Steam!');
-
-                        // We now know our SteamID, but we still don't have our Steam API key
-                        const inventory = new Inventory(this.client.steamID, this.manager, this.schema);
-                        this.inventoryManager.setInventory(inventory);
-        
-                        return callback(null);
-                    }
-
-                    this.login(data.loginKey || null).asCallback(loginResponse);
-                },
-                (callback) => {
-                    log.debug('Waiting for web session');
-                    this.getWebSession().asCallback((err, v) => {
-                        if (err) {
-                            return callback(err);
-                        }
-
-                        cookies = v;
-
-                        this.bptf.setCookies(cookies);
-
-                        return callback(null);
-                    });
-                },
-                (callback) => {
-                    if (process.env.BPTF_API_KEY && process.env.BPTF_ACCESS_TOKEN) {
-                        return callback(null);
-                    }
-
-                    log.warn('You have not included the backpack.tf API key or access token in the environment variables');
-
-                    this.getBptfAPICredentials().asCallback((err) => {
-                        if (err) {
-                            return callback(err);
-                        }
-
-                        return callback(null);
-                    });
-                },
-                (callback) => {
-                    log.info('Initializing bptf-listings...');
-                    async.parallel([
-                        (callback) => {
-                            this.inventoryManager.getInventory().fetch().asCallback(callback);
-                        },
-                        (callback) => {
-                            this.listingManager.token = process.env.BPTF_ACCESS_TOKEN;
-                            this.listingManager.steamid = this.client.steamID;
-
-                            this.listingManager.init(callback);
-                        },
-                        (callback) => {
-                            if (process.env.SKIP_UPDATE_PROFILE_SETTINGS !== 'true') {
-                                return callback(null);
+                        log.verbose('Checking account limitations...');
+                        this.getAccountLimitations().asCallback(function(err, limitations) {
+                            if (err) {
+                                return callback(err);
                             }
 
-                            this.community.profileSettings({
-                                profile: 3,
-                                inventory: 3,
-                                inventoryGifts: false
-                            }, callback);
+                            if (limitations.limited) {
+                                throw new Error('The account is limited');
+                            } else if (limitations.communityBanned) {
+                                throw new Error('The account is community banned');
+                            } else if (limitations.locked) {
+                                throw new Error('The account is locked');
+                            }
+
+                            log.verbose('Account limitations check completed!');
+
+                            return callback(null);
+                        });
+                    },
+                    (callback): void => {
+                        log.info('Signing in to Steam...');
+
+                        let lastLoginFailed = false;
+
+                        const loginResponse = (err): void => {
+                            if (err) {
+                                if (
+                                    !lastLoginFailed &&
+                                    err.eresult !== SteamUser.EFriendRelationship.RateLimitExceeded &&
+                                    err.eresult !== SteamUser.EFriendRelationship.InvalidPassword
+                                ) {
+                                    lastLoginFailed = true;
+                                    // Try and sign in without login key
+                                    log.warn('Failed to sign in to Steam, retrying without login key...');
+                                    this.login(null).asCallback(loginResponse);
+                                    return;
+                                } else {
+                                    log.warn('Failed to sign in to Steam: ', err);
+                                    return callback(err);
+                                }
+                            }
+
+                            log.info('Signed in to Steam!');
+
+                            // We now know our SteamID, but we still don't have our Steam API key
+                            const inventory = new Inventory(this.client.steamID, this.manager, this.schema);
+                            this.inventoryManager.setInventory(inventory);
+
+                            return callback(null);
+                        };
+
+                        this.login(data.loginKey || null).asCallback(loginResponse);
+                    },
+                    (callback): void => {
+                        log.debug('Waiting for web session');
+                        this.getWebSession().asCallback((err, v) => {
+                            if (err) {
+                                return callback(err);
+                            }
+
+                            cookies = v;
+
+                            this.bptf.setCookies(cookies);
+
+                            return callback(null);
+                        });
+                    },
+                    (callback): void => {
+                        if (process.env.BPTF_API_KEY && process.env.BPTF_ACCESS_TOKEN) {
+                            return callback(null);
                         }
-                    ], callback);
+
+                        log.warn(
+                            'You have not included the backpack.tf API key or access token in the environment variables'
+                        );
+
+                        this.getBptfAPICredentials().asCallback(err => {
+                            if (err) {
+                                return callback(err);
+                            }
+
+                            return callback(null);
+                        });
+                    },
+                    (callback): void => {
+                        log.info('Initializing bptf-listings...');
+                        async.parallel(
+                            [
+                                (callback): void => {
+                                    this.inventoryManager
+                                        .getInventory()
+                                        .fetch()
+                                        .asCallback(callback);
+                                },
+                                (callback): void => {
+                                    this.listingManager.token = process.env.BPTF_ACCESS_TOKEN;
+                                    this.listingManager.steamid = this.client.steamID;
+
+                                    this.listingManager.init(callback);
+                                },
+                                (callback): void => {
+                                    if (process.env.SKIP_UPDATE_PROFILE_SETTINGS !== 'true') {
+                                        return callback(null);
+                                    }
+
+                                    this.community.profileSettings(
+                                        {
+                                            profile: 3,
+                                            inventory: 3,
+                                            inventoryGifts: false
+                                        },
+                                        callback
+                                    );
+                                }
+                            ],
+                            callback
+                        );
+                    },
+                    (callback): void => {
+                        log.info('Getting Steam API key...');
+                        this.setCookies(cookies).asCallback(callback);
+                    },
+                    (callback): void => {
+                        log.debug('Getting max friends...');
+                        this.friends.getMaxFriends().asCallback(callback);
+                    }
+                ],
+                (item, callback) => {
+                    if (this.botManager.isStopping()) {
+                        // Shutdown is requested, stop the bot
+                        this.botManager.stop(null, false, false);
+                        return;
+                    }
+
+                    item(callback);
                 },
-                (callback) => {
-                    log.info('Getting Steam API key...');
-                    this.setCookies(cookies).asCallback(callback);
-                },
-                (callback) => {
-                    log.debug('Getting max friends...');
-                    this.friends.getMaxFriends().asCallback(callback);
+                err => {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    this.manager.pollInterval = 1000;
+
+                    this.setReady();
+                    this.handler.onReady();
+
+                    this.manager.doPoll();
+
+                    // this.startVersionChecker();
+
+                    return resolve();
                 }
-            ], (item, callback) => {
-                if (this.botManager.isStopping()) {
-                    // Shutdown is requested, stop the bot
-                    this.botManager.stop(null, false, false);
-                    return;
-                }
-
-                item(callback);
-            }, (err) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                this.manager.pollInterval = 1000;
-
-                this.setReady();
-                this.handler.onReady();
-
-                this.manager.doPoll();
-
-                // this.startVersionChecker();
-                
-                return resolve();
-            });
+            );
         });
     }
 
-    setCookies (cookies: string[]): Promise<void> {
+    setCookies(cookies: string[]): Promise<void> {
         this.bptf.setCookies(cookies);
 
         this.community.setCookies(cookies);
 
         return new Promise((resolve, reject) => {
-            this.manager.setCookies(cookies, function (err) {
+            this.manager.setCookies(cookies, function(err) {
                 if (err) {
                     return reject(err);
                 }
@@ -304,7 +343,7 @@ export = class Bot {
         });
     }
 
-    getWebSession (eventOnly: boolean = false): Promise<string[]> {
+    getWebSession(eventOnly = false): Promise<string[]> {
         return new Promise((resolve, reject) => {
             if (!eventOnly) {
                 const cookies = this.getCookies();
@@ -320,7 +359,7 @@ export = class Bot {
                 return reject(new Error('Could not sign in to steamcommunity'));
             }, 10000);
 
-            function webSessionEvent (sessionID: string, cookies: string[]) {
+            function webSessionEvent(sessionID: string, cookies: string[]): void {
                 clearTimeout(timeout);
 
                 resolve(cookies);
@@ -328,7 +367,12 @@ export = class Bot {
         });
     }
 
-    getAccountLimitations (): Promise<{ limited: boolean, communityBanned: boolean, locked: boolean, canInviteFriends: boolean }> {
+    getAccountLimitations(): Promise<{
+        limited: boolean;
+        communityBanned: boolean;
+        locked: boolean;
+        canInviteFriends: boolean;
+    }> {
         return new Promise((resolve, reject) => {
             if (this.client.limitations !== null) {
                 return resolve(this.client.limitations);
@@ -341,7 +385,12 @@ export = class Bot {
                 return reject(new Error('Could not get account limitations'));
             }, 10000);
 
-            function accountLimitationsEvent (limited: boolean, communityBanned: boolean, locked: boolean, canInviteFriends: boolean) {
+            function accountLimitationsEvent(
+                limited: boolean,
+                communityBanned: boolean,
+                locked: boolean,
+                canInviteFriends: boolean
+            ): void {
                 clearTimeout(timeout);
 
                 resolve({ limited, communityBanned, locked, canInviteFriends });
@@ -349,13 +398,19 @@ export = class Bot {
         });
     }
 
-    private getCookies (): string[] {
-        return this.community._jar.getCookies('https://steamcommunity.com').filter((cookie) => ['sessionid', 'steamLogin', 'steamLoginSecure'].indexOf(cookie.key) !== -1).map(function (cookie) {
-            return `${cookie.key}=${cookie.value}`;
-        });
+    private getCookies(): string[] {
+        return this.community._jar
+            .getCookies('https://steamcommunity.com')
+            .filter(cookie => ['sessionid', 'steamLogin', 'steamLoginSecure'].indexOf(cookie.key) !== -1)
+            .map(function(cookie) {
+                return `${cookie.key}=${cookie.value}`;
+            });
     }
 
-    private async getBptfAPICredentials (): Promise<{ apiKey: string, accessToken: string }> {
+    private async getBptfAPICredentials(): Promise<{
+        apiKey: string;
+        accessToken: string;
+    }> {
         await this.bptfLogin();
 
         log.verbose('Getting API key and access token...');
@@ -373,9 +428,9 @@ export = class Bot {
         return { apiKey, accessToken };
     }
 
-    private getBptfAccessToken (): Promise<string> {
+    private getBptfAccessToken(): Promise<string> {
         return new Promise((resolve, reject) => {
-            this.bptf.getAccessToken(function (err, accessToken) {
+            this.bptf.getAccessToken(function(err, accessToken) {
                 if (err) {
                     return reject(err);
                 }
@@ -385,31 +440,35 @@ export = class Bot {
         });
     }
 
-    private getOrCreateBptfAPIKey (): Promise<string> {
-        return new Promise ((resolve, reject) => {
+    private getOrCreateBptfAPIKey(): Promise<string> {
+        return new Promise((resolve, reject) => {
             this.bptf.getAPIKey((err, apiKey) => {
                 if (err) {
                     return reject(err);
                 }
-        
+
                 if (apiKey !== null) {
                     return resolve(apiKey);
                 }
-        
-                log.verbose('You don\'t have a backpack.tf API key, creating one...');
-        
-                this.bptf.generateAPIKey('http://localhost', 'Check if an account is banned on backpack.tf', (err, apiKey) => {
-                    if (err) {
-                        return reject(err);
-                    }
 
-                    return resolve(apiKey);
-                });
+                log.verbose("You don't have a backpack.tf API key, creating one...");
+
+                this.bptf.generateAPIKey(
+                    'http://localhost',
+                    'Check if an account is banned on backpack.tf',
+                    (err, apiKey) => {
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        return resolve(apiKey);
+                    }
+                );
             });
         });
     }
 
-    private bptfLogin (): Promise<void> {
+    private bptfLogin(): Promise<void> {
         return new Promise((resolve, reject) => {
             // @ts-ignore
             if (this.bptf.loggedIn) {
@@ -418,7 +477,7 @@ export = class Bot {
 
             log.verbose('Signing in to backpack.tf...');
 
-            this.bptf.login((err) => {
+            this.bptf.login(err => {
                 if (err) {
                     return reject(err);
                 }
@@ -433,8 +492,11 @@ export = class Bot {
         });
     }
 
-    login (loginKey?: string): Promise<void> {
-        log.debug('Starting login attempt', { loginKey: loginKey, private: true });
+    login(loginKey?: string): Promise<void> {
+        log.debug('Starting login attempt', {
+            loginKey: loginKey,
+            private: true
+        });
 
         const wait = this.loginWait();
 
@@ -445,21 +507,21 @@ export = class Bot {
         return new Promise((resolve, reject) => {
             Promise.delay(wait).then(() => {
                 const listeners = this.client.listeners('error');
-        
+
                 this.client.removeAllListeners('error');
-    
+
                 const details: {
-                    accountName: string,
-                    logonID: number,
-                    rememberPassword: boolean,
-                    password?: string,
-                    loginKey?: string
+                    accountName: string;
+                    logonID: number;
+                    rememberPassword: boolean;
+                    password?: string;
+                    loginKey?: string;
                 } = {
                     accountName: process.env.STEAM_ACCOUNT_NAME,
                     logonID: 69420,
                     rememberPassword: true
                 };
-    
+
                 if (loginKey) {
                     log.debug('Signing in using login key');
                     details.loginKey = loginKey;
@@ -467,43 +529,43 @@ export = class Bot {
                     log.debug('Signing in using password');
                     details.password = process.env.STEAM_PASSWORD;
                 }
-    
+
                 this.newLoginAttempt();
-    
+
                 this.client.logOn(details);
-    
-                const gotEvent = () => {
-                    listeners.forEach((listener) => {
+
+                const gotEvent = (): void => {
+                    listeners.forEach(listener => {
                         // @ts-ignore
                         this.client.on('error', listener);
                     });
                 };
-    
-                const loggedOnEvent = () => {
+
+                const loggedOnEvent = (): void => {
                     gotEvent();
-    
+
                     this.client.removeListener('error', errorEvent);
-    
+
                     resolve(null);
                 };
-    
-                const errorEvent = (err: Error) => {
+
+                const errorEvent = (err: Error): void => {
                     gotEvent();
-    
+
                     this.client.removeListener('loggedOn', loggedOnEvent);
-    
+
                     log.debug('Failed to sign in to Steam: ', err);
-    
+
                     reject(err);
                 };
-    
+
                 this.client.once('loggedOn', loggedOnEvent);
                 this.client.once('error', errorEvent);
             });
         });
     }
 
-    sendMessage (steamID: SteamID|string, message: string): void {
+    sendMessage(steamID: SteamID | string, message: string): void {
         const steamID64 = steamID.toString();
 
         const friend = this.friends.getFriend(steamID64);
@@ -517,11 +579,11 @@ export = class Bot {
         }
     }
 
-    private canSendEvents (): boolean {
+    private canSendEvents(): boolean {
         return this.ready || !this.botManager.isStopping();
     }
 
-    private onMessage (steamID: SteamID, message: string): void {
+    private onMessage(steamID: SteamID, message: string): void {
         if (message.startsWith('[tradeoffer sender=') && message.endsWith('[/tradeoffer]')) {
             return;
         }
@@ -529,22 +591,22 @@ export = class Bot {
         this.handler.onMessage(steamID, message);
     }
 
-    private onWebSession (sessionID: string, cookies: string[]): void {
+    private onWebSession(sessionID: string, cookies: string[]): void {
         log.debug('New web session');
 
         this.setCookies(cookies);
     }
 
-    private onSessionExpired (): void {
+    private onSessionExpired(): void {
         log.debug('Web session has expired');
 
         this.client.webLogOn();
     }
 
-    private onConfKeyNeeded (tag: string, callback: (err: Error|null, time: number, confKey: string) => void): void {
+    private onConfKeyNeeded(tag: string, callback: (err: Error | null, time: number, confKey: string) => void): void {
         log.debug('Conf key needed');
 
-        this.getTimeOffset().asCallback(function (err, offset) {
+        this.getTimeOffset().asCallback(function(err, offset) {
             const time = SteamTotp.time(offset);
             const confKey = SteamTotp.getConfirmationKey(process.env.STEAM_IDENTITY_SECRET, time, tag);
 
@@ -552,7 +614,7 @@ export = class Bot {
         });
     }
 
-    private onSteamGuard (domain: string, callback: (authCode: string) => void, lastCodeWrong: boolean): void {
+    private onSteamGuard(domain: string, callback: (authCode: string) => void, lastCodeWrong: boolean): void {
         log.debug('Steam guard code requested');
 
         if (lastCodeWrong === false) {
@@ -560,43 +622,45 @@ export = class Bot {
         } else {
             this.consecutiveSteamGuardCodesWrong++;
         }
-    
+
         if (this.consecutiveSteamGuardCodesWrong > 1) {
             // Too many logins will trigger this error because steam returns TwoFactorCodeMismatch
             throw new Error('Too many wrong Steam Guard codes');
         }
-    
+
         const wait = this.loginWait();
-    
+
         if (wait !== 0) {
             this.handler.onLoginThrottle(wait);
         }
 
-        Promise.delay(wait).then(this.generateAuthCode).then((authCode) => {
-            this.newLoginAttempt();
+        Promise.delay(wait)
+            .then(this.generateAuthCode)
+            .then(authCode => {
+                this.newLoginAttempt();
 
-            callback(authCode);
-        });
+                callback(authCode);
+            });
     }
 
-    private onError (err: Error): void {
+    private onError(err: Error): void {
         // @ts-ignore
         if (err.eresult === SteamUser.EResult.LoggedInElsewhere) {
             log.warn('Signed in elsewhere, stopping the bot...');
             this.botManager.stop(err, false, true);
-        // @ts-ignore
+            // @ts-ignore
         } else if (err.eresult === SteamUser.EResult.LogonSessionReplaced) {
             this.sessionReplaceCount++;
-    
+
             if (this.sessionReplaceCount > 0) {
                 log.warn('Detected login session replace loop, stopping bot...');
                 this.botManager.stop(err, false, true);
                 return;
             }
-    
+
             log.warn('Login session replaced, relogging...');
 
-            this.login().asCallback(function (err) {
+            this.login().asCallback(function(err) {
                 if (err) {
                     throw err;
                 }
@@ -606,7 +670,7 @@ export = class Bot {
         }
     }
 
-    private async generateAuthCode (): Promise<string> {
+    private async generateAuthCode(): Promise<string> {
         let offset: number;
         try {
             offset = await this.getTimeOffset();
@@ -617,8 +681,8 @@ export = class Bot {
         return SteamTotp.generateAuthCode(process.env.STEAM_SHARED_SECRET, offset);
     }
 
-    private getTimeOffset (): Promise<number> {
-        return new Promise ((resolve, reject) => {
+    private getTimeOffset(): Promise<number> {
+        return new Promise((resolve, reject) => {
             if (this.timeOffset !== null) {
                 return resolve(this.timeOffset);
             }
@@ -629,16 +693,16 @@ export = class Bot {
                 }
 
                 this.timeOffset = offset;
-                
+
                 resolve(offset);
             });
         });
     }
 
-    private loginWait (): number {
+    private loginWait(): number {
         const attemptsWithinPeriod = this.getLoginAttemptsWithinPeriod();
 
-        let wait: number = 0;
+        let wait = 0;
 
         if (attemptsWithinPeriod >= this.maxLoginAttemptsWithinPeriod) {
             const oldest = attemptsWithinPeriod[0];
@@ -658,20 +722,22 @@ export = class Bot {
         return wait;
     }
 
-    private getLoginAttemptsWithinPeriod (): number {
+    private getLoginAttemptsWithinPeriod(): number {
         const now = moment();
 
-        return this.loginAttempts.filter((attempt) => now.diff(attempt, 'milliseconds') < this.loginPeriodTime).length;
+        return this.loginAttempts.filter(attempt => now.diff(attempt, 'milliseconds') < this.loginPeriodTime).length;
     }
 
-    private newLoginAttempt (): void {
+    private newLoginAttempt(): void {
         const now = moment();
 
         // Clean up old login attempts
-        this.loginAttempts = this.loginAttempts.filter((attempt) => now.diff(attempt, 'milliseconds') < this.loginPeriodTime);
-        
+        this.loginAttempts = this.loginAttempts.filter(
+            attempt => now.diff(attempt, 'milliseconds') < this.loginPeriodTime
+        );
+
         this.loginAttempts.push(now);
 
-        this.handler.onLoginAttempts(this.loginAttempts.map((attempt) => attempt.unix()));
+        this.handler.onLoginAttempts(this.loginAttempts.map(attempt => attempt.unix()));
     }
-}
+};

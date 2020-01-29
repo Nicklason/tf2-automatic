@@ -17,7 +17,7 @@ if (process.env.BOT_VERSION !== pjson.version) {
     process.exit(1);
 }
 
-import 'bluebird-global'
+import 'bluebird-global';
 
 import dotenv from 'dotenv';
 
@@ -26,20 +26,24 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 import log from './lib/logger';
 
 if (process.env.pm_id === undefined) {
-    log.warn('You are not running the bot with PM2! If the bot crashes it won\'t start again, see the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2');
+    log.warn(
+        "You are not running the bot with PM2! If the bot crashes it won't start again, see the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2"
+    );
 }
 
 import SchemaManager from 'tf2-schema';
 import { getSchema } from './lib/ptf-api';
 
 // Make the schema manager request the schema from PricesTF
-SchemaManager.prototype.getSchema = function (callback) {
-    getSchema().then((schema) => {
-        this.setSchema(schema, true);
-        callback(null, this.schema);
-    }).catch(function (err) {
-        callback(err);
-    });
+SchemaManager.prototype.getSchema = function(callback): void {
+    getSchema()
+        .then(schema => {
+            this.setSchema(schema, true);
+            callback(null, this.schema);
+        })
+        .catch(function(err) {
+            callback(err);
+        });
 };
 
 import BotManager from './classes/BotManager';
@@ -48,7 +52,7 @@ const botManager = new BotManager();
 
 import ON_DEATH from 'death';
 
-ON_DEATH({ uncaughtException: true })(function (signal, err) {
+ON_DEATH({ uncaughtException: true })(function(signal, err) {
     const crashed = typeof err !== 'string';
 
     if (crashed) {
@@ -58,15 +62,24 @@ ON_DEATH({ uncaughtException: true })(function (signal, err) {
 
         const botReady = botManager.isBotReady();
 
-        log.error([
-            'tf2-automatic' + (!botReady ? ' failed to start properly, this is most likely a temporary error. See the log:' : ' crashed! Please create an issue with the following log:'),
-            `package.version: ${process.env.BOT_VERSION || undefined}; node: ${process.version} ${process.platform} ${process.arch}}`,
-            'Stack trace:',
-            require('util').inspect(err)
-        ].join('\r\n'));
+        log.error(
+            [
+                'tf2-automatic' +
+                    (!botReady
+                        ? ' failed to start properly, this is most likely a temporary error. See the log:'
+                        : ' crashed! Please create an issue with the following log:'),
+                `package.version: ${process.env.BOT_VERSION || undefined}; node: ${process.version} ${
+                    process.platform
+                } ${process.arch}}`,
+                'Stack trace:',
+                require('util').inspect(err)
+            ].join('\r\n')
+        );
 
         if (botReady) {
-            log.error('Create an issue here: https://github.com/Nicklason/tf2-automatic/issues/new?template=bug_report.md');
+            log.error(
+                'Create an issue here: https://github.com/Nicklason/tf2-automatic/issues/new?template=bug_report.md'
+            );
         }
     } else {
         log.warn('Received kill signal `' + signal + '`');
@@ -75,22 +88,21 @@ ON_DEATH({ uncaughtException: true })(function (signal, err) {
     botManager.stop(crashed ? err : null, true, signal === 'SIGKILL');
 });
 
-const EconItem = require('steam-tradeoffer-manager/lib/classes/EconItem.js');
-const CEconItem = require('steamcommunity/classes/CEconItem.js');
+import EconItem from 'steam-tradeoffer-manager/lib/classes/EconItem.js';
+import CEconItem from 'steamcommunity/classes/CEconItem.js';
 
-['hasDescription', 'getAction', 'getTag', 'getItem', 'getSKU'].forEach(function (v) {
-    const func = require('./lib/extend/item/' + v);
-    EconItem.prototype[v] = func;
-    CEconItem.prototype[v] = func;
+['hasDescription', 'getAction', 'getTag', 'getItem', 'getSKU'].forEach(function(v) {
+    EconItem.prototype[v] = require('./lib/extend/item/' + v);
+    CEconItem.prototype[v] = require('./lib/extend/item/' + v);
 });
 
-const TradeOffer = require('steam-tradeoffer-manager/lib/classes/TradeOffer');
+import TradeOffer from 'steam-tradeoffer-manager/lib/classes/TradeOffer';
 
-['log', 'summarize'].forEach(function (v) {
+['log', 'summarize'].forEach(function(v) {
     TradeOffer.prototype[v] = require('./lib/extend/offer/' + v);
 });
 
-botManager.start().asCallback(function (err) {
+botManager.start().asCallback(function(err) {
     if (err) {
         throw err;
     }

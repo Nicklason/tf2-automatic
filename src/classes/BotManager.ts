@@ -11,15 +11,20 @@ import { waitForWriting } from '../lib/files';
 
 export = class BotManager {
     private readonly socket: SocketIOClient.Socket;
-    private readonly schemaManager: SchemaManager
+
+    private readonly schemaManager: SchemaManager;
+
     private bot: Bot = null;
 
-    private stopRequested: boolean = false;
-    private stopRequestCount: number = 0;
-    private stopping: boolean = false;
-    private exiting: boolean = false;
+    private stopRequested = false;
 
-    constructor () {
+    private stopRequestCount = 0;
+
+    private stopping = false;
+
+    private exiting = false;
+
+    constructor() {
         this.schemaManager = new SchemaManager({});
         this.socket = io('https://api.prices.tf', {
             forceNew: true,
@@ -30,79 +35,85 @@ export = class BotManager {
             log.debug('Connected to socket server');
             this.socket.emit('authentication', process.env.PRICESTF_API_KEY);
         });
-        
-        this.socket.on('authenticated', function () {
+
+        this.socket.on('authenticated', function() {
             log.debug('Authenticated with socket server');
         });
-        
-        this.socket.on('unauthorized', function (err) {
-            log.debug('Failed to authenticate with socket server', { error: err });
+
+        this.socket.on('unauthorized', function(err) {
+            log.debug('Failed to authenticate with socket server', {
+                error: err
+            });
         });
-        
-        this.socket.on('disconnect', (reason) => {
+
+        this.socket.on('disconnect', reason => {
             log.debug('Disconnected from socket server', { reason: reason });
-        
+
             if (reason === 'io server disconnect') {
                 this.socket.connect();
             }
         });
     }
 
-    getSchema (): SchemaManager.Schema {
+    getSchema(): SchemaManager.Schema {
         return this.schemaManager.schema;
     }
 
-    getSocket (): SocketIOClient.Socket {
+    getSocket(): SocketIOClient.Socket {
         return this.socket;
     }
 
-    isStopping (): boolean {
+    isStopping(): boolean {
         return this.stopping || this.stopRequested;
     }
 
-    isBotReady (): boolean {
+    isBotReady(): boolean {
         return this.bot !== null && this.bot.isReady();
     }
 
-    start (): Promise<void> {
+    start(): Promise<void> {
         return new Promise((resolve, reject) => {
-            async.eachSeries([
-                (callback) => {
-                    log.debug('Connecting to PM2...');
-                    this.connectToPM2().asCallback(callback);
+            async.eachSeries(
+                [
+                    (callback): void => {
+                        log.debug('Connecting to PM2...');
+                        this.connectToPM2().asCallback(callback);
+                    },
+                    (callback): void => {
+                        log.info('Getting TF2 schema...');
+                        this.initializeSchema().asCallback(callback);
+                    },
+                    (callback): void => {
+                        log.info('Starting bot...');
+                        this.bot = new Bot(this);
+
+                        this.bot.start().asCallback(callback);
+                    }
+                ],
+                (item, callback) => {
+                    if (this.isStopping()) {
+                        // Shutdown is requested, stop the bot
+                        this.stop(null, false, false);
+                        return;
+                    }
+
+                    item(callback);
                 },
-                (callback) => {
-                    log.info('Getting TF2 schema...');
-                    this.initializeSchema().asCallback(callback);
-                },
-                (callback) => {
-                    log.info('Starting bot...');
-                    this.bot = new Bot(this);
+                err => {
+                    if (err) {
+                        return reject(err);
+                    }
 
-                    this.bot.start().asCallback(callback);
-                }
-            ], (item, callback) => {
-                if (this.isStopping()) {
-                    // Shutdown is requested, stop the bot
-                    this.stop(null, false, false);
-                    return;
-                }
+                    // Connect to socket server
+                    this.socket.open();
 
-                item(callback);
-            }, (err) => {
-                if (err) {
-                    return reject(err);
+                    return resolve();
                 }
-
-                // Connect to socket server
-                this.socket.open();
-                
-                return resolve();
-            });
+            );
         });
     }
 
-    stop (err: Error|null, checkIfReady = true, rudely = false) {
+    stop(err: Error | null, checkIfReady = true, rudely = false): void {
         log.debug('Shutdown has been initialized, stopping...', { err: err });
 
         this.stopRequested = true;
@@ -145,7 +156,7 @@ export = class BotManager {
         });
     }
 
-    private cleanup (): void {
+    private cleanup(): void {
         if (this.bot !== null) {
             // Make the bot snooze on Steam, that way people will know it is not running
             this.bot.client.setPersona(SteamUser.EPersonaState.Snooze);
@@ -167,7 +178,7 @@ export = class BotManager {
         this.socket.disconnect();
     }
 
-    private exit (err: Error|null): void {
+    private exit(err: Error | null): void {
         if (this.exiting) {
             return;
         }
@@ -181,24 +192,24 @@ export = class BotManager {
         }
 
         log.debug('Waiting for files to be saved');
-        waitForWriting().then(function () {
+        waitForWriting().then(function() {
             log.debug('Done waiting for files');
 
-            log.on('finish', function () {
+            log.on('finish', function() {
                 // Logger has finished, exit the process
                 process.exit(err ? 1 : 0);
             });
-    
+
             log.warn('Exiting...');
-    
+
             // Stop the logger
             log.end();
         });
     }
 
-    connectToPM2 (): Promise<void> {
+    connectToPM2(): Promise<void> {
         return new Promise((resolve, reject) => {
-            pm2.connect(function (err) {
+            pm2.connect(function(err) {
                 if (err) {
                     return reject(err);
                 }
@@ -208,9 +219,9 @@ export = class BotManager {
         });
     }
 
-    initializeSchema (): Promise<void> {
+    initializeSchema(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.schemaManager.init(function (err) {
+            this.schemaManager.init(function(err) {
                 if (err) {
                     return reject(err);
                 }
@@ -219,4 +230,4 @@ export = class BotManager {
             });
         });
     }
-}
+};

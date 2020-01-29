@@ -1,7 +1,7 @@
 import { Currency } from '../types/TeamFortress2';
 import { UnknownDictionary } from '../types/common';
 
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'events';
 import moment from 'moment';
 import Currencies from 'tf2-currencies';
 import SKU from 'tf2-sku';
@@ -13,29 +13,37 @@ import { getPricelist, getPrice } from '../lib/ptf-api';
 const maxAge = parseInt(process.env.MAX_PRICE_AGE) || 8 * 60 * 60;
 
 export interface EntryData {
-    sku: string,
-    enabled: boolean,
-    autoprice: boolean,
-    max: number,
-    min: number,
-    intent: 0|1|2,
-    buy: Currency,
-    sell: Currency,
-    time: number|null
-}
-
-export class Entry {
     sku: string;
     enabled: boolean;
     autoprice: boolean;
     max: number;
     min: number;
-    intent: 0|1|2;
-    buy: Currencies;
-    sell: Currencies;
-    time: number|null;
+    intent: 0 | 1 | 2;
+    buy: Currency;
+    sell: Currency;
+    time: number | null;
+}
 
-    constructor (entry: EntryData) {
+export class Entry {
+    sku: string;
+
+    enabled: boolean;
+
+    autoprice: boolean;
+
+    max: number;
+
+    min: number;
+
+    intent: 0 | 1 | 2;
+
+    buy: Currencies;
+
+    sell: Currencies;
+
+    time: number | null;
+
+    constructor(entry: EntryData) {
         this.sku = entry.sku;
         this.enabled = entry.enabled;
         this.autoprice = entry.autoprice;
@@ -50,11 +58,14 @@ export class Entry {
 
 export default class Pricelist extends EventEmitter {
     private readonly schema: SchemaManager.Schema;
-    private readonly socket: SocketIOClient.Socket;
-    private prices: Entry[];
-    private keyPrices: { buy: Currencies, sell: Currencies };
 
-    constructor (schema: SchemaManager.Schema, socket: SocketIOClient.Socket) {
+    private readonly socket: SocketIOClient.Socket;
+
+    private prices: Entry[];
+
+    private keyPrices: { buy: Currencies; sell: Currencies };
+
+    constructor(schema: SchemaManager.Schema, socket: SocketIOClient.Socket) {
         super();
         this.schema = schema;
         this.socket = socket;
@@ -64,19 +75,19 @@ export default class Pricelist extends EventEmitter {
         this.socket.on('price', this.handlePriceChange);
     }
 
-    getKeyPrices () {
+    getKeyPrices(): { buy: Currencies; sell: Currencies } {
         return this.keyPrices;
     }
 
-    getKeyPrice (): Currencies {
+    getKeyPrice(): Currencies {
         return this.keyPrices.sell;
     }
 
-    getLength (): number {
+    getLength(): number {
         return this.prices.length;
     }
 
-    getPrice (sku: string, onlyEnabled = false): Entry|null {
+    getPrice(sku: string, onlyEnabled = false): Entry | null {
         // Index of of item in pricelist
         const index = this.getIndex(sku);
 
@@ -95,7 +106,7 @@ export default class Pricelist extends EventEmitter {
         return match;
     }
 
-    async addPrice (entry: Entry, emitChange: boolean): Promise<Entry> {
+    async addPrice(entry: Entry, emitChange: boolean): Promise<Entry> {
         if (entry.autoprice) {
             const price = await getPrice(entry.sku, 'bptf');
 
@@ -123,7 +134,7 @@ export default class Pricelist extends EventEmitter {
         return entry;
     }
 
-    removePrice (sku: string, emitChange: boolean): void {
+    removePrice(sku: string, emitChange: boolean): void {
         const index = this.getIndex(sku);
 
         if (index !== -1) {
@@ -131,89 +142,87 @@ export default class Pricelist extends EventEmitter {
             this.prices.splice(index, 1);
 
             if (emitChange) {
-                this.emit('price', sku, null); 
+                this.emit('price', sku, null);
             }
         }
     }
 
-    private getIndex (sku: string): number {
+    private getIndex(sku: string): number {
         // Get name of item
         const name = this.schema.getName(SKU.fromString(sku));
 
-        return this.prices.findIndex((entry) => this.schema.getName(SKU.fromString(entry.sku)) === name);
+        return this.prices.findIndex(entry => this.schema.getName(SKU.fromString(entry.sku)) === name);
     }
 
-    setPricelist (prices: EntryData[]): Promise<void> {
-        return new Promise (async (resolve) => {
-            // @ts-ignore
-            this.prices = prices.map((entry) => new Entry(entry));
+    async setPricelist(prices: EntryData[]): Promise<void> {
+        // @ts-ignore
+        this.prices = prices.map(entry => new Entry(entry));
 
-            // TODO: Get key price and pricelist in parallel
+        // TODO: Get key price and pricelist in parallel
 
-            log.debug('Getting key price...');
-            const keyPrices = await getPrice('5021;6', 'bptf');
-            log.debug('Got key price');
+        log.debug('Getting key price...');
+        const keyPrices = await getPrice('5021;6', 'bptf');
+        log.debug('Got key price');
 
-            this.keyPrices = {
-                buy: new Currencies(keyPrices.buy),
-                sell: new Currencies(keyPrices.sell)
-            };
+        this.keyPrices = {
+            buy: new Currencies(keyPrices.buy),
+            sell: new Currencies(keyPrices.sell)
+        };
 
-            const old = this.getOld();
+        const old = this.getOld();
 
-            if (old.length === 0) {
-                return resolve();
+        if (old.length === 0) {
+            return Promise.resolve();
+        }
+
+        log.debug('Getting pricelist...');
+        const pricelist = (await getPricelist('bptf')).items as any[];
+        log.debug('Got pricelist');
+
+        const groupedPrices = Pricelist.groupPrices(pricelist);
+
+        let pricesChanged = false;
+
+        // Go through our pricelist
+        for (let i = 0; i < old.length; i++) {
+            const currPrice = old[i];
+            if (currPrice.autoprice !== true) {
+                continue;
             }
 
-            log.debug('Getting pricelist...');
-            const pricelist = <any[]>(await getPricelist('bptf')).items;
-            log.debug('Got pricelist');
+            const item = SKU.fromString(currPrice.sku);
+            const name = this.schema.getName(item);
 
-            const groupedPrices = Pricelist.groupPrices(pricelist);
+            // Go through pricestf prices
+            for (let j = 0; j < groupedPrices[item.quality][item.killstreak].length; j++) {
+                const newestPrice = groupedPrices[item.quality][item.killstreak][j];
 
-            let pricesChanged = false;
+                if (name === newestPrice.name) {
+                    // Found matching items
+                    if (currPrice.time < newestPrice.time) {
+                        // Times don't match, update our price
+                        currPrice.buy = new Currencies(newestPrice.buy);
+                        currPrice.sell = new Currencies(newestPrice.sell);
+                        currPrice.time = newestPrice.time;
 
-            // Go through our pricelist
-            for (let i = 0; i < old.length; i++) {
-                const currPrice = old[i];
-                if (currPrice.autoprice !== true) {
-                    continue;
-                }
-
-                const item = SKU.fromString(currPrice.sku);
-                const name = this.schema.getName(item);
-
-                // Go through pricestf prices
-                for (let j = 0; j < groupedPrices[item.quality][item.killstreak].length; j++) {
-                    const newestPrice = groupedPrices[item.quality][item.killstreak][j];
-
-                    if (name === newestPrice.name) {
-                        // Found matching items
-                        if (currPrice.time < newestPrice.time) {
-                            // Times don't match, update our price
-                            currPrice.buy = new Currencies(newestPrice.buy);
-                            currPrice.sell = new Currencies(newestPrice.sell);
-                            currPrice.time = newestPrice.time;
-
-                            pricesChanged = true;
-                        }
-
-                        // When a match is found remove it from the ptf pricelist
-                        groupedPrices[item.quality][item.killstreak].splice(j, 1);
-                        break;
+                        pricesChanged = true;
                     }
+
+                    // When a match is found remove it from the ptf pricelist
+                    groupedPrices[item.quality][item.killstreak].splice(j, 1);
+                    break;
                 }
             }
+        }
 
-            if (pricesChanged) {
-                this.emit('pricelist', this.prices);
-            }
+        if (pricesChanged) {
+            this.emit('pricelist', this.prices);
+        }
 
-            return resolve();
-        });
+        return Promise.resolve();
     }
 
-    private handlePriceChange (data: any) {
+    private handlePriceChange(data: any): void {
         if (data.soure !== 'bptf') {
             return;
         }
@@ -234,21 +243,21 @@ export default class Pricelist extends EventEmitter {
         }
     }
 
-    private priceChanged (entry: Entry) {
+    private priceChanged(entry: Entry): void {
         this.emit('price', entry);
     }
 
-    private getOld (): Entry[] {
+    private getOld(): Entry[] {
         if (maxAge <= 0) {
             return this.prices;
         }
 
         const now = moment().unix();
 
-        return this.prices.filter((entry) => entry.time + maxAge <= now);
+        return this.prices.filter(entry => entry.time + maxAge <= now);
     }
 
-    static groupPrices (prices: any[]): UnknownDictionary<UnknownDictionary<any[]>> {
+    static groupPrices(prices: any[]): UnknownDictionary<UnknownDictionary<any[]>> {
         const sorted: UnknownDictionary<UnknownDictionary<any[]>> = {};
 
         for (let i = 0; i < prices.length; i++) {

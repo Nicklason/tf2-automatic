@@ -23,8 +23,8 @@ const colors = {
 
 winston.addColors(colors);
 
-const levelFilter = function (level) {
-    return winston.format((info, opts) => {
+const levelFilter = function(level): any {
+    return winston.format(info => {
         if (info.level !== level) {
             return false;
         }
@@ -33,7 +33,7 @@ const levelFilter = function (level) {
     });
 };
 
-const privateFilter = winston.format((info, opts) => {
+const privateFilter = winston.format(info => {
     if (info.private === true) {
         return false;
     }
@@ -43,7 +43,9 @@ const privateFilter = winston.format((info, opts) => {
 
 const fileFormat = winston.format.combine(
     winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
+    winston.format.errors({
+        stack: true
+    }),
     winston.format.json()
 );
 
@@ -52,8 +54,10 @@ const consoleFormat = winston.format.combine(
         format: 'YYYY-MM-DD HH:mm:ss'
     }),
     winston.format.colorize(),
-    winston.format.errors({ stack: true }),
-    winston.format.printf((info) => {
+    winston.format.errors({
+        stack: true
+    }),
+    winston.format.printf(info => {
         let msg = `${info.timestamp} ${info.level}: ${info.message}`;
 
         // @ts-ignore
@@ -82,29 +86,34 @@ const logger = winston.createLogger({
 
 // TODO: Populate transports through some sort of config / env variable
 
-const transports = [{
-    type: 'DailyRotateFile',
-    filename: paths.logs.log,
-    level: debugFile ? 'debug' : 'verbose',
-    filter: 'private',
-    datePattern: 'YYYY-MM-DD',
-    zippedArchive: true,
-    maxFiles: '14d'
-}, {
-    type: 'File',
-    filename: paths.logs.trade,
-    level: 'trade',
-    filter: 'trade'
-}, {
-    type: 'File',
-    filename: paths.logs.error,
-    level: 'error'
-}, {
-    type: 'Console',
-    level: debugConsole ? 'debug' : 'verbose'
-}];
+const transports = [
+    {
+        type: 'DailyRotateFile',
+        filename: paths.logs.log,
+        level: debugFile ? 'debug' : 'verbose',
+        filter: 'private',
+        datePattern: 'YYYY-MM-DD',
+        zippedArchive: true,
+        maxFiles: '14d'
+    },
+    {
+        type: 'File',
+        filename: paths.logs.trade,
+        level: 'trade',
+        filter: 'trade'
+    },
+    {
+        type: 'File',
+        filename: paths.logs.error,
+        level: 'error'
+    },
+    {
+        type: 'Console',
+        level: debugConsole ? 'debug' : 'verbose'
+    }
+];
 
-transports.forEach(function (transport) {
+transports.forEach(function(transport) {
     const type = transport.type;
 
     delete transport.type;
@@ -124,14 +133,22 @@ transports.forEach(function (transport) {
 
         if (filter === 'trade') {
             // @ts-ignore
-            transport.format = winston.format.combine(levelFilter(filter)(), transport.format);
+            transport.format = winston.format.combine(
+                levelFilter(filter)(),
+                // @ts-ignore
+                transport.format
+            );
         } else if (filter === 'private') {
             // @ts-ignore
-            transport.format = winston.format.combine(privateFilter(), transport.format);
+            transport.format = winston.format.combine(
+                privateFilter(),
+                // @ts-ignore
+                transport.format
+            );
         }
     }
 
-    logger.add(new (winston.transports[type])(transport));
+    logger.add(new winston.transports[type](transport));
 });
 
 export = logger;

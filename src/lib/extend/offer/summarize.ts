@@ -6,22 +6,35 @@ import SchemaManager from 'tf2-schema';
 import Currencies from 'tf2-currencies';
 import SKU from 'tf2-sku';
 
-export = function (schema: SchemaManager.Schema): string {
+export = function(schema: SchemaManager.Schema): string {
     // @ts-ignore
-    const self = <TradeOffer>this;
+    const self = this as TradeOffer;
 
-    const value: { our: Currency, their: Currency } = self.data('value');
+    const value: { our: Currency; their: Currency } = self.data('value');
 
-    const items: { our: UnknownDictionary<number>, their: UnknownDictionary<number> } = self.data('dict') || { our: null, their: null };
+    const items: {
+        our: UnknownDictionary<number>;
+        their: UnknownDictionary<number>;
+    } = self.data('dict') || { our: null, their: null };
 
     if (!value) {
         return 'Asked: ' + summarizeItems(items.our, schema) + '\nOffered: ' + summarizeItems(items.their, schema);
     } else {
-        return 'Asked: ' + new Currencies(value.our).toString() + ' (' + summarizeItems(items.our, schema) + ')\nOffered: ' + new Currencies(value.their).toString() + ' (' + summarizeItems(items.their, schema) + ')';
+        return (
+            'Asked: ' +
+            new Currencies(value.our).toString() +
+            ' (' +
+            summarizeItems(items.our, schema) +
+            ')\nOffered: ' +
+            new Currencies(value.their).toString() +
+            ' (' +
+            summarizeItems(items.their, schema) +
+            ')'
+        );
     }
 };
 
-function summarizeItems (dict: UnknownDictionary<number>, schema: SchemaManager.Schema): string {
+function summarizeItems(dict: UnknownDictionary<number>, schema: SchemaManager.Schema): string {
     if (dict === null) {
         return 'unknown items';
     }

@@ -3,7 +3,7 @@ import SchemaManager from 'tf2-schema';
 
 import isObject from 'isobject';
 
-export = function (item: Item, schema: SchemaManager.Schema): Item {
+export = function(item: Item, schema: SchemaManager.Schema): Item {
     const schemaItem = schema.getItemByDefindex(item.defindex);
 
     if (schemaItem === null) {
@@ -12,7 +12,10 @@ export = function (item: Item, schema: SchemaManager.Schema): Item {
 
     if (schemaItem.name.indexOf(schemaItem.item_class.toUpperCase()) !== -1) {
         for (let i = 0; i < schema.raw.schema.items.length; i++) {
-            if (schema.raw.schema.items[i].item_class === schemaItem.item_class && schema.raw.schema.items[i].name.startsWith('Upgradeable ')) {
+            if (
+                schema.raw.schema.items[i].item_class === schemaItem.item_class &&
+                schema.raw.schema.items[i].name.startsWith('Upgradeable ')
+            ) {
                 item.defindex = schema.raw.schema.items[i].defindex;
             }
         }
@@ -57,7 +60,10 @@ export = function (item: Item, schema: SchemaManager.Schema): Item {
         if (series === null) {
             const itemsGameItem = schema.raw.items_game.items[item.defindex];
 
-            if (itemsGameItem.static_attrs !== undefined && itemsGameItem.static_attrs['set supply crate series'] !== undefined) {
+            if (
+                itemsGameItem.static_attrs !== undefined &&
+                itemsGameItem.static_attrs['set supply crate series'] !== undefined
+            ) {
                 // @ts-ignore
                 if (isObject(itemsGameItem.static_attrs['set supply crate series'])) {
                     series = itemsGameItem.static_attrs['set supply crate series'].value;
@@ -86,7 +92,9 @@ export = function (item: Item, schema: SchemaManager.Schema): Item {
     }
 
     if (item.paintkit !== null) {
-        const hasCorrectPaintkitAttribute = schema.raw.items_game.items[item.defindex].static_attrs !== undefined && schema.raw.items_game.items[item.defindex].static_attrs['paintkit_proto_def_index'] == item.paintkit;
+        const hasCorrectPaintkitAttribute =
+            schema.raw.items_game.items[item.defindex].static_attrs !== undefined &&
+            schema.raw.items_game.items[item.defindex].static_attrs['paintkit_proto_def_index'] == item.paintkit;
 
         if (schemaItem.item_quality != 15 || !hasCorrectPaintkitAttribute) {
             for (const defindex in schema.raw.items_game.items) {
@@ -110,6 +118,6 @@ export = function (item: Item, schema: SchemaManager.Schema): Item {
     return item;
 };
 
-function _isPromo (schemaItem: SchemaManager.SchemaItem): boolean {
+function _isPromo(schemaItem: SchemaManager.SchemaItem): boolean {
     return schemaItem.name.startsWith('Promo ') && schemaItem.craft_class === '';
 }

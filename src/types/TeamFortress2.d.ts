@@ -1,8 +1,6 @@
 import { UnknownDictionary } from './common';
 
-export interface ItemsDictionaryWithAmounts extends UnknownDictionary<number> {
-
-}
+export type ItemsDictionaryWithAmounts = UnknownDictionary<number>;
 
 export interface Currency {
     keys: number;
