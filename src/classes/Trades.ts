@@ -1,5 +1,5 @@
 import TradeOfferManager, { EconItem } from 'steam-tradeoffer-manager';
-import { UnknownDictionaryKnownValues, UnknownDictionary } from '../types/common';
+import { UnknownDictionaryKnownValues } from '../types/common';
 import moment from 'moment';
 import pluralize from 'pluralize';
 
@@ -12,52 +12,59 @@ export = class Trades {
     private readonly bot: Bot;
 
     private itemsInTrade: string[] = [];
-    private receivedOffers: number[] = [];
-    private processingOffer: boolean = false;
-    private pollCount: number = 0;
 
-    constructor (bot: Bot) {
+    private receivedOffers: number[] = [];
+
+    private processingOffer = false;
+
+    private pollCount = 0;
+
+    constructor(bot: Bot) {
         this.bot = bot;
     }
 
-    onPollData (pollData: TradeOfferManager.PollData): void {
+    onPollData(pollData: TradeOfferManager.PollData): void {
         this.bot.handler.onPollData(pollData);
     }
 
-    setPollData (pollData: TradeOfferManager.PollData): void {
+    setPollData(pollData: TradeOfferManager.PollData): void {
         const activeOrCreatedNeedsConfirmation: string[] = [];
 
         for (const id in pollData.sent) {
             if (!Object.prototype.hasOwnProperty.call(pollData.sent, id)) {
                 continue;
             }
-    
+
             const state = pollData.sent[id];
-    
-            if (state === TradeOfferManager.ETradeOfferState.Active || state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+
+            if (
+                state === TradeOfferManager.ETradeOfferState.Active ||
+                state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation
+            ) {
                 activeOrCreatedNeedsConfirmation.push(id);
             }
         }
-    
+
         for (const id in pollData.received) {
             if (!Object.prototype.hasOwnProperty.call(pollData.received, id)) {
                 continue;
             }
-    
+
             const state = pollData.received[id];
-    
+
             if (state === TradeOfferManager.ETradeOfferState.Active) {
                 activeOrCreatedNeedsConfirmation.push(id);
             }
         }
-    
+
         // Go through all sent / received offers and mark the items as in trade
         for (let i = 0; i < activeOrCreatedNeedsConfirmation.length; i++) {
             const id = activeOrCreatedNeedsConfirmation[i];
-    
-            const offerData: UnknownDictionaryKnownValues = pollData.offerData === undefined ? {} : (pollData.offerData[id] || {});
-            const items = <TradeOfferManager.TradeOfferItem[]>(offerData.items || []);
-    
+
+            const offerData: UnknownDictionaryKnownValues =
+                pollData.offerData === undefined ? {} : pollData.offerData[id] || {};
+            const items = (offerData.items || []) as TradeOfferManager.TradeOfferItem[];
+
             for (let i = 0; i < items.length; i++) {
                 this.setItemInTrade(items[i].assetid);
             }
@@ -66,7 +73,7 @@ export = class Trades {
         this.bot.manager.pollData = pollData;
     }
 
-    onNewOffer (offer: TradeOfferManager.TradeOffer): void {
+    onNewOffer(offer: TradeOfferManager.TradeOffer): void {
         if (offer.isGlitched()) {
             offer.log('debug', 'is glitched');
             return;
@@ -74,55 +81,83 @@ export = class Trades {
 
         offer.log('info', 'received offer');
 
-        offer.itemsToGive.forEach((item) => this.setItemInTrade(item.assetid));
+        offer.itemsToGive.forEach(item => this.setItemInTrade(item.assetid));
 
         offer.data('partner', offer.partner.getSteamID64());
 
         this.enqueueOffer(offer);
     }
 
-    onOfferList (filter: number, sent: TradeOfferManager.TradeOffer[], received: TradeOfferManager.TradeOffer[]): void {
+    onOfferList(filter: number, sent: TradeOfferManager.TradeOffer[], received: TradeOfferManager.TradeOffer[]): void {
         // Go through all offers and add offers that we have not checked
 
         this.pollCount++;
 
-        const activeReceived = received.filter((offer) => offer.state === TradeOfferManager.ETradeOfferState.Active);
+        const activeReceived = received.filter(offer => offer.state === TradeOfferManager.ETradeOfferState.Active);
 
-        if (filter === TradeOfferManager.EOfferFilter.ActiveOnly && (this.pollCount * this.bot.manager.pollInterval) / (2 * 60 * 1000) >= 1) {
+        if (
+            filter === TradeOfferManager.EOfferFilter.ActiveOnly &&
+            (this.pollCount * this.bot.manager.pollInterval) / (2 * 60 * 1000) >= 1
+        ) {
             this.pollCount = 0;
 
-            const activeSent = sent.filter((offer) => offer.state === TradeOfferManager.ETradeOfferState.Active);
+            const activeSent = sent.filter(offer => offer.state === TradeOfferManager.ETradeOfferState.Active);
 
-            const receivedOnHold = received.filter((offer) => offer.state === TradeOfferManager.ETradeOfferState.InEscrow).length;
-            const sentOnHold = sent.filter((offer) => offer.state === TradeOfferManager.ETradeOfferState.InEscrow).length;
+            const receivedOnHold = received.filter(offer => offer.state === TradeOfferManager.ETradeOfferState.InEscrow)
+                .length;
+            const sentOnHold = sent.filter(offer => offer.state === TradeOfferManager.ETradeOfferState.InEscrow).length;
 
-            log.verbose(activeReceived.length + ' incoming ' + pluralize('offer', activeReceived.length) + ' (' + receivedOnHold + ' on hold), ' + activeSent.length + ' outgoing ' + pluralize('offer', activeSent.length) + ' (' + sentOnHold + ' on hold)');
+            log.verbose(
+                activeReceived.length +
+                    ' incoming ' +
+                    pluralize('offer', activeReceived.length) +
+                    ' (' +
+                    receivedOnHold +
+                    ' on hold), ' +
+                    activeSent.length +
+                    ' outgoing ' +
+                    pluralize('offer', activeSent.length) +
+                    ' (' +
+                    sentOnHold +
+                    ' on hold)'
+            );
         }
 
-        activeReceived.filter((offer) => offer.data('handledByUs') !== true).forEach((offer) => this.enqueueOffer(offer));
+        activeReceived.filter(offer => offer.data('handledByUs') !== true).forEach(offer => this.enqueueOffer(offer));
     }
 
-    getOffers (includeInactive = false): Promise<{ sent: TradeOfferManager.TradeOffer[], received: TradeOfferManager.TradeOffer[] }> {
+    getOffers(
+        includeInactive = false
+    ): Promise<{
+        sent: TradeOfferManager.TradeOffer[];
+        received: TradeOfferManager.TradeOffer[];
+    }> {
         return new Promise((resolve, reject) => {
-            this.bot.manager.getOffers(includeInactive ? TradeOfferManager.EOfferFilter.All : TradeOfferManager.EOfferFilter.ActiveOnly, (err, sent, received) => {
-                if (err) {
-                    return reject(err);
-                }
+            this.bot.manager.getOffers(
+                includeInactive ? TradeOfferManager.EOfferFilter.All : TradeOfferManager.EOfferFilter.ActiveOnly,
+                (err, sent, received) => {
+                    if (err) {
+                        return reject(err);
+                    }
 
-                return resolve({ sent, received });
-            });
+                    return resolve({ sent, received });
+                }
+            );
         });
     }
 
-    findMatchingOffer (offer: TradeOfferManager.TradeOffer, isSent: boolean): Promise<TradeOfferManager.TradeOffer|null> {
+    findMatchingOffer(
+        offer: TradeOfferManager.TradeOffer,
+        isSent: boolean
+    ): Promise<TradeOfferManager.TradeOffer | null> {
         return this.getOffers().then(({ sent, received }) => {
-            const match = (isSent ? sent : received).find((v) => Trades.offerEquals(offer, v));
+            const match = (isSent ? sent : received).find(v => Trades.offerEquals(offer, v));
 
             return match;
         });
     }
 
-    private enqueueOffer (offer: TradeOfferManager.TradeOffer) {
+    private enqueueOffer(offer: TradeOfferManager.TradeOffer): void {
         if (this.receivedOffers.indexOf(offer.id) === -1) {
             this.receivedOffers.push(offer.id);
 
@@ -136,7 +171,7 @@ export = class Trades {
         }
     }
 
-    private dequeueOffer (offerId: number): void {
+    private dequeueOffer(offerId: number): void {
         const index = this.receivedOffers.indexOf(offerId);
 
         if (index !== -1) {
@@ -144,7 +179,7 @@ export = class Trades {
         }
     }
 
-    private handlerProcessOffer (offer: TradeOfferManager.TradeOffer) {
+    private handlerProcessOffer(offer: TradeOfferManager.TradeOffer): void {
         log.debug('Giving offer to handler');
 
         const start = moment().valueOf();
@@ -159,7 +194,9 @@ export = class Trades {
 
             offer.data('handleTime', moment().valueOf() - start);
 
-            offer.log('debug', 'handler is done with offer', { response: response });
+            offer.log('debug', 'handler is done with offer', {
+                response: response
+            });
 
             let actionFunc: Function;
 
@@ -171,47 +208,49 @@ export = class Trades {
 
             offer.data('action', response);
 
-            actionFunc.call(this, offer).asCallback((err) => {
+            actionFunc.call(this, offer).asCallback(err => {
                 if (err) {
                     log.warn('Failed to ' + response.action + ' the offer: ', err);
                     return;
                 }
-                
-                offer.log('debug', 'done doing action on offer', { action: response.action });
+
+                offer.log('debug', 'done doing action on offer', {
+                    action: response.action
+                });
 
                 this.finishProcessingOffer(offer.id);
             });
         });
     }
 
-    private finishProcessingOffer (offerId): void {
+    private finishProcessingOffer(offerId): void {
         this.dequeueOffer(offerId);
         this.processingOffer = false;
         this.processNextOffer();
     }
 
-    private processNextOffer (): void {
+    private processNextOffer(): void {
         if (this.processingOffer || this.receivedOffers.length === 0) {
             return;
         }
-    
+
         this.processingOffer = true;
-    
+
         const offerId = this.receivedOffers[0];
-    
+
         log.verbose('Handling offer #' + offerId + '...');
-    
+
         this.fetchOffer(offerId).asCallback((err, offer) => {
             if (err) {
                 log.warn('Failed to get offer #' + offerId + ': ', err);
                 // After many retries we could not get the offer data
-    
+
                 if (this.receivedOffers.length !== 1) {
                     // Remove the offer from the queue and add it to the back of the queue
                     this.receivedOffers.push(offerId);
                 }
             }
-    
+
             if (!offer) {
                 // Failed to get the offer
                 this.finishProcessingOffer(offerId);
@@ -222,7 +261,7 @@ export = class Trades {
         });
     }
 
-    fetchOffer (offerId: number, attempts: number = 0): Promise<TradeOfferManager.TradeOffer> {
+    fetchOffer(offerId: number, attempts = 0): Promise<TradeOfferManager.TradeOffer> {
         return new Promise((resolve, reject) => {
             this.bot.manager.getOffer(offerId, (err, offer) => {
                 attempts++;
@@ -231,12 +270,12 @@ export = class Trades {
                         // The offer does not exist
                         return resolve(null);
                     }
-        
+
                     if (attempts > 5) {
                         // Too many retries
                         return reject(err);
                     }
-        
+
                     if (err.message !== 'Not Logged In') {
                         // We got an error getting the offer, retry after some time
                         Promise.delay(exponentialBackoff(attempts)).then(() => {
@@ -245,7 +284,7 @@ export = class Trades {
                         return;
                     }
 
-                    this.bot.getWebSession(true).asCallback((err) => {
+                    this.bot.getWebSession(true).asCallback(err => {
                         // If there is no error when waiting for web session, then attempt to fetch the offer right away
                         Promise.delay(err !== null ? 0 : exponentialBackoff(attempts)).then(() => {
                             resolve(this.fetchOffer(offerId, attempts));
@@ -265,8 +304,8 @@ export = class Trades {
         });
     }
 
-    private acceptOffer (offer: TradeOfferManager.TradeOffer): Promise<string> {
-        return new Promise ((resolve, reject) => {
+    private acceptOffer(offer: TradeOfferManager.TradeOffer): Promise<string> {
+        return new Promise((resolve, reject) => {
             offer.data('handledByUs', true);
 
             const start = moment().valueOf();
@@ -280,7 +319,7 @@ export = class Trades {
                     return reject(err);
                 }
 
-                offer.log('trade', 'successfully accepted' + (status === 'pending' ? '; confirmation required': ''));
+                offer.log('trade', 'successfully accepted' + (status === 'pending' ? '; confirmation required' : ''));
 
                 if (status === 'pending') {
                     // Maybe wait for confirmation to be accepted and then resolve?
@@ -292,15 +331,17 @@ export = class Trades {
         });
     }
 
-    private acceptConfirmation (offer: TradeOfferManager.TradeOffer): Promise<void> {
+    private acceptConfirmation(offer: TradeOfferManager.TradeOffer): Promise<void> {
         return new Promise((resolve, reject) => {
-            log.debug('Accepting mobile confirmation...', { offer_id: offer.id });
+            log.debug('Accepting mobile confirmation...', {
+                offerId: offer.id
+            });
 
             const start = moment().valueOf();
             offer.data('actedOnConfirmation', true);
             offer.data('actedOnConfirmationTimestamp', start);
 
-            this.bot.community.acceptConfirmationForObject(process.env.STEAM_IDENTITY_SECRET, offer.id, (err) => {
+            this.bot.community.acceptConfirmationForObject(process.env.STEAM_IDENTITY_SECRET, offer.id, err => {
                 const confirmationTime = moment().valueOf() - start;
                 offer.data('confirmationTime', confirmationTime);
 
@@ -314,8 +355,8 @@ export = class Trades {
         });
     }
 
-    private acceptOfferRetry (offer: TradeOfferManager.TradeOffer, attempts: number = 0): Promise<string> {
-        return new Promise ((resolve, reject) => {
+    private acceptOfferRetry(offer: TradeOfferManager.TradeOffer, attempts = 0): Promise<string> {
+        return new Promise((resolve, reject) => {
             offer.accept((err, status) => {
                 attempts++;
 
@@ -333,7 +374,7 @@ export = class Trades {
                         return;
                     }
 
-                    this.bot.getWebSession(true).asCallback((err) => {
+                    this.bot.getWebSession(true).asCallback(err => {
                         // If there is no error when waiting for web session, then attempt to fetch the offer right away
                         Promise.delay(err !== null ? 0 : exponentialBackoff(attempts)).then(() => {
                             resolve(this.acceptOfferRetry(offer, attempts));
@@ -347,14 +388,14 @@ export = class Trades {
         });
     }
 
-    private declineOffer (offer: TradeOfferManager.TradeOffer): Promise<void> {
+    private declineOffer(offer: TradeOfferManager.TradeOffer): Promise<void> {
         return new Promise((resolve, reject) => {
             offer.data('handledByUs', true);
 
             const start = moment().valueOf();
             offer.data('actionTimestamp', start);
 
-            offer.decline((err) => {
+            offer.decline(err => {
                 const actionTime = moment().valueOf() - start;
                 offer.data('actionTime', actionTime);
 
@@ -367,22 +408,34 @@ export = class Trades {
         });
     }
 
-    onOfferChanged (offer: TradeOfferManager.TradeOffer, oldState: number): void {
-        offer.log('verbose', 'state changed: ' + TradeOfferManager.ETradeOfferState[oldState] + ' -> ' + TradeOfferManager.ETradeOfferState[offer.state]);
+    onOfferChanged(offer: TradeOfferManager.TradeOffer, oldState: number): void {
+        offer.log(
+            'verbose',
+            'state changed: ' +
+                TradeOfferManager.ETradeOfferState[oldState] +
+                ' -> ' +
+                TradeOfferManager.ETradeOfferState[offer.state]
+        );
 
-        if (offer.state === TradeOfferManager.ETradeOfferState.Active || offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+        if (
+            offer.state === TradeOfferManager.ETradeOfferState.Active ||
+            offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation
+        ) {
             // Offer is active
 
             // Mark items as in trade
-            offer.itemsToGive.forEach((item) => this.setItemInTrade(item.id));
+            offer.itemsToGive.forEach(item => this.setItemInTrade(item.id));
 
             if (offer.isOurOffer && offer.data('_ourItems') === null) {
                 // Items are not saved for sent offer, save them
-                offer.data('_ourItems', offer.itemsToGive.map((item) => Trades.mapItem(item)));
+                offer.data(
+                    '_ourItems',
+                    offer.itemsToGive.map(item => Trades.mapItem(item))
+                );
             }
         } else {
             // Offer is not active and the items are no longer in trade
-            offer.itemsToGive.forEach((item) => this.unsetItemInTrade(item.assetid));
+            offer.itemsToGive.forEach(item => this.unsetItemInTrade(item.assetid));
 
             // Unset items
             offer.data('_ourItems', undefined);
@@ -393,23 +446,33 @@ export = class Trades {
 
             const processTime = finishTimestamp - offer.data('handleTimeStamp');
 
-            log.debug('Took ' + (isNaN(processTime) ? 'unknown' : processTime) + ' ms to process offer', { offer_id: offer.id, state: offer.state, finish_time: processTime });
+            log.debug('Took ' + (isNaN(processTime) ? 'unknown' : processTime) + ' ms to process offer', {
+                offerId: offer.id,
+                state: offer.state,
+                finishTime: processTime
+            });
         }
 
-        if (offer.state !== TradeOfferManager.ETradeOfferState.Accepted && offer.state !== TradeOfferManager.ETradeOfferState.InEscrow) {
+        if (
+            offer.state !== TradeOfferManager.ETradeOfferState.Accepted &&
+            offer.state !== TradeOfferManager.ETradeOfferState.InEscrow
+        ) {
             // The offer was not accepted
             this.bot.handler.onTradeOfferChanged(offer, oldState);
             return;
         }
-        
-        offer.itemsToGive.forEach((item) => this.bot.inventoryManager.getInventory().removeItem(item.assetid));
 
-        this.bot.inventoryManager.getInventory().fetch().asCallback(() => {
-            this.bot.getHandler().onTradeOfferChanged(offer, oldState);
-        });
+        offer.itemsToGive.forEach(item => this.bot.inventoryManager.getInventory().removeItem(item.assetid));
+
+        this.bot.inventoryManager
+            .getInventory()
+            .fetch()
+            .asCallback(() => {
+                this.bot.getHandler().onTradeOfferChanged(offer, oldState);
+            });
     }
 
-    private setItemInTrade (assetid: string): void {
+    private setItemInTrade(assetid: string): void {
         const index = this.itemsInTrade.indexOf(assetid);
 
         if (index === -1) {
@@ -417,7 +480,7 @@ export = class Trades {
         }
     }
 
-    private unsetItemInTrade (assetid: string): void {
+    private unsetItemInTrade(assetid: string): void {
         const index = this.itemsInTrade.indexOf(assetid);
 
         if (index !== -1) {
@@ -425,38 +488,43 @@ export = class Trades {
         }
     }
 
-    private static offerEquals (a: TradeOfferManager.TradeOffer, b: TradeOfferManager.TradeOffer): boolean {
-        return a.isOurOffer === b.isOurOffer && a.partner.getSteamID64() === b.partner.getSteamID64() && Trades.itemsEquals(a.itemsToGive, b.itemsToGive) && Trades.itemsEquals(a.itemsToReceive, b.itemsToReceive);
+    private static offerEquals(a: TradeOfferManager.TradeOffer, b: TradeOfferManager.TradeOffer): boolean {
+        return (
+            a.isOurOffer === b.isOurOffer &&
+            a.partner.getSteamID64() === b.partner.getSteamID64() &&
+            Trades.itemsEquals(a.itemsToGive, b.itemsToGive) &&
+            Trades.itemsEquals(a.itemsToReceive, b.itemsToReceive)
+        );
     }
 
-    private static itemsEquals (a: TradeOfferManager.EconItem[], b: TradeOfferManager.EconItem[]): boolean {
+    private static itemsEquals(a: TradeOfferManager.EconItem[], b: TradeOfferManager.EconItem[]): boolean {
         if (a.length !== b.length) {
             return false;
         }
-    
+
         const copy = b.concat();
-    
+
         for (let i = 0; i < a.length; i++) {
             // Find index of matching item
-            const index = copy.findIndex((item) => Trades.itemEquals(item, a[i]));
-    
+            const index = copy.findIndex(item => Trades.itemEquals(item, a[i]));
+
             if (index === -1) {
                 // Item was not found, offers don't match
                 return false;
             }
-    
+
             // Remove match from list
             copy.splice(index, 1);
         }
-    
+
         return copy.length === 0;
     }
 
-    private static itemEquals (a: TradeOfferManager.EconItem, b: TradeOfferManager.EconItem): boolean {
+    private static itemEquals(a: TradeOfferManager.EconItem, b: TradeOfferManager.EconItem): boolean {
         return a.appid == b.appid && a.contextid == b.contextid && (a.assetid || a.id) == (b.assetid || b.id);
     }
 
-    private static mapItem (item: EconItem): TradeOfferManager.TradeOfferItem {
+    private static mapItem(item: EconItem): TradeOfferManager.TradeOfferItem {
         return {
             appid: item.appid,
             contextid: item.contextid,
@@ -464,4 +532,4 @@ export = class Trades {
             amount: item.amount
         };
     }
-}
+};

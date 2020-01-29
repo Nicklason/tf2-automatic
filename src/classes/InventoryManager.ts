@@ -1,32 +1,31 @@
 import Inventory from './Inventory';
 import Pricelist from './Pricelist';
 
-export = InventoryManager;
-
-class InventoryManager {
+export = class InventoryManager {
     private inventory: Inventory = null;
+
     private readonly pricelist: Pricelist;
 
-    constructor (pricelist: Pricelist, inventory?: Inventory) {
+    constructor(pricelist: Pricelist, inventory?: Inventory) {
         if (inventory !== null) {
             this.inventory = inventory;
         }
         this.pricelist = pricelist;
     }
 
-    setInventory (inventory: Inventory): void {
+    setInventory(inventory: Inventory): void {
         this.inventory = inventory;
     }
 
-    getInventory (): Inventory {
+    getInventory(): Inventory {
         return this.inventory;
     }
 
-    isOverstocked (sku: string, buying: boolean, diff: number): boolean {
+    isOverstocked(sku: string, buying: boolean, diff: number): boolean {
         return this.amountCanTrade(sku, buying) + (buying ? -diff : diff) < 0;
     }
 
-    amountCanTrade (sku: string, buying: boolean): number {
+    amountCanTrade(sku: string, buying: boolean): number {
         if (this.inventory === undefined) {
             throw new Error('Inventory has not been set yet');
         }
@@ -59,4 +58,4 @@ class InventoryManager {
 
         return 0;
     }
-}
+};

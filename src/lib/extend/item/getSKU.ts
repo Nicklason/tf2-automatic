@@ -1,5 +1,4 @@
 import { EconItem } from 'steam-tradeoffer-manager';
-import { Item } from '../../../types/TeamFortress2';
 import SchemaManager from 'tf2-schema';
 
 import SKU from 'tf2-sku';
@@ -7,26 +6,29 @@ import url from 'url';
 
 import fixItem from './fixItem';
 
-export = function (schema: SchemaManager.Schema): string {
+export = function(schema: SchemaManager.Schema): string {
     // @ts-ignore
-    const self = <EconItem>this;
+    const self = this as EconItem;
 
     if (self.appid != 440) {
         return null;
     }
 
-    let item = Object.assign({
-        defindex: getDefindex(self),
-        quality: getQuality(self, schema),
-        craftable: isCraftable(self),
-        killstreak: getKillstreak(self),
-        australium: isAustralium(self),
-        festive: isFestive(self),
-        effect: getEffect(self, schema),
-        wear: getWear(self),
-        paintkit: getPaintKit(self, schema),
-        quality2: getElevatedQuality(self)
-    }, getOutput(self, schema));
+    let item = Object.assign(
+        {
+            defindex: getDefindex(self),
+            quality: getQuality(self, schema),
+            craftable: isCraftable(self),
+            killstreak: getKillstreak(self),
+            australium: isAustralium(self),
+            festive: isFestive(self),
+            effect: getEffect(self, schema),
+            wear: getWear(self),
+            paintkit: getPaintKit(self, schema),
+            quality2: getElevatedQuality(self)
+        },
+        getOutput(self, schema)
+    );
 
     if (item.target === null) {
         item.target = getTarget(self, schema);
@@ -46,7 +48,7 @@ export = function (schema: SchemaManager.Schema): string {
  * Gets the defindex of an item
  * @param item
  */
-function getDefindex (item: EconItem): number {
+function getDefindex(item: EconItem): number {
     if (item.app_data !== undefined) {
         return parseInt(item.app_data.def_index, 10);
     }
@@ -66,7 +68,7 @@ function getDefindex (item: EconItem): number {
  * Gets the quality of an item
  * @param item
  */
-function getQuality (item: EconItem, schema: SchemaManager.Schema): number {
+function getQuality(item: EconItem, schema: SchemaManager.Schema): number {
     if (item.app_data !== undefined) {
         return parseInt(item.app_data.quality, 10);
     }
@@ -83,7 +85,7 @@ function getQuality (item: EconItem, schema: SchemaManager.Schema): number {
  * Determines if the item is craftable
  * @param item
  */
-function isCraftable (item: EconItem): boolean {
+function isCraftable(item: EconItem): boolean {
     return !item.hasDescription('( Not Usable in Crafting )');
 }
 
@@ -91,10 +93,10 @@ function isCraftable (item: EconItem): boolean {
  * Gets the killstreak tier of an item
  * @param item
  */
-function getKillstreak (item: EconItem): number {
+function getKillstreak(item: EconItem): number {
     const killstreaks = ['Professional ', 'Specialized ', ''];
 
-    const index = killstreaks.findIndex((killstreak) => item.market_hash_name.indexOf(killstreak + 'Killstreak') !== -1);
+    const index = killstreaks.findIndex(killstreak => item.market_hash_name.indexOf(killstreak + 'Killstreak') !== -1);
 
     return index === -1 ? 0 : 3 - index;
 }
@@ -103,7 +105,7 @@ function getKillstreak (item: EconItem): number {
  * Determines if the item is australium
  * @param item
  */
-function isAustralium (item: EconItem): boolean {
+function isAustralium(item: EconItem): boolean {
     if (item.getTag('Quality') !== 'Strange') {
         return false;
     }
@@ -115,7 +117,7 @@ function isAustralium (item: EconItem): boolean {
  * Determines if thje item is festivized
  * @param item
  */
-function isFestive (item: EconItem): boolean {
+function isFestive(item: EconItem): boolean {
     return item.market_hash_name.indexOf('Festivized ') !== -1;
 }
 
@@ -123,16 +125,16 @@ function isFestive (item: EconItem): boolean {
  * Gets the effect of an item
  * @param item
  */
-function getEffect (item: EconItem, schema: SchemaManager.Schema): number {
+function getEffect(item: EconItem, schema: SchemaManager.Schema): number {
     if (!Array.isArray(item.descriptions)) {
         return null;
     }
 
-    if (item.descriptions.some((description) => description.value === 'Case Global Unusual Effect(s)')) {
+    if (item.descriptions.some(description => description.value === 'Case Global Unusual Effect(s)')) {
         return null;
     }
 
-    const effects = item.descriptions.filter((description) => description.value.startsWith('★ Unusual Effect: '));
+    const effects = item.descriptions.filter(description => description.value.startsWith('★ Unusual Effect: '));
 
     if (effects.length !== 1) {
         return null;
@@ -145,8 +147,10 @@ function getEffect (item: EconItem, schema: SchemaManager.Schema): number {
  * Gets the wear of an item
  * @param item
  */
-function getWear (item: EconItem): number {
-    const wear = ['Factory New', 'Minimal Wear', 'Field-Tested', 'Well-Worn', 'Battle Scarred'].indexOf(item.getTag('Exterior'));
+function getWear(item: EconItem): number {
+    const wear = ['Factory New', 'Minimal Wear', 'Field-Tested', 'Well-Worn', 'Battle Scarred'].indexOf(
+        item.getTag('Exterior')
+    );
 
     return wear === -1 ? null : wear + 1;
 }
@@ -155,7 +159,7 @@ function getWear (item: EconItem): number {
  * Get skin from item
  * @param item
  */
-function getPaintKit (item: EconItem, schema: SchemaManager.Schema): number {
+function getPaintKit(item: EconItem, schema: SchemaManager.Schema): number {
     if (getWear(item) === null) {
         return null;
     }
@@ -169,7 +173,10 @@ function getPaintKit (item: EconItem, schema: SchemaManager.Schema): number {
         if (!hasCaseCollection && description.endsWith('Collection')) {
             hasCaseCollection = true;
         } else if (hasCaseCollection && (description.startsWith('✔') || description.startsWith('★'))) {
-            skin = description.substring(1).replace(' War Paint', '').trim();
+            skin = description
+                .substring(1)
+                .replace(' War Paint', '')
+                .trim();
             break;
         }
     }
@@ -194,7 +201,7 @@ function getPaintKit (item: EconItem, schema: SchemaManager.Schema): number {
  * Gets the elevated quality of an item
  * @param item
  */
-function getElevatedQuality (item: EconItem): number {
+function getElevatedQuality(item: EconItem): number {
     if (item.hasDescription('Strange Stat Clock Attached')) {
         return 11;
     } else {
@@ -202,7 +209,10 @@ function getElevatedQuality (item: EconItem): number {
     }
 }
 
-function getOutput (item: EconItem, schema: SchemaManager.Schema): { target: number, output: number, outputQuality: number } {
+function getOutput(
+    item: EconItem,
+    schema: SchemaManager.Schema
+): { target: number; output: number; outputQuality: number } {
     let index = -1;
 
     for (let i = 0; i < item.descriptions.length; i++) {
@@ -233,7 +243,10 @@ function getOutput (item: EconItem, schema: SchemaManager.Schema): { target: num
     if (killstreak !== 0) {
         // Killstreak Kit Fabricator
 
-        const name = output.replace(['Killstreak', 'Specialized Killstreak', 'Professional Killstreak'][killstreak - 1], '').replace('Kit', '').trim();
+        const name = output
+            .replace(['Killstreak', 'Specialized Killstreak', 'Professional Killstreak'][killstreak - 1], '')
+            .replace('Kit', '')
+            .trim();
 
         target = schema.getItemByItemName(name).defindex;
         outputQuality = 6;
@@ -246,10 +259,10 @@ function getOutput (item: EconItem, schema: SchemaManager.Schema): { target: num
         target = schema.getItemByItemName(name).defindex;
         outputQuality = 6;
         outputDefindex = 6522;
-    } else if (output.indexOf(' Collector\'s') !== -1) {
+    } else if (output.indexOf(" Collector's") !== -1) {
         // Collector's Chemistry Set
 
-        const name = output.replace('Collector\'s', '').trim();
+        const name = output.replace("Collector's", '').trim();
 
         outputQuality = 14;
         outputDefindex = schema.getItemByItemName(name).defindex;
@@ -262,7 +275,7 @@ function getOutput (item: EconItem, schema: SchemaManager.Schema): { target: num
     };
 }
 
-function getTarget (item: EconItem, schema: SchemaManager.Schema): number {
+function getTarget(item: EconItem, schema: SchemaManager.Schema): number {
     const defindex = getDefindex(item);
 
     if (defindex === null) {
@@ -291,13 +304,20 @@ function getTarget (item: EconItem, schema: SchemaManager.Schema): number {
 
     if (defindex === 6527) {
         // Killstreak Kit
-        return schema.getItemByItemName(item.market_hash_name.substring(10, item.market_hash_name.length - 3).replace('Killstreak', '').trim()).defindex;
+        return schema.getItemByItemName(
+            item.market_hash_name
+                .substring(10, item.market_hash_name.length - 3)
+                .replace('Killstreak', '')
+                .trim()
+        ).defindex;
     } else if (defindex === 6523) {
         // Specialized Killstreak Kit
-        return schema.getItemByItemName(item.market_hash_name.substring(22, item.market_hash_name.length - 3).trim()).defindex;
+        return schema.getItemByItemName(item.market_hash_name.substring(22, item.market_hash_name.length - 3).trim())
+            .defindex;
     } else if (defindex === 6526) {
         // Professional Killstreak Kit
-        return schema.getItemByItemName(item.market_hash_name.substring(23, item.market_hash_name.length - 3).trim()).defindex;
+        return schema.getItemByItemName(item.market_hash_name.substring(23, item.market_hash_name.length - 3).trim())
+            .defindex;
     }
 
     return null;

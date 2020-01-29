@@ -7,43 +7,67 @@ declare module 'bptf-listings' {
     interface Events {
         ready: () => void;
         listings: (listings: ListingManager.Listing[]) => void;
-        actions: (actions: { create: object[], remove: string[] }) => void;
+        actions: (actions: { create: object[]; remove: string[] }) => void;
         heartbeat: (bumped: number) => void;
         inventory: (lastUpdated: number) => void;
     }
 
-    export = ListingManager;
-
     class ListingManager extends EventEmitter {
         static EFailiureReason: object;
 
-        constructor (options?: { token?: string, steamid?: string, waitTime?: number, batchSize?: number, schema?: SchemaManager.Schema });
+        constructor(options?: {
+            token?: string;
+            steamid?: string;
+            waitTime?: number;
+            batchSize?: number;
+            schema?: SchemaManager.Schema;
+        });
 
-        token: string|undefined;
+        token: string | undefined;
+
         steamid: SteamID;
+
         waitTime: number;
+
         batchSize: number;
-        cap: number|null;
-        promotes: number|null;
+
+        cap: number | null;
+
+        promotes: number | null;
+
         listings: ListingManager.Listing[];
-        actions: { create: object[], remove: string[] };
+
+        actions: { create: object[]; remove: string[] };
+
         ready: boolean;
-        schema: SchemaManager.Schema|null;
+
+        schema: SchemaManager.Schema | null;
 
         _timeout: ReturnType<typeof setTimeout>;
+
         _heartbeatInterval: ReturnType<typeof setInterval>;
+
         _inventoryInterval: ReturnType<typeof setInterval>;
 
-        init (callback: Function): void;
-        sendHeartbeat (callback: Function): void;
-        getListings (callback: Function): void;
-        findListing (search: string|number): ListingManager.Listing|null;
-        findListings (sku: string): ListingManager.Listing[];
-        createListing (listing: ListingManager.CreateListing): void;
-        createListings (listings: ListingManager.CreateListing[]): void;
-        removeListing (listingId: string): void;
-        removeListings (listingIds: string[]): void;
-        shutdown (): void;
+        init(callback: Function): void;
+
+        sendHeartbeat(callback: Function): void;
+
+        getListings(callback: Function): void;
+
+        findListing(search: string | number): ListingManager.Listing | null;
+
+        findListings(sku: string): ListingManager.Listing[];
+
+        createListing(listing: ListingManager.CreateListing): void;
+
+        createListings(listings: ListingManager.CreateListing[]): void;
+
+        removeListing(listingId: string): void;
+
+        removeListings(listingIds: string[]): void;
+
+        shutdown(): void;
 
         _processActions: (callback: (err?: Error) => void) => void;
     }
@@ -66,7 +90,7 @@ declare module 'bptf-listings' {
             output?: number;
             outputQuality?: number;
         }
-        
+
         interface CreateListing {
             id?: string;
             sku?: string;
@@ -75,25 +99,47 @@ declare module 'bptf-listings' {
             currencies: object;
             time: number;
         }
-    
-        class Listing {
+
+        export class Listing {
             id: string;
+
             steamid: SteamID;
+
             intent: number;
+
             item: object;
+
             appid: number;
+
             currencies: TF2Currencies;
+
             offers: boolean;
+
             buyout: boolean;
+
             details: string;
+
             created: number;
+
             bump: number;
 
-            getSKU (): string;
-            getItem (): Item;
-            getName (): string;
-            update (properties: { time: number, currencies?: { keys: number, metal: number }, details?: string, offers?: boolean, buyout?: boolean }): void;
-            remove (): void;
+            getSKU(): string;
+
+            getItem(): Item;
+
+            getName(): string;
+
+            update(properties: {
+                time: number;
+                currencies?: { keys: number; metal: number };
+                details?: string;
+                offers?: boolean;
+                buyout?: boolean;
+            }): void;
+
+            remove(): void;
         }
     }
+
+    export = ListingManager;
 }
