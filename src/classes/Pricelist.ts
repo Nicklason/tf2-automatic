@@ -154,72 +154,75 @@ export default class Pricelist extends EventEmitter {
         return this.prices.findIndex(entry => this.schema.getName(SKU.fromString(entry.sku)) === name);
     }
 
-    async setPricelist(prices: EntryData[]): Promise<void> {
+    setPricelist(prices: EntryData[]): Promise<void> {
         // @ts-ignore
         this.prices = prices.map(entry => new Entry(entry));
 
-        // TODO: Get key price and pricelist in parallel
-
         log.debug('Getting key price...');
-        const keyPrices = await getPrice('5021;6', 'bptf');
-        log.debug('Got key price');
+        return getPrice('5021;6', 'bptf')
+            .then(keyPrices => {
+                log.debug('Got key price');
 
-        this.keyPrices = {
-            buy: new Currencies(keyPrices.buy),
-            sell: new Currencies(keyPrices.sell)
-        };
+                this.keyPrices = {
+                    buy: new Currencies(keyPrices.buy),
+                    sell: new Currencies(keyPrices.sell)
+                };
 
-        const old = this.getOld();
+                const old = this.getOld();
 
-        if (old.length === 0) {
-            return Promise.resolve();
-        }
+                if (old.length === 0) {
+                    return;
+                }
 
-        log.debug('Getting pricelist...');
-        const pricelist = (await getPricelist('bptf')).items as any[];
-        log.debug('Got pricelist');
+                log.debug('Getting pricelist...');
 
-        const groupedPrices = Pricelist.groupPrices(pricelist);
+                return Promise.all([getPricelist('bptf'), old]);
+            })
+            .then(([pricelist, old]) => {
+                log.debug('Got pricelist');
 
-        let pricesChanged = false;
+                const groupedPrices = Pricelist.groupPrices(pricelist.items as any[]);
 
-        // Go through our pricelist
-        for (let i = 0; i < old.length; i++) {
-            const currPrice = old[i];
-            if (currPrice.autoprice !== true) {
-                continue;
-            }
+                let pricesChanged = false;
 
-            const item = SKU.fromString(currPrice.sku);
-            const name = this.schema.getName(item);
-
-            // Go through pricestf prices
-            for (let j = 0; j < groupedPrices[item.quality][item.killstreak].length; j++) {
-                const newestPrice = groupedPrices[item.quality][item.killstreak][j];
-
-                if (name === newestPrice.name) {
-                    // Found matching items
-                    if (currPrice.time < newestPrice.time) {
-                        // Times don't match, update our price
-                        currPrice.buy = new Currencies(newestPrice.buy);
-                        currPrice.sell = new Currencies(newestPrice.sell);
-                        currPrice.time = newestPrice.time;
-
-                        pricesChanged = true;
+                // Go through our pricelist
+                for (let i = 0; i < old.length; i++) {
+                    const currPrice = old[i];
+                    if (currPrice.autoprice !== true) {
+                        continue;
                     }
 
-                    // When a match is found remove it from the ptf pricelist
-                    groupedPrices[item.quality][item.killstreak].splice(j, 1);
-                    break;
+                    const item = SKU.fromString(currPrice.sku);
+                    const name = this.schema.getName(item);
+
+                    // Go through pricestf prices
+                    for (let j = 0; j < groupedPrices[item.quality][item.killstreak].length; j++) {
+                        const newestPrice = groupedPrices[item.quality][item.killstreak][j];
+
+                        if (name === newestPrice.name) {
+                            // Found matching items
+                            if (currPrice.time < newestPrice.time) {
+                                // Times don't match, update our price
+                                currPrice.buy = new Currencies(newestPrice.buy);
+                                currPrice.sell = new Currencies(newestPrice.sell);
+                                currPrice.time = newestPrice.time;
+
+                                pricesChanged = true;
+                            }
+
+                            // When a match is found remove it from the ptf pricelist
+                            groupedPrices[item.quality][item.killstreak].splice(j, 1);
+                            break;
+                        }
+                    }
                 }
-            }
-        }
 
-        if (pricesChanged) {
-            this.emit('pricelist', this.prices);
-        }
+                if (pricesChanged) {
+                    this.emit('pricelist', this.prices);
+                }
 
-        return Promise.resolve();
+                return;
+            });
     }
 
     private handlePriceChange(data: any): void {
