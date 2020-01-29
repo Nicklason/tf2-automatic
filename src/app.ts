@@ -91,7 +91,7 @@ ON_DEATH({ uncaughtException: true })(function(signal, err) {
 import EconItem from 'steam-tradeoffer-manager/lib/classes/EconItem.js';
 import CEconItem from 'steamcommunity/classes/CEconItem.js';
 
-['hasDescription', 'getAction', 'getTag', 'getItem', 'getSKU'].forEach(function(v) {
+['hasDescription', 'getAction', 'getTag', 'getSKU'].forEach(function(v) {
     EconItem.prototype[v] = require('./lib/extend/item/' + v);
     CEconItem.prototype[v] = require('./lib/extend/item/' + v);
 });
