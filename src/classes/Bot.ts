@@ -569,7 +569,7 @@ export = class Bot {
 
                     log.debug('Did not get login response from Steam');
 
-                    reject(new Error('Did not get login response from Steam'));
+                    reject(new Error('Did not get login response (Steam might be down)'));
                 }, 60 * 1000);
 
                 this.client.once('loggedOn', loggedOnEvent);
