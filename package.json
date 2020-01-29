@@ -4,14 +4,14 @@
     "description": "Fully automated TF2 trading bot advertising on www.backpack.tf using prices from www.prices.tf",
     "main": "app.js",
     "scripts": {
-        "start": "cd dist && node app.js",
+        "start": "node dist/app.js",
         "lint": "eslint src/**/*",
+        "prettier": "prettier --check src/**/*",
         "release": "np --no-cleanup --no-publish",
         "compile": "tsc -p .",
         "prepare": "npm run compile",
         "pretest": "npm run compile",
-        "eslint-check": "eslint --print-config src/app.ts | eslint-config-prettier-check",
-        "prettier-check": "prettier --check src/**/*"
+        "eslint-check": "eslint --print-config src/app.ts | eslint-config-prettier-check"
     },
     "repository": {
         "type": "git",
