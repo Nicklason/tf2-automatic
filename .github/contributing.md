@@ -72,35 +72,37 @@ When contributing to this repository, please first discuss the change you wish t
 
 All pull requests should be made to [the development branch](https://github.com/Nicklason/tf2-automatic/tree/development). When a new release is made the development branch will be merged with the master branch.
 
+Please make sure that you follow the [style guides](#styleguides).
+
 ## Styleguides
 
 ### Git commit messages
 
 * Use the present tense ("Add feature" not "Added feature")
 * Keep the messages short and simple
+* Don't repeat messages (here's a [good example](https://github.com/Nicklason/tf2-automatic/pull/276) of what **not** to do)
 * Reference issues and pull requests liberally after the first line
 * Consider starting the commit message with [an emoji](https://gist.github.com/parmentf/035de27d6ed1dce0b36a)
 
-### JavaScript Styleguide
+### Typescript Styleguide
 
-All JavaScript must follow the eslint rules made.
+All Typescript must follow the eslint rules made.
 
 To enable eslint, install it globally using `npm install -g pm2`. It can be used either using the command `npm run lint`, or by installing [an extention](https://eslint.org/docs/6.0.0/user-guide/integrations) to your editor.
 
 ### Documentation Styleguide
 
-* Use [JSDoc](https://jsdoc.app/tags-example.html)
+* Use [TSDoc](https://github.com/microsoft/tsdoc)
 * Use [Markdown](https://guides.github.com/features/mastering-markdown/)
 
 #### Example
 
-```js
+```ts
 /**
  * Signs in to Steam and catches login error
- * @param {String} loginKey A login key used to sign in without 2FA code (can be `null`)
- * @param {Function} callback The function to call after signing in to Steam
+ * @param loginKey
  */
-function login (loginKey, callback) {
+function login (loginKey?: string|null): Promise<void> {
     // ...
 }
 ```
