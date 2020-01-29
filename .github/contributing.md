@@ -17,7 +17,7 @@ The following is a set of guidelines for contributing to TF2 Automatic. These ar
 [Styleguides](#styleguides)
 
 * [Git commit messages](#git-commit-messages)
-* [JavaScript Styleguide](#javascript-styleguide)
+* [Typescript Styleguide](#typescript-styleguide)
 * [Documentation Styleguide](#documentation-styleguide)
 
 ## How to contribute
@@ -78,11 +78,29 @@ Please make sure that you follow the [style guides](#styleguides).
 
 ### Git commit messages
 
-* Use the present tense ("Add feature" not "Added feature")
+* Use the present tense ("add feature" not "added feature")
 * Keep the messages short and simple
-* Don't repeat messages (here's a [good example](https://github.com/Nicklason/tf2-automatic/pull/276) of what **not** to do)
-* Reference issues and pull requests liberally after the first line
-* Consider starting the commit message with [an emoji](https://gist.github.com/parmentf/035de27d6ed1dce0b36a)
+* First line should:
+  * contain a short description of the change (preferably 50 characters or less, and no more than 72 characters)
+  * be entirely in lowercase with the exception of proper nouns, acronyms, and the words that refer to code, like function/variable names
+  * be prefixed with the name of the changed
+  * use present tense ("add feature" not "added feature")
+* Keep the second line blank
+* Wrap all other lines at 72 characters (except for long URLs)
+* If your patch fixes an open issue, you can add a reference to it at the end of the log. Use the `Fixes:` prefix and the full issue URL. For other references use `Refs:`
+
+Example of a complete commit message:
+
+```txt
+src: explain the commit on one line
+
+The body of the commit message should be one or more paragraphs, explaining
+things in more detail. Please word-wrap to keep columns to 72 characters or
+less.
+
+Fixes: https://github.com/Nicklason/tf2-automatic/issues/1337
+Refs: https://eslint.org/docs/rules/space-in-parens.html
+```
 
 ### Typescript Styleguide
 
