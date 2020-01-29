@@ -106,7 +106,7 @@ Refs: https://eslint.org/docs/rules/space-in-parens.html
 
 All Typescript must follow the eslint rules made.
 
-To enable eslint, install it globally using `npm install -g pm2`. It can be used either using the command `npm run lint`, or by installing [an extention](https://eslint.org/docs/6.0.0/user-guide/integrations) to your editor.
+To enable eslint, install it globally using `npm install -g eslint`. It can be used either using the command `npm run lint`, or by installing [an extention](https://eslint.org/docs/6.0.0/user-guide/integrations) to your editor.
 
 ### Documentation Styleguide
 
