@@ -1,19 +1,26 @@
 module.exports = {
     root: true,
     parser: '@typescript-eslint/parser',
-    plugins: ['@typescript-eslint', 'eslint-plugin-tsdoc'],
+    parserOptions: {
+        project: './tsconfig.json'
+    },
+    plugins: ['@typescript-eslint', 'eslint-plugin-tsdoc', 'prettier'],
     extends: [
         'eslint:recommended',
         'plugin:@typescript-eslint/eslint-recommended',
         'plugin:@typescript-eslint/recommended',
+        'plugin:@typescript-eslint/recommended-requiring-type-checking',
+        'prettier/@typescript-eslint',
         'prettier',
-        'prettier/@typescript-eslint'
+        'plugin:prettier/recommended'
     ],
     rules: {
         'lines-between-class-members': ['error', 'always'],
         '@typescript-eslint/no-explicit-any': [0],
         '@typescript-eslint/ban-ts-ignore': [0],
         '@typescript-eslint/no-use-before-define': [0],
-        'tsdoc/syntax': 'warn'
+        'no-console': 'error',
+        'tsdoc/syntax': 'error',
+        'prettier/prettier': 'error'
     }
 };
