@@ -13,6 +13,7 @@ if (!fs.existsSync(path.join(__dirname, '../node_modules'))) {
 import pjson from 'pjson';
 
 if (process.env.BOT_VERSION !== pjson.version) {
+    /* eslint-disable-next-line no-console */
     console.error('You have a newer version on disk! Compile the code using `tsc`');
     process.exit(1);
 }
@@ -35,6 +36,8 @@ import SchemaManager from 'tf2-schema';
 import { getSchema } from './lib/ptf-api';
 
 // Make the schema manager request the schema from PricesTF
+
+/* eslint-disable-next-line @typescript-eslint/unbound-method */
 SchemaManager.prototype.getSchema = function(callback): void {
     getSchema()
         .then(schema => {

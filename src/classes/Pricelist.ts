@@ -71,8 +71,8 @@ export default class Pricelist extends EventEmitter {
         this.socket = socket;
         this.prices = [];
 
-        this.socket.removeListener('price', this.handlePriceChange);
-        this.socket.on('price', this.handlePriceChange);
+        this.socket.removeListener('price', this.handlePriceChange.bind(this));
+        this.socket.on('price', this.handlePriceChange.bind(this));
     }
 
     getKeyPrices(): { buy: Currencies; sell: Currencies } {
