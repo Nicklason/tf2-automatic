@@ -108,4 +108,9 @@ export = class MyHandler extends Handler {
     onLoginThrottle(wait: number): void {
         log.warn('Waiting ' + wait + ' ms before trying to sign in...');
     }
+
+    onTF2QueueCompleted(): void {
+        log.debug('Queue finished');
+        this.bot.client.gamesPlayed('tf2-automatic');
+    }
 };

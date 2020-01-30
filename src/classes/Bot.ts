@@ -3,6 +3,7 @@ import Pricelist from './Pricelist';
 import Handler from './Handler';
 import Friends from './Friends';
 import Trades from './Trades';
+import TF2GC from './TF2GC';
 import Inventory from './Inventory';
 import BotManager from './BotManager';
 import MyHandler from './MyHandler';
@@ -44,6 +45,8 @@ export = class Bot {
     readonly friends: Friends;
 
     readonly trades: Trades;
+
+    readonly tf2gc: TF2GC;
 
     readonly handler: Handler;
 
@@ -95,34 +98,35 @@ export = class Bot {
 
         this.friends = new Friends(this);
         this.trades = new Trades(this);
+        this.tf2gc = new TF2GC(this);
 
         this.handler = new MyHandler(this);
 
         this.pricelist = new Pricelist(this.schema, this.socket);
         this.inventoryManager = new InventoryManager(this.pricelist);
 
-        this.addListener(this.client, 'loggedOn', this.handler.onLoggedOn, this.handler, true);
-        this.addListener(this.client, 'friendMessage', this.onMessage, this, true);
-        this.addListener(this.client, 'friendRelationship', this.handler.onFriendRelationship, this, true);
-        this.addListener(this.client, 'groupRelationship', this.handler.onGroupRelationship, this, true);
-        this.addListener(this.client, 'webSession', this.onWebSession, this, false);
-        this.addListener(this.client, 'steamGuard', this.onSteamGuard, this, false);
-        this.addListener(this.client, 'loginKey', this.handler.onLoginKey, this.handler, true);
-        this.addListener(this.client, 'error', this.onError, this, false);
+        this.addListener(this.client, 'loggedOn', this.handler.onLoggedOn.bind(this.handler), true);
+        this.addListener(this.client, 'friendMessage', this.onMessage.bind(this), true);
+        this.addListener(this.client, 'friendRelationship', this.handler.onFriendRelationship.bind(this.handler), true);
+        this.addListener(this.client, 'groupRelationship', this.handler.onGroupRelationship.bind(this.handler), true);
+        this.addListener(this.client, 'webSession', this.onWebSession.bind(this), false);
+        this.addListener(this.client, 'steamGuard', this.onSteamGuard.bind(this), false);
+        this.addListener(this.client, 'loginKey', this.handler.onLoginKey.bind(this.handler), true);
+        this.addListener(this.client, 'error', this.onError.bind(this), false);
 
-        this.addListener(this.community, 'sessionExpired', this.onSessionExpired, this, false);
-        this.addListener(this.community, 'confKeyNeeded', this.onConfKeyNeeded, this, false);
+        this.addListener(this.community, 'sessionExpired', this.onSessionExpired.bind(this), false);
+        this.addListener(this.community, 'confKeyNeeded', this.onConfKeyNeeded.bind(this), false);
 
-        this.addListener(this.manager, 'pollData', this.handler.onPollData, this.handler, true);
-        this.addListener(this.manager, 'newOffer', this.trades.onNewOffer, this.trades, true);
-        this.addListener(this.manager, 'sentOfferChanged', this.trades.onOfferChanged, this.trades, true);
-        this.addListener(this.manager, 'receivedOfferChanged', this.trades.onOfferChanged, this.trades, true);
-        this.addListener(this.manager, 'offerList', this.trades.onOfferList, this.trades, true);
+        this.addListener(this.manager, 'pollData', this.handler.onPollData.bind(this.handler), true);
+        this.addListener(this.manager, 'newOffer', this.trades.onNewOffer.bind(this.trades), true);
+        this.addListener(this.manager, 'sentOfferChanged', this.trades.onOfferChanged.bind(this.trades), true);
+        this.addListener(this.manager, 'receivedOfferChanged', this.trades.onOfferChanged.bind(this.trades), true);
+        this.addListener(this.manager, 'offerList', this.trades.onOfferList.bind(this.trades), true);
 
-        this.addListener(this.listingManager, 'heartbeat', this.handler.onHeartbeat, this, true);
+        this.addListener(this.listingManager, 'heartbeat', this.handler.onHeartbeat.bind(this), true);
 
-        this.addListener(this.pricelist, 'pricelist', this.handler.onPricelist, this.pricelist, true);
-        this.addListener(this.pricelist, 'price', this.handler.onPriceChange, this.pricelist, true);
+        this.addListener(this.pricelist, 'pricelist', this.handler.onPricelist.bind(this.pricelist), true);
+        this.addListener(this.pricelist, 'price', this.handler.onPriceChange.bind(this.pricelist), true);
     }
 
     getHandler(): Handler {
@@ -137,10 +141,10 @@ export = class Bot {
         return this.ready;
     }
 
-    private addListener(emitter: any, event: string, listener: Function, context: any, checkCanEmit: boolean): void {
+    private addListener(emitter: any, event: string, listener: Function, checkCanEmit: boolean): void {
         emitter.on(event, (...args: any[]) => {
             if (!checkCanEmit || this.canSendEvents()) {
-                listener.call(context, ...args);
+                listener(...args);
             }
         });
     }
@@ -405,7 +409,7 @@ export = class Bot {
     private getCookies(): string[] {
         return this.community._jar
             .getCookies('https://steamcommunity.com')
-            .filter(cookie => ['sessionid', 'steamLogin', 'steamLoginSecure'].indexOf(cookie.key) !== -1)
+            .filter(cookie => ['sessionid', 'steamLogin', 'steamLoginSecure'].includes(cookie.key))
             .map(function(cookie) {
                 return `${cookie.key}=${cookie.value}`;
             });
@@ -652,7 +656,7 @@ export = class Bot {
         }
 
         Promise.delay(wait)
-            .then(this.generateAuthCode)
+            .then(this.generateAuthCode.bind(this))
             .then(authCode => {
                 this.newLoginAttempt();
 
