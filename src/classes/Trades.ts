@@ -162,7 +162,7 @@ export = class Trades {
     }
 
     private enqueueOffer(offer: TradeOfferManager.TradeOffer): void {
-        if (this.receivedOffers.indexOf(offer.id) === -1) {
+        if (!this.receivedOffers.includes(offer.id)) {
             this.receivedOffers.push(offer.id);
 
             if (this.receivedOffers.length === 1) {
@@ -202,17 +202,17 @@ export = class Trades {
                 response: response
             });
 
-            let actionFunc: Function;
+            let actionFunc;
 
             if (response.action === 'accept') {
-                actionFunc = this.acceptOffer;
+                actionFunc = this.acceptOffer.bind(this, offer);
             } else if (response.action === 'decline') {
-                actionFunc = this.declineOffer;
+                actionFunc = this.declineOffer.bind(this, offer);
             }
 
             offer.data('action', response);
 
-            actionFunc.call(this, offer).asCallback(err => {
+            actionFunc().asCallback(err => {
                 if (err) {
                     log.warn('Failed to ' + response.action + ' the offer: ', err);
                     return;
@@ -461,12 +461,12 @@ export = class Trades {
                         return reject(err);
                     }
 
-                    if (err.message.indexOf('can only be sent to friends') !== -1) {
+                    if (err.message.includes('can only be sent to friends')) {
                         return reject(err);
-                    } else if (err.message.indexOf('is not available to trade') !== -1) {
+                    } else if (err.message.includes('is not available to trade')) {
                         return reject(err);
                     } else if (
-                        err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory') !== -1
+                        err.message.includes('maximum number of items allowed in your Team Fortress 2 inventory')
                     ) {
                         return reject(err);
                         // @ts-ignore
@@ -481,7 +481,7 @@ export = class Trades {
                         // @ts-ignore
                     } else if (err.eresult === TradeOfferManager.EResult.Timeout) {
                         // The offer may or may not have been made, will wait some time and check if if we can find a matching offer
-                        return Promise.delay(exponentialBackoff(attempts, 4000)).then(() => {
+                        Promise.delay(exponentialBackoff(attempts, 4000)).then(() => {
                             // Done waiting, try and find matching offer
                             this.findMatchingOffer(offer, true).asCallback((err, match) => {
                                 if (err) {
@@ -491,7 +491,8 @@ export = class Trades {
 
                                 if (match === null) {
                                     // Did not find a matching offer, retry sending the offer
-                                    return this.sendOfferRetry(offer, attempts);
+                                    this.sendOfferRetry(offer, attempts);
+                                    return;
                                 }
 
                                 // Update the offer we attempted to send with the properties from the matching offer
@@ -523,6 +524,7 @@ export = class Trades {
                                 );
                             });
                         });
+                        return;
                         // @ts-ignore
                     } else if (err.eresult !== undefined) {
                         return reject(err);

@@ -96,7 +96,7 @@ function isCraftable(item: EconItem): boolean {
 function getKillstreak(item: EconItem): number {
     const killstreaks = ['Professional ', 'Specialized ', ''];
 
-    const index = killstreaks.findIndex(killstreak => item.market_hash_name.indexOf(killstreak + 'Killstreak') !== -1);
+    const index = killstreaks.findIndex(killstreak => item.market_hash_name.includes(killstreak + 'Killstreak'));
 
     return index === -1 ? 0 : 3 - index;
 }
@@ -110,7 +110,7 @@ function isAustralium(item: EconItem): boolean {
         return false;
     }
 
-    return item.market_hash_name.indexOf('Australium ') !== -1;
+    return item.market_hash_name.includes('Australium ');
 }
 
 /**
@@ -118,7 +118,7 @@ function isAustralium(item: EconItem): boolean {
  * @param item - Item object
  */
 function isFestive(item: EconItem): boolean {
-    return item.market_hash_name.indexOf('Festivized ') !== -1;
+    return item.market_hash_name.includes('Festivized ');
 }
 
 /**
@@ -251,7 +251,7 @@ function getOutput(
         target = schema.getItemByItemName(name).defindex;
         outputQuality = 6;
         outputDefindex = [6527, 6523, 6526][killstreak - 1];
-    } else if (output.indexOf(' Strangifier') !== -1) {
+    } else if (output.includes(' Strangifier')) {
         // Strangifier Chemistry Set
 
         const name = output.replace('Strangifier', '').trim();
@@ -259,7 +259,7 @@ function getOutput(
         target = schema.getItemByItemName(name).defindex;
         outputQuality = 6;
         outputDefindex = 6522;
-    } else if (output.indexOf(" Collector's") !== -1) {
+    } else if (output.includes(" Collector's")) {
         // Collector's Chemistry Set
 
         const name = output.replace("Collector's", '').trim();
@@ -282,7 +282,7 @@ function getTarget(item: EconItem, schema: SchemaManager.Schema): number {
         throw new Error('Could not get defindex of item "' + item.market_hash_name + '"');
     }
 
-    if (item.market_hash_name.indexOf('Strangifier') !== -1) {
+    if (item.market_hash_name.includes('Strangifier')) {
         // Strangifiers
         const gameItem = schema.raw.items_game.items[defindex];
 

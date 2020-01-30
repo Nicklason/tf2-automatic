@@ -42,7 +42,7 @@ export = class Inventory {
             if (Object.prototype.hasOwnProperty.call(items, sku)) {
                 const assetids = items[sku];
 
-                const index = assetids[sku].indexOf(assetid);
+                const index = assetids.indexOf(assetid);
 
                 if (index !== -1) {
                     assetids.splice(index, 1);
@@ -87,7 +87,7 @@ export = class Inventory {
                 continue;
             }
 
-            if (this.tradable[sku].indexOf(assetid) === -1) {
+            if (!this.tradable[sku].includes(assetid)) {
                 continue;
             }
 
@@ -99,7 +99,7 @@ export = class Inventory {
                 continue;
             }
 
-            if (this.nonTradable[sku].indexOf(assetid) === -1) {
+            if (!this.nonTradable[sku].includes(assetid)) {
                 continue;
             }
 

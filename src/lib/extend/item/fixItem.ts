@@ -10,7 +10,7 @@ export = function(item: Item, schema: SchemaManager.Schema): Item {
         return item;
     }
 
-    if (schemaItem.name.indexOf(schemaItem.item_class.toUpperCase()) !== -1) {
+    if (schemaItem.name.includes(schemaItem.item_class.toUpperCase())) {
         for (let i = 0; i < schema.raw.schema.items.length; i++) {
             if (
                 schema.raw.schema.items[i].item_class === schemaItem.item_class &&
