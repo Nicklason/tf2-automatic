@@ -1,9 +1,9 @@
-import { Item } from '../../../types/TeamFortress2';
+import { Item } from '../types/TeamFortress2';
 import SchemaManager from 'tf2-schema';
 
 import isObject from 'isobject';
 
-export = function(item: Item, schema: SchemaManager.Schema): Item {
+export function fixItem(item: Item, schema: SchemaManager.Schema): Item {
     const schemaItem = schema.getItemByDefindex(item.defindex);
 
     if (schemaItem === null) {
@@ -27,18 +27,24 @@ export = function(item: Item, schema: SchemaManager.Schema): Item {
         item.defindex = 160;
     }
 
-    const isPromo = _isPromo(schemaItem);
+    const isPromo = isPromoItem(schemaItem);
 
     if (isPromo && item.quality != 1) {
         for (let i = 0; i < schema.raw.schema.items.length; i++) {
-            if (!_isPromo(schema.raw.schema.items[i]) && schema.raw.schema.items[i].item_name == schemaItem.item_name) {
+            if (
+                !isPromoItem(schema.raw.schema.items[i]) &&
+                schema.raw.schema.items[i].item_name == schemaItem.item_name
+            ) {
                 // This is the non-promo version, use that defindex instead
                 item.defindex = schema.raw.schema.items[i].defindex;
             }
         }
     } else if (!isPromo && item.quality == 1) {
         for (let i = 0; i < schema.raw.schema.items.length; i++) {
-            if (_isPromo(schema.raw.schema.items[i]) && schema.raw.schema.items[i].item_name == schemaItem.item_name) {
+            if (
+                isPromoItem(schema.raw.schema.items[i]) &&
+                schema.raw.schema.items[i].item_name == schemaItem.item_name
+            ) {
                 item.defindex = schema.raw.schema.items[i].defindex;
             }
         }
@@ -116,8 +122,8 @@ export = function(item: Item, schema: SchemaManager.Schema): Item {
     }
 
     return item;
-};
+}
 
-function _isPromo(schemaItem: SchemaManager.SchemaItem): boolean {
+export function isPromoItem(schemaItem: SchemaManager.SchemaItem): boolean {
     return schemaItem.name.startsWith('Promo ') && schemaItem.craft_class === '';
 }
