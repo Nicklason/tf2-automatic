@@ -4,7 +4,7 @@ import SchemaManager from 'tf2-schema';
 import SKU from 'tf2-sku';
 import url from 'url';
 
-import fixItem from './fixItem';
+import { fixItem } from '../../items';
 
 export = function(schema: SchemaManager.Schema): string {
     // @ts-ignore

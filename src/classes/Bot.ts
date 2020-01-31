@@ -71,6 +71,10 @@ export = class Bot {
 
     private loginAttempts: moment.Moment[] = [];
 
+    private admins: SteamID[] = [];
+
+    private alertTypes: string[] = [];
+
     private ready = false;
 
     constructor(botManager: BotManager) {
@@ -109,6 +113,18 @@ export = class Bot {
         this.pricelist = new Pricelist(this.schema, this.socket);
         this.inventoryManager = new InventoryManager(this.pricelist);
 
+        this.admins = (process.env.ADMINS === undefined ? [] : JSON.parse(process.env.ADMINS)).map(
+            steamID => new SteamID(steamID)
+        );
+
+        this.admins.forEach(function(steamID) {
+            if (!steamID.isValid()) {
+                throw new Error('Invalid admin steamID');
+            }
+        });
+
+        this.alertTypes = process.env.ALERTS === undefined ? [] : JSON.parse(process.env.ALERTS);
+
         this.addListener(this.client, 'loggedOn', this.handler.onLoggedOn.bind(this.handler), false);
         this.addListener(this.client, 'friendMessage', this.onMessage.bind(this), true);
         this.addListener(this.client, 'friendRelationship', this.handler.onFriendRelationship.bind(this.handler), true);
@@ -135,6 +151,25 @@ export = class Bot {
 
     getHandler(): Handler {
         return this.handler;
+    }
+
+    isAdmin(steamID: SteamID | string): boolean {
+        const steamID64 = steamID.toString();
+        return this.admins.some(adminSteamID => adminSteamID.toString() === steamID64);
+    }
+
+    getAdmins(): SteamID[] {
+        return this.admins;
+    }
+
+    messageAdmins(type: string, message: string): void {
+        if (!this.alertTypes.includes(type)) {
+            return;
+        }
+
+        this.admins.forEach(steamID => {
+            this.sendMessage(steamID, message);
+        });
     }
 
     setReady(): void {
