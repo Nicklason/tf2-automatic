@@ -46,6 +46,11 @@ export = class InventoryManager {
             return Infinity;
         }
 
+        if (match.intent !== 2 && match.intent !== (buying ? 0 : 1)) {
+            // We are not buying / selling the item
+            return 0;
+        }
+
         let canTrade = match[buying ? 'max' : 'min'] - amount;
         if (!buying) {
             canTrade *= -1;
