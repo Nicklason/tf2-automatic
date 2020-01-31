@@ -210,6 +210,11 @@ export = class Trades {
                 actionFunc = this.declineOffer.bind(this, offer);
             }
 
+            if (!actionFunc) {
+                this.finishProcessingOffer(offer.id);
+                return;
+            }
+
             offer.data('action', response);
 
             actionFunc().asCallback(err => {
