@@ -2,24 +2,15 @@
 
 import Bot from './Bot';
 import { Entry, EntryData } from './Pricelist';
-import Commands from './Commands';
 
 import SteamID from 'steamid';
-import SteamTradeOfferManager from 'steam-tradeoffer-manager';
-
-import log from '../lib/logger';
-import { UnknownDictionary } from '../types/common';
+import SteamTradeOfferManager, { PollData } from 'steam-tradeoffer-manager';
 
 abstract class Handler {
     readonly bot: Bot;
 
-    readonly commands: Commands;
-
-    recentlySentMessage: UnknownDictionary<number> = {};
-
     constructor(bot: Bot) {
         this.bot = bot;
-        this.commands = new Commands(bot);
     }
 
     get steamID(): SteamID {
@@ -33,6 +24,7 @@ abstract class Handler {
         loginAttempts?: number[];
         pricelist?: EntryData[];
         loginKey?: string;
+        pollData?: PollData;
     }>;
 
     /**
@@ -114,27 +106,7 @@ abstract class Handler {
      * @param message - The message from the sender
      */
     onMessage(steamID: SteamID, message: string): void {
-        const steamID64 = steamID.toString();
-
-        if (!this.bot.friends.isFriend(steamID64)) {
-            return;
-        }
-
-        const friend = this.bot.friends.getFriend(steamID64);
-
-        if (friend === null) {
-            log.info('Message from ' + steamID64 + ': ' + message);
-        } else {
-            log.info('Message from ' + friend.player_name + ' (' + steamID64 + '): ' + message);
-        }
-
-        if (this.recentlySentMessage[steamID64] !== undefined && this.recentlySentMessage[steamID64] >= 1) {
-            return;
-        }
-
-        this.recentlySentMessage[steamID64] = this.recentlySentMessage[steamID64] + 1;
-
-        this.commands.processMessage(steamID64, message);
+        // empty function
     }
 
     /**
