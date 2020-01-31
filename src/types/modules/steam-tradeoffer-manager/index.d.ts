@@ -191,7 +191,7 @@ declare module 'steam-tradeoffer-manager' {
         export class TradeOffer {
             partner: SteamID;
 
-            id: number | null;
+            id: string | null;
 
             message: string | null;
 
@@ -216,6 +216,8 @@ declare module 'steam-tradeoffer-manager' {
             manager: SteamTradeOfferManager;
 
             isGlitched(): boolean;
+
+            data(): UnknownKeys<any>;
 
             data(key: string): any;
 

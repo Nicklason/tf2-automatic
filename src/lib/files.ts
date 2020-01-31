@@ -76,6 +76,25 @@ export function writeFile(p: string, data: any, json: boolean): Promise<void> {
     });
 }
 
+export function deleteFile(p: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (!fs.existsSync(p)) {
+            resolve(null);
+            return;
+        }
+
+        filesBeingSaved++;
+        fs.unlink(p, function(err) {
+            filesBeingSaved--;
+            if (err) {
+                return reject(err);
+            }
+
+            return resolve();
+        });
+    });
+}
+
 export function isWritingToFiles(): boolean {
     return filesBeingSaved !== 0;
 }

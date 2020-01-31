@@ -62,7 +62,7 @@ declare module 'steamcommunity' {
 
         getTradeURL(callback: (err?: Error, url?: string, token?: string) => void): void;
 
-        acceptConfirmationForObject(identitySecret: string, objectID: number, callback: (err?: Error) => void): void;
+        acceptConfirmationForObject(identitySecret: string, objectID: string, callback: (err?: Error) => void): void;
     }
 
     namespace SteamCommunity {

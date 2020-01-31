@@ -104,6 +104,12 @@ export = class BotManager {
                         return reject(err);
                     }
 
+                    if (this.isStopping()) {
+                        // Shutdown is requested, stop the bot
+                        this.stop(null, false, false);
+                        return;
+                    }
+
                     // Connect to socket server
                     this.socket.open();
 
