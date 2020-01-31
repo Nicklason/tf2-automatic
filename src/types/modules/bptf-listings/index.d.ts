@@ -94,7 +94,7 @@ declare module 'bptf-listings' {
         interface CreateListing {
             id?: string;
             sku?: string;
-            intent: number;
+            intent: 0 | 1;
             details?: string;
             currencies: object;
             time: number;
@@ -105,7 +105,7 @@ declare module 'bptf-listings' {
 
             steamid: SteamID;
 
-            intent: number;
+            intent: 0 | 1;
 
             item: object;
 

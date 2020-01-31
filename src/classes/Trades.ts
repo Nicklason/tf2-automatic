@@ -13,7 +13,7 @@ export = class Trades {
 
     private itemsInTrade: string[] = [];
 
-    private receivedOffers: number[] = [];
+    private receivedOffers: string[] = [];
 
     private processingOffer = false;
 
@@ -175,7 +175,7 @@ export = class Trades {
         }
     }
 
-    private dequeueOffer(offerId: number): void {
+    private dequeueOffer(offerId: string): void {
         const index = this.receivedOffers.indexOf(offerId);
 
         if (index !== -1) {
@@ -196,6 +196,7 @@ export = class Trades {
                 throw err;
             }
 
+            offer.data('handledByUs', true);
             offer.data('handleTime', moment().valueOf() - start);
 
             offer.log('debug', 'handler is done with offer', {
@@ -270,7 +271,7 @@ export = class Trades {
         });
     }
 
-    fetchOffer(offerId: number, attempts = 0): Promise<TradeOfferManager.TradeOffer> {
+    fetchOffer(offerId: string, attempts = 0): Promise<TradeOfferManager.TradeOffer> {
         return new Promise((resolve, reject) => {
             this.bot.manager.getOffer(offerId, (err, offer) => {
                 attempts++;
@@ -315,8 +316,6 @@ export = class Trades {
 
     private acceptOffer(offer: TradeOfferManager.TradeOffer): Promise<string> {
         return new Promise((resolve, reject) => {
-            offer.data('handledByUs', true);
-
             const start = moment().valueOf();
             offer.data('actionTimestamp', start);
 
@@ -399,8 +398,6 @@ export = class Trades {
 
     private declineOffer(offer: TradeOfferManager.TradeOffer): Promise<void> {
         return new Promise((resolve, reject) => {
-            offer.data('handledByUs', true);
-
             const start = moment().valueOf();
             offer.data('actionTimestamp', start);
 

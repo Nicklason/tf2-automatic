@@ -19,13 +19,15 @@ export = class MyHandler extends Handler {
         loginAttempts?: number[];
         pricelist?: EntryData[];
         loginKey?: string;
+        pollData?: PollData;
     }> {
         return Promise.all([
             files.readFile(paths.files.loginKey, false),
             files.readFile(paths.files.pricelist, true),
-            files.readFile(paths.files.loginAttempts, true)
-        ]).then(function([loginKey, pricelist, loginAttempts]) {
-            return { loginKey, pricelist, loginAttempts };
+            files.readFile(paths.files.loginAttempts, true),
+            files.readFile(paths.files.pollData, true)
+        ]).then(function([loginKey, pricelist, loginAttempts, pollData]) {
+            return { loginKey, pricelist, loginAttempts, pollData };
         });
     }
 
@@ -46,10 +48,21 @@ export = class MyHandler extends Handler {
         this.bot.client.setPersona(SteamUser.EPersonaState.Online);
     }
 
-    async onShutdown(): Promise<void> {
-        // TODO: Remove listings
+    onShutdown(): Promise<void> {
+        return new Promise(resolve => {
+            if (this.bot.listingManager.ready !== true) {
+                // We have not set up the listing manager, don't try and remove listings
+                return resolve();
+            }
 
-        return Promise.resolve();
+            this.bot.listings.removeAll().asCallback(function(err) {
+                if (err) {
+                    log.warn('Failed to r emove all listings: ', err);
+                }
+
+                resolve();
+            });
+        });
     }
 
     onLoggedOn(): void {
@@ -67,9 +80,16 @@ export = class MyHandler extends Handler {
         });
     }
 
-    onLoginAttempts(attempts: number[]): void {
-        log.debug('Login attempts changed');
+    onLoginError(err: Error): void {
+        // @ts-ignore
+        if (err.eresult === SteamUser.EResult.InvalidPassword) {
+            files.deleteFile(paths.files.loginKey).catch(err => {
+                log.warn('Failed to delete login key: ', err);
+            });
+        }
+    }
 
+    onLoginAttempts(attempts: number[]): void {
         files.writeFile(paths.files.loginAttempts, attempts, true).catch(function(err) {
             log.warn('Failed to save login attempts: ', err);
         });
@@ -81,9 +101,7 @@ export = class MyHandler extends Handler {
         action: 'accept' | 'decline' | null;
         reason: string | null;
     }> {
-        offer.log('info', 'is being processed...');
-
-        return Promise.resolve({ action: 'accept', reason: 'TEST' });
+        return Promise.resolve({ action: null, reason: null });
     }
 
     onPollData(pollData: PollData): void {
@@ -94,11 +112,16 @@ export = class MyHandler extends Handler {
 
     onPricelist(pricelist: Entry[]): void {
         log.debug('Pricelist changed');
-        // TODO: Emit pricelist change when the price of an item changes
 
-        files.writeFile(paths.files.pricelist, pricelist, true).catch(function(err) {
-            log.warn('Failed to save pricelist: ', err);
-        });
+        files
+            .writeFile(
+                paths.files.pricelist,
+                pricelist.map(entry => entry.getJSON()),
+                true
+            )
+            .catch(function(err) {
+                log.warn('Failed to save pricelist: ', err);
+            });
     }
 
     onPriceChange(): void {

@@ -27,6 +27,8 @@ export interface EntryData {
 export class Entry {
     sku: string;
 
+    name: string;
+
     enabled: boolean;
 
     autoprice: boolean;
@@ -43,8 +45,9 @@ export class Entry {
 
     time: number | null;
 
-    constructor(entry: EntryData) {
+    constructor(entry: EntryData, schema: SchemaManager.Schema) {
         this.sku = entry.sku;
+        this.name = schema.getName(SKU.fromString(entry.sku));
         this.enabled = entry.enabled;
         this.autoprice = entry.autoprice;
         this.max = entry.max;
@@ -53,6 +56,20 @@ export class Entry {
         this.buy = new Currencies(entry.buy);
         this.sell = new Currencies(entry.sell);
         this.time = entry.time;
+    }
+
+    getJSON(): EntryData {
+        return {
+            sku: this.sku,
+            enabled: this.enabled,
+            autoprice: this.autoprice,
+            max: this.max,
+            min: this.min,
+            intent: this.intent,
+            buy: this.buy,
+            sell: this.sell,
+            time: this.time
+        };
     }
 }
 
@@ -85,6 +102,10 @@ export default class Pricelist extends EventEmitter {
 
     getLength(): number {
         return this.prices.length;
+    }
+
+    getPrices(): Entry[] {
+        return [].concat(this.prices);
     }
 
     getPrice(sku: string, onlyEnabled = false): Entry | null {
@@ -151,12 +172,12 @@ export default class Pricelist extends EventEmitter {
         // Get name of item
         const name = this.schema.getName(SKU.fromString(sku));
 
-        return this.prices.findIndex(entry => this.schema.getName(SKU.fromString(entry.sku)) === name);
+        return this.prices.findIndex(entry => entry.name === name);
     }
 
     setPricelist(prices: EntryData[]): Promise<void> {
         // @ts-ignore
-        this.prices = prices.map(entry => new Entry(entry));
+        this.prices = prices.map(entry => new Entry(entry, this.schema));
 
         log.debug('Getting key price...');
         return getPrice('5021;6', 'bptf')
@@ -248,6 +269,7 @@ export default class Pricelist extends EventEmitter {
 
     private priceChanged(entry: Entry): void {
         this.emit('price', entry);
+        this.emit('pricelist', this.prices);
     }
 
     private getOld(): Entry[] {

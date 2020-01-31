@@ -3,6 +3,7 @@ import Pricelist from './Pricelist';
 import Handler from './Handler';
 import Friends from './Friends';
 import Trades from './Trades';
+import Listings from './Listings';
 import TF2GC from './TF2GC';
 import Inventory from './Inventory';
 import BotManager from './BotManager';
@@ -46,6 +47,8 @@ export = class Bot {
 
     readonly trades: Trades;
 
+    readonly listings: Listings;
+
     readonly tf2gc: TF2GC;
 
     readonly handler: Handler;
@@ -55,7 +58,7 @@ export = class Bot {
     readonly pricelist: Pricelist;
 
     // Settings
-    private readonly maxLoginAttemptsWithinPeriod: number = 3;
+    private readonly maxLoginAttemptsWithinPeriod: number = 2;
 
     private readonly loginPeriodTime: number = 60 * 1000;
 
@@ -98,6 +101,7 @@ export = class Bot {
 
         this.friends = new Friends(this);
         this.trades = new Trades(this);
+        this.listings = new Listings(this);
         this.tf2gc = new TF2GC(this);
 
         this.handler = new MyHandler(this);
@@ -105,19 +109,19 @@ export = class Bot {
         this.pricelist = new Pricelist(this.schema, this.socket);
         this.inventoryManager = new InventoryManager(this.pricelist);
 
-        this.addListener(this.client, 'loggedOn', this.handler.onLoggedOn.bind(this.handler), true);
+        this.addListener(this.client, 'loggedOn', this.handler.onLoggedOn.bind(this.handler), false);
         this.addListener(this.client, 'friendMessage', this.onMessage.bind(this), true);
         this.addListener(this.client, 'friendRelationship', this.handler.onFriendRelationship.bind(this.handler), true);
         this.addListener(this.client, 'groupRelationship', this.handler.onGroupRelationship.bind(this.handler), true);
         this.addListener(this.client, 'webSession', this.onWebSession.bind(this), false);
         this.addListener(this.client, 'steamGuard', this.onSteamGuard.bind(this), false);
-        this.addListener(this.client, 'loginKey', this.handler.onLoginKey.bind(this.handler), true);
+        this.addListener(this.client, 'loginKey', this.handler.onLoginKey.bind(this.handler), false);
         this.addListener(this.client, 'error', this.onError.bind(this), false);
 
         this.addListener(this.community, 'sessionExpired', this.onSessionExpired.bind(this), false);
         this.addListener(this.community, 'confKeyNeeded', this.onConfKeyNeeded.bind(this), false);
 
-        this.addListener(this.manager, 'pollData', this.handler.onPollData.bind(this.handler), true);
+        this.addListener(this.manager, 'pollData', this.handler.onPollData.bind(this.handler), false);
         this.addListener(this.manager, 'newOffer', this.trades.onNewOffer.bind(this.trades), true);
         this.addListener(this.manager, 'sentOfferChanged', this.trades.onOfferChanged.bind(this.trades), true);
         this.addListener(this.manager, 'receivedOfferChanged', this.trades.onOfferChanged.bind(this.trades), true);
@@ -125,7 +129,7 @@ export = class Bot {
 
         this.addListener(this.listingManager, 'heartbeat', this.handler.onHeartbeat.bind(this), true);
 
-        this.addListener(this.pricelist, 'pricelist', this.handler.onPricelist.bind(this.pricelist), true);
+        this.addListener(this.pricelist, 'pricelist', this.handler.onPricelist.bind(this.pricelist), false);
         this.addListener(this.pricelist, 'price', this.handler.onPriceChange.bind(this.pricelist), true);
     }
 
@@ -143,9 +147,11 @@ export = class Bot {
 
     private addListener(emitter: any, event: string, listener: Function, checkCanEmit: boolean): void {
         emitter.on(event, (...args: any[]) => {
-            if (!checkCanEmit || this.canSendEvents()) {
-                listener(...args);
-            }
+            setImmediate(() => {
+                if (!checkCanEmit || this.canSendEvents()) {
+                    listener(...args);
+                }
+            });
         });
     }
 
@@ -158,12 +164,22 @@ export = class Bot {
                 [
                     (callback): void => {
                         log.debug('Calling onRun');
-                        this.handler.onRun().asCallback(function(err, v) {
+                        this.handler.onRun().asCallback((err, v) => {
                             if (err) {
                                 return callback(err);
                             }
 
                             data = v;
+
+                            if (data.pollData) {
+                                log.debug('Setting poll data');
+                                this.manager.pollData = data.pollData;
+                            }
+
+                            if (data.loginAttempts) {
+                                log.debug('Setting login attempts');
+                                this.setLoginAttempts(data.loginAttempts);
+                            }
 
                             return callback(null);
                         });
@@ -205,11 +221,8 @@ export = class Bot {
 
                         const loginResponse = (err): void => {
                             if (err) {
-                                if (
-                                    !lastLoginFailed &&
-                                    err.eresult !== SteamUser.EFriendRelationship.RateLimitExceeded &&
-                                    err.eresult !== SteamUser.EFriendRelationship.InvalidPassword
-                                ) {
+                                this.handler.onLoginError(err);
+                                if (!lastLoginFailed && err.eresult === SteamUser.EResult.InvalidPassword) {
                                     lastLoginFailed = true;
                                     // Try and sign in without login key
                                     log.warn('Failed to sign in to Steam, retrying without login key...');
@@ -304,13 +317,16 @@ export = class Bot {
                     (callback): void => {
                         log.debug('Getting max friends...');
                         this.friends.getMaxFriends().asCallback(callback);
+                    },
+                    (callback): void => {
+                        log.debug('Creating listings...');
+                        this.listings.redoListings().asCallback(callback);
                     }
                 ],
                 (item, callback) => {
                     if (this.botManager.isStopping()) {
-                        // Shutdown is requested, stop the bot
-                        this.botManager.stop(null, false, false);
-                        return;
+                        // Shutdown is requested, break out of the startup process
+                        return resolve();
                     }
 
                     item(callback);
@@ -318,6 +334,11 @@ export = class Bot {
                 err => {
                     if (err) {
                         return reject(err);
+                    }
+
+                    if (this.botManager.isStopping()) {
+                        // Shutdown is requested, break out of the startup process
+                        return resolve();
                     }
 
                     this.manager.pollInterval = 1000;
@@ -513,7 +534,7 @@ export = class Bot {
         }
 
         return new Promise((resolve, reject) => {
-            Promise.delay(wait).then(() => {
+            setTimeout(() => {
                 const listeners = this.client.listeners('error');
 
                 this.client.removeAllListeners('error');
@@ -582,7 +603,7 @@ export = class Bot {
 
                 this.client.once('loggedOn', loggedOnEvent);
                 this.client.once('error', errorEvent);
-            });
+            }, wait);
         });
     }
 
@@ -601,7 +622,7 @@ export = class Bot {
     }
 
     private canSendEvents(): boolean {
-        return this.ready || !this.botManager.isStopping();
+        return this.ready && !this.botManager.isStopping();
     }
 
     private onMessage(steamID: SteamID, message: string): void {
@@ -725,14 +746,14 @@ export = class Bot {
 
         let wait = 0;
 
-        if (attemptsWithinPeriod >= this.maxLoginAttemptsWithinPeriod) {
+        if (attemptsWithinPeriod.length >= this.maxLoginAttemptsWithinPeriod) {
             const oldest = attemptsWithinPeriod[0];
 
             // Time when we can make login attempt
             const timeCanAttempt = moment().add(this.loginPeriodTime, 'milliseconds');
 
             // Get milliseconds till oldest till timeCanAttempt
-            wait = oldest.diff(timeCanAttempt, 'milliseconds');
+            wait = timeCanAttempt.diff(oldest, 'milliseconds');
         }
 
         if (wait === 0 && this.consecutiveSteamGuardCodesWrong > 1) {
@@ -743,10 +764,14 @@ export = class Bot {
         return wait;
     }
 
-    private getLoginAttemptsWithinPeriod(): number {
+    private setLoginAttempts(attempts: number[]): void {
+        this.loginAttempts = attempts.map(time => moment.unix(time));
+    }
+
+    private getLoginAttemptsWithinPeriod(): moment.Moment[] {
         const now = moment();
 
-        return this.loginAttempts.filter(attempt => now.diff(attempt, 'milliseconds') < this.loginPeriodTime).length;
+        return this.loginAttempts.filter(attempt => now.diff(attempt, 'milliseconds') < this.loginPeriodTime);
     }
 
     private newLoginAttempt(): void {
