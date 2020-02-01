@@ -6,13 +6,16 @@ import { parseJSON } from '../lib/helpers';
 export = class CommandParser {
     static getCommand(message: string): string | null {
         if (message.startsWith('!')) {
-            return message
-                .toLowerCase()
-                .split(' ')[0]
-                .substring(1);
+            const index = message.indexOf(' ');
+
+            return message.substring(1, index === -1 ? undefined : index);
         }
 
         return null;
+    }
+
+    static removeCommand(message: string): string {
+        return message.substring(message.indexOf(' ') + 1);
     }
 
     static parseParams(paramString: string): UnknownDictionaryKnownValues {
