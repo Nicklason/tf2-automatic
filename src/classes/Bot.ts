@@ -58,7 +58,7 @@ export = class Bot {
     readonly pricelist: Pricelist;
 
     // Settings
-    private readonly maxLoginAttemptsWithinPeriod: number = 2;
+    private readonly maxLoginAttemptsWithinPeriod: number = 3;
 
     private readonly loginPeriodTime: number = 60 * 1000;
 
