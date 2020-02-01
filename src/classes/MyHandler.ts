@@ -1,18 +1,31 @@
 import Handler from './Handler';
 import Bot from './Bot';
 import { Entry, EntryData } from './Pricelist';
+import Commands from './Commands';
+import { UnknownDictionary } from '../types/common';
 
 import SteamUser from 'steam-user';
 import { TradeOffer, PollData } from 'steam-tradeoffer-manager';
 import pluralize from 'pluralize';
+import SteamID from 'steamid';
 
 import log from '../lib/logger';
 import * as files from '../lib/files';
 import paths from '../resources/paths';
 
 export = class MyHandler extends Handler {
+    private readonly commands: Commands;
+
+    recentlySentMessage: UnknownDictionary<number> = {};
+
     constructor(bot: Bot) {
         super(bot);
+
+        this.commands = new Commands(bot);
+
+        setInterval(() => {
+            this.recentlySentMessage = {};
+        }, 1000);
     }
 
     onRun(): Promise<{
@@ -70,6 +83,30 @@ export = class MyHandler extends Handler {
             this.bot.client.setPersona(SteamUser.EPersonaState.Online);
             this.bot.client.gamesPlayed('tf2-automatic');
         }
+    }
+
+    onMessage(steamID: SteamID, message: string): void {
+        const steamID64 = steamID.toString();
+
+        if (!this.bot.friends.isFriend(steamID64)) {
+            return;
+        }
+
+        const friend = this.bot.friends.getFriend(steamID64);
+
+        if (friend === null) {
+            log.info('Message from ' + steamID64 + ': ' + message);
+        } else {
+            log.info('Message from ' + friend.player_name + ' (' + steamID64 + '): ' + message);
+        }
+
+        if (this.recentlySentMessage[steamID64] !== undefined && this.recentlySentMessage[steamID64] >= 1) {
+            return;
+        }
+
+        this.recentlySentMessage[steamID64] = this.recentlySentMessage[steamID64] + 1;
+
+        this.commands.processMessage(steamID, message);
     }
 
     onLoginKey(loginKey: string): void {

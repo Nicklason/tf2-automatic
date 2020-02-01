@@ -127,6 +127,46 @@ export default class Pricelist extends EventEmitter {
         return match;
     }
 
+    searchByName(search: string, enabledOnly = true): Entry | string[] | null {
+        search = search.toLowerCase();
+
+        const match = [];
+
+        for (let i = 0; i < this.prices.length; i++) {
+            const entry = this.prices[i];
+
+            if (enabledOnly && entry.enabled === false) {
+                continue;
+            }
+
+            const name = entry.name.toLowerCase();
+
+            if (search.includes('uncraftable')) {
+                search = search.replace('uncraftable', 'non-craftable');
+            }
+
+            if (search === name) {
+                // Found direct match
+                return entry;
+            }
+
+            if (name.includes(search)) {
+                match.push(entry);
+            }
+        }
+
+        if (match.length === 0) {
+            // No match
+            return null;
+        } else if (match.length === 1) {
+            // Found one that matched the search
+            return match[0];
+        }
+
+        // Found many that matched, return list of the names
+        return match.map(entry => entry.name);
+    }
+
     async addPrice(entry: Entry, emitChange: boolean): Promise<Entry> {
         if (entry.autoprice) {
             const price = await getPrice(entry.sku, 'bptf');

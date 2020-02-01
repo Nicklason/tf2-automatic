@@ -24,6 +24,10 @@ export = class Inventory {
         return this.steamID;
     }
 
+    getItems(): UnknownDictionary<string[]> {
+        return this.tradable;
+    }
+
     addItem(sku: string, assetid: string): void {
         const items = this.tradable;
         (items[sku] = items[sku] || []).push(assetid);
