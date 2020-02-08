@@ -97,13 +97,23 @@ class Cart {
         return Object.keys(this.our).length === 0 && Object.keys(this.their).length === 0;
     }
 
-    protected preSendOffer(): Promise<void> {
+    protected async preSendOffer(): Promise<void> {
         if (this.bot.isAdmin(this.partner)) {
-            return Promise.resolve();
+            return;
         }
 
-        // TODO: Check escrow and bans
-        return Promise.resolve();
+        const [banned, escrow] = await Promise.all([
+            this.bot.getHandler().onCheckBanned(this.partner),
+            this.bot.trades.checkEscrow(this.offer)
+        ]);
+
+        if (banned) {
+            return Promise.reject('You are banned in one or more communities');
+        }
+
+        if (escrow) {
+            return Promise.reject('The offer wiill be held');
+        }
     }
 
     protected constructOffer(): Promise<string | void> {

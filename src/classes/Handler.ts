@@ -85,6 +85,12 @@ abstract class Handler {
     abstract onPriceChange(sku: string, price: Entry | null): void;
 
     /**
+     * Called when a trade needs to check if the partner is banned
+     * @param steamID - The SteamID of the partner
+     */
+    abstract onCheckBanned(steamID: SteamID): Promise<boolean>;
+
+    /**
      * Called when login attempt has been throttled
      * @param wait - Milliseconds that the bot will wait
      */
