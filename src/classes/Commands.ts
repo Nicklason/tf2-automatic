@@ -8,7 +8,6 @@ import Bot from './Bot';
 import CommandParser from './CommandParser';
 import { Entry } from './Pricelist';
 import Cart from './Cart';
-import AdminCart from './AdminCart';
 
 import { Item } from '../types/TeamFortress2';
 import { UnknownDictionaryKnownValues } from '../types/common';
@@ -318,7 +317,7 @@ export = class Commands {
         const sku = SKU.fromObject(fixItem(SKU.fromString(params.sku as string), this.bot.schema));
         const amount = typeof params.amount === 'number' ? params.amount : 1;
 
-        const cart = Cart.getCart(steamID) || new AdminCart(steamID, this.bot);
+        const cart = Cart.getCart(steamID) || new Cart(steamID, this.bot);
 
         cart.addTheirItem(sku, amount);
 
@@ -353,7 +352,7 @@ export = class Commands {
         const sku = SKU.fromObject(fixItem(SKU.fromString(params.sku as string), this.bot.schema));
         let amount = typeof params.amount === 'number' ? params.amount : 1;
 
-        const cart = Cart.getCart(steamID) || new AdminCart(steamID, this.bot);
+        const cart = Cart.getCart(steamID) || new Cart(steamID, this.bot);
 
         const ourAmount = this.bot.inventoryManager.getInventory().getAmount(sku);
 
