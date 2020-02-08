@@ -112,7 +112,7 @@ class Cart {
         }
 
         if (escrow) {
-            return Promise.reject('The offer wiill be held');
+            return Promise.reject('The offer will be held');
         }
     }
 
