@@ -36,7 +36,7 @@ export = class Listings {
     }
 
     setupAutorelist(): void {
-        if (process.env.AUTOBUMP !== 'true') {
+        if (process.env.AUTOBUMP !== 'true' || process.env.DISABLE_LISTINGS === 'true') {
             // Autobump is not enabled
             return;
         }
@@ -51,7 +51,7 @@ export = class Listings {
     }
 
     private enableAutoRelist(): void {
-        if (this.autoRelistEnabled) {
+        if (this.autoRelistEnabled || process.env.DISABLE_LISTINGS === 'true') {
             return;
         }
 
@@ -145,6 +145,10 @@ export = class Listings {
     }
 
     checkBySKU(sku: string, data: Entry | null): void {
+        if (process.env.DISABLE_LISTINGS === 'true') {
+            return;
+        }
+
         const item = SKU.fromString(sku);
 
         const match = data && data.enabled === false ? null : this.bot.pricelist.getPrice(sku, true);
@@ -221,11 +225,15 @@ export = class Listings {
 
     checkAll(): Promise<void> {
         return new Promise(resolve => {
+            if (process.env.DISABLE_LISTINGS === 'true') {
+                return resolve();
+            }
+
             log.debug('Checking all');
 
             const doneRemovingAll = (): void => {
                 const next = callbackQueue.add('checkAllListings', function() {
-                    resolve(null);
+                    resolve();
                 });
 
                 if (next === false) {
