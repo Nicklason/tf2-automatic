@@ -40,9 +40,9 @@ export = class CommandParser {
 
                 if (key !== 'sku') {
                     const lowerCase = value.toLowerCase();
-                    if (/^\d+$/.test(lowerCase)) {
+                    if (/^-?\d+$/.test(lowerCase)) {
                         value = parseInt(lowerCase);
-                    } else if (/^\d+(\.\d+)?$/.test(lowerCase)) {
+                    } else if (/^-?\d+(\.\d+)?$/.test(lowerCase)) {
                         value = parseFloat(lowerCase);
                     } else if (lowerCase === 'true') {
                         value = true;
