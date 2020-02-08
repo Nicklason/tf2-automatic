@@ -3,6 +3,7 @@ import moment from 'moment';
 import SKU from 'tf2-sku';
 import pluralize from 'pluralize';
 import SteamTradeOfferManager from 'steam-tradeoffer-manager';
+import Currencies from 'tf2-currencies';
 
 import Bot from './Bot';
 import Inventory from './Inventory';
@@ -30,9 +31,21 @@ class Cart {
 
     protected their: UnknownDictionary<number> = {};
 
+    protected ourCurrencies: Currencies = new Currencies({});
+
+    protected theirCurrencies: Currencies = new Currencies({});
+
     constructor(partner: SteamID, bot: Bot) {
         this.partner = partner;
         this.bot = bot;
+    }
+
+    setOurCurrencies(currencies: Currencies): void {
+        this.ourCurrencies = currencies;
+    }
+
+    setTheirCurrencies(currencies: Currencies): void {
+        this.theirCurrencies = currencies;
     }
 
     getOurCount(sku: string): number {
@@ -98,6 +111,8 @@ class Cart {
             if (this.isEmpty()) {
                 return reject('cart is empty');
             }
+
+            // TODO: Add currencies
 
             const offer = this.bot.manager.createOffer(this.partner);
 
@@ -297,6 +312,12 @@ class Cart {
             str += '\n- ' + this.our[sku] + 'x ' + name;
         }
 
+        if (Object.keys(this.our).length === 0) {
+            str += '\n' + this.ourCurrencies.toString();
+        } else {
+            str += '\nand ' + this.ourCurrencies.toString();
+        }
+
         str += '\n\nYour side (items you will lose):';
         for (const sku in this.their) {
             if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
@@ -305,6 +326,12 @@ class Cart {
 
             const name = this.bot.schema.getName(SKU.fromString(sku));
             str += '\n- ' + this.their[sku] + 'x ' + name;
+        }
+
+        if (Object.keys(this.their).length === 0) {
+            str += '\n' + this.theirCurrencies.toString();
+        } else {
+            str += '\nand ' + this.theirCurrencies.toString();
         }
 
         return str;
