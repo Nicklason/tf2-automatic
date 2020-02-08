@@ -7,10 +7,27 @@ import Currencies from 'tf2-currencies';
 import Bot from './Bot';
 import CommandParser from './CommandParser';
 import { Entry } from './Pricelist';
+import Cart from './Cart';
+import AdminCart from './AdminCart';
 
 import { Item } from '../types/TeamFortress2';
 import { UnknownDictionaryKnownValues } from '../types/common';
 import { fixItem } from '../lib/items';
+
+import log from '../lib/logger';
+
+const COMMANDS: string[] = [
+    '!help - Get list of commands',
+    '!how2trade - Guide on how to trade with the bot',
+    '!price [amount] <name> - Get the price and stock of an item',
+    '!stock - Get a list of items that the bot has',
+    '!rate - Get current key prices',
+    '!cart - See current cart',
+    '!clearcart - Clears the current cart',
+    '!checkout - Make the bot send an offer the items in the cart'
+];
+
+const ADMIN_COMMANDS: string[] = ['!deposit - Used to deposit items', '!withdraw - Used to withdraw items'];
 
 export = class Commands {
     private readonly bot: Bot;
@@ -22,6 +39,8 @@ export = class Commands {
     processMessage(steamID: SteamID, message: string): void {
         const command = CommandParser.getCommand(message);
 
+        const isAdmin = this.bot.isAdmin(steamID);
+
         if (command === 'help') {
             this.helpCommand(steamID);
         } else if (command === 'how2trade') {
@@ -32,21 +51,27 @@ export = class Commands {
             this.stockCommand(steamID);
         } else if (command === 'rate') {
             this.rateCommand(steamID);
+        } else if (command === 'cart') {
+            this.cartCommand(steamID);
+        } else if (command === 'clearcart') {
+            this.clearCartCommand(steamID);
+        } else if (command === 'checkout') {
+            this.checkoutCommand(steamID);
+        } else if (command === 'deposit' && isAdmin) {
+            this.depositCommand(steamID, message);
+        } else if (command === 'withdraw' && isAdmin) {
+            this.withdrawCommand(steamID, message);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
     }
 
     private helpCommand(steamID: SteamID): void {
-        const commands = [
-            '!help - Get list of commands',
-            '!how2trade - Guide on how to trade with the bot',
-            '!price [amount] <name> - Get the price and stock of an item',
-            '!stock - Get a list of items that the bot has',
-            '!rate - Get current key prices'
-        ];
+        let reply = "Here's a list of all my commands:\n- " + COMMANDS.join('\n- ');
 
-        const reply = "Here's a list of all my commands:\n- " + commands.join('\n- ');
+        if (this.bot.isAdmin(steamID)) {
+            reply += '\n\nAdmin commands:\n- ' + ADMIN_COMMANDS.join('\n- ');
+        }
 
         this.bot.sendMessage(steamID, reply);
     }
@@ -231,6 +256,143 @@ export = class Commands {
         );
     }
 
+    private cartCommand(steamID: SteamID): void {
+        this.bot.sendMessage(steamID, Cart.stringify(steamID));
+    }
+
+    private clearCartCommand(steamID: SteamID): void {
+        Cart.removeCart(steamID);
+
+        this.bot.sendMessage(steamID, 'Your cart has been cleared.');
+    }
+
+    private checkoutCommand(steamID: SteamID): void {
+        const cart = Cart.getCart(steamID);
+
+        if (cart === null) {
+            this.bot.sendMessage(steamID, 'Your cart is empty.');
+            return;
+        }
+
+        this.bot.sendMessage(steamID, 'Please wait while I process your offer...');
+
+        // TODO: Check escrow and bptf bans
+
+        cart.sendOffer()
+            .then(status => {
+                if (status === 'pending') {
+                    this.bot.sendMessage(
+                        steamID,
+                        'Your offer has been made, please wait while I accept the mobile confirmation.'
+                    );
+                }
+            })
+            .catch(err => {
+                if (err instanceof Error) {
+                    this.bot.sendMessage(steamID, 'I failed to make the offer. Reason: ' + err);
+                } else {
+                    log.warn('Failed to make offer: ', err);
+                    this.bot.sendMessage(
+                        steamID,
+                        'Something went wrong while trying to make the offer, try again later!'
+                    );
+                }
+            });
+    }
+
+    private depositCommand(steamID: SteamID, message: string): void {
+        const paramStr = CommandParser.removeCommand(message);
+
+        const params = CommandParser.parseParams(paramStr);
+
+        if (params.sku === undefined) {
+            const item = this.getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
+        const sku = SKU.fromObject(fixItem(SKU.fromString(params.sku as string), this.bot.schema));
+        const amount = typeof params.amount === 'number' ? params.amount : 1;
+
+        const cart = Cart.getCart(steamID) || new AdminCart(steamID, this.bot);
+
+        cart.addTheirItem(sku, amount);
+
+        Cart.addCart(cart);
+
+        const name = this.bot.schema.getName(SKU.fromString(sku));
+
+        this.bot.sendMessage(
+            steamID,
+            pluralize(name, Math.abs(amount), true) +
+                ' has been ' +
+                (amount >= 0 ? 'added to' : 'removed from') +
+                ' your cart.'
+        );
+    }
+
+    private withdrawCommand(steamID: SteamID, message: string): void {
+        const paramStr = CommandParser.removeCommand(message);
+
+        const params = CommandParser.parseParams(paramStr);
+
+        if (params.sku === undefined) {
+            const item = this.getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
+        const sku = SKU.fromObject(fixItem(SKU.fromString(params.sku as string), this.bot.schema));
+        let amount = typeof params.amount === 'number' ? params.amount : 1;
+
+        const cart = Cart.getCart(steamID) || new AdminCart(steamID, this.bot);
+
+        const ourAmount = this.bot.inventoryManager.getInventory().getAmount(sku);
+
+        const amountCanTrade = ourAmount - cart.getOurCount(sku);
+
+        const name = this.bot.schema.getName(SKU.fromString(sku));
+
+        // Correct trade if needed
+        if (amountCanTrade <= 0) {
+            this.bot.sendMessage(
+                steamID,
+                "I don't have any " + (ourAmount > 0 ? 'more ' : '') + pluralize(name, 0) + '.'
+            );
+            amount = 0;
+        } else if (amount > amountCanTrade) {
+            amount = amountCanTrade;
+            this.bot.sendMessage(
+                steamID,
+                'I only have ' +
+                    pluralize(name, amount, true) +
+                    '. ' +
+                    (amount > 1 ? 'They have' : 'It has') +
+                    ' been added to your cart'
+            );
+        } else {
+            this.bot.sendMessage(
+                steamID,
+                pluralize(name, Math.abs(amount), true) +
+                    ' has been ' +
+                    (amount >= 0 ? 'added to' : 'removed from') +
+                    ' your cart.'
+            );
+        }
+
+        cart.addOurItem(sku, amount);
+
+        Cart.addCart(cart);
+    }
+
     private getItemAndAmount(steamID: SteamID, message: string): { match: Entry; amount: number } | null {
         let name = message;
         let amount = 1;
@@ -361,12 +523,14 @@ export = class Commands {
                 return null;
             }
 
+            item.defindex = schemaItem.defindex;
+
             if (item.quality === 0) {
                 item.quality = schemaItem.item_quality;
             }
         }
 
-        if (typeof params.quality !== undefined) {
+        if (params.quality !== undefined) {
             const quality = this.bot.schema.getQualityIdByName(params.quality as string);
             if (quality === null) {
                 this.bot.sendMessage(
@@ -422,7 +586,7 @@ export = class Commands {
             if (item.outputQuality === null) {
                 item.quality = schemaItem.item_quality;
             }
-        } else if (item.output !== undefined) {
+        } else if (item.output !== null) {
             // Look for all items that have the same name
 
             const match = [];

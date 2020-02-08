@@ -416,6 +416,8 @@ export = class Trades {
 
     sendOffer(offer: TradeOfferManager.TradeOffer): Promise<string> {
         return new Promise((resolve, reject) => {
+            offer.data('partner', offer.partner.getSteamID64());
+
             const ourItems: TradeOfferManager.TradeOfferItem[] = [];
 
             offer.itemsToGive.forEach(item => {
