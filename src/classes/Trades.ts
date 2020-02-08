@@ -2,6 +2,7 @@ import TradeOfferManager, { EconItem } from 'steam-tradeoffer-manager';
 import { UnknownDictionaryKnownValues } from '../types/common';
 import moment from 'moment';
 import pluralize from 'pluralize';
+import retry from 'retry';
 
 import Bot from './Bot';
 
@@ -552,6 +553,45 @@ export = class Trades {
                 }
 
                 resolve(status);
+            });
+        });
+    }
+
+    checkEscrow(offer): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            const operation = retry.operation({
+                retries: 5,
+                factor: 2,
+                minTimeout: 1000,
+                randomize: true
+            });
+
+            operation.attempt(() => {
+                log.debug('Attempting to check escrow...');
+                offer.getUserDetails((err, me, them) => {
+                    log.debug('Escrow callback');
+                    if (!err || err.message !== 'Not Logged In') {
+                        // No error / not because session expired
+                        if (operation.retry(err)) {
+                            return;
+                        }
+
+                        if (err) {
+                            return reject(operation.mainError());
+                        }
+
+                        return resolve(them.escrowDays !== 0);
+                    }
+
+                    // Reset attempts
+                    operation.reset();
+
+                    // Wait for bot to sign in to retry
+                    this.bot.getWebSession(true).asCallback(function() {
+                        // Callback was called, ignore error from callback and retry
+                        operation.retry(err);
+                    });
+                });
             });
         });
     }
