@@ -183,7 +183,7 @@ export = class Commands {
             }
 
             items.push({
-                name: this.bot.schema.getName(SKU.fromString(sku)),
+                name: this.bot.schema.getName(SKU.fromString(sku), false),
                 amount: dict[sku].length
             });
         }
@@ -330,7 +330,7 @@ export = class Commands {
 
         Cart.addCart(cart);
 
-        const name = this.bot.schema.getName(SKU.fromString(sku));
+        const name = this.bot.schema.getName(SKU.fromString(sku), false);
 
         this.bot.sendMessage(
             steamID,
@@ -371,7 +371,7 @@ export = class Commands {
 
         const amountCanTrade = ourAmount - cart.getOurCount(sku);
 
-        const name = this.bot.schema.getName(SKU.fromString(sku));
+        const name = this.bot.schema.getName(SKU.fromString(sku), false);
 
         // Correct trade if needed
         if (amountCanTrade <= 0) {

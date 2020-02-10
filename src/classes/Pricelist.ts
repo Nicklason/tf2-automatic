@@ -47,7 +47,7 @@ export class Entry {
 
     constructor(entry: EntryData, schema: SchemaManager.Schema) {
         this.sku = entry.sku;
-        this.name = schema.getName(SKU.fromString(entry.sku));
+        this.name = schema.getName(SKU.fromString(entry.sku), false);
         this.enabled = entry.enabled;
         this.autoprice = entry.autoprice;
         this.max = entry.max;
@@ -210,7 +210,7 @@ export default class Pricelist extends EventEmitter {
 
     private getIndex(sku: string): number {
         // Get name of item
-        const name = this.schema.getName(SKU.fromString(sku));
+        const name = this.schema.getName(SKU.fromString(sku), false);
 
         return this.prices.findIndex(entry => entry.name === name);
     }
@@ -254,7 +254,7 @@ export default class Pricelist extends EventEmitter {
                     }
 
                     const item = SKU.fromString(currPrice.sku);
-                    const name = this.schema.getName(item);
+                    const name = this.schema.getName(item, false);
 
                     // Go through pricestf prices
                     for (let j = 0; j < groupedPrices[item.quality][item.killstreak].length; j++) {
