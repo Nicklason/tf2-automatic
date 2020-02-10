@@ -371,7 +371,7 @@ export = class Trades {
 
                 if (err) {
                     // @ts-ignore
-                    if (err.eresult !== undefined || attempts > 5) {
+                    if (attempts > 5 || err.eresult !== undefined || err.cause !== undefined) {
                         return reject(err);
                     }
 
@@ -462,20 +462,22 @@ export = class Trades {
                 attempts++;
 
                 if (err) {
-                    if (attempts > 5) {
-                        return reject(err);
-                    }
-
-                    if (err.message.includes('can only be sent to friends')) {
-                        return reject(err);
-                    } else if (err.message.includes('is not available to trade')) {
-                        return reject(err);
-                    } else if (
+                    if (
+                        attempts > 5 ||
+                        err.message.includes('can only be sent to friends') ||
+                        err.message.includes('is not available to trade') ||
                         err.message.includes('maximum number of items allowed in your Team Fortress 2 inventory')
                     ) {
                         return reject(err);
-                        // @ts-ignore
-                    } else if (err.eresult === TradeOfferManager.EResult.Revoked) {
+                    }
+
+                    // @ts-ignore
+                    if (err.cause !== undefined) {
+                        return reject(err);
+                    }
+
+                    // @ts-ignore
+                    if (err.eresult === TradeOfferManager.EResult.Revoked) {
                         // One or more of the items does not exist in the inventories, refresh our inventory and return the error
                         this.bot.inventoryManager
                             .getInventory()

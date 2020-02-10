@@ -133,7 +133,9 @@ abstract class Cart {
                 Cart.removeCart(this.partner);
             })
             .catch(err => {
-                if (err.message.indexOf("We were unable to contact the game's item server") !== -1) {
+                if (err.cause === 'TradeBan') {
+                    return Promise.reject('You are trade banned');
+                } else if (err.cause === 'ItemServerUnavailable') {
                     return Promise.reject(
                         "Team Fortress 2's item server may be down or Steam may be experiencing temporary connectivity issues"
                     );
