@@ -870,7 +870,7 @@ exports.offerChanged = function (offer, oldState) {
         require('./crafting').keepMetalSupply();
 
         // Sort inventory
-        if (process.env.SKIP_SORTING_INVENTORY === 'false'){
+        if (process.env.SKIP_SORTING_INVENTORY !== 'true'){
             require('../crafting').sortInventory(3);
         }
         

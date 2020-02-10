@@ -21,7 +21,9 @@ exports.onReady = function () {
     require('../handler/crafting').keepMetalSupply();
 
     // Sort the inventory after crafting metal
-    require('../crafting').sortInventory(3);
+    if (process.env.SKIP_SORTING_INVENTORY !== 'true'){
+        require('../crafting').sortInventory(3);
+    }
 
     // Check friend requests that we got while offline
     require('../handler/friends').checkFriendRequests();
