@@ -47,7 +47,7 @@ function summarizeItems(dict: UnknownDictionary<number>, schema: SchemaManager.S
         }
 
         const amount = dict[sku];
-        const name = schema.getName(SKU.fromString(sku));
+        const name = schema.getName(SKU.fromString(sku), false);
 
         summary.push(name + (amount > 1 ? ' x' + amount : ''));
     }

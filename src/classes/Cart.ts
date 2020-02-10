@@ -177,7 +177,7 @@ abstract class Cart {
                 continue;
             }
 
-            const name = this.bot.schema.getName(SKU.fromString(sku));
+            const name = this.bot.schema.getName(SKU.fromString(sku), false);
             str += '\n- ' + this.our[sku] + 'x ' + name;
         }
 
@@ -187,7 +187,7 @@ abstract class Cart {
                 continue;
             }
 
-            const name = this.bot.schema.getName(SKU.fromString(sku));
+            const name = this.bot.schema.getName(SKU.fromString(sku), false);
             str += '\n- ' + this.their[sku] + 'x ' + name;
         }
 

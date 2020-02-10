@@ -39,12 +39,12 @@ class AdminCart extends Cart {
 
                     if (ourAssetids.length === 0) {
                         alteredMessages.push(
-                            "I don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku)))
+                            "I don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false))
                         );
                     } else {
                         alteredMessages.push(
                             'I only have ' +
-                                pluralize(this.bot.schema.getName(SKU.fromString(sku)), ourAssetids.length, true)
+                                pluralize(this.bot.schema.getName(SKU.fromString(sku), false), ourAssetids.length, true)
                         );
 
                         // Add the max amount to the offer
@@ -95,12 +95,16 @@ class AdminCart extends Cart {
 
                         if (theirAssetids.length === 0) {
                             alteredMessages.push(
-                                "you don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku)))
+                                "you don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false))
                             );
                         } else {
                             alteredMessages.push(
                                 'you only have ' +
-                                    pluralize(this.bot.schema.getName(SKU.fromString(sku)), theirAssetids.length, true)
+                                    pluralize(
+                                        this.bot.schema.getName(SKU.fromString(sku), false),
+                                        theirAssetids.length,
+                                        true
+                                    )
                             );
 
                             // Add the max amount to the offer
