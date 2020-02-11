@@ -377,20 +377,20 @@ export = class Commands {
 
         const cart = AdminCart.getCart(steamID) || new AdminCart(steamID, this.bot);
 
+        const cartAmount = cart.getOurCount(sku);
         const ourAmount = this.bot.inventoryManager.getInventory().getAmount(sku);
-
         const amountCanTrade = ourAmount - cart.getOurCount(sku);
 
         const name = this.bot.schema.getName(SKU.fromString(sku), false);
 
         // Correct trade if needed
-        if (amountCanTrade <= 0) {
+        if (amountCanTrade - cartAmount <= 0) {
             this.bot.sendMessage(
                 steamID,
                 "I don't have any " + (ourAmount > 0 ? 'more ' : '') + pluralize(name, 0) + '.'
             );
             amount = 0;
-        } else if (amount > amountCanTrade) {
+        } else if (amount + cartAmount > amountCanTrade) {
             amount = amountCanTrade;
             this.bot.sendMessage(
                 steamID,
@@ -440,7 +440,7 @@ export = class Commands {
         const name = this.bot.schema.getName(SKU.fromString(match.sku), false);
 
         // Correct trade if needed
-        if (amountCanTrade <= 0) {
+        if (amountCanTrade - cartAmount <= 0) {
             this.bot.sendMessage(
                 steamID,
                 'I ' +
@@ -453,7 +453,7 @@ export = class Commands {
             return;
         }
 
-        if (amount > amountCanTrade) {
+        if (amount + cartAmount > amountCanTrade) {
             amount = amountCanTrade;
             this.bot.sendMessage(
                 steamID,
