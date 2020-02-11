@@ -2,6 +2,7 @@ import Handler from './Handler';
 import Bot from './Bot';
 import { Entry, EntryData } from './Pricelist';
 import Commands from './Commands';
+import CartQueue from './CartQueue';
 import { UnknownDictionary } from '../types/common';
 
 import SteamUser from 'steam-user';
@@ -16,12 +17,15 @@ import paths from '../resources/paths';
 export = class MyHandler extends Handler {
     private readonly commands: Commands;
 
+    readonly cartQueue: CartQueue;
+
     recentlySentMessage: UnknownDictionary<number> = {};
 
     constructor(bot: Bot) {
         super(bot);
 
         this.commands = new Commands(bot);
+        this.cartQueue = new CartQueue(bot);
 
         setInterval(() => {
             this.recentlySentMessage = {};

@@ -10,12 +10,12 @@ import { Entry } from './Pricelist';
 import Cart from './Cart';
 import AdminCart from './AdminCart';
 import UserCart from './UserCart';
+import MyHandler from './MyHandler';
+import CartQueue from './CartQueue';
 
 import { Item } from '../types/TeamFortress2';
 import { UnknownDictionaryKnownValues } from '../types/common';
 import { fixItem } from '../lib/items';
-
-import log from '../lib/logger';
 
 const COMMANDS: string[] = [
     '!help - Get list of commands',
@@ -37,6 +37,10 @@ export = class Commands {
 
     constructor(bot: Bot) {
         this.bot = bot;
+    }
+
+    get cartQueue(): CartQueue {
+        return (this.bot.getHandler() as MyHandler).cartQueue;
     }
 
     processMessage(steamID: SteamID, message: string): void {
@@ -279,35 +283,36 @@ export = class Commands {
             return;
         }
 
-        cart.constructOffer()
-            .then(alteredMessage => {
-                if (alteredMessage) {
-                    this.bot.sendMessage(steamID, 'Your offer has been altered: ' + alteredMessage + '.');
-                }
+        const currentPosition = this.cartQueue.getPosition(steamID);
 
-                this.bot.sendMessage(steamID, 'Please wait while I process your offer! ' + cart.summarize() + '.');
+        if (currentPosition !== -1) {
+            if (currentPosition === 0) {
+                this.bot.sendMessage(steamID, 'You are already in the queue! Please wait while I process your offer.');
+            } else {
+                this.bot.sendMessage(
+                    steamID,
+                    'You are already in the queue! Please wait your turn, there ' +
+                        (currentPosition !== 1 ? 'are' : 'is') +
+                        ' ' +
+                        currentPosition +
+                        ' infront of you.'
+                );
+            }
+            return;
+        }
 
-                return cart.sendOffer();
-            })
-            .then(status => {
-                if (status === 'pending') {
-                    this.bot.sendMessage(
-                        steamID,
-                        'Your offer has been made, please wait while I accept the mobile confirmation.'
-                    );
-                }
-            })
-            .catch(err => {
-                if (!(err instanceof Error)) {
-                    this.bot.sendMessage(steamID, 'I failed to make the offer. Reason: ' + err);
-                } else {
-                    log.warn('Failed to make offer: ', err);
-                    this.bot.sendMessage(
-                        steamID,
-                        'Something went wrong while trying to make the offer, try again later!'
-                    );
-                }
-            });
+        const position = this.cartQueue.enqueue(cart);
+
+        if (position !== 0) {
+            this.bot.sendMessage(
+                steamID,
+                'You have been added to the queue! Please wait your turn, there ' +
+                    (position !== 1 ? 'are' : 'is') +
+                    ' ' +
+                    position +
+                    ' infront of you.'
+            );
+        }
     }
 
     private depositCommand(steamID: SteamID, message: string): void {
