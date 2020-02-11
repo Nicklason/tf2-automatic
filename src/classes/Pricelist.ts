@@ -229,6 +229,15 @@ export default class Pricelist extends EventEmitter {
                     sell: new Currencies(keyPrices.sell)
                 };
 
+                const entryKey = this.getPrice('5021;6');
+
+                if (entryKey !== undefined && entryKey.autoprice) {
+                    // The price of a key in the pricelist can be different from keyPrices because the pricelist is not updated
+                    entryKey.buy = new Currencies(keyPrices.buy);
+                    entryKey.sell = new Currencies(keyPrices.sell);
+                    entryKey.time = keyPrices.time;
+                }
+
                 const old = this.getOld();
 
                 if (old.length === 0) {
