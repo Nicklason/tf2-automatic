@@ -7,7 +7,7 @@ import Inventory from './Inventory';
 export = AdminCart;
 
 class AdminCart extends Cart {
-    preSendOffer(): Promise<void> {
+    protected preSendOffer(): Promise<void> {
         return Promise.resolve();
     }
 
