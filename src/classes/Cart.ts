@@ -82,7 +82,7 @@ abstract class Cart {
         return Object.keys(this.our).length === 0 && Object.keys(this.their).length === 0;
     }
 
-    abstract preSendOffer(): Promise<void>;
+    protected abstract preSendOffer(): Promise<void>;
 
     abstract constructOffer(): Promise<string>;
 
