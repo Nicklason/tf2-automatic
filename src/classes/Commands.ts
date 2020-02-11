@@ -283,11 +283,15 @@ export = class Commands {
             return;
         }
 
-        const activeOfferID = this.bot.trades.getActiveOffer(steamID);
+        this.addCartToQueue(cart);
+    }
+
+    private addCartToQueue(cart: Cart): void {
+        const activeOfferID = this.bot.trades.getActiveOffer(cart.partner);
 
         if (activeOfferID !== null) {
             this.bot.sendMessage(
-                steamID,
+                cart.partner,
                 'You already have an active offer! Please finish it before requesting a new one:  https://steamcommunity.com/tradeoffer/' +
                     activeOfferID +
                     '/'
@@ -295,14 +299,17 @@ export = class Commands {
             return;
         }
 
-        const currentPosition = this.cartQueue.getPosition(steamID);
+        const currentPosition = this.cartQueue.getPosition(cart.partner);
 
         if (currentPosition !== -1) {
             if (currentPosition === 0) {
-                this.bot.sendMessage(steamID, 'You are already in the queue! Please wait while I process your offer.');
+                this.bot.sendMessage(
+                    cart.partner,
+                    'You are already in the queue! Please wait while I process your offer.'
+                );
             } else {
                 this.bot.sendMessage(
-                    steamID,
+                    cart.partner,
                     'You are already in the queue! Please wait your turn, there ' +
                         (currentPosition !== 1 ? 'are' : 'is') +
                         ' ' +
@@ -317,7 +324,7 @@ export = class Commands {
 
         if (position !== 0) {
             this.bot.sendMessage(
-                steamID,
+                cart.partner,
                 'You have been added to the queue! Please wait your turn, there ' +
                     (position !== 1 ? 'are' : 'is') +
                     ' ' +
