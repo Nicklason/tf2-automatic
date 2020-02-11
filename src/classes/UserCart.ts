@@ -269,6 +269,68 @@ class UserCart extends Cart {
         };
     }
 
+    summarizeOur(): string[] {
+        const summary = super.summarizeOur();
+
+        const { isBuyer } = this.getCurrencies();
+
+        const ourDict = this.offer.data('dict').our;
+        const scrap = ourDict['5000;6'] || 0;
+        const reclaimed = ourDict['5001;6'] || 0;
+        const refined = ourDict['5002;6'] || 0;
+
+        if (isBuyer) {
+            const keys = this.canUseKeys() ? ourDict['5021;6'] || 0 : 0;
+
+            const currencies = new Currencies({
+                keys: keys,
+                metal: Currencies.toRefined(scrap + reclaimed * 3 + refined * 9)
+            });
+
+            summary.push(currencies.toString());
+        } else if (scrap + reclaimed + refined !== 0) {
+            const currencies = new Currencies({
+                keys: 0,
+                metal: Currencies.toRefined(scrap + reclaimed * 3 + refined * 9)
+            });
+
+            summary.push(currencies.toString());
+        }
+
+        return summary;
+    }
+
+    summarizeTheir(): string[] {
+        const summary = super.summarizeTheir();
+
+        const { isBuyer } = this.getCurrencies();
+
+        const theirDict = this.offer.data('dict').their;
+        const scrap = theirDict['5000;6'] || 0;
+        const reclaimed = theirDict['5001;6'] || 0;
+        const refined = theirDict['5002;6'] || 0;
+
+        if (!isBuyer) {
+            const keys = this.canUseKeys() ? theirDict['5021;6'] || 0 : 0;
+
+            const currencies = new Currencies({
+                keys: keys,
+                metal: Currencies.toRefined(scrap + reclaimed * 3 + refined * 9)
+            });
+
+            summary.push(currencies.toString());
+        } else if (scrap + reclaimed + refined !== 0) {
+            const currencies = new Currencies({
+                keys: 0,
+                metal: Currencies.toRefined(scrap + reclaimed * 3 + refined * 9)
+            });
+
+            summary.push(currencies.toString());
+        }
+
+        return summary;
+    }
+
     constructOffer(): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.isEmpty()) {
@@ -292,8 +354,9 @@ class UserCart extends Cart {
 
                 if (amount > ourAssetids.length) {
                     amount = ourAssetids.length;
+
                     // Remove the item from the cart
-                    this.removeOurItem(sku);
+                    this.removeOurItem(sku, Infinity);
 
                     if (ourAssetids.length === 0) {
                         alteredMessages.push(
@@ -306,7 +369,7 @@ class UserCart extends Cart {
                         );
 
                         // Add the max amount to the cart
-                        this.addOurItem(sku, ourAssetids.length);
+                        this.addOurItem(sku, amount);
                     }
                 }
 
@@ -338,18 +401,19 @@ class UserCart extends Cart {
                         continue;
                     }
 
-                    const amount = this.getTheirCount(sku);
+                    let amount = this.getTheirCount(sku);
                     const theirAssetids = theirInventory.findBySKU(sku, true);
 
                     if (amount > theirAssetids.length) {
                         // Remove the item from the cart
-                        this.removeTheirItem(sku);
+                        this.removeTheirItem(sku, Infinity);
 
                         if (theirAssetids.length === 0) {
                             alteredMessages.push(
                                 "you don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false))
                             );
                         } else {
+                            amount = theirAssetids.length;
                             alteredMessages.push(
                                 'you only have ' +
                                     pluralize(
@@ -360,7 +424,7 @@ class UserCart extends Cart {
                             );
 
                             // Add the max amount to the cart
-                            this.addTheirItem(sku, theirAssetids.length);
+                            this.addTheirItem(sku, amount);
                         }
                     }
                 }
