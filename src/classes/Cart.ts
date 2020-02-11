@@ -211,8 +211,7 @@ abstract class Cart {
         this.offer.data('handleTimestamp', moment().valueOf());
 
         this.offer.setMessage(
-            process.env.OFFER_MESSAGE ||
-                'Powered by TF2 Automatic. For more information see https://github.com/Nicklason/tf2-automatic'
+            'Powered by TF2 Automatic. For more information see https://github.com/Nicklason/tf2-automatic'
         );
 
         return this.preSendOffer()
