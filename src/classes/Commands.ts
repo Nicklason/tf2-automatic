@@ -379,19 +379,28 @@ export = class Commands {
 
         const cartAmount = cart.getOurCount(sku);
         const ourAmount = this.bot.inventoryManager.getInventory().getAmount(sku);
-        const amountCanTrade = ourAmount - cart.getOurCount(sku);
+        const amountCanTrade = ourAmount - cart.getOurCount(sku) - cartAmount;
 
         const name = this.bot.schema.getName(SKU.fromString(sku), false);
 
         // Correct trade if needed
-        if (amountCanTrade - cartAmount <= 0) {
+        if (amountCanTrade <= 0) {
             this.bot.sendMessage(
                 steamID,
                 "I don't have any " + (ourAmount > 0 ? 'more ' : '') + pluralize(name, 0) + '.'
             );
             amount = 0;
-        } else if (amount + cartAmount > amountCanTrade) {
+        } else if (amount > amountCanTrade) {
             amount = amountCanTrade;
+
+            if (amount === cartAmount && cartAmount > 0) {
+                this.bot.sendMessage(
+                    steamID,
+                    "I don't have any " + (ourAmount > 0 ? 'more ' : '') + pluralize(name, 0) + '.'
+                );
+                return;
+            }
+
             this.bot.sendMessage(
                 steamID,
                 'I only have ' +
@@ -435,12 +444,12 @@ export = class Commands {
 
         const cartAmount = cart.getOurCount(match.sku);
         const ourAmount = this.bot.inventoryManager.getInventory().getAmount(match.sku);
-        const amountCanTrade = this.bot.inventoryManager.amountCanTrade(match.sku, false);
+        const amountCanTrade = this.bot.inventoryManager.amountCanTrade(match.sku, false) - cartAmount;
 
         const name = this.bot.schema.getName(SKU.fromString(match.sku), false);
 
         // Correct trade if needed
-        if (amountCanTrade - cartAmount <= 0) {
+        if (amountCanTrade <= 0) {
             this.bot.sendMessage(
                 steamID,
                 'I ' +
@@ -453,8 +462,17 @@ export = class Commands {
             return;
         }
 
-        if (amount + cartAmount > amountCanTrade) {
+        if (amount > amountCanTrade) {
             amount = amountCanTrade;
+
+            if (amount === cartAmount && cartAmount > 0) {
+                this.bot.sendMessage(
+                    steamID,
+                    "I don't have any " + (ourAmount > 0 ? 'more ' : '') + pluralize(name, 0) + '.'
+                );
+                return;
+            }
+
             this.bot.sendMessage(
                 steamID,
                 'I only have ' +
@@ -492,7 +510,7 @@ export = class Commands {
 
         const cartAmount = cart.getOurCount(match.sku);
         const ourAmount = this.bot.inventoryManager.getInventory().getAmount(match.sku);
-        const amountCanTrade = this.bot.inventoryManager.amountCanTrade(match.sku, true);
+        const amountCanTrade = this.bot.inventoryManager.amountCanTrade(match.sku, true) - cartAmount;
 
         const name = this.bot.schema.getName(SKU.fromString(match.sku), false);
 
@@ -512,6 +530,12 @@ export = class Commands {
 
         if (amount > amountCanTrade) {
             amount = amountCanTrade;
+
+            if (amount === cartAmount && cartAmount > 0) {
+                this.bot.sendMessage(steamID, "I don't want any more " + pluralize(name, 0) + '.');
+                return;
+            }
+
             this.bot.sendMessage(
                 steamID,
                 'I can only buy ' +
