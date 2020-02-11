@@ -8,7 +8,6 @@ import SteamUser from 'steam-user';
 import { TradeOffer, PollData } from 'steam-tradeoffer-manager';
 import pluralize from 'pluralize';
 import SteamID from 'steamid';
-import request from '@nicklason/request-retry';
 
 import log from '../lib/logger';
 import * as files from '../lib/files';
@@ -130,60 +129,6 @@ export = class MyHandler extends Handler {
     onLoginAttempts(attempts: number[]): void {
         files.writeFile(paths.files.loginAttempts, attempts, true).catch(function(err) {
             log.warn('Failed to save login attempts: ', err);
-        });
-    }
-
-    onCheckBanned(steamID: SteamID): Promise<boolean> {
-        return Promise.all([this.isBptfBanned(steamID), this.isSteamRepBanned(steamID)]).then(([bptf, steamrep]) => {
-            return bptf || steamrep;
-        });
-    }
-
-    private isBptfBanned(steamID: SteamID | string): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            const steamID64 = steamID.toString();
-            request(
-                {
-                    url: 'https://backpack.tf/api/users/info/v1',
-                    qs: {
-                        key: process.env.BPTF_API_KEY,
-                        steamids: steamID64
-                    },
-                    gzip: true,
-                    json: true
-                },
-                function(err, response, body) {
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    const user = body.users[steamID64];
-
-                    return resolve(user.bans && user.bans.all);
-                }
-            );
-        });
-    }
-
-    private isSteamRepBanned(steamID: SteamID | string): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            request(
-                {
-                    url: 'http://steamrep.com/api/beta4/reputation/' + steamID.toString(),
-                    qs: {
-                        json: 1
-                    },
-                    gzip: true,
-                    json: true
-                },
-                function(err, response, body) {
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    return resolve(body.steamrep.reputation.summary.toLowerCase().indexOf('scammer') !== -1);
-                }
-            );
         });
     }
 
