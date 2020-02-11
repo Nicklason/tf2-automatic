@@ -23,6 +23,8 @@ const COMMANDS: string[] = [
     '!price [amount] <name> - Get the price and stock of an item',
     '!stock - Get a list of items that the bot has',
     '!rate - Get current key prices',
+    '!buy [amount] <name> - Instantly buy an item',
+    '!sell [amount] <sell> - Instantly sell an item',
     '!buycart [amount] <name> - Adds an item you want to buy to the cart',
     '!sellcart [amount] <name> - Adds an item you want to sell to the cart',
     '!cart - See current cart',
@@ -72,6 +74,10 @@ export = class Commands {
             this.buyCartCommand(steamID, message);
         } else if (command === 'sellcart') {
             this.sellCartCommand(steamID, message);
+        } else if (command === 'buy') {
+            this.buyCommand(steamID, message);
+        } else if (command === 'sell') {
+            this.sellCommand(steamID, message);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
@@ -575,6 +581,40 @@ export = class Commands {
         cart.addTheirItem(match.sku, amount);
 
         Cart.addCart(cart);
+    }
+
+    private buyCommand(steamID: SteamID, message: string): void {
+        const info = this.getItemAndAmount(steamID, CommandParser.removeCommand(message));
+
+        if (info === null) {
+            return;
+        }
+
+        const match = info.match;
+        const amount = info.amount;
+
+        const cart = new UserCart(steamID, this.bot);
+
+        cart.addOurItem(match.sku, amount);
+
+        this.addCartToQueue(cart);
+    }
+
+    private sellCommand(steamID: SteamID, message: string): void {
+        const info = this.getItemAndAmount(steamID, CommandParser.removeCommand(message));
+
+        if (info === null) {
+            return;
+        }
+
+        const match = info.match;
+        const amount = info.amount;
+
+        const cart = new UserCart(steamID, this.bot);
+
+        cart.addTheirItem(match.sku, amount);
+
+        this.addCartToQueue(cart);
     }
 
     private getItemAndAmount(steamID: SteamID, message: string): { match: Entry; amount: number } | null {
