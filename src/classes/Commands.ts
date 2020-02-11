@@ -9,6 +9,7 @@ import CommandParser from './CommandParser';
 import { Entry } from './Pricelist';
 import Cart from './Cart';
 import AdminCart from './AdminCart';
+import UserCart from './UserCart';
 
 import { Item } from '../types/TeamFortress2';
 import { UnknownDictionaryKnownValues } from '../types/common';
@@ -22,6 +23,8 @@ const COMMANDS: string[] = [
     '!price [amount] <name> - Get the price and stock of an item',
     '!stock - Get a list of items that the bot has',
     '!rate - Get current key prices',
+    '!buycart [amount] <name> - Adds an item you want to buy to the cart',
+    '!sellcart [amount] <name> - Adds an item you want to sell to the cart',
     '!cart - See current cart',
     '!clearcart - Clears the current cart',
     '!checkout - Make the bot send an offer the items in the cart'
@@ -61,6 +64,10 @@ export = class Commands {
             this.depositCommand(steamID, message);
         } else if (command === 'withdraw' && isAdmin) {
             this.withdrawCommand(steamID, message);
+        } else if (command === 'buycart') {
+            this.buyCartCommand(steamID, message);
+        } else if (command === 'sellcart') {
+            this.sellCartCommand(steamID, message);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
@@ -276,9 +283,14 @@ export = class Commands {
 
         this.bot.sendMessage(steamID, 'Please wait while I process your offer...');
 
-        // TODO: Check escrow and bptf bans
+        cart.constructOffer()
+            .then(alteredMessage => {
+                if (alteredMessage) {
+                    this.bot.sendMessage(steamID, 'Your offer has been altered: ' + alteredMessage);
+                }
 
-        cart.sendOffer()
+                return cart.sendOffer();
+            })
             .then(status => {
                 if (status === 'pending') {
                     this.bot.sendMessage(
@@ -288,7 +300,7 @@ export = class Commands {
                 }
             })
             .catch(err => {
-                if (err instanceof Error) {
+                if (!(err instanceof Error)) {
                     this.bot.sendMessage(steamID, 'I failed to make the offer. Reason: ' + err);
                 } else {
                     log.warn('Failed to make offer: ', err);
@@ -401,6 +413,120 @@ export = class Commands {
         }
 
         cart.addOurItem(sku, amount);
+
+        Cart.addCart(cart);
+    }
+
+    private buyCartCommand(steamID: SteamID, message: string): void {
+        const currentCart = Cart.getCart(steamID);
+        if (currentCart !== null && !(currentCart instanceof UserCart)) {
+            this.bot.sendMessage(steamID, 'You already have a different cart open, finish it before making a new one.');
+            return;
+        }
+
+        const info = this.getItemAndAmount(steamID, CommandParser.removeCommand(message));
+
+        if (info === null) {
+            return;
+        }
+
+        const match = info.match;
+        let amount = info.amount;
+
+        const cart = Cart.getCart(steamID) || new UserCart(steamID, this.bot);
+
+        const cartAmount = cart.getOurCount(match.sku);
+        const ourAmount = this.bot.inventoryManager.getInventory().getAmount(match.sku);
+        const amountCanTrade = this.bot.inventoryManager.amountCanTrade(match.sku, false);
+
+        const name = this.bot.schema.getName(SKU.fromString(match.sku), false);
+
+        // Correct trade if needed
+        if (amountCanTrade <= 0) {
+            this.bot.sendMessage(
+                steamID,
+                'I ' +
+                    (ourAmount > 0 ? "can't sell" : "don't have") +
+                    ' any ' +
+                    (cartAmount > 0 ? 'more ' : '') +
+                    pluralize(name, 0) +
+                    '.'
+            );
+            return;
+        }
+
+        if (amount > amountCanTrade) {
+            amount = amountCanTrade;
+            this.bot.sendMessage(
+                steamID,
+                'I only have ' +
+                    pluralize(name, amount, true) +
+                    '. ' +
+                    (amount > 1 ? 'They have' : 'It has') +
+                    ' been added to your cart.'
+            );
+        } else {
+            this.bot.sendMessage(steamID, pluralize(name, Math.abs(amount), true) + ' has been added to your cart.');
+        }
+
+        cart.addOurItem(match.sku, amount);
+
+        Cart.addCart(cart);
+    }
+
+    private sellCartCommand(steamID: SteamID, message: string): void {
+        const currentCart = Cart.getCart(steamID);
+        if (currentCart !== null && !(currentCart instanceof UserCart)) {
+            this.bot.sendMessage(steamID, 'You already have a different cart open, finish it before making a new one.');
+            return;
+        }
+
+        const info = this.getItemAndAmount(steamID, CommandParser.removeCommand(message));
+
+        if (info === null) {
+            return;
+        }
+
+        const match = info.match;
+        let amount = info.amount;
+
+        const cart = Cart.getCart(steamID) || new UserCart(steamID, this.bot);
+
+        const cartAmount = cart.getOurCount(match.sku);
+        const ourAmount = this.bot.inventoryManager.getInventory().getAmount(match.sku);
+        const amountCanTrade = this.bot.inventoryManager.amountCanTrade(match.sku, true);
+
+        const name = this.bot.schema.getName(SKU.fromString(match.sku), false);
+
+        // Correct trade if needed
+        if (amountCanTrade <= 0) {
+            this.bot.sendMessage(
+                steamID,
+                'I ' +
+                    (ourAmount > 0 ? "can't buy" : "don't want") +
+                    ' any ' +
+                    (cartAmount > 0 ? 'more ' : '') +
+                    pluralize(name, 0) +
+                    '.'
+            );
+            return;
+        }
+
+        if (amount > amountCanTrade) {
+            amount = amountCanTrade;
+            this.bot.sendMessage(
+                steamID,
+                'I can only buy ' +
+                    pluralize(name, amount, true) +
+                    '. ' +
+                    (amount > 1 ? 'They have' : 'It has') +
+                    ' been added to your cart.'
+            );
+        } else {
+            this.bot.sendMessage(steamID, pluralize(name, Math.abs(amount), true) + ' has been added to your cart.');
+        }
+
+        cart.addTheirItem(match.sku, amount);
 
         Cart.addCart(cart);
     }

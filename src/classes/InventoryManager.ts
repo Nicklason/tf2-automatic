@@ -1,3 +1,5 @@
+import Currencies from 'tf2-currencies';
+
 import Inventory from './Inventory';
 import Pricelist from './Pricelist';
 
@@ -62,5 +64,24 @@ export = class InventoryManager {
         }
 
         return 0;
+    }
+
+    amountCanAfford(useKeys: boolean, price: Currencies, inventory: Inventory): number {
+        const keyPrice = exports.getKeyPrice();
+
+        const value = price.toValue(keyPrice.metal);
+
+        const buyerCurrencies = inventory.getCurrencies();
+
+        let totalValue =
+            buyerCurrencies['5002;6'].length * 9 +
+            buyerCurrencies['5001;6'].length * 3 +
+            buyerCurrencies['5000;6'].length;
+
+        if (useKeys) {
+            totalValue += buyerCurrencies['5021;6'].length * keyPrice.toValue();
+        }
+
+        return Math.floor(totalValue / value);
     }
 };

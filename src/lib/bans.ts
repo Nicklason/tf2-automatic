@@ -1,65 +1,61 @@
-import async from 'async';
 import request from '@nicklason/request-retry';
+import SteamID from 'steamid';
 
-export function isBanned(steamid64: string, callback: (err?: Error, isBanned?: boolean) => void): void {
-    async.parallel(
-        {
-            bptf: function(callback: (err?: Error, result?: boolean) => void) {
-                isBptfBanned(steamid64, callback);
-            },
-            steamrep: function(callback: (err?: Error, result?: boolean) => void) {
-                isSteamRepMarked(steamid64, callback);
-            }
-        },
-        function(err, result) {
-            if (err) {
-                return callback(err);
-            }
+export async function isBanned(steamID: SteamID | string): Promise<boolean> {
+    const steamID64 = steamID.toString();
 
-            return callback(null, result.bptf || result.steamrep);
-        }
-    );
+    const [bptf, steamrep] = await Promise.all([isBptfBanned(steamID64), isSteamRepMarked(steamID64)]);
+
+    return bptf || steamrep;
 }
 
-function isBptfBanned(steamid64: string, callback: (err?: Error, isBanned?: boolean) => void): void {
-    request(
-        {
-            url: 'https://backpack.tf/api/users/info/v1',
-            qs: {
-                key: process.env.BPTF_API_KEY,
-                steamids: steamid64
+function isBptfBanned(steamID: SteamID | string): Promise<boolean> {
+    const steamID64 = steamID.toString();
+
+    return new Promise((resolve, reject) => {
+        request(
+            {
+                url: 'https://backpack.tf/api/users/info/v1',
+                qs: {
+                    key: process.env.BPTF_API_KEY,
+                    steamids: steamID64
+                },
+                gzip: true,
+                json: true
             },
-            gzip: true,
-            json: true
-        },
-        function(err, response, body) {
-            if (err) {
-                return callback(err);
+            function(err, response, body) {
+                if (err) {
+                    return reject(err);
+                }
+
+                const user = body.users[steamID64];
+
+                return resolve(user.bans && user.bans.all);
             }
-
-            const user = body.users[steamid64];
-
-            return callback(null, user.bans && user.bans.all);
-        }
-    );
+        );
+    });
 }
 
-function isSteamRepMarked(steamid64: string, callback: (err?: Error, isBanned?: boolean) => void): void {
-    request(
-        {
-            url: 'http://steamrep.com/api/beta4/reputation/' + steamid64,
-            qs: {
-                json: 1
-            },
-            gzip: true,
-            json: true
-        },
-        function(err, response, body) {
-            if (err) {
-                return callback(err);
-            }
+function isSteamRepMarked(steamID: SteamID | string): Promise<boolean> {
+    const steamID64 = steamID.toString();
 
-            return callback(null, body.steamrep.reputation.summary.toLowerCase().indexOf('scammer') !== -1);
-        }
-    );
+    return new Promise((resolve, reject) => {
+        request(
+            {
+                url: 'http://steamrep.com/api/beta4/reputation/' + steamID64,
+                qs: {
+                    json: 1
+                },
+                gzip: true,
+                json: true
+            },
+            function(err, response, body) {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(body.steamrep.reputation.summary.toLowerCase().indexOf('scammer') !== -1);
+            }
+        );
+    });
 }

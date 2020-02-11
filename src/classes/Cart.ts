@@ -86,15 +86,13 @@ abstract class Cart {
 
     abstract constructOffer(): Promise<string>;
 
-    async sendOffer(): Promise<string | void> {
-        const alteredMessage = await this.constructOffer();
-
+    sendOffer(): Promise<string | void> {
         if (this.isEmpty()) {
             return Promise.reject("I don't or you don't have enough items for this trade");
         }
 
-        if (alteredMessage) {
-            this.bot.sendMessage(this.partner, 'Your offer has been altered: ' + alteredMessage);
+        if (this.offer === null) {
+            return Promise.reject(new Error('Offer has not yet been constructed'));
         }
 
         const itemsDiff: UnknownDictionary<number> = {};
@@ -124,13 +122,15 @@ abstract class Cart {
                 'Powered by TF2 Automatic. For more information see https://github.com/Nicklason/tf2-automatic'
         );
 
-        await this.preSendOffer();
-
-        return this.bot.trades
-            .sendOffer(this.offer)
+        return this.preSendOffer()
             .then(() => {
+                return this.bot.trades.sendOffer(this.offer);
+            })
+            .then(status => {
                 // Offer finished, remove cart
                 Cart.removeCart(this.partner);
+
+                return status;
             })
             .catch(err => {
                 if (err.cause === 'TradeBan') {
