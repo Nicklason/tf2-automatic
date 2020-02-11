@@ -2,6 +2,7 @@ import SteamID from 'steamid';
 import moment from 'moment';
 import SKU from 'tf2-sku';
 import SteamTradeOfferManager from 'steam-tradeoffer-manager';
+import pluralize from 'pluralize';
 
 import Bot from './Bot';
 import { UnknownDictionary } from '../types/common';
@@ -80,6 +81,94 @@ abstract class Cart {
 
     isEmpty(): boolean {
         return Object.keys(this.our).length === 0 && Object.keys(this.their).length === 0;
+    }
+
+    summarize(): string {
+        const ourSummary = this.summarizeOur();
+
+        let ourSummaryString: string;
+
+        if (ourSummary.length > 1) {
+            ourSummaryString =
+                ourSummary.slice(0, ourSummary.length - 1).join(', ') + ' and ' + ourSummary[ourSummary.length - 1];
+        } else {
+            ourSummaryString = ourSummary.join(', ');
+        }
+
+        const theirSummary = this.summarizeTheir();
+
+        let theirSummaryString: string;
+
+        if (theirSummary.length > 1) {
+            theirSummaryString =
+                ourSummary.slice(0, theirSummary.length - 1).join(', ') +
+                ' and ' +
+                theirSummary[theirSummary.length - 1];
+        } else {
+            theirSummaryString = theirSummary.join(', ');
+        }
+
+        return 'You will be offered ' + ourSummaryString + ' for ' + theirSummaryString;
+    }
+
+    summarizeOur(): string[] {
+        const items: { name: string; amount: number }[] = [];
+
+        for (const sku in this.our) {
+            if (!Object.prototype.hasOwnProperty.call(this.our, sku)) {
+                continue;
+            }
+
+            items.push({ name: this.bot.schema.getName(SKU.fromString(sku), false), amount: this.our[sku] });
+        }
+
+        let summary: string[];
+
+        if (items.length <= 1) {
+            summary = items.map(v => {
+                if (v.amount === 1) {
+                    return 'a ' + v.name;
+                } else {
+                    return pluralize(v.name, v.amount, true);
+                }
+            });
+        } else {
+            summary = items.map(v => pluralize(v.name, v.amount, true));
+        }
+
+        /* if (summary.length > 1) {
+            return summary.slice(0, summary.length - 1).join(', ') + ' and ' + summary[0];
+        } */
+
+        return summary;
+    }
+
+    summarizeTheir(): string[] {
+        const items: { name: string; amount: number }[] = [];
+
+        for (const sku in this.their) {
+            if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
+                continue;
+            }
+
+            items.push({ name: this.bot.schema.getName(SKU.fromString(sku), false), amount: this.their[sku] });
+        }
+
+        let summary: string[];
+
+        if (items.length <= 1) {
+            summary = items.map(v => {
+                if (v.amount === 1) {
+                    return 'a ' + v.name;
+                } else {
+                    return pluralize(v.name, v.amount, true);
+                }
+            });
+        } else {
+            summary = items.map(v => pluralize(v.name, v.amount, true));
+        }
+
+        return summary;
     }
 
     protected abstract preSendOffer(): Promise<void>;

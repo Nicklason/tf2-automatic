@@ -279,13 +279,13 @@ export = class Commands {
             return;
         }
 
-        this.bot.sendMessage(steamID, 'Please wait while I process your offer...');
-
         cart.constructOffer()
             .then(alteredMessage => {
                 if (alteredMessage) {
-                    this.bot.sendMessage(steamID, 'Your offer has been altered: ' + alteredMessage);
+                    this.bot.sendMessage(steamID, 'Your offer has been altered: ' + alteredMessage + '.');
                 }
+
+                this.bot.sendMessage(steamID, 'Please wait while I process your offer! ' + cart.summarize() + '.');
 
                 return cart.sendOffer();
             })
