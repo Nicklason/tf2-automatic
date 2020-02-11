@@ -86,7 +86,7 @@ export = class Commands {
     private howToTradeCommand(steamID: SteamID): void {
         this.bot.sendMessage(
             steamID,
-            'You can either send me an offer yourself, or use one of my commands to request a trade. Say you want to buy a Team Captain, just type "!buy The Team Captain".'
+            'You can either send me an offer yourself, or use one of my commands to request a trade. Say you want to buy a Team Captain, just type "!buy Team Captain".'
         );
     }
 
@@ -116,8 +116,6 @@ export = class Commands {
 
             if (amount !== 1) {
                 reply += amount + ' ';
-            } else {
-                reply += 'a ';
             }
 
             // If the amount is 1, then don't convert to value and then to currencies. If it is for keys, then don't use conversion rate
@@ -129,7 +127,7 @@ export = class Commands {
                           isKey ? undefined : keyPrice.metal
                       );
 
-            reply += pluralize(match.name, amount) + ' for ' + currencies.toString();
+            reply += pluralize(match.name, 2) + ' for ' + currencies.toString();
         }
 
         if (isSelling) {
