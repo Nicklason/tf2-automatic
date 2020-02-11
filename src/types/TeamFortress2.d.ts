@@ -2,6 +2,13 @@ import { UnknownDictionary } from './common';
 
 export type ItemsDictionaryWithAmounts = UnknownDictionary<number>;
 
+export interface CurrencyObject {
+    '5021;6': number;
+    '5002;6': number;
+    '5001;6': number;
+    '5000;6': number;
+}
+
 export interface Currency {
     keys: number;
     metal: number;
