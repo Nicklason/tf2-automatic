@@ -1,10 +1,11 @@
 import pluralize from 'pluralize';
 import SKU from 'tf2-sku';
 import Currencies from 'tf2-currencies';
-import { CurrencyObject } from '../types/TeamFortress2';
 
 import Cart from './Cart';
 import Inventory from './Inventory';
+import { CurrencyObject } from '../types/TeamFortress2';
+import { UnknownDictionary } from '../types/common';
 
 import { isBanned } from '../lib/bans';
 import log from '../lib/logger';
@@ -17,8 +18,8 @@ class UserCart extends Cart {
      */
     private useKeys = true;
 
-    async preSendOffer(): Promise<void> {
-        const [banned, escrow] = await Promise.all([isBanned(this.partner), this.bot.trades.checkEscrow(this.offer)]);
+    protected async preSendOffer(): Promise<void> {
+        const [banned, escrow] = await Promise.all([this.checkBanned(), this.checkEscrow()]);
 
         if (banned) {
             return Promise.reject('you are banned in one or more trading communities');
@@ -27,6 +28,22 @@ class UserCart extends Cart {
         if (escrow) {
             return Promise.reject('trade would be held');
         }
+    }
+
+    private checkBanned(): Promise<boolean> {
+        if (process.env.ACCEPT_BANNED === 'true') {
+            return Promise.resolve(false);
+        }
+
+        return isBanned(this.partner);
+    }
+
+    private checkEscrow(): Promise<boolean> {
+        if (process.env.ACCEPT_ESCROW === 'true') {
+            return Promise.resolve(false);
+        }
+
+        this.bot.trades.checkEscrow(this.offer);
     }
 
     canUseKeys(): boolean {
@@ -39,9 +56,9 @@ class UserCart extends Cart {
     }
 
     /**
-     * Get relative currencies
+     * Figure our who the buyer is and get relative currencies
      */
-    getCurrencies(): { our: Currencies; their: Currencies } {
+    getCurrencies(): { isBuyer: boolean; currencies: Currencies } {
         const ourCurrencies = this.getOurCurrencies();
         const theirCurrencies = this.getTheirCurrencies();
 
@@ -55,14 +72,14 @@ class UserCart extends Cart {
         if (ourValue >= theirValue) {
             // Our value is greater, we are selling
             return {
-                our: Currencies.toCurrencies(ourValue, useKeys ? keyPrice.metal : undefined),
-                their: new Currencies({})
+                isBuyer: false,
+                currencies: Currencies.toCurrencies(ourValue - theirValue, useKeys ? keyPrice.metal : undefined)
             };
         } else {
             // Our value is smaller, we are buying
             return {
-                our: new Currencies({}),
-                their: Currencies.toCurrencies(theirValue, useKeys ? keyPrice.metal : undefined)
+                isBuyer: true,
+                currencies: Currencies.toCurrencies(theirValue - ourValue, useKeys ? keyPrice.metal : undefined)
             };
         }
     }
@@ -115,7 +132,7 @@ class UserCart extends Cart {
         return Currencies.toCurrencies(value, this.canUseKeys() ? keyPrice.metal : undefined);
     }
 
-    private getRequiredCurrencies(
+    private getRequired(
         buyerCurrencies: CurrencyObject,
         price: Currencies,
         useKeys: boolean
@@ -258,16 +275,6 @@ class UserCart extends Cart {
                 return reject('cart is empty');
             }
 
-            // TODO: Finish constructing offer
-
-            // Check amountCanTrade on each item
-
-            // Get prices
-
-            // Check if the buyer can afford to do the trade
-
-            // Add metal from buyer and change from seller
-
             const offer = this.bot.manager.createOffer(this.partner);
 
             const alteredMessages: string[] = [];
@@ -298,7 +305,7 @@ class UserCart extends Cart {
                                 pluralize(this.bot.schema.getName(SKU.fromString(sku), false), ourAssetids.length, true)
                         );
 
-                        // Add the max amount to the offer
+                        // Add the max amount to the cart
                         this.addOurItem(sku, ourAssetids.length);
                     }
                 }
@@ -312,14 +319,6 @@ class UserCart extends Cart {
                             ' more ' +
                             this.bot.schema.getName(SKU.fromString(sku), false)
                     );
-                }
-
-                for (let i = 0; i < amount; i++) {
-                    offer.addMyItem({
-                        appid: 440,
-                        contextid: '2',
-                        assetid: ourAssetids[i]
-                    });
                 }
             }
 
@@ -339,11 +338,10 @@ class UserCart extends Cart {
                         continue;
                     }
 
-                    let amount = this.getTheirCount(sku);
+                    const amount = this.getTheirCount(sku);
                     const theirAssetids = theirInventory.findBySKU(sku, true);
 
                     if (amount > theirAssetids.length) {
-                        amount = theirAssetids.length;
                         // Remove the item from the cart
                         this.removeTheirItem(sku);
 
@@ -361,19 +359,242 @@ class UserCart extends Cart {
                                     )
                             );
 
-                            // Add the max amount to the offer
+                            // Add the max amount to the cart
                             this.addTheirItem(sku, theirAssetids.length);
                         }
                     }
+                }
 
-                    for (let i = 0; i < amount; i++) {
-                        offer.addTheirItem({
+                const itemsDict: {
+                    our: UnknownDictionary<number>;
+                    their: UnknownDictionary<number>;
+                } = {
+                    our: Object.assign({}, this.our),
+                    their: Object.assign({}, this.their)
+                };
+
+                // Done checking if buyer and seller has the items and if the bot wants to buy / sell more
+
+                // Add values to the offer
+
+                // Figure out who the buyer is and what they are offering
+                const { isBuyer, currencies } = this.getCurrencies();
+
+                // We now know who the buyer is, now get their inventory
+                const buyerInventory = isBuyer ? this.bot.inventoryManager.getInventory() : theirInventory;
+
+                if (this.bot.inventoryManager.amountCanAfford(this.canUseKeys(), currencies, buyerInventory) < 1) {
+                    // Buyer can't afford the items
+                    return reject((isBuyer ? 'I' : 'You') + " don't have enough pure for this trade");
+                }
+
+                const keyPrice = this.bot.pricelist.getKeyPrice();
+
+                const ourItemsValue = this.getOurCurrencies().toValue(keyPrice.metal);
+                const theirItemsValue = this.getTheirCurrencies().toValue(keyPrice.metal);
+
+                // Create exchange object with our and their items values
+                const exchange = {
+                    our: { value: ourItemsValue, keys: 0, scrap: ourItemsValue },
+                    their: { value: theirItemsValue, keys: 0, scrap: theirItemsValue }
+                };
+
+                // Figure out what pure to pick from the buyer, and if change is needed
+
+                const buyerCurrenciesWithAssetids = buyerInventory.getCurrencies();
+
+                const buyerCurrenciesCount = {
+                    '5021;6': buyerCurrenciesWithAssetids['5021;6'].length,
+                    '5002;6': buyerCurrenciesWithAssetids['5002;6'].length,
+                    '5001;6': buyerCurrenciesWithAssetids['5001;6'].length,
+                    '5000;6': buyerCurrenciesWithAssetids['5000;6'].length
+                };
+
+                const required = this.getRequired(buyerCurrenciesCount, currencies, this.canUseKeys());
+
+                // Add the value that the buyer pays to the exchange
+                exchange[isBuyer ? 'our' : 'their'].value += currencies.toValue(keyPrice.metal);
+                exchange[isBuyer ? 'our' : 'their'].keys += required.currencies['5021;6'];
+                exchange[isBuyer ? 'our' : 'their'].scrap +=
+                    required.currencies['5002;6'] * 9 +
+                    required.currencies['5001;6'] * 3 +
+                    required.currencies['5000;6'];
+
+                const itemsDiff: UnknownDictionary<number> = {};
+
+                // Add items to offer
+
+                // Add our items
+                for (const sku in this.our) {
+                    const amount = this.our[sku];
+                    const assetids = ourInventory.findBySKU(sku, true);
+
+                    itemsDiff[sku] = (itemsDiff[sku] || 0) - amount;
+
+                    let missing = amount;
+
+                    for (let i = 0; i < assetids.length; i++) {
+                        const isAdded = offer.addMyItem({
                             appid: 440,
                             contextid: '2',
-                            assetid: theirAssetids[i]
+                            assetid: assetids[i]
                         });
+
+                        if (isAdded) {
+                            // The item was added to the offer
+                            missing--;
+                            if (missing === 0) {
+                                // We added all the items
+                                break;
+                            }
+                        }
+                    }
+
+                    if (missing !== 0) {
+                        log.warn('Failed to create offer because missing our items', {
+                            sku: sku,
+                            required: amount,
+                            missing: missing
+                        });
+
+                        return reject('Something went wrong while constructing the offer');
                     }
                 }
+
+                // Add their items
+                for (const sku in this.their) {
+                    const amount = this.their[sku];
+                    const assetids = theirInventory.findBySKU(sku, true);
+
+                    itemsDiff[sku] = (itemsDiff[sku] || 0) + amount;
+
+                    let missing = amount;
+
+                    for (let i = 0; i < assetids.length; i++) {
+                        const isAdded = offer.addTheirItem({
+                            appid: 440,
+                            contextid: '2',
+                            assetid: assetids[i]
+                        });
+
+                        if (isAdded) {
+                            missing--;
+                            if (missing === 0) {
+                                break;
+                            }
+                        }
+                    }
+
+                    if (missing !== 0) {
+                        log.warn('Failed to create offer because missing their items', {
+                            sku: sku,
+                            required: amount,
+                            missing: missing
+                        });
+
+                        return reject('Something went wrong while constructing the offer');
+                    }
+                }
+
+                const sellerInventory = isBuyer ? theirInventory : ourInventory;
+
+                if (required.change !== 0) {
+                    let change = Math.abs(required.change);
+
+                    exchange[isBuyer ? 'their' : 'our'].value += change;
+                    exchange[isBuyer ? 'their' : 'our'].scrap += change;
+
+                    const currencies = sellerInventory.getCurrencies();
+                    // We won't use keys when giving change
+                    delete currencies['5021;6'];
+
+                    for (const sku in currencies) {
+                        if (!Object.prototype.hasOwnProperty.call(currencies, sku)) {
+                            continue;
+                        }
+
+                        let value = 0;
+
+                        if (sku === '5002;6') {
+                            value = 9;
+                        } else if (sku === '5001;6') {
+                            value = 3;
+                        } else if (sku === '5000;6') {
+                            value = 1;
+                        }
+
+                        if (change / value >= 1) {
+                            const whose = isBuyer ? 'their' : 'our';
+
+                            for (let i = 0; i < currencies[sku].length; i++) {
+                                const isAdded = offer[isBuyer ? 'addTheirItem' : 'addMyItem']({
+                                    assetid: currencies[sku][i],
+                                    appid: 440,
+                                    contextid: '2',
+                                    amount: 1
+                                });
+
+                                if (isAdded) {
+                                    itemsDict[whose][sku] = (itemsDict[whose][sku] || 0) + 1;
+                                    itemsDiff[sku] = (itemsDiff[sku] || 0) + (isBuyer ? 1 : -1);
+                                    change -= value;
+                                    if (change < value) {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (change !== 0) {
+                        return reject('I am missing ' + Currencies.toRefined(change) + ' ref as change');
+                    }
+                }
+
+                for (const sku in required.currencies) {
+                    if (!Object.prototype.hasOwnProperty.call(required.currencies, sku)) {
+                        continue;
+                    }
+
+                    if (required.currencies[sku] === 0) {
+                        continue;
+                    }
+
+                    itemsDict[isBuyer ? 'our' : 'their'][sku] = required.currencies[sku];
+                    itemsDiff[sku] = (itemsDiff[sku] || 0) + required.currencies[sku] * (isBuyer ? -1 : 1);
+
+                    for (let i = 0; i < buyerCurrenciesWithAssetids[sku].length; i++) {
+                        const isAdded = offer[isBuyer ? 'addMyItem' : 'addTheirItem']({
+                            assetid: buyerCurrenciesWithAssetids[sku][i],
+                            appid: 440,
+                            contextid: '2',
+                            amount: 1
+                        });
+
+                        if (isAdded) {
+                            required.currencies[sku]--;
+                            if (required.currencies[sku] === 0) {
+                                break;
+                            }
+                        }
+                    }
+
+                    if (required.currencies[sku] !== 0) {
+                        log.warn('Failed to create offer because missing buyer pure', {
+                            requiredCurrencies: required.currencies,
+                            sku: sku
+                        });
+
+                        return reject('Something went wrong while constructing the offer');
+                    }
+                }
+
+                // Check if the buyer can afford to do the trade
+
+                // Add metal from buyer and change from seller
+                offer.data('diff', itemsDiff);
+                offer.data('dict', itemsDict);
+                offer.data('value', exchange);
 
                 this.offer = offer;
 
@@ -388,7 +609,7 @@ class UserCart extends Cart {
             return 'Your cart is empty.';
         }
 
-        const currencies = this.getCurrencies();
+        const { isBuyer, currencies } = this.getCurrencies();
 
         let str = '== YOUR CART ==';
 
@@ -402,9 +623,9 @@ class UserCart extends Cart {
             str += '\n- ' + this.our[sku] + 'x ' + name;
         }
 
-        if (currencies.our.keys === 0 && currencies.our.metal === 0) {
+        if (isBuyer) {
             // We don't offer any currencies, add their currencies to cart string because we are buying their value
-            str += '\n' + (Object.keys(this.our).length === 0 ? '' : 'and ') + currencies.their.toString();
+            str += '\n' + (Object.keys(this.our).length === 0 ? '' : 'and ') + currencies.toString();
         }
 
         str += '\n\nYour side (items you will lose):';
@@ -417,9 +638,9 @@ class UserCart extends Cart {
             str += '\n- ' + this.their[sku] + 'x ' + name;
         }
 
-        if (currencies.their.keys === 0 && currencies.their.metal === 0) {
+        if (!isBuyer) {
             // They don't offer any currencies, add our currencies to cart string because they are buying our value
-            str += '\n' + (Object.keys(this.their).length === 0 ? '' : 'and ') + currencies.our.toString();
+            str += '\n' + (Object.keys(this.their).length === 0 ? '' : 'and ') + currencies.toString();
         }
 
         return str;
