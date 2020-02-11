@@ -283,6 +283,18 @@ export = class Commands {
             return;
         }
 
+        const activeOfferID = this.bot.trades.getActiveOffer(steamID);
+
+        if (activeOfferID !== null) {
+            this.bot.sendMessage(
+                steamID,
+                'You already have an active offer! Please finish it before requesting a new one:  https://steamcommunity.com/tradeoffer/' +
+                    activeOfferID +
+                    '/'
+            );
+            return;
+        }
+
         const currentPosition = this.cartQueue.getPosition(steamID);
 
         if (currentPosition !== -1) {
@@ -412,7 +424,7 @@ export = class Commands {
                     pluralize(name, amount, true) +
                     '. ' +
                     (amount > 1 ? 'They have' : 'It has') +
-                    ' been added to your cart'
+                    ' been added to your cart.'
             );
         } else {
             this.bot.sendMessage(
@@ -480,7 +492,7 @@ export = class Commands {
 
             this.bot.sendMessage(
                 steamID,
-                'I only have ' +
+                'I can only sell ' +
                     pluralize(name, amount, true) +
                     '. ' +
                     (amount > 1 ? 'They have' : 'It has') +

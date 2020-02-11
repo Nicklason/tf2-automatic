@@ -3,6 +3,7 @@ import { UnknownDictionaryKnownValues } from '../types/common';
 import moment from 'moment';
 import pluralize from 'pluralize';
 import retry from 'retry';
+import SteamID from 'steamid';
 
 import Bot from './Bot';
 
@@ -129,6 +130,37 @@ export = class Trades {
 
     isInTrade(assetid: string): boolean {
         return this.itemsInTrade.some(v => assetid === v);
+    }
+
+    getActiveOffer(steamID: SteamID): string | null {
+        const pollData = this.bot.manager.pollData;
+
+        if (!pollData.offerData) {
+            return null;
+        }
+
+        const steamID64 = typeof steamID === 'string' ? steamID : steamID.getSteamID64();
+
+        for (const id in pollData.sent) {
+            if (!Object.prototype.hasOwnProperty.call(pollData.sent, id)) {
+                continue;
+            }
+
+            if (pollData.sent[id] !== TradeOfferManager.ETradeOfferState.Active) {
+                continue;
+            }
+
+            const data = pollData.offerData[id] || null;
+            if (data === null) {
+                continue;
+            }
+
+            if (data.partner === steamID64) {
+                return id;
+            }
+        }
+
+        return null;
     }
 
     getOffers(
