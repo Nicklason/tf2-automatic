@@ -122,6 +122,10 @@ abstract class Cart {
             items.push({ name: this.bot.schema.getName(SKU.fromString(sku), false), amount: this.our[sku] });
         }
 
+        if (items.length === 0) {
+            return ['nothing'];
+        }
+
         let summary: string[];
 
         if (items.length <= 1) {
@@ -136,10 +140,6 @@ abstract class Cart {
             summary = items.map(v => pluralize(v.name, v.amount, true));
         }
 
-        /* if (summary.length > 1) {
-            return summary.slice(0, summary.length - 1).join(', ') + ' and ' + summary[0];
-        } */
-
         return summary;
     }
 
@@ -152,6 +152,10 @@ abstract class Cart {
             }
 
             items.push({ name: this.bot.schema.getName(SKU.fromString(sku), false), amount: this.their[sku] });
+        }
+
+        if (items.length === 0) {
+            return ['nothing'];
         }
 
         let summary: string[];
