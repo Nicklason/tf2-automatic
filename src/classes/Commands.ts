@@ -6,7 +6,7 @@ import Currencies from 'tf2-currencies';
 
 import Bot from './Bot';
 import CommandParser from './CommandParser';
-import { Entry } from './Pricelist';
+import { Entry, EntryData } from './Pricelist';
 import Cart from './Cart';
 import AdminCart from './AdminCart';
 import UserCart from './UserCart';
@@ -16,6 +16,8 @@ import CartQueue from './CartQueue';
 import { Item } from '../types/TeamFortress2';
 import { UnknownDictionaryKnownValues } from '../types/common';
 import { fixItem } from '../lib/items';
+import validator from '../lib/validator';
+import log from '../lib/logger';
 
 const COMMANDS: string[] = [
     '!help - Get list of commands',
@@ -32,7 +34,14 @@ const COMMANDS: string[] = [
     '!checkout - Make the bot send an offer the items in the cart'
 ];
 
-const ADMIN_COMMANDS: string[] = ['!deposit - Used to deposit items', '!withdraw - Used to withdraw items'];
+const ADMIN_COMMANDS: string[] = [
+    '!deposit - Used to deposit items',
+    '!withdraw - Used to withdraw items',
+    '!get - Get raw information about a pricelist entry',
+    '!add - Add a pricelist entry',
+    '!remove - Remove a pricelist entry',
+    '!update - Update a pricelist entry'
+];
 
 export = class Commands {
     private readonly bot: Bot;
@@ -78,6 +87,14 @@ export = class Commands {
             this.buyCommand(steamID, message);
         } else if (command === 'sell') {
             this.sellCommand(steamID, message);
+        } else if (command === 'get' && isAdmin) {
+            this.getCommand(steamID, message);
+        } else if (command === 'add' && isAdmin) {
+            this.addCommand(steamID, message);
+        } else if (command === 'remove' && isAdmin) {
+            this.removeCommand(steamID, message);
+        } else if (command === 'update' && isAdmin) {
+            this.updateCommand(steamID, message);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
@@ -617,6 +634,370 @@ export = class Commands {
         this.addCartToQueue(cart);
     }
 
+    private getCommand(steamID: SteamID, message: string): void {
+        const params = CommandParser.parseParams(CommandParser.removeCommand(message));
+
+        if (params.item !== undefined) {
+            // Remove by full name
+            let match = this.bot.pricelist.searchByName(params.item as string, false);
+
+            if (match === null) {
+                this.bot.sendMessage(
+                    steamID,
+                    'I could not find any items in my pricelist that contains "' + params.item + '"'
+                );
+                return;
+            } else if (Array.isArray(match)) {
+                const matchCount = match.length;
+                if (match.length > 20) {
+                    match = match.splice(0, 20);
+                }
+
+                let reply =
+                    "I've found " +
+                    match.length +
+                    ' items. Try with one of the items shown below:\n' +
+                    match.join(',\n');
+                if (matchCount > match.length) {
+                    const other = matchCount - match.length;
+                    reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
+                }
+
+                this.bot.sendMessage(steamID, reply);
+                return;
+            }
+
+            delete params.item;
+            params.sku = match.sku;
+        } else if (params.sku === undefined) {
+            const item = this.getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
+        if (params.sku === undefined) {
+            this.bot.sendMessage(steamID, 'Missing item');
+            return;
+        }
+
+        const match = this.bot.pricelist.getPrice(params.sku as string);
+
+        if (match === null) {
+            this.bot.sendMessage(steamID, 'Could not find item "' + params.sku + '" in the pricelist');
+        } else {
+            this.bot.sendMessage(steamID, '/code ' + JSON.stringify(match, null, 4));
+        }
+    }
+
+    private addCommand(steamID: SteamID, message: string): void {
+        const params = CommandParser.parseParams(CommandParser.removeCommand(message)) as any;
+
+        if (params.enabled === undefined) {
+            params.enabled = true;
+        }
+        if (params.max === undefined) {
+            params.max = 1;
+        }
+        if (params.min === undefined) {
+            params.min = 0;
+        }
+        if (params.intent === undefined) {
+            params.intent = 2;
+        } else if (typeof params.intent === 'string') {
+            const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
+            if (intent !== -1) {
+                params.intent = intent;
+            }
+        }
+
+        if (typeof params.buy === 'object') {
+            params.buy.keys = params.buy.keys || 0;
+            params.buy.metal = params.buy.metal || 0;
+
+            if (params.autoprice === undefined) {
+                params.autoprice = false;
+            }
+        }
+        if (typeof params.sell === 'object') {
+            params.sell.keys = params.sell.keys || 0;
+            params.sell.metal = params.sell.metal || 0;
+
+            if (params.autoprice === undefined) {
+                params.autoprice = false;
+            }
+        }
+
+        if (params.autoprice === undefined) {
+            params.autoprice = true;
+        }
+
+        if (params.sku === undefined) {
+            const item = this.getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
+        this.bot.pricelist
+            .addPrice(params as EntryData, true)
+            .then(entry => {
+                this.bot.sendMessage(steamID, 'Added "' + entry.name + '".');
+            })
+            .catch(err => {
+                this.bot.sendMessage(steamID, 'Failed to add the item to the pricelist: ' + err.message);
+            });
+    }
+
+    private updateCommand(steamID: SteamID, message: string): void {
+        const params = CommandParser.parseParams(CommandParser.removeCommand(message));
+
+        if (typeof params.intent === 'string') {
+            const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
+            if (intent !== -1) {
+                params.intent = intent;
+            }
+        }
+
+        if (params.all === true) {
+            // TODO: Must have atleast one other param
+            const pricelist = this.bot.pricelist.getPrices();
+
+            if (pricelist.length === 0) {
+                this.bot.sendMessage(steamID, 'Your pricelist is empty.');
+                return;
+            }
+
+            for (let i = 0; i < pricelist.length; i++) {
+                if (params.intent) {
+                    pricelist[i].intent = params.intent as 0 | 1 | 2;
+                }
+
+                if (params.min && typeof params.min === 'number') {
+                    pricelist[i].min = params.min;
+                }
+
+                if (params.max && typeof params.max === 'number') {
+                    pricelist[i].max = params.max;
+                }
+
+                if (params.enabled === false || params.enabled === true) {
+                    pricelist[i].enabled = params.enabled;
+                }
+
+                if (params.autoprice === false) {
+                    pricelist[i].time = null;
+                    pricelist[i].autoprice = false;
+                } else if (params.autoprice === true) {
+                    pricelist[i].time = 0;
+                    pricelist[i].autoprice = true;
+                }
+
+                if (i === 0) {
+                    const errors = validator(
+                        {
+                            sku: pricelist[i].sku,
+                            enabled: pricelist[i].enabled,
+                            intent: pricelist[i].intent,
+                            max: pricelist[i].max,
+                            min: pricelist[i].min,
+                            autoprice: pricelist[i].autoprice,
+                            buy: pricelist[i].buy.toJSON(),
+                            sell: pricelist[i].sell.toJSON(),
+                            time: pricelist[i].time
+                        },
+                        'pricelist'
+                    );
+
+                    if (errors !== null) {
+                        throw new Error(errors.join(', '));
+                    }
+                }
+            }
+
+            // FIXME: Make it so that it is not needed to remove all listings
+
+            if (params.autoprice !== true) {
+                this.bot.getHandler().onPricelist(pricelist);
+                this.bot.sendMessage(steamID, 'Updated pricelist!');
+                this.bot.listings.redoListings().asCallback();
+                return;
+            }
+
+            this.bot.sendMessage(steamID, 'Updating prices...');
+
+            this.bot.pricelist
+                .setupPricelist()
+                .then(() => {
+                    this.bot.sendMessage(steamID, 'Updated pricelist!');
+                    this.bot.listings.redoListings().asCallback();
+                })
+                .catch(err => {
+                    log.warn('Failed to update prices: ', err);
+                    this.bot.sendMessage(steamID, 'Failed to update prices: ' + err.message);
+                    return;
+                });
+            return;
+        }
+
+        if (typeof params.buy === 'object') {
+            params.buy.keys = params.buy.keys || 0;
+            params.buy.metal = params.buy.metal || 0;
+
+            if (params.autoprice === undefined) {
+                params.autoprice = false;
+            }
+        }
+        if (typeof params.sell === 'object') {
+            params.sell.keys = params.sell.keys || 0;
+            params.sell.metal = params.sell.metal || 0;
+
+            if (params.autoprice === undefined) {
+                params.autoprice = false;
+            }
+        }
+
+        if (params.item !== undefined) {
+            // Remove by full name
+            let match = this.bot.pricelist.searchByName(params.item as string, false);
+
+            if (match === null) {
+                this.bot.sendMessage(
+                    steamID,
+                    'I could not find any items in my pricelist that contains "' + params.item + '"'
+                );
+                return;
+            } else if (Array.isArray(match)) {
+                const matchCount = match.length;
+                if (match.length > 20) {
+                    match = match.splice(0, 20);
+                }
+
+                let reply =
+                    "I've found " +
+                    match.length +
+                    ' items. Try with one of the items shown below:\n' +
+                    match.join(',\n');
+                if (matchCount > match.length) {
+                    const other = matchCount - match.length;
+                    reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
+                }
+
+                this.bot.sendMessage(steamID, reply);
+                return;
+            }
+
+            delete params.item;
+            params.sku = match.sku;
+        } else if (params.sku === undefined) {
+            const item = this.getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
+        if (!this.bot.pricelist.hasPrice(params.sku as string)) {
+            this.bot.sendMessage(steamID, 'Item is not in the pricelist.');
+            return;
+        }
+
+        const entryData = this.bot.pricelist.getPrice(params.sku as string, false).getJSON();
+
+        delete entryData.time;
+        delete params.sku;
+
+        if (Object.keys(params).length === 0) {
+            this.bot.sendMessage(steamID, 'Missing properties to update.');
+            return;
+        }
+
+        // Update entry
+        for (const property in params) {
+            if (!Object.prototype.hasOwnProperty.call(params, property)) {
+                continue;
+            }
+
+            entryData[property] = params[property];
+        }
+
+        this.bot.pricelist
+            .updatePrice(entryData, true)
+            .then(entry => {
+                this.bot.sendMessage(steamID, 'Updated "' + entry.name + '".');
+            })
+            .catch(err => {
+                this.bot.sendMessage(
+                    steamID,
+                    'Failed to update pricelist entry: ' +
+                        (err.body && err.body.message ? err.body.message : err.message)
+                );
+            });
+    }
+
+    private removeCommand(steamID: SteamID, message: string): void {
+        const params = CommandParser.parseParams(CommandParser.removeCommand(message));
+
+        if (params.item !== undefined) {
+            // Remove by full name
+            let match = this.bot.pricelist.searchByName(params.item as string, false);
+
+            if (match === null) {
+                this.bot.sendMessage(
+                    steamID,
+                    'I could not find any items in my pricelist that contains "' + params.item + '"'
+                );
+                return;
+            } else if (Array.isArray(match)) {
+                const matchCount = match.length;
+                if (match.length > 20) {
+                    match = match.splice(0, 20);
+                }
+
+                let reply =
+                    "I've found " +
+                    match.length +
+                    ' items. Try with one of the items shown below:\n' +
+                    match.join(',\n');
+                if (matchCount > match.length) {
+                    const other = matchCount - match.length;
+                    reply += ',\nand ' + other + ' other ' + pluralize('item', other) + '.';
+                }
+
+                this.bot.sendMessage(steamID, reply);
+                return;
+            }
+
+            delete params.item;
+            params.sku = match.sku;
+        } else if (params.sku === undefined) {
+            const item = this.getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
+        this.bot.pricelist
+            .removePrice(params.sku as string, true)
+            .then(entry => {
+                this.bot.sendMessage(steamID, 'Removed "' + entry.name + '".');
+            })
+            .catch(err => {
+                this.bot.sendMessage(steamID, 'Failed to remove pricelist entry: ' + err.message);
+            });
+    }
+
     private getItemAndAmount(steamID: SteamID, message: string): { match: Entry; amount: number } | null {
         let name = message;
         let amount = 1;
@@ -692,7 +1073,7 @@ export = class Commands {
             if (match.length === 0) {
                 this.bot.sendMessage(
                     steamID,
-                    'Could not find an item in the schema with the name "' + params.name + '"'
+                    'Could not find an item in the schema with the name "' + params.name + '".'
                 );
                 return null;
             } else if (match.length !== 1) {
@@ -732,7 +1113,7 @@ export = class Commands {
         }
 
         if (!foundSomething) {
-            this.bot.sendMessage(steamID, 'Missing item properties');
+            this.bot.sendMessage(steamID, 'Missing item properties.');
             return null;
         }
 
@@ -742,7 +1123,7 @@ export = class Commands {
             if (schemaItem === null) {
                 this.bot.sendMessage(
                     steamID,
-                    'Could not find an item in the schema with the defindex "' + params.defindex + '"'
+                    'Could not find an item in the schema with the defindex "' + params.defindex + '".'
                 );
                 return null;
             }
@@ -759,7 +1140,7 @@ export = class Commands {
             if (quality === null) {
                 this.bot.sendMessage(
                     steamID,
-                    'Could not find a quality in the schema with the name "' + params.quality + '"'
+                    'Could not find a quality in the schema with the name "' + params.quality + '".'
                 );
                 return null;
             }
@@ -772,7 +1153,7 @@ export = class Commands {
             if (paintkit === null) {
                 this.bot.sendMessage(
                     steamID,
-                    'Could not find a skin in the schema with the name "' + item.paintkit + '"'
+                    'Could not find a skin in the schema with the name "' + item.paintkit + '".'
                 );
                 return null;
             }
@@ -786,7 +1167,7 @@ export = class Commands {
             if (effect === null) {
                 this.bot.sendMessage(
                     steamID,
-                    'Could not find an unusual effect in the schema with the name "' + params.effect + '"'
+                    'Could not find an unusual effect in the schema with the name "' + params.effect + '".'
                 );
                 return null;
             }
@@ -802,7 +1183,7 @@ export = class Commands {
             if (schemaItem === null) {
                 this.bot.sendMessage(
                     steamID,
-                    'Could not find an item in the schema with the defindex "' + params.defindex + '"'
+                    'Could not find an item in the schema with the defindex "' + params.defindex + '".'
                 );
                 return null;
             }
@@ -825,7 +1206,7 @@ export = class Commands {
             if (match.length === 0) {
                 this.bot.sendMessage(
                     steamID,
-                    'Could not find an item in the schema with the name "' + params.name + '"'
+                    'Could not find an item in the schema with the name "' + params.name + '".'
                 );
                 return null;
             } else if (match.length !== 1) {
@@ -862,13 +1243,25 @@ export = class Commands {
             if (quality === null) {
                 this.bot.sendMessage(
                     steamID,
-                    'Could not find a quality in the schema with the name "' + params.outputQuality + '"'
+                    'Could not find a quality in the schema with the name "' + params.outputQuality + '".'
                 );
                 return null;
             }
 
             item.outputQuality = quality;
         }
+
+        for (const key in params) {
+            if (!Object.prototype.hasOwnProperty.call(params, key)) {
+                continue;
+            }
+
+            if (item[key] !== undefined) {
+                delete params[key];
+            }
+        }
+
+        delete params.name;
 
         return fixItem(item, this.bot.schema);
     }

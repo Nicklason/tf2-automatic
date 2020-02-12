@@ -251,7 +251,9 @@ export = class Listings {
                 log.debug('Checking listings for ' + pluralize('item', pricelist.length, true) + '...');
 
                 this.recursiveCheckPricelist(pricelist).asCallback(() => {
+                    log.debug('Done checking all');
                     // Done checking all listings
+                    this.checkingAllListings = false;
                     next();
                 });
             };
@@ -261,7 +263,7 @@ export = class Listings {
                 return;
             }
 
-            callbackQueue.add('removeAll', () => {
+            callbackQueue.add('removeAllListings', () => {
                 doneRemovingAll();
             });
         });
@@ -278,13 +280,7 @@ export = class Listings {
                 }
 
                 setImmediate(() => {
-                    /* if (index % 100 === 0) {
-                        console.log('Checking ' + index + ' out of ' + pricelist.length);
-                    } */
-
-                    /* const start = new Date().getTime(); */
                     this.checkBySKU(pricelist[index].sku, pricelist[index]);
-                    /* console.log(new Date().getTime() - start); */
 
                     index++;
 

@@ -17,6 +17,11 @@ declare module 'tf2-currencies' {
         toValue(conversion?: number): number;
 
         toString(): string;
+
+        toJSON(): {
+            keys: number;
+            metal: number;
+        };
     }
 
     export = Currencies;
