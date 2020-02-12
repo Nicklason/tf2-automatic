@@ -145,8 +145,8 @@ export = class Bot {
 
         this.addListener(this.listingManager, 'heartbeat', this.handler.onHeartbeat.bind(this), true);
 
-        this.addListener(this.pricelist, 'pricelist', this.handler.onPricelist.bind(this.pricelist), false);
-        this.addListener(this.pricelist, 'price', this.handler.onPriceChange.bind(this.pricelist), true);
+        this.addListener(this.pricelist, 'pricelist', this.handler.onPricelist.bind(this.handler), false);
+        this.addListener(this.pricelist, 'price', this.handler.onPriceChange.bind(this.handler), true);
     }
 
     getHandler(): Handler {
@@ -221,8 +221,9 @@ export = class Bot {
                     },
                     (callback): void => {
                         log.info('Setting up pricelist...');
+
                         this.pricelist
-                            .setPricelist(data.pricelist === undefined ? [] : data.pricelist)
+                            .setPricelist(!Array.isArray(data.pricelist) ? [] : data.pricelist)
                             .asCallback(callback);
                     },
                     (callback): void => {

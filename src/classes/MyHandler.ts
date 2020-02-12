@@ -165,8 +165,8 @@ export = class MyHandler extends Handler {
             });
     }
 
-    onPriceChange(): void {
-        // TODO: Update backpack.tf listings
+    onPriceChange(sku: string, entry: Entry): void {
+        this.bot.listings.checkBySKU(sku, entry);
     }
 
     onLoginThrottle(wait: number): void {
