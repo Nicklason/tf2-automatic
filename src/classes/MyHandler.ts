@@ -232,7 +232,7 @@ export = class MyHandler extends Handler {
         }
     }
 
-    keepMetalSupply(): void {
+    private keepMetalSupply(): void {
         const currencies = this.bot.inventoryManager.getInventory().getCurrencies();
 
         let refined = currencies['5002;6'].length;
@@ -288,7 +288,7 @@ export = class MyHandler extends Handler {
         }
     }
 
-    private sortInventory() {
+    private sortInventory(): void {
         if (process.env.DISABLE_INVENTORY_SORT !== 'true') {
             this.bot.tf2gc.sortInventory(3);
         }
