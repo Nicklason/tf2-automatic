@@ -107,6 +107,7 @@ export = class Bot {
         this.tf2 = new TF2(this.client);
 
         this.friends = new Friends(this);
+        this.groups = new Groups(this);
         this.trades = new Trades(this);
         this.listings = new Listings(this);
         this.tf2gc = new TF2GC(this);

@@ -91,6 +91,8 @@ abstract class Cart {
         if (ourSummary.length > 1) {
             ourSummaryString =
                 ourSummary.slice(0, ourSummary.length - 1).join(', ') + ' and ' + ourSummary[ourSummary.length - 1];
+        } else if (ourSummary.length === 0) {
+            ourSummaryString = 'nothing';
         } else {
             ourSummaryString = ourSummary.join(', ');
         }
@@ -101,9 +103,11 @@ abstract class Cart {
 
         if (theirSummary.length > 1) {
             theirSummaryString =
-                ourSummary.slice(0, theirSummary.length - 1).join(', ') +
+                theirSummary.slice(0, theirSummary.length - 1).join(', ') +
                 ' and ' +
                 theirSummary[theirSummary.length - 1];
+        } else if (theirSummary.length === 0) {
+            theirSummaryString = 'nothing';
         } else {
             theirSummaryString = theirSummary.join(', ');
         }
@@ -120,10 +124,6 @@ abstract class Cart {
             }
 
             items.push({ name: this.bot.schema.getName(SKU.fromString(sku), false), amount: this.our[sku] });
-        }
-
-        if (items.length === 0) {
-            return ['nothing'];
         }
 
         let summary: string[];
@@ -152,10 +152,6 @@ abstract class Cart {
             }
 
             items.push({ name: this.bot.schema.getName(SKU.fromString(sku), false), amount: this.their[sku] });
-        }
-
-        if (items.length === 0) {
-            return ['nothing'];
         }
 
         let summary: string[];

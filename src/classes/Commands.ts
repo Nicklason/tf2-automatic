@@ -46,7 +46,8 @@ const ADMIN_COMMANDS: string[] = [
     '!restart - Restart the bot',
     '!version - Get version that the bot is running',
     '!avatar - Change avatar',
-    '!name - Change name'
+    '!name - Change name',
+    '!trades - Get statistics for accepted trades'
 ];
 
 export = class Commands {
@@ -111,6 +112,8 @@ export = class Commands {
             this.nameCommand(steamID, message);
         } else if (command === 'avatar' && isAdmin) {
             this.avatarCommand(steamID, message);
+        } else if (command === 'trades') {
+            this.tradesCommand(steamID);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
@@ -1048,6 +1051,48 @@ export = class Commands {
 
             this.bot.sendMessage(steamID, 'Successfully uploaded new avatar.');
         });
+    }
+
+    private tradesCommand(steamID: SteamID): void {
+        const now = moment();
+        const startOfDay = now.startOf('day');
+
+        let tradesToday = 0;
+        let trades24Hours = 0;
+        let tradesTotal = 0;
+
+        const offerData = this.bot.manager.pollData.offerData;
+
+        for (const offerID in offerData) {
+            if (!Object.prototype.hasOwnProperty.call(offerData, offerID)) {
+                continue;
+            }
+
+            if (offerData[offerID].handledByUs === true && offerData[offerID].isAccepted === true) {
+                // Sucessful trades handled by the bot
+                tradesTotal++;
+
+                if (offerData[offerID].finishTimestamp >= now.valueOf() - 86400000) {
+                    // Within the last 24 hours
+                    trades24Hours++;
+                }
+
+                if (offerData[offerID].finishTimestamp >= now.valueOf() - startOfDay.valueOf()) {
+                    // All trades since 0:00 in the morning.
+                    tradesToday++;
+                }
+            }
+        }
+
+        this.bot.sendMessage(
+            steamID,
+            'Total: ' +
+                tradesTotal +
+                ' \n Last 24 hours: ' +
+                trades24Hours +
+                ' \n Since beginning of today: ' +
+                tradesToday
+        );
     }
 
     private removeCommand(steamID: SteamID, message: string): void {
