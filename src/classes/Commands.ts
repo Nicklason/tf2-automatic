@@ -3,6 +3,7 @@ import SKU from 'tf2-sku';
 import pluralize from 'pluralize';
 import moment from 'moment';
 import Currencies from 'tf2-currencies';
+import validUrl from 'valid-url';
 
 import Bot from './Bot';
 import CommandParser from './CommandParser';
@@ -43,7 +44,9 @@ const ADMIN_COMMANDS: string[] = [
     '!update - Update a pricelist entry',
     '!stop - Stop the bot',
     '!restart - Restart the bot',
-    '!version - Get version that the bot is running'
+    '!version - Get version that the bot is running',
+    '!avatar - Change avatar',
+    '!name - Change name'
 ];
 
 export = class Commands {
@@ -104,6 +107,10 @@ export = class Commands {
             this.restartCommand(steamID);
         } else if (command === 'version' && isAdmin) {
             this.versionCommand(steamID);
+        } else if (command === 'name' && isAdmin) {
+            this.nameCommand(steamID, message);
+        } else if (command === 'avatar' && isAdmin) {
+            this.avatarCommand(steamID, message);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
@@ -985,6 +992,62 @@ export = class Commands {
             steamID,
             'Currently running tf2-automatic@' + process.env.BOT_VERSION + '. Checking for a new version...'
         );
+
+        // TODO: Check version
+    }
+
+    private nameCommand(steamID: SteamID, message: string): void {
+        const newName = CommandParser.removeCommand(message);
+
+        if (newName === '') {
+            this.bot.sendMessage(steamID, 'You forgot to add a name. Example: "!name Nicklason"');
+            return;
+        }
+
+        this.bot.community.editProfile(
+            {
+                name: newName
+            },
+            err => {
+                if (err) {
+                    log.warn('Error while changing name: ', err);
+                    this.bot.sendMessage(steamID, 'Error while changing name: ' + err.message);
+                    return;
+                }
+
+                this.bot.sendMessage(steamID, 'Successfully changed name.');
+            }
+        );
+    }
+
+    private avatarCommand(steamID: SteamID, message: string): void {
+        const imageUrl = CommandParser.removeCommand(message);
+
+        if (imageUrl === '') {
+            this.bot.sendMessage(
+                steamID,
+                'You forgot to add an image url. Example: "!avatar https://steamuserimages-a.akamaihd.net/ugc/949595415286366323/8FECE47652C9D77501035833E937584E30D0F5E7/"'
+            );
+            return;
+        }
+
+        if (!validUrl.isUri(imageUrl)) {
+            this.bot.sendMessage(
+                steamID,
+                'Your url is not valid. Example: "!avatar https://steamuserimages-a.akamaihd.net/ugc/949595415286366323/8FECE47652C9D77501035833E937584E30D0F5E7/"'
+            );
+            return;
+        }
+
+        this.bot.community.uploadAvatar(imageUrl, err => {
+            if (err) {
+                log.warn('Error while uploading new avatar: ', err);
+                this.bot.sendMessage(steamID, 'Error while uploading new avatar: ' + err.message);
+                return;
+            }
+
+            this.bot.sendMessage(steamID, 'Successfully uploaded new avatar.');
+        });
     }
 
     private removeCommand(steamID: SteamID, message: string): void {
