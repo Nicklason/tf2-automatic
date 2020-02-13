@@ -425,6 +425,8 @@ export = class MyHandler extends Handler {
             log.debug('Now friends with ' + steamID.getSteamID64());
         }
 
+        const isAdmin = this.bot.isAdmin(steamID);
+
         setImmediate(() => {
             if (!this.bot.friends.isFriend(steamID)) {
                 return;
@@ -438,7 +440,12 @@ export = class MyHandler extends Handler {
                 if (tries >= 5) {
                     log.info('I am now friends with ' + steamID.getSteamID64());
 
-                    this.bot.sendMessage(steamID, 'Hi! If you don\'t know how things work, please type "!help" :)');
+                    this.bot.sendMessage(
+                        steamID,
+                        'Hi! If you don\'t know how things work, please type "!' +
+                            (isAdmin ? 'help' : 'how2trade') +
+                            '" :)'
+                    );
                     return;
                 }
 
@@ -455,7 +462,11 @@ export = class MyHandler extends Handler {
 
             this.bot.sendMessage(
                 steamID,
-                'Hi ' + friend.player_name + '! If you don\'t know how things work, please type "!help" :)'
+                'Hi ' +
+                    friend.player_name +
+                    '! If you don\'t know how things work, please type "!' +
+                    (isAdmin ? 'help' : 'how2trade') +
+                    '" :)'
             );
         });
     }
