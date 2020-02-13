@@ -40,7 +40,9 @@ const ADMIN_COMMANDS: string[] = [
     '!get - Get raw information about a pricelist entry',
     '!add - Add a pricelist entry',
     '!remove - Remove a pricelist entry',
-    '!update - Update a pricelist entry'
+    '!update - Update a pricelist entry',
+    '!stop - Stop the bot',
+    '!restart - Restart the bot'
 ];
 
 export = class Commands {
@@ -95,6 +97,10 @@ export = class Commands {
             this.removeCommand(steamID, message);
         } else if (command === 'update' && isAdmin) {
             this.updateCommand(steamID, message);
+        } else if (command === 'stop' && isAdmin) {
+            this.stopCommand(steamID);
+        } else if (command === 'restart' && isAdmin) {
+            this.restartCommand(steamID);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
@@ -940,6 +946,34 @@ export = class Commands {
                     'Failed to update pricelist entry: ' +
                         (err.body && err.body.message ? err.body.message : err.message)
                 );
+            });
+    }
+
+    private stopCommand(steamID: SteamID): void {
+        this.bot.sendMessage(steamID, 'Stopping...');
+
+        this.bot.botManager.stopProcess().catch(err => {
+            log.warn('Error occurred while trying to stop: ', err);
+            this.bot.sendMessage(steamID, 'An error occurred while trying to stop: ' + err.message);
+        });
+    }
+
+    private restartCommand(steamID: SteamID): void {
+        this.bot.sendMessage(steamID, 'Restarting...');
+
+        this.bot.botManager
+            .restartProcess()
+            .then(restarting => {
+                if (!restarting) {
+                    this.bot.sendMessage(
+                        steamID,
+                        'You are not running the bot with PM2! See the documentation: https://github.com/Nicklason/tf2-automatic/wiki/PM2'
+                    );
+                }
+            })
+            .catch(err => {
+                log.warn('Error occurred while trying to restart: ', err);
+                this.bot.sendMessage(steamID, 'An error occurred while trying to restart: ' + err.message);
             });
     }
 
