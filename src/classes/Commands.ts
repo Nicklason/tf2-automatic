@@ -21,7 +21,7 @@ import log from '../lib/logger';
 
 const COMMANDS: string[] = [
     '!help - Get list of commands',
-    '!how2trade - Guide on how to trade with the bot',
+    '!how2trade - Guide on how to use and trade with the bot',
     '!price [amount] <name> - Get the price and stock of an item',
     '!stock - Get a list of items that the bot has',
     '!rate - Get current key prices',
@@ -113,7 +113,7 @@ export = class Commands {
     private howToTradeCommand(steamID: SteamID): void {
         this.bot.sendMessage(
             steamID,
-            'You can either send me an offer yourself, or use one of my commands to request a trade. Say you want to buy a Team Captain, just type "!buy Team Captain".'
+            'You can either send me an offer yourself, or use one of my commands to request a trade. Say you want to buy a Team Captain, just type "!buy Team Captain". Type "!help" for all the commands.'
         );
     }
 
