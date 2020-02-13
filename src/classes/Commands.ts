@@ -59,29 +59,7 @@ export = class Commands {
 
         const isAdmin = this.bot.isAdmin(steamID);
 
-        if (command === 'keep') {
-            (this.bot.handler as MyHandler).keepMetalSupply();
-        } else if (command === 'combineallreclaimed') {
-            const amount = this.bot.inventoryManager.getInventory().getAmount('5001;6');
-            for (let i = 0; i < Math.floor(amount / 3); i++) {
-                this.bot.tf2gc.combineMetal(5001);
-            }
-        } else if (command === 'combineallscrap') {
-            const amount = this.bot.inventoryManager.getInventory().getAmount('5000;6');
-            for (let i = 0; i < Math.floor(amount / 3); i++) {
-                this.bot.tf2gc.combineMetal(5000);
-            }
-        } else if (command === 'smeltallreclaimed') {
-            const amount = this.bot.inventoryManager.getInventory().getAmount('5001;6');
-            for (let i = 0; i < amount; i++) {
-                this.bot.tf2gc.smeltMetal(5001);
-            }
-        } else if (command === 'smeltallrefined') {
-            const amount = this.bot.inventoryManager.getInventory().getAmount('5002;6');
-            for (let i = 0; i < amount; i++) {
-                this.bot.tf2gc.smeltMetal(5002);
-            }
-        } else if (command === 'help') {
+        if (command === 'help') {
             this.helpCommand(steamID);
         } else if (command === 'how2trade') {
             this.howToTradeCommand(steamID);
