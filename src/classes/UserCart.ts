@@ -658,7 +658,18 @@ class UserCart extends Cart {
                 // Add metal from buyer and change from seller
                 offer.data('diff', itemsDiff);
                 offer.data('dict', itemsDict);
-                offer.data('value', exchange);
+                offer.data('value', {
+                    our: {
+                        total: exchange.our.value,
+                        keys: exchange.our.keys,
+                        metal: Currencies.toRefined(exchange.our.scrap)
+                    },
+                    their: {
+                        total: exchange.their.value,
+                        keys: exchange.their.keys,
+                        metal: Currencies.toRefined(exchange.their.scrap)
+                    }
+                });
 
                 this.offer = offer;
 
