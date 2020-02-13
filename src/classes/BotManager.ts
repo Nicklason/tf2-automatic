@@ -162,6 +162,45 @@ export = class BotManager {
         });
     }
 
+    stopProcess(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (process.env.pm_id === undefined) {
+                this.stop(null);
+                return resolve();
+            }
+
+            log.warn('Stop has been requested, stopping...');
+
+            pm2.stop(process.env.pm_id, function(err) {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve();
+            });
+        });
+    }
+
+    restartProcess(): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            if (process.env.pm_id === undefined) {
+                return resolve(false);
+            }
+
+            // TODO: Make restart function take arguments, for example, an option to update the environment variables
+
+            log.warn('Restart has been initialized, restarting...');
+
+            pm2.restart(process.env.pm_id, function(err) {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(true);
+            });
+        });
+    }
+
     private cleanup(): void {
         if (this.bot !== null) {
             // Make the bot snooze on Steam, that way people will know it is not running
