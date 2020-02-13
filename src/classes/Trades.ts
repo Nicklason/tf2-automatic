@@ -1,5 +1,5 @@
 import TradeOfferManager, { EconItem } from 'steam-tradeoffer-manager';
-import { UnknownDictionaryKnownValues } from '../types/common';
+import { UnknownDictionaryKnownValues, UnknownDictionary } from '../types/common';
 import moment from 'moment';
 import pluralize from 'pluralize';
 import retry from 'retry';
@@ -161,6 +161,30 @@ export = class Trades {
         }
 
         return null;
+    }
+
+    getTradesWithPeople(steamIDs: SteamID[] | string[]): UnknownDictionary<number> {
+        const tradesBySteamID = {};
+
+        steamIDs.forEach(function(steamID) {
+            tradesBySteamID[steamID.toString()] = 0;
+        });
+
+        for (const offerID in this.bot.manager.pollData.offerData) {
+            if (!Object.prototype.hasOwnProperty.call(this.bot.manager.pollData.offerData, offerID)) {
+                continue;
+            }
+
+            const offerData = this.bot.manager.pollData.offerData[offerID];
+
+            if (!offerData.partner || tradesBySteamID[offerData.partner] === undefined) {
+                continue;
+            }
+
+            tradesBySteamID[offerData.partner]++;
+        }
+
+        return tradesBySteamID;
     }
 
     getOffers(

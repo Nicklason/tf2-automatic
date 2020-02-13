@@ -8,6 +8,7 @@ import TF2GC from './TF2GC';
 import Inventory from './Inventory';
 import BotManager from './BotManager';
 import MyHandler from './MyHandler';
+import Groups from './Groups';
 
 import SteamID from 'steamid';
 import SteamUser from 'steam-user';
@@ -44,6 +45,8 @@ export = class Bot {
     readonly listingManager: ListingManager;
 
     readonly friends: Friends;
+
+    readonly groups: Groups;
 
     readonly trades: Trades;
 
