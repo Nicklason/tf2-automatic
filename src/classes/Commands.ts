@@ -42,7 +42,8 @@ const ADMIN_COMMANDS: string[] = [
     '!remove - Remove a pricelist entry',
     '!update - Update a pricelist entry',
     '!stop - Stop the bot',
-    '!restart - Restart the bot'
+    '!restart - Restart the bot',
+    '!version - Get version that the bot is running'
 ];
 
 export = class Commands {
@@ -101,6 +102,8 @@ export = class Commands {
             this.stopCommand(steamID);
         } else if (command === 'restart' && isAdmin) {
             this.restartCommand(steamID);
+        } else if (command === 'version' && isAdmin) {
+            this.versionCommand(steamID);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
@@ -975,6 +978,13 @@ export = class Commands {
                 log.warn('Error occurred while trying to restart: ', err);
                 this.bot.sendMessage(steamID, 'An error occurred while trying to restart: ' + err.message);
             });
+    }
+
+    private versionCommand(steamID: SteamID): void {
+        this.bot.sendMessage(
+            steamID,
+            'Currently running tf2-automatic@' + process.env.BOT_VERSION + '. Checking for a new version...'
+        );
     }
 
     private removeCommand(steamID: SteamID, message: string): void {
