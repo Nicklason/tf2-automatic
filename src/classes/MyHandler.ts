@@ -270,7 +270,7 @@ export = class MyHandler extends Handler {
                         ' with ' +
                         offer.partner.getSteamID64() +
                         ' is accepted. Summary:\n' +
-                        offer.summarize()
+                        offer.summarize(this.bot.schema)
                 );
                 this.bot.sendMessage(offer.partner, 'Success! The offer went through successfully.');
             } else if (offer.state === TradeOfferManager.ETradeOfferState.InvalidItems) {
@@ -286,7 +286,7 @@ export = class MyHandler extends Handler {
 
             offer.data('isAccepted', true);
 
-            offer.log('trade', 'has been accepted. Summary:\n' + offer.summarize());
+            offer.log('trade', 'has been accepted. Summary:\n' + offer.summarize(this.bot.schema));
 
             // Smelt / combine metal
             this.keepMetalSupply();

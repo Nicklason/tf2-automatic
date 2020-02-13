@@ -249,7 +249,7 @@ declare module 'steam-tradeoffer-manager' {
             log(level: string, message: string, ...meta: any[]);
 
             // Custom function added to prototype
-            summarize(): string;
+            summarize(schema: SchemaManager.Schema): string;
         }
     }
 

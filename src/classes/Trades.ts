@@ -95,6 +95,16 @@ export = class Trades {
 
         this.pollCount++;
 
+        received.concat(sent).forEach(offer => {
+            if (offer.state !== TradeOfferManager.ETradeOfferState.Active) {
+                const ourItems = offer.data('_ourItems');
+                if (ourItems !== undefined) {
+                    // Make sure that offers that are not active does not have items saved
+                    offer.data('_ourItems', undefined);
+                }
+            }
+        });
+
         const activeReceived = received.filter(offer => offer.state === TradeOfferManager.ETradeOfferState.Active);
 
         if (
@@ -714,7 +724,7 @@ export = class Trades {
             .getInventory()
             .fetch()
             .asCallback(() => {
-                this.bot.getHandler().onTradeOfferChanged(offer, oldState);
+                this.bot.handler.onTradeOfferChanged(offer, oldState);
             });
     }
 
