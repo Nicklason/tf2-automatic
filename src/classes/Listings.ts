@@ -144,7 +144,7 @@ export = class Listings {
         });
     }
 
-    checkBySKU(sku: string, data: Entry | null): void {
+    checkBySKU(sku: string, data?: Entry | null): void {
         if (process.env.DISABLE_LISTINGS === 'true') {
             return;
         }

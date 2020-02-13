@@ -6,7 +6,7 @@ import CartQueue from './CartQueue';
 import { UnknownDictionary } from '../types/common';
 
 import SteamUser from 'steam-user';
-import { TradeOffer, PollData } from 'steam-tradeoffer-manager';
+import TradeOfferManager, { TradeOffer, PollData } from 'steam-tradeoffer-manager';
 import pluralize from 'pluralize';
 import SteamID from 'steamid';
 
@@ -19,6 +19,12 @@ export = class MyHandler extends Handler {
 
     readonly cartQueue: CartQueue;
 
+    private minimumScrap: number;
+
+    private minimumReclaimed: number;
+
+    private combineThreshhold: number;
+
     recentlySentMessage: UnknownDictionary<number> = {};
 
     constructor(bot: Bot) {
@@ -26,6 +32,10 @@ export = class MyHandler extends Handler {
 
         this.commands = new Commands(bot);
         this.cartQueue = new CartQueue(bot);
+
+        this.minimumScrap = process.env.MINIMUM_SCRAP ? parseInt(process.env.MINIMUM_SCRAP) : 6;
+        this.minimumReclaimed = process.env.MINIMUM_RECLAIMED ? parseInt(process.env.MINIMUM_RECLAIMED) : 6;
+        this.combineThreshhold = process.env.COMBINE_THRESHOLD ? parseInt(process.env.COMBINE_THRESHOLD) : 6;
 
         setInterval(() => {
             this.recentlySentMessage = {};
@@ -143,6 +153,151 @@ export = class MyHandler extends Handler {
         reason: string | null;
     }> {
         return Promise.resolve({ action: null, reason: null });
+    }
+
+    onTradeOfferChanged(offer: TradeOffer, oldState: number): void {
+        // Not sure if it can go from other states to active
+        if (oldState === TradeOfferManager.ETradeOfferState.Accepted) {
+            offer.data('switchedState', oldState);
+        }
+
+        const handledByUs = offer.data('handledByUs') === true;
+
+        if (handledByUs && offer.data('switchedState') !== offer.state) {
+            if (offer.isOurOffer) {
+                if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
+                    this.bot.sendMessage(
+                        offer.partner,
+                        'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.'
+                    );
+                } else if (offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
+                    if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+                        this.bot.sendMessage(
+                            offer.partner,
+                            'Ohh nooooes! The offer is no longer available. Reason: Failed to accept mobile confirmation.'
+                        );
+                    } else {
+                        this.bot.sendMessage(
+                            offer.partner,
+                            'Ohh nooooes! The offer is no longer available. Reason: The offer has been active for a while.'
+                        );
+                    }
+                }
+            }
+
+            if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
+                this.bot.messageAdmins(
+                    'trade',
+                    'Trade #' +
+                        offer.id +
+                        ' with ' +
+                        offer.partner.getSteamID64() +
+                        ' is accepted. Summary:\n' +
+                        offer.summarize()
+                );
+                this.bot.sendMessage(offer.partner, 'Success! The offer went through successfully.');
+            } else if (offer.state === TradeOfferManager.ETradeOfferState.InvalidItems) {
+                this.bot.sendMessage(
+                    offer.partner,
+                    'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).'
+                );
+            }
+        }
+
+        if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
+            // Offer is accepted
+
+            offer.data('isAccepted', true);
+
+            offer.log('trade', 'has been accepted. Summary:\n' + offer.summarize());
+
+            // Smelt / combine metal
+            this.keepMetalSupply();
+
+            // Sort inventory
+            this.sortInventory();
+
+            // Update listings
+            const diff = offer.data('diff') || {};
+
+            for (const sku in diff) {
+                if (!Object.prototype.hasOwnProperty.call(diff, sku)) {
+                    continue;
+                }
+
+                this.bot.listings.checkBySKU(sku);
+            }
+
+            this.inviteToGroups(offer.partner);
+        }
+    }
+
+    keepMetalSupply(): void {
+        const currencies = this.bot.inventoryManager.getInventory().getCurrencies();
+
+        let refined = currencies['5002;6'].length;
+        let reclaimed = currencies['5001;6'].length;
+        let scrap = currencies['5000;6'].length;
+
+        const maxReclaimed = this.minimumReclaimed + this.combineThreshhold;
+        const maxScrap = this.minimumScrap + this.combineThreshhold;
+        const minReclaimed = this.minimumReclaimed;
+        const minScrap = this.minimumScrap;
+
+        let smeltReclaimed = 0;
+        let smeltRefined = 0;
+        let combineScrap = 0;
+        let combineReclaimed = 0;
+
+        if (reclaimed > maxReclaimed) {
+            combineReclaimed = Math.ceil((reclaimed - maxReclaimed) / 3);
+            refined += combineReclaimed;
+            reclaimed -= combineReclaimed * 3;
+        } else if (minReclaimed > reclaimed) {
+            smeltRefined = Math.ceil((minReclaimed - reclaimed) / 3);
+            reclaimed += smeltRefined * 3;
+            refined -= smeltRefined;
+        }
+
+        if (scrap > maxScrap) {
+            combineScrap = Math.ceil((scrap - maxScrap) / 3);
+            reclaimed += combineScrap;
+            scrap -= combineScrap * 3;
+        } else if (minScrap > scrap) {
+            smeltReclaimed = Math.ceil((minReclaimed - reclaimed) / 3);
+            scrap += smeltReclaimed * 3;
+            reclaimed -= smeltReclaimed;
+        }
+
+        // TODO: When smelting metal mark the item as being used, then we won't use it when sending offers
+
+        for (let i = 0; i < combineScrap; i++) {
+            this.bot.tf2gc.combineMetal(5000);
+        }
+
+        for (let i = 0; i < combineReclaimed; i++) {
+            this.bot.tf2gc.combineMetal(5001);
+        }
+
+        for (let i = 0; i < smeltRefined; i++) {
+            this.bot.tf2gc.smeltMetal(5002);
+        }
+
+        for (let i = 0; i < smeltReclaimed; i++) {
+            this.bot.tf2gc.smeltMetal(5001);
+        }
+    }
+
+    private sortInventory() {
+        if (process.env.DISABLE_INVENTORY_SORT !== 'true') {
+            this.bot.tf2gc.sortInventory(3);
+        }
+    }
+
+    private inviteToGroups(steamID: SteamID | string): void {
+        const steamID64 = steamID.toString();
+
+        throw new Error('Not implemented');
     }
 
     onPollData(pollData: PollData): void {

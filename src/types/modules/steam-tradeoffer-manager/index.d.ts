@@ -247,6 +247,9 @@ declare module 'steam-tradeoffer-manager' {
 
             // Custom function added to prototype
             log(level: string, message: string, ...meta: any[]);
+
+            // Custom function added to prototype
+            summarize(): string;
         }
     }
 
