@@ -312,7 +312,7 @@ export = class MyHandler extends Handler {
     private keepMetalSupply(): void {
         const currencies = this.bot.inventoryManager.getInventory().getCurrencies();
 
-        let refined = currencies['5002;6'].length;
+        // let refined = currencies['5002;6'].length;
         let reclaimed = currencies['5001;6'].length;
         let scrap = currencies['5000;6'].length;
 
@@ -328,12 +328,12 @@ export = class MyHandler extends Handler {
 
         if (reclaimed > maxReclaimed) {
             combineReclaimed = Math.ceil((reclaimed - maxReclaimed) / 3);
-            refined += combineReclaimed;
+            // refined += combineReclaimed;
             reclaimed -= combineReclaimed * 3;
         } else if (minReclaimed > reclaimed) {
             smeltRefined = Math.ceil((minReclaimed - reclaimed) / 3);
             reclaimed += smeltRefined * 3;
-            refined -= smeltRefined;
+            // refined -= smeltRefined;
         }
 
         if (scrap > maxScrap) {
