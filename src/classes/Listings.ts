@@ -314,11 +314,11 @@ export = class Listings {
                 return;
             }
 
-            this._removeAll().asCallback(next);
+            this.removeAllListings().asCallback(next);
         });
     }
 
-    private _removeAll(): Promise<void> {
+    private removeAllListings(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.removingAllListings = true;
 
