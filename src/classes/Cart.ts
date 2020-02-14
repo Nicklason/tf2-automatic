@@ -184,26 +184,32 @@ abstract class Cart {
             return Promise.reject(new Error('Offer has not yet been constructed'));
         }
 
-        const itemsDiff: UnknownDictionary<number> = {};
-
-        for (const sku in this.our) {
-            if (!Object.prototype.hasOwnProperty.call(this.our, sku)) {
-                continue;
-            }
-
-            itemsDiff[sku] = (itemsDiff[sku] || 0) + this.our[sku];
+        if (this.offer.data('dict') === null) {
+            this.offer.data('dict', { our: this.our, their: this.their });
         }
 
-        for (const sku in this.their) {
-            if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
-                continue;
+        if (this.offer.data('diff') === null) {
+            const itemsDiff: UnknownDictionary<number> = {};
+
+            for (const sku in this.our) {
+                if (!Object.prototype.hasOwnProperty.call(this.our, sku)) {
+                    continue;
+                }
+
+                itemsDiff[sku] = (itemsDiff[sku] || 0) + this.our[sku];
             }
 
-            itemsDiff[sku] = (itemsDiff[sku] || 0) - this.their[sku];
+            for (const sku in this.their) {
+                if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
+                    continue;
+                }
+
+                itemsDiff[sku] = (itemsDiff[sku] || 0) - this.their[sku];
+            }
+
+            this.offer.data('diff', itemsDiff);
         }
 
-        this.offer.data('dict', { our: this.our, their: this.their });
-        this.offer.data('diff', itemsDiff);
         this.offer.data('handleTimestamp', moment().valueOf());
 
         this.offer.setMessage(
