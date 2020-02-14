@@ -522,7 +522,7 @@ export = class Trades {
         });
     }
 
-    sendOfferRetry(offer: TradeOfferManager.TradeOffer, attempts = 0): Promise<string> {
+    private sendOfferRetry(offer: TradeOfferManager.TradeOffer, attempts = 0): Promise<string> {
         return new Promise((resolve, reject) => {
             offer.send((err, status) => {
                 attempts++;
@@ -744,7 +744,7 @@ export = class Trades {
         }
     }
 
-    private static offerEquals(a: TradeOfferManager.TradeOffer, b: TradeOfferManager.TradeOffer): boolean {
+    static offerEquals(a: TradeOfferManager.TradeOffer, b: TradeOfferManager.TradeOffer): boolean {
         return (
             a.isOurOffer === b.isOurOffer &&
             a.partner.getSteamID64() === b.partner.getSteamID64() &&
@@ -753,7 +753,7 @@ export = class Trades {
         );
     }
 
-    private static itemsEquals(a: TradeOfferManager.EconItem[], b: TradeOfferManager.EconItem[]): boolean {
+    static itemsEquals(a: TradeOfferManager.EconItem[], b: TradeOfferManager.EconItem[]): boolean {
         if (a.length !== b.length) {
             return false;
         }
@@ -776,11 +776,11 @@ export = class Trades {
         return copy.length === 0;
     }
 
-    private static itemEquals(a: TradeOfferManager.EconItem, b: TradeOfferManager.EconItem): boolean {
+    static itemEquals(a: TradeOfferManager.EconItem, b: TradeOfferManager.EconItem): boolean {
         return a.appid == b.appid && a.contextid == b.contextid && (a.assetid || a.id) == (b.assetid || b.id);
     }
 
-    private static mapItem(item: EconItem): TradeOfferManager.TradeOfferItem {
+    static mapItem(item: EconItem): TradeOfferManager.TradeOfferItem {
         return {
             appid: item.appid,
             contextid: item.contextid,
