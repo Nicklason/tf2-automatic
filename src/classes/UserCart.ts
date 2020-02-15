@@ -4,10 +4,9 @@ import Currencies from 'tf2-currencies';
 
 import Cart from './Cart';
 import Inventory from './Inventory';
-import { CurrencyObject } from '../types/TeamFortress2';
+import { CurrencyObject, Currency } from '../types/TeamFortress2';
 import { UnknownDictionary } from '../types/common';
 
-import { isBanned } from '../lib/bans';
 import log from '../lib/logger';
 
 export = UserCart;
@@ -19,7 +18,10 @@ class UserCart extends Cart {
     private useKeys = true;
 
     protected async preSendOffer(): Promise<void> {
-        const [banned, escrow] = await Promise.all([this.checkBanned(), this.checkEscrow()]);
+        const [banned, escrow] = await Promise.all([
+            this.bot.checkBanned(this.partner),
+            this.bot.checkEscrow(this.offer)
+        ]);
 
         if (banned) {
             return Promise.reject('you are banned in one or more trading communities');
@@ -28,22 +30,6 @@ class UserCart extends Cart {
         if (escrow) {
             return Promise.reject('trade would be held');
         }
-    }
-
-    private checkBanned(): Promise<boolean> {
-        if (process.env.ACCEPT_BANNED === 'true') {
-            return Promise.resolve(false);
-        }
-
-        return isBanned(this.partner);
-    }
-
-    private checkEscrow(): Promise<boolean> {
-        if (process.env.ACCEPT_ESCROW === 'true') {
-            return Promise.resolve(false);
-        }
-
-        this.bot.trades.checkEscrow(this.offer);
     }
 
     canUseKeys(): boolean {
@@ -670,6 +656,40 @@ class UserCart extends Cart {
                         metal: Currencies.toRefined(exchange.their.scrap)
                     }
                 });
+
+                const itemPrices: UnknownDictionary<{ buy: Currency; sell: Currency }> = {};
+
+                for (const sku in this.our) {
+                    if (!Object.prototype.hasOwnProperty.call(itemsDiff, sku)) {
+                        continue;
+                    }
+
+                    const entry = this.bot.pricelist.getPrice(sku, true);
+
+                    itemPrices[sku] = {
+                        buy: entry.buy.toJSON(),
+                        sell: entry.sell.toJSON()
+                    };
+                }
+
+                for (const sku in this.their) {
+                    if (!Object.prototype.hasOwnProperty.call(itemsDiff, sku)) {
+                        continue;
+                    }
+
+                    if (itemPrices[sku] !== undefined) {
+                        continue;
+                    }
+
+                    const entry = this.bot.pricelist.getPrice(sku, true);
+
+                    itemPrices[sku] = {
+                        buy: entry.buy.toJSON(),
+                        sell: entry.sell.toJSON()
+                    };
+                }
+
+                offer.data('prices', itemPrices);
 
                 this.offer = offer;
 

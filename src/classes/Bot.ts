@@ -12,7 +12,7 @@ import Groups from './Groups';
 
 import SteamID from 'steamid';
 import SteamUser from 'steam-user';
-import SteamTradeOfferManager from 'steam-tradeoffer-manager';
+import TradeOfferManager from 'steam-tradeoffer-manager';
 import SteamCommunity from 'steamcommunity';
 import SteamTotp from 'steam-totp';
 import ListingManager from 'bptf-listings';
@@ -23,6 +23,7 @@ import moment from 'moment';
 import async from 'async';
 
 import log from '../lib/logger';
+import { isBanned } from '../lib/bans';
 
 export = class Bot {
     // Modules and classes
@@ -38,7 +39,7 @@ export = class Bot {
 
     readonly client: SteamUser;
 
-    readonly manager: SteamTradeOfferManager;
+    readonly manager: TradeOfferManager;
 
     readonly community: SteamCommunity;
 
@@ -88,7 +89,7 @@ export = class Bot {
 
         this.client = new SteamUser();
         this.community = new SteamCommunity();
-        this.manager = new SteamTradeOfferManager({
+        this.manager = new TradeOfferManager({
             steam: this.client,
             community: this.community,
             language: 'en',
@@ -164,6 +165,22 @@ export = class Bot {
 
     getAdmins(): SteamID[] {
         return this.admins;
+    }
+
+    checkBanned(steamID: SteamID | string): Promise<boolean> {
+        if (process.env.ACCEPT_BANNED === 'true') {
+            return Promise.resolve(false);
+        }
+
+        return Promise.resolve(isBanned(steamID));
+    }
+
+    checkEscrow(offer: TradeOfferManager.TradeOffer): Promise<boolean> {
+        if (process.env.ACCEPT_ESCROW === 'true') {
+            return Promise.resolve(false);
+        }
+
+        return this.trades.checkEscrow(offer);
     }
 
     messageAdmins(type: string, message: string): void {

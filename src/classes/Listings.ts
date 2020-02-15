@@ -348,7 +348,7 @@ export = class Listings {
                     }
 
                     // The request might fail, if it does we will try again
-                    return resolve(this._removeAll());
+                    return resolve(this.removeAllListings());
                 });
             });
         });

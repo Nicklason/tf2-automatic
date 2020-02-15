@@ -4,7 +4,7 @@ import Bot from './Bot';
 import { Entry, EntryData } from './Pricelist';
 
 import SteamID from 'steamid';
-import SteamTradeOfferManager, { PollData } from 'steam-tradeoffer-manager';
+import TradeOfferManager, { PollData } from 'steam-tradeoffer-manager';
 
 abstract class Handler {
     readonly bot: Bot;
@@ -53,7 +53,7 @@ abstract class Handler {
      * @param offer - The new trade offer
      */
     abstract onNewTradeOffer(
-        offer: SteamTradeOfferManager.TradeOffer
+        offer: TradeOfferManager.TradeOffer
     ): Promise<{
         action: 'accept' | 'decline' | null;
         reason: string | null;
@@ -69,7 +69,7 @@ abstract class Handler {
      * Called when polldata changes
      * @param pollData - The polldata
      */
-    abstract onPollData(pollData: SteamTradeOfferManager.PollData): void;
+    abstract onPollData(pollData: TradeOfferManager.PollData): void;
 
     /**
      * Called when the pricelist updates
@@ -132,7 +132,7 @@ abstract class Handler {
      * @param offer - The offer that changed
      * @param oldState - The old state of the offer
      */
-    onTradeOfferChanged(offer: SteamTradeOfferManager.TradeOffer, oldState: number): void {
+    onTradeOfferChanged(offer: TradeOfferManager.TradeOffer, oldState: number): void {
         // empty function
     }
 

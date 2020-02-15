@@ -1,12 +1,12 @@
 import { UnknownDictionary } from '../types/common';
 import SteamID from 'steamid';
-import SteamTradeOfferManager, { EconItem } from 'steam-tradeoffer-manager';
+import TradeOfferManager, { EconItem } from 'steam-tradeoffer-manager';
 import SchemaManager from 'tf2-schema';
 
 export = class Inventory {
     private readonly steamID: SteamID;
 
-    private readonly manager: SteamTradeOfferManager;
+    private readonly manager: TradeOfferManager;
 
     private readonly schema: SchemaManager.Schema;
 
@@ -14,10 +14,24 @@ export = class Inventory {
 
     private nonTradable: UnknownDictionary<string[]>;
 
-    constructor(steamID: SteamID | string, manager: SteamTradeOfferManager, schema: SchemaManager.Schema) {
+    constructor(steamID: SteamID | string, manager: TradeOfferManager, schema: SchemaManager.Schema) {
         this.steamID = new SteamID(steamID.toString());
         this.manager = manager;
         this.schema = schema;
+    }
+
+    static fromItems(
+        steamID: SteamID | string,
+        items: EconItem[],
+        manager: TradeOfferManager,
+        schema: SchemaManager.Schema
+    ): Inventory {
+        const inventory = new Inventory(steamID, manager, schema);
+
+        // Funny how typescript allows calling a private function from a static function
+        inventory.setItems(items);
+
+        return inventory;
     }
 
     getSteamID(): SteamID {
@@ -66,23 +80,27 @@ export = class Inventory {
                     return reject(err);
                 }
 
-                const tradable: EconItem[] = [];
-                const nonTradable: EconItem[] = [];
-
-                items.forEach(function(item) {
-                    if (item.tradable) {
-                        tradable.push(item);
-                    } else {
-                        nonTradable.push(item);
-                    }
-                });
-
-                this.tradable = Inventory.createDictionary(tradable, this.schema);
-                this.nonTradable = Inventory.createDictionary(nonTradable, this.schema);
+                this.setItems(items);
 
                 resolve();
             });
         });
+    }
+
+    private setItems(items: EconItem[]): void {
+        const tradable: EconItem[] = [];
+        const nonTradable: EconItem[] = [];
+
+        items.forEach(function(item) {
+            if (item.tradable) {
+                tradable.push(item);
+            } else {
+                nonTradable.push(item);
+            }
+        });
+
+        this.tradable = Inventory.createDictionary(tradable, this.schema);
+        this.nonTradable = Inventory.createDictionary(nonTradable, this.schema);
     }
 
     findByAssetid(assetid: string): string | null {
