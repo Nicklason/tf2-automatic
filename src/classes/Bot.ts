@@ -21,6 +21,8 @@ import BptfLogin from 'bptf-login';
 import TF2 from 'tf2';
 import moment from 'moment';
 import async from 'async';
+import semver from 'semver';
+import request from '@nicklason/request-retry';
 
 import log from '../lib/logger';
 import { isBanned } from '../lib/bans';
@@ -67,6 +69,8 @@ export = class Bot {
     private readonly loginPeriodTime: number = 60 * 1000;
 
     // Values
+    private lastNotifiedVersion: string;
+
     private sessionReplaceCount = 0;
 
     private consecutiveSteamGuardCodesWrong = 0;
@@ -208,6 +212,53 @@ export = class Bot {
                     listener(...args);
                 }
             });
+        });
+    }
+
+    startVersionChecker(): void {
+        this.checkForUpdates();
+
+        // Check for updates every 10 minutes
+        setInterval(() => {
+            this.checkForUpdates().catch(err => {
+                log.warn('Failed to check for updates: ', err);
+            });
+        }, 10 * 60 * 1000);
+    }
+
+    checkForUpdates(): Promise<{ hasNewVersion: boolean; latestVersion: string }> {
+        return this.getLatestVersion().then(latestVersion => {
+            const hasNewVersion = semver.lt(process.env.BOT_VERSION, latestVersion);
+
+            if (this.lastNotifiedVersion !== latestVersion && hasNewVersion) {
+                this.lastNotifiedVersion = latestVersion;
+
+                this.messageAdmins(
+                    'version',
+                    `Update available! Current: v${process.env.BOT_VERSION}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`
+                );
+            }
+
+            return { hasNewVersion, latestVersion };
+        });
+    }
+
+    getLatestVersion(): Promise<string> {
+        return new Promise((resolve, reject) => {
+            request(
+                {
+                    method: 'GET',
+                    url: 'https://raw.githubusercontent.com/Nicklason/tf2-automatic/master/package.json',
+                    json: true
+                },
+                function(err, response, body) {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    return resolve(body.version);
+                }
+            );
         });
     }
 
@@ -405,7 +456,7 @@ export = class Bot {
 
                     this.manager.doPoll();
 
-                    // this.startVersionChecker();
+                    this.startVersionChecker();
 
                     return resolve();
                 }
