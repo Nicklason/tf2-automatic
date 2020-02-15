@@ -1069,7 +1069,8 @@ export = class Commands {
 
     private tradesCommand(steamID: SteamID): void {
         const now = moment();
-        const startOfDay = now.startOf('day');
+        const aDayAgo = moment().subtract(24, 'day');
+        const startOfDay = moment().startOf('day');
 
         let tradesToday = 0;
         let trades24Hours = 0;
@@ -1086,7 +1087,7 @@ export = class Commands {
                 // Sucessful trades handled by the bot
                 tradesTotal++;
 
-                if (offerData[offerID].finishTimestamp >= now.valueOf() - 86400000) {
+                if (offerData[offerID].finishTimestamp >= aDayAgo.valueOf()) {
                     // Within the last 24 hours
                     trades24Hours++;
                 }
