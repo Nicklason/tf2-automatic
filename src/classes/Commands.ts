@@ -996,7 +996,21 @@ export = class Commands {
             'Currently running tf2-automatic@' + process.env.BOT_VERSION + '. Checking for a new version...'
         );
 
-        // TODO: Check version
+        this.bot
+            .checkForUpdates()
+            .then(({ hasNewVersion, latestVersion }) => {
+                if (!hasNewVersion) {
+                    this.bot.sendMessage(steamID, 'You are running the latest version of tf2-automatic!');
+                } else if (this.bot.lastNotifiedVersion === latestVersion) {
+                    this.bot.sendMessage(
+                        steamID,
+                        `Update available! Current: v${process.env.BOT_VERSION}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`
+                    );
+                }
+            })
+            .catch(err => {
+                this.bot.sendMessage(steamID, 'Failed to check for updates: ' + err.message);
+            });
     }
 
     private nameCommand(steamID: SteamID, message: string): void {
