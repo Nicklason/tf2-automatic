@@ -625,7 +625,9 @@ export = class Trades {
         });
     }
 
-    checkEscrow(offer): Promise<boolean> {
+    checkEscrow(offer: TradeOfferManager.TradeOffer): Promise<boolean> {
+        log.debug('Checking escrow');
+
         return new Promise((resolve, reject) => {
             const operation = retry.operation({
                 retries: 5,
@@ -647,6 +649,8 @@ export = class Trades {
                         if (err) {
                             return reject(operation.mainError());
                         }
+
+                        log.debug('Done checking escrow');
 
                         return resolve(them.escrowDays !== 0);
                     }

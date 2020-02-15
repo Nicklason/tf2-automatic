@@ -3,12 +3,14 @@ import Bot from './Bot';
 import { Entry, EntryData } from './Pricelist';
 import Commands from './Commands';
 import CartQueue from './CartQueue';
+import Inventory from './Inventory';
 import { UnknownDictionary } from '../types/common';
 
 import SteamUser from 'steam-user';
 import TradeOfferManager, { TradeOffer, PollData } from 'steam-tradeoffer-manager';
 import pluralize from 'pluralize';
 import SteamID from 'steamid';
+import Currencies from 'tf2-currencies';
 
 import log from '../lib/logger';
 import * as files from '../lib/files';
@@ -229,8 +231,257 @@ export = class MyHandler extends Handler {
         action: 'accept' | 'decline' | null;
         reason: string | null;
     }> {
-        return Promise.resolve({ action: null, reason: null });
+        return new Promise(resolve => {
+            offer.log('info', 'is being processed...');
+
+            const ourItems = Inventory.fromItems(
+                this.bot.client.steamID,
+                offer.itemsToGive,
+                this.bot.manager,
+                this.bot.schema
+            );
+
+            const theirItems = Inventory.fromItems(
+                offer.partner,
+                offer.itemsToReceive,
+                this.bot.manager,
+                this.bot.schema
+            );
+
+            const items = {
+                our: ourItems.getItems(),
+                their: theirItems.getItems()
+            };
+
+            const exchange = {
+                contains: { items: false, metal: false, keys: false },
+                our: { value: 0, keys: 0, scrap: 0, contains: { items: false, metal: false, keys: false } },
+                their: { value: 0, keys: 0, scrap: 0, contains: { items: false, metal: false, keys: false } }
+            };
+
+            const itemsDiff = {};
+            const itemsDict = { our: {}, their: {} };
+
+            const states = [false, true];
+
+            for (let i = 0; i < states.length; i++) {
+                const buying = states[i];
+                const which = buying ? 'their' : 'our';
+
+                for (const sku in items[which]) {
+                    if (!Object.prototype.hasOwnProperty.call(items[which], sku)) {
+                        continue;
+                    }
+
+                    if (sku === 'unknown') {
+                        // Offer contains an item that is not from TF2
+                        offer.log('info', 'contains items not from TF2, declining...');
+
+                        return resolve({ action: 'decline', reason: 'INVALID_ITEMS' });
+                    }
+
+                    if (sku === '5000;6') {
+                        exchange.contains.metal = true;
+                        exchange[which].contains.metal = true;
+                    } else if (sku === '5001;6') {
+                        exchange.contains.metal = true;
+                        exchange[which].contains.metal = true;
+                    } else if (sku === '5002;6') {
+                        exchange.contains.metal = true;
+                        exchange[which].contains.metal = true;
+                    } else if (sku === '5021;6') {
+                        exchange.contains.keys = true;
+                        exchange[which].contains.keys = true;
+                    } else {
+                        exchange.contains.items = true;
+                        exchange[which].contains.items = true;
+                    }
+
+                    const amount = items[which][sku].length;
+
+                    itemsDiff[sku] = (itemsDiff[sku] || 0) + amount * (buying ? 1 : -1);
+                    itemsDict[which][sku] = amount;
+                }
+            }
+
+            offer.data('diff', itemsDiff);
+            offer.data('dict', itemsDict);
+
+            // Check if the offer is from an admin
+            if (this.bot.isAdmin(offer.partner)) {
+                offer.log('trade', 'is from an admin, accepting. Summary:\n' + offer.summarize(this.bot.schema));
+                return resolve({ action: 'accept', reason: 'ADMIN' });
+            }
+
+            if (offer.itemsToGive.length === 0 && ['donate', 'gift'].includes(offer.message.toLowerCase())) {
+                offer.log('trade', 'is a gift offer, accepting. Summary:\n' + offer.summarize(this.bot.schema));
+                return resolve({ action: 'accept', reason: 'GIFT' });
+            } else if (offer.itemsToReceive.length === 0 || offer.itemsToGive.length === 0) {
+                offer.log('info', 'is a gift offer, declining...');
+                return resolve({ action: 'decline', reason: 'GIFT' });
+            }
+
+            if (exchange.contains.metal && !exchange.contains.keys && !exchange.contains.items) {
+                // Offer only contains metal
+                offer.log('info', 'only contains metal, declining...');
+                return resolve({ action: 'decline', reason: 'ONLY_METAL' });
+            } else if (exchange.contains.keys && !exchange.contains.items) {
+                // Offer is for trading keys, check if we are trading them
+                const priceEntry = this.bot.pricelist.getPrice('5021;6', true);
+                if (priceEntry === null) {
+                    // We are not trading keys
+                    offer.log('info', 'we are not trading keys, declining...');
+                    return resolve({ action: 'decline', reason: 'NOT_TRADING_KEYS' });
+                } else if (exchange.our.contains.keys && priceEntry.intent !== 1 && priceEntry.intent !== 2) {
+                    // We are not selling keys
+                    offer.log('info', 'we are not selling keys, declining...');
+                    return resolve({ action: 'decline', reason: 'NOT_TRADING_KEYS' });
+                } else if (exchange.their.contains.keys && priceEntry.intent !== 0 && priceEntry.intent !== 2) {
+                    // We are not buying keys
+                    offer.log('info', 'we are not buying keys, declining...');
+                    return resolve({ action: 'decline', reason: 'NOT_TRADING_KEYS' });
+                } else {
+                    // Check overstock / understock on keys
+                    const diff = itemsDiff['5021;6'];
+                    // If the diff is greater than 0 then we are buying, less than is selling
+
+                    if (diff !== 0 && this.bot.inventoryManager.amountCanTrade('5021;6', diff > 0) < diff) {
+                        // User is taking too many / offering too many
+                        offer.log('info', 'is taking / offering too many keys, declining...');
+                        return resolve({ action: 'decline', reason: 'OVERSTOCKED' });
+                    }
+                }
+            }
+
+            const itemPrices = {};
+
+            const keyPrice = this.bot.pricelist.getKeyPrice();
+
+            for (let i = 0; i < states.length; i++) {
+                const buying = states[i];
+                const which = buying ? 'their' : 'our';
+                const intentString = buying ? 'buy' : 'sell';
+
+                for (const sku in items[which]) {
+                    if (!Object.prototype.hasOwnProperty.call(items[which], sku)) {
+                        continue;
+                    }
+
+                    const assetids = items[which][sku];
+                    const amount = assetids.length;
+
+                    if (sku === '5000;6') {
+                        exchange[which].value += amount;
+                        exchange[which].scrap += amount;
+                    } else if (sku === '5001;6') {
+                        const value = 3 * amount;
+                        exchange[which].value += value;
+                        exchange[which].scrap += value;
+                    } else if (sku === '5002;6') {
+                        const value = 9 * amount;
+                        exchange[which].value += value;
+                        exchange[which].scrap += value;
+                    } else {
+                        const match = this.bot.pricelist.getPrice(sku, true);
+
+                        // TODO: Go through all assetids and check if the item is being sold for a specific price
+
+                        if (match !== null && (sku !== '5021;6' || !exchange.contains.items)) {
+                            // If we found a matching price and the item is not a key, or the we are not trading items (meaning that we are trading keys) then add the price of the item
+
+                            // Add value of items
+                            exchange[which].value += match[intentString].toValue(keyPrice.metal) * amount;
+                            exchange[which].keys += match[intentString].keys * amount;
+                            exchange[which].scrap += Currencies.toScrap(match[intentString].metal) * amount;
+
+                            itemPrices[match.sku] = {
+                                buy: match.buy,
+                                sell: match.sell
+                            };
+
+                            // Check stock limits (not for keys)
+                            const diff = itemsDiff[sku];
+
+                            if (diff !== 0 && this.bot.inventoryManager.amountCanTrade(sku, diff > 0) < diff) {
+                                // User is taking too many / offering too many
+                                offer.log('info', 'is taking / offering too many, declining...');
+                                return resolve({ action: 'decline', reason: 'OVERSTOCKED' });
+                            }
+                        } else if (sku === '5021;6' && exchange.contains.items) {
+                            // Offer contains keys and we are not trading keys, add key value
+                            exchange[which].value += keyPrice.toValue() * amount;
+                            exchange[which].keys += amount;
+                        } else if (match === null || match.intent === (buying ? 1 : 0)) {
+                            // Offer contains an item that we are not trading
+                            return resolve({ action: 'decline', reason: 'INVALID_ITEMS' });
+                        }
+                    }
+                }
+            }
+
+            offer.data('value', {
+                our: {
+                    total: exchange.our.value,
+                    keys: exchange.our.keys,
+                    metal: Currencies.toRefined(exchange.our.scrap)
+                },
+                their: {
+                    total: exchange.their.value,
+                    keys: exchange.their.keys,
+                    metal: Currencies.toRefined(exchange.their.scrap)
+                },
+                rate: keyPrice.metal
+            });
+
+            offer.data('prices', itemPrices);
+
+            // Check if the values are correct
+            if (exchange.our.value > exchange.their.value) {
+                // We are offering more than them, decline the offer
+                offer.log('info', 'is not offering enough, declining...');
+                return resolve({ action: 'decline', reason: 'INVALID_VALUE' });
+            } else if (exchange.our.value < exchange.their.value && process.env.ACCEPT_OVERPAY === 'false') {
+                offer.log('info', 'is offering more than needed, declining...');
+                return resolve({ action: 'decline', reason: 'OVERPAY' });
+            }
+
+            // TODO: If we are receiving items, mark them as pending and use it to check overstock / understock for new offers
+
+            offer.log('info', 'checking escrow...');
+
+            this.bot.checkEscrow(offer).asCallback((err, escrow) => {
+                if (err) {
+                    log.warn('Failed to check escrow: ', err);
+                    return resolve();
+                }
+
+                if (escrow) {
+                    offer.log('info', 'would be held if accepted, declining...');
+                    return resolve({ action: 'decline', reason: 'ESCROW' });
+                }
+
+                offer.log('info', 'checking bans...');
+
+                this.bot.checkBanned(offer.partner.getSteamID64()).asCallback((err, banned) => {
+                    if (err) {
+                        log.warn('Failed to check banned: ', err);
+                        return resolve();
+                    }
+
+                    if (banned) {
+                        offer.log('info', 'partner is banned in one or more communities, declining...');
+                        return resolve({ action: 'decline', reason: 'BANNED' });
+                    }
+
+                    offer.log('trade', 'accepting. Summary:\n' + offer.summarize(this.bot.schema));
+
+                    return resolve({ action: 'accept', reason: 'VALID' });
+                });
+            });
+        });
     }
+
+    // TODO: checkBanned and checkEscrow are copied from UserCart, don't duplicate them
 
     onTradeOfferChanged(offer: TradeOffer, oldState: number): void {
         // Not sure if it can go from other states to active

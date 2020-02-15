@@ -1,7 +1,7 @@
 import SteamID from 'steamid';
 import moment from 'moment';
 import SKU from 'tf2-sku';
-import SteamTradeOfferManager from 'steam-tradeoffer-manager';
+import TradeOfferManager from 'steam-tradeoffer-manager';
 import pluralize from 'pluralize';
 
 import Bot from './Bot';
@@ -19,7 +19,7 @@ abstract class Cart {
 
     readonly partner: SteamID;
 
-    protected offer: SteamTradeOfferManager.TradeOffer | null = null;
+    protected offer: TradeOfferManager.TradeOffer | null = null;
 
     protected readonly bot: Bot;
 
@@ -250,9 +250,7 @@ abstract class Cart {
                     );
                 } else if (err.eresult !== undefined) {
                     return Promise.reject(
-                        'An error occurred while sending the offer (' +
-                            SteamTradeOfferManager.EResult[err.eresult] +
-                            ')'
+                        'An error occurred while sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')'
                     );
                 }
 
