@@ -13,7 +13,6 @@ Before you install the bot, there are a few things you need to have taken care o
 
 * You need a seperate Steam account with a mobile authenticator. I suggest using the [Steam Desktop Authenticator](https://github.com/Jessecar96/SteamDesktopAuthenticator) to authenticate the account and get the secret keys used to automate generating 2FA codes and managing mobile confirmations.
 * NodeJS version 8 or more
-* Typescript 3.7 or above
 
 Please refer to the [wiki](https://github.com/Nicklason/tf2-automatic/wiki) for setting up the bot. For additional help and questions, please ask in the TF2 Automatic [Discord server](https://discord.tf2automatic.com/) or create an [issue](https://github.com/Nicklason/bot-framework/issues/new).
 
