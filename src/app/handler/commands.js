@@ -278,7 +278,7 @@ exports.handleMessage = function (steamID, message) {
             '!price [amount] <name> - Get the price and stock of an item',
             '!stock - Get a list of items that the bot has',
             '!buy [amount] <name> - Request to buy an item from the bot',
-            '!sell [amount] <name> - Request to selll an item to the bot'
+            '!sell [amount] <name> - Request to sell an item to the bot'
         ];
 
         let reply = 'Here\'s a list of all my commands:\n- ' + commands.join('\n- ');
