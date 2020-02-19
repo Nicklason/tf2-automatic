@@ -537,6 +537,8 @@ export = class MyHandler extends Handler {
 
             offer.data('isAccepted', true);
 
+            offer.log('trade', 'has been accepted.');
+
             // Smelt / combine metal
             this.keepMetalSupply();
 
