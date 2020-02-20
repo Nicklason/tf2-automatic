@@ -64,6 +64,8 @@ class AdminCart extends Cart {
             if (Object.keys(this.their).length === 0) {
                 // Done constructing offer
 
+                offer.data('dict', { our: this.our, their: this.their });
+
                 this.offer = offer;
 
                 return resolve(alteredMessages.length === 0 ? undefined : alteredMessages.join(', '));
@@ -120,6 +122,8 @@ class AdminCart extends Cart {
                         });
                     }
                 }
+
+                offer.data('dict', { our: this.our, their: this.their });
 
                 this.offer = offer;
 
