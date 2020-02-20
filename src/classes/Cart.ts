@@ -184,30 +184,8 @@ abstract class Cart {
             return Promise.reject(new Error('Offer has not yet been constructed'));
         }
 
-        if (this.offer.data('dict') === null) {
-            this.offer.data('dict', { our: this.our, their: this.their });
-        }
-
-        if (this.offer.data('diff') === null) {
-            const itemsDiff: UnknownDictionary<number> = {};
-
-            for (const sku in this.our) {
-                if (!Object.prototype.hasOwnProperty.call(this.our, sku)) {
-                    continue;
-                }
-
-                itemsDiff[sku] = (itemsDiff[sku] || 0) + this.our[sku];
-            }
-
-            for (const sku in this.their) {
-                if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
-                    continue;
-                }
-
-                itemsDiff[sku] = (itemsDiff[sku] || 0) - this.their[sku];
-            }
-
-            this.offer.data('diff', itemsDiff);
+        if (this.offer.data('dict') === undefined) {
+            throw new Error('dict not saved on offer');
         }
 
         this.offer.data('handleTimestamp', moment().valueOf());

@@ -263,6 +263,10 @@ export = class Trades {
                 throw err;
             }
 
+            if (offer.data('dict') === undefined) {
+                throw new Error('dict not saved on offer');
+            }
+
             offer.data('handledByUs', true);
             offer.data('handleTime', moment().valueOf() - start);
 

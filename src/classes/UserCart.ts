@@ -470,16 +470,12 @@ class UserCart extends Cart {
                     required.currencies['5001;6'] * 3 +
                     required.currencies['5000;6'];
 
-                const itemsDiff: UnknownDictionary<number> = {};
-
                 // Add items to offer
 
                 // Add our items
                 for (const sku in this.our) {
                     const amount = this.our[sku];
                     const assetids = ourInventory.findBySKU(sku, true);
-
-                    itemsDiff[sku] = (itemsDiff[sku] || 0) - amount;
 
                     let missing = amount;
 
@@ -515,8 +511,6 @@ class UserCart extends Cart {
                 for (const sku in this.their) {
                     const amount = this.their[sku];
                     const assetids = theirInventory.findBySKU(sku, true);
-
-                    itemsDiff[sku] = (itemsDiff[sku] || 0) + amount;
 
                     let missing = amount;
 
@@ -586,7 +580,6 @@ class UserCart extends Cart {
 
                                 if (isAdded) {
                                     itemsDict[whose][sku] = (itemsDict[whose][sku] || 0) + 1;
-                                    itemsDiff[sku] = (itemsDiff[sku] || 0) + (isBuyer ? 1 : -1);
                                     change -= value;
                                     if (change < value) {
                                         break;
@@ -611,7 +604,6 @@ class UserCart extends Cart {
                     }
 
                     itemsDict[isBuyer ? 'our' : 'their'][sku] = required.currencies[sku];
-                    itemsDiff[sku] = (itemsDiff[sku] || 0) + required.currencies[sku] * (isBuyer ? -1 : 1);
 
                     for (let i = 0; i < buyerCurrenciesWithAssetids[sku].length; i++) {
                         const isAdded = offer[isBuyer ? 'addMyItem' : 'addTheirItem']({
@@ -639,28 +631,10 @@ class UserCart extends Cart {
                     }
                 }
 
-                // Check if the buyer can afford to do the trade
-
-                // Add metal from buyer and change from seller
-                offer.data('diff', itemsDiff);
-                offer.data('dict', itemsDict);
-                offer.data('value', {
-                    our: {
-                        total: exchange.our.value,
-                        keys: exchange.our.keys,
-                        metal: Currencies.toRefined(exchange.our.scrap)
-                    },
-                    their: {
-                        total: exchange.their.value,
-                        keys: exchange.their.keys,
-                        metal: Currencies.toRefined(exchange.their.scrap)
-                    }
-                });
-
                 const itemPrices: UnknownDictionary<{ buy: Currency; sell: Currency }> = {};
 
                 for (const sku in this.our) {
-                    if (!Object.prototype.hasOwnProperty.call(itemsDiff, sku)) {
+                    if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
                         continue;
                     }
 
@@ -673,7 +647,7 @@ class UserCart extends Cart {
                 }
 
                 for (const sku in this.their) {
-                    if (!Object.prototype.hasOwnProperty.call(itemsDiff, sku)) {
+                    if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
                         continue;
                     }
 
@@ -689,6 +663,19 @@ class UserCart extends Cart {
                     };
                 }
 
+                offer.data('dict', itemsDict);
+                offer.data('value', {
+                    our: {
+                        total: exchange.our.value,
+                        keys: exchange.our.keys,
+                        metal: Currencies.toRefined(exchange.our.scrap)
+                    },
+                    their: {
+                        total: exchange.their.value,
+                        keys: exchange.their.keys,
+                        metal: Currencies.toRefined(exchange.their.scrap)
+                    }
+                });
                 offer.data('prices', itemPrices);
 
                 this.offer = offer;

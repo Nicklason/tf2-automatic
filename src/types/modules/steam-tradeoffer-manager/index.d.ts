@@ -160,14 +160,18 @@ declare module 'steam-tradeoffer-manager' {
 
             app_data: any;
 
-            // Custom functions added to prototype
+            // Custom function added to prototype
             hasDescription(description: string): boolean;
 
+            // Custom function added to prototype
             getAction(action: string): string | null;
 
             // FIXME: Don't overwrite getTag prototype as it already exists
+
+            // Custom function added to prototype
             getTag(category: string): string | null;
 
+            // Custom function added to prototype
             getSKU(schema: SchemaManager.Schema): string | null;
         }
 
@@ -250,6 +254,9 @@ declare module 'steam-tradeoffer-manager' {
 
             // Custom function added to prototype
             summarize(schema: SchemaManager.Schema): string;
+
+            // Custom function added to prototype
+            getDiff(): UnknownKeys<any> | null;
         }
     }
 
