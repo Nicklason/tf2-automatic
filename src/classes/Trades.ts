@@ -726,12 +726,25 @@ export = class Trades {
             return;
         }
 
+        offer.data('isAccepted', true);
+
         offer.itemsToGive.forEach(item => this.bot.inventoryManager.getInventory().removeItem(item.assetid));
 
         this.bot.inventoryManager
             .getInventory()
             .fetch()
             .asCallback(() => {
+                // Update listings
+                const diff = offer.getDiff() || {};
+
+                for (const sku in diff) {
+                    if (!Object.prototype.hasOwnProperty.call(diff, sku)) {
+                        continue;
+                    }
+
+                    this.bot.listings.checkBySKU(sku);
+                }
+
                 this.bot.handler.onTradeOfferChanged(offer, oldState);
             });
     }

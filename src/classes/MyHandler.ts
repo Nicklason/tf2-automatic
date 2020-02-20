@@ -539,6 +539,9 @@ export = class MyHandler extends Handler {
 
         if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
             // Offer is accepted
+
+            offer.data('isAccepted', true);
+
             offer.log('trade', 'has been accepted.');
 
             // Smelt / combine metal
@@ -546,6 +549,17 @@ export = class MyHandler extends Handler {
 
             // Sort inventory
             this.sortInventory();
+
+            // Update listings
+            const diff = offer.getDiff() || {};
+
+            for (const sku in diff) {
+                if (!Object.prototype.hasOwnProperty.call(diff, sku)) {
+                    continue;
+                }
+
+                this.bot.listings.checkBySKU(sku);
+            }
 
             this.inviteToGroups(offer.partner);
         }
