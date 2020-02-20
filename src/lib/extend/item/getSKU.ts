@@ -11,7 +11,7 @@ export = function(schema: SchemaManager.Schema): string {
     const self = this as EconItem;
 
     if (self.appid != 440) {
-        return null;
+        return 'unknown';
     }
 
     let item = Object.assign(

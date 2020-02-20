@@ -259,10 +259,11 @@ export = class MyHandler extends Handler {
                 their: { value: 0, keys: 0, scrap: 0, contains: { items: false, metal: false, keys: false } }
             };
 
-            const itemsDiff = {};
             const itemsDict = { our: {}, their: {} };
 
             const states = [false, true];
+
+            let hasInvalidItems = false;
 
             for (let i = 0; i < states.length; i++) {
                 const buying = states[i];
@@ -275,9 +276,7 @@ export = class MyHandler extends Handler {
 
                     if (sku === 'unknown') {
                         // Offer contains an item that is not from TF2
-                        offer.log('info', 'contains items not from TF2, declining...');
-
-                        return resolve({ action: 'decline', reason: 'INVALID_ITEMS' });
+                        hasInvalidItems = true;
                     }
 
                     if (sku === '5000;6') {
@@ -299,13 +298,19 @@ export = class MyHandler extends Handler {
 
                     const amount = items[which][sku].length;
 
-                    itemsDiff[sku] = (itemsDiff[sku] || 0) + amount * (buying ? 1 : -1);
                     itemsDict[which][sku] = amount;
                 }
             }
 
-            offer.data('diff', itemsDiff);
             offer.data('dict', itemsDict);
+
+            if (hasInvalidItems) {
+                // Using boolean because items dict always needs to be saved
+                offer.log('info', 'contains items not from TF2, declining...');
+                return resolve({ action: 'decline', reason: 'INVALID_ITEMS' });
+            }
+
+            const itemsDiff = offer.getDiff();
 
             // Check if the offer is from an admin
             if (this.bot.isAdmin(offer.partner)) {
@@ -534,9 +539,6 @@ export = class MyHandler extends Handler {
 
         if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
             // Offer is accepted
-
-            offer.data('isAccepted', true);
-
             offer.log('trade', 'has been accepted.');
 
             // Smelt / combine metal
@@ -544,17 +546,6 @@ export = class MyHandler extends Handler {
 
             // Sort inventory
             this.sortInventory();
-
-            // Update listings
-            const diff = offer.data('diff') || {};
-
-            for (const sku in diff) {
-                if (!Object.prototype.hasOwnProperty.call(diff, sku)) {
-                    continue;
-                }
-
-                this.bot.listings.checkBySKU(sku);
-            }
 
             this.inviteToGroups(offer.partner);
         }
