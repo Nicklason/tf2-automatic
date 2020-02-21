@@ -40,7 +40,7 @@
                 "ADMINS": ["<your steamid 64>"],
                 "KEEP": ["<steamid of person to keep in friendslist>"],
                 "GROUPS": ["103582791462300957"],
-                "ALERTS": "none",
+                "ALERTS": ["none"],
 
                 "DEBUG": false,
                 "DEBUG_FILE": true
