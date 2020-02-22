@@ -190,9 +190,7 @@ abstract class Cart {
 
         this.offer.data('handleTimestamp', moment().valueOf());
 
-        this.offer.setMessage(
-            'Powered by TF2 Automatic. For more information see https://github.com/Nicklason/tf2-automatic'
-        );
+        this.offer.setMessage('Powered by TF2 Automatic');
 
         return this.preSendOffer()
             .then(() => {
