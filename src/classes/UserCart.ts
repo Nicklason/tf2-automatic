@@ -415,6 +415,10 @@ class UserCart extends Cart {
                     }
                 }
 
+                if (this.isEmpty()) {
+                    return reject("I don't or you don't have the items for this trade");
+                }
+
                 const itemsDict: {
                     our: UnknownDictionary<number>;
                     their: UnknownDictionary<number>;
