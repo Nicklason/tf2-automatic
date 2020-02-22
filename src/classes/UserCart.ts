@@ -674,7 +674,8 @@ class UserCart extends Cart {
                         total: exchange.their.value,
                         keys: exchange.their.keys,
                         metal: Currencies.toRefined(exchange.their.scrap)
-                    }
+                    },
+                    rate: keyPrice.metal
                 });
                 offer.data('prices', itemPrices);
 
