@@ -6,6 +6,10 @@ export = {
             // sku of the item
             type: 'string'
         },
+        name: {
+            // name of the item (used for compatibility with v2)
+            type: 'string'
+        },
         enabled: {
             // if we are actually trading the item
             type: 'boolean'
