@@ -1,0 +1,16 @@
+version: '3.5'
+services:
+  tf2-automatic:
+    build:
+      context: .
+      target: docker-tf2-automatic
+    image: docker-tf2-automatic:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./files:/files
+      - ./logs:/logs
