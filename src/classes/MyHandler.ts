@@ -26,11 +26,11 @@ export = class MyHandler extends Handler {
 
     private friendsToKeep: string[] = [];
 
-    private minimumScrap = 6;
+    private minimumScrap = 9;
 
-    private minimumReclaimed = 6;
+    private minimumReclaimed = 9;
 
-    private combineThreshold = 6;
+    private combineThreshold = 9;
 
     recentlySentMessage: UnknownDictionary<number> = {};
 

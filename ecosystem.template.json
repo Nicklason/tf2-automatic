@@ -28,6 +28,7 @@
 
                 "MINIMUM_SCRAP": 9,
                 "MINIMUM_RECLAIMED": 9,
+                "METAL_THRESHOLD": 9,
 
                 "DISABLE_LISTINGS": false,
                 "SKIP_BPTF_TRADEOFFERURL": false,
