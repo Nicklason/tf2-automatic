@@ -225,6 +225,12 @@ export = class MyHandler extends Handler {
         }
     }
 
+    onBptfAuth(auth: { apiKey: string; accessToken: string }): void {
+        const details = Object.assign({ private: true }, auth);
+
+        log.warn('Please add the backpack.tf API key and access token to the environment variables!', details);
+    }
+
     onNewTradeOffer(
         offer: TradeOffer
     ): Promise<{
