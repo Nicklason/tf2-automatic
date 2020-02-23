@@ -38,9 +38,31 @@ class CartQueue {
         return position;
     }
 
-    getPosition(steamID: SteamID): number {
+    dequeue(steamID: SteamID | string): boolean {
+        const position = this.getPosition(steamID);
+
+        if (position === -1) {
+            return false;
+        }
+
+        this.carts.splice(position, 1);
+
+        return true;
+    }
+
+    getPosition(steamID: SteamID | string): number {
         const steamID64 = steamID.toString();
         return this.carts.findIndex(cart => cart.partner.toString() === steamID64);
+    }
+
+    getCart(steamID: SteamID | string): Cart | null {
+        const index = this.getPosition(steamID);
+
+        if (index === -1) {
+            return null;
+        }
+
+        return this.carts[index];
     }
 
     private handleQueue(): void {
@@ -66,15 +88,17 @@ class CartQueue {
                 if (status === 'pending') {
                     this.bot.sendMessage(
                         cart.partner,
-                        'Your offer has been made, please wait while I accept the mobile confirmation.'
+                        'Your offer has been made! Please wait while I accept the mobile confirmation.'
                     );
                 }
             })
             .catch(err => {
                 if (!(err instanceof Error)) {
-                    this.bot.sendMessage(cart.partner, 'I failed to make the offer. Reason: ' + err);
+                    this.bot.sendMessage(cart.partner, 'I failed to make the offer! Reason: ' + err + '.');
                 } else {
-                    log.warn('Failed to make offer: ', err);
+                    log.warn('Failed to make offer');
+                    log.error(require('util').inspect(err));
+
                     this.bot.sendMessage(
                         cart.partner,
                         'Something went wrong while trying to make the offer, try again later!'
