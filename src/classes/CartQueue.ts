@@ -38,9 +38,31 @@ class CartQueue {
         return position;
     }
 
-    getPosition(steamID: SteamID): number {
+    dequeue(steamID: SteamID | string): boolean {
+        const position = this.getPosition(steamID);
+
+        if (position === -1) {
+            return false;
+        }
+
+        this.carts.splice(position, 1);
+
+        return true;
+    }
+
+    getPosition(steamID: SteamID | string): number {
         const steamID64 = steamID.toString();
         return this.carts.findIndex(cart => cart.partner.toString() === steamID64);
+    }
+
+    getCart(steamID: SteamID | string): Cart | null {
+        const index = this.getPosition(steamID);
+
+        if (index === -1) {
+            return null;
+        }
+
+        return this.carts[index];
     }
 
     private handleQueue(): void {

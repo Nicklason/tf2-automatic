@@ -249,6 +249,12 @@ declare module 'steam-tradeoffer-manager' {
 
             decline(callback?: (err: Error | null) => void): void;
 
+            /**
+             * Alias of decline
+             * @param callback - Function to call when done
+             */
+            cancel(callback?: (err: Error | null) => void): void;
+
             // Custom function added to prototype
             log(level: string, message: string, ...meta: any[]);
 

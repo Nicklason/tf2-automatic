@@ -510,7 +510,12 @@ export = class MyHandler extends Handler {
                         'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.'
                     );
                 } else if (offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
-                    if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+                    if (offer.data('canceledByUser') === true) {
+                        this.bot.sendMessage(
+                            offer.partner,
+                            'Ohh nooooes! The offer is no longer available. Reason: Offer was canceled by user.'
+                        );
+                    } else if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
                         this.bot.sendMessage(
                             offer.partner,
                             'Ohh nooooes! The offer is no longer available. Reason: Failed to accept mobile confirmation.'

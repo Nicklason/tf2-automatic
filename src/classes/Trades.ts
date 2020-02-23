@@ -321,7 +321,7 @@ export = class Trades {
 
         log.verbose('Handling offer #' + offerId + '...');
 
-        this.fetchOffer(offerId).asCallback((err, offer) => {
+        this.getOffer(offerId).asCallback((err, offer) => {
             if (err) {
                 log.warn('Failed to get offer #' + offerId + ': ', err);
                 // After many retries we could not get the offer data
@@ -342,7 +342,7 @@ export = class Trades {
         });
     }
 
-    fetchOffer(offerId: string, attempts = 0): Promise<TradeOfferManager.TradeOffer> {
+    getOffer(offerId: string, attempts = 0): Promise<TradeOfferManager.TradeOffer> {
         return new Promise((resolve, reject) => {
             this.bot.manager.getOffer(offerId, (err, offer) => {
                 attempts++;
@@ -360,7 +360,7 @@ export = class Trades {
                     if (err.message !== 'Not Logged In') {
                         // We got an error getting the offer, retry after some time
                         Promise.delay(exponentialBackoff(attempts)).then(() => {
-                            resolve(this.fetchOffer(offerId, attempts));
+                            resolve(this.getOffer(offerId, attempts));
                         });
                         return;
                     }
@@ -368,7 +368,7 @@ export = class Trades {
                     this.bot.getWebSession(true).asCallback(err => {
                         // If there is no error when waiting for web session, then attempt to fetch the offer right away
                         Promise.delay(err !== null ? 0 : exponentialBackoff(attempts)).then(() => {
-                            resolve(this.fetchOffer(offerId, attempts));
+                            resolve(this.getOffer(offerId, attempts));
                         });
                     });
                     return;
