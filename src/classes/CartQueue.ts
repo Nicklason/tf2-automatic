@@ -88,15 +88,17 @@ class CartQueue {
                 if (status === 'pending') {
                     this.bot.sendMessage(
                         cart.partner,
-                        'Your offer has been made, please wait while I accept the mobile confirmation.'
+                        'Your offer has been made! Please wait while I accept the mobile confirmation.'
                     );
                 }
             })
             .catch(err => {
                 if (!(err instanceof Error)) {
-                    this.bot.sendMessage(cart.partner, 'I failed to make the offer. Reason: ' + err);
+                    this.bot.sendMessage(cart.partner, 'I failed to make the offer! Reason: ' + err + '.');
                 } else {
-                    log.warn('Failed to make offer: ', err);
+                    log.warn('Failed to make offer');
+                    log.error(require('util').inspect(err));
+
                     this.bot.sendMessage(
                         cart.partner,
                         'Something went wrong while trying to make the offer, try again later!'

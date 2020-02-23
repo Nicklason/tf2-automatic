@@ -264,6 +264,12 @@ declare module 'steam-tradeoffer-manager' {
             // Custom function added to prototype
             getDiff(): UnknownKeys<any> | null;
         }
+
+        export class CustomError extends Error {
+            cause?: string;
+
+            eresult?: number;
+        }
     }
 
     export = SteamTradeOfferManager;
