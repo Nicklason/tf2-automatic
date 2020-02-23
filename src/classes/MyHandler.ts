@@ -58,7 +58,7 @@ export = class MyHandler extends Handler {
 
         const groups = parseJSON(process.env.GROUPS);
         if (groups !== null && Array.isArray(groups)) {
-            groups.forEach(function(groupID64) {
+            groups.forEach(function (groupID64) {
                 if (!new SteamID(groupID64).isValid()) {
                     throw new Error('Invalid group SteamID64 "' + groupID64 + '"');
                 }
@@ -69,7 +69,7 @@ export = class MyHandler extends Handler {
 
         const friendsToKeep = parseJSON(process.env.KEEP_FRIENDS);
         if (friendsToKeep !== null && Array.isArray(friendsToKeep)) {
-            friendsToKeep.forEach(function(steamID64) {
+            friendsToKeep.forEach(function (steamID64) {
                 if (!new SteamID(steamID64).isValid()) {
                     throw new Error('Invalid SteamID64 "' + steamID64 + '"');
                 }
@@ -94,7 +94,7 @@ export = class MyHandler extends Handler {
             files.readFile(paths.files.pricelist, true),
             files.readFile(paths.files.loginAttempts, true),
             files.readFile(paths.files.pollData, true)
-        ]).then(function([loginKey, pricelist, loginAttempts, pollData]) {
+        ]).then(function ([loginKey, pricelist, loginAttempts, pollData]) {
             return { loginKey, pricelist, loginAttempts, pollData };
         });
     }
@@ -102,14 +102,14 @@ export = class MyHandler extends Handler {
     onReady(): void {
         log.info(
             'tf2-automatic v' +
-                process.env.BOT_VERSION +
-                ' is ready! ' +
-                pluralize('item', this.bot.pricelist.getLength(), true) +
-                ' in pricelist, ' +
-                pluralize('listing', this.bot.listingManager.listings.length, true) +
-                ' on www.backpack.tf (cap: ' +
-                this.bot.listingManager.cap +
-                ')'
+            process.env.BOT_VERSION +
+            ' is ready! ' +
+            pluralize('item', this.bot.pricelist.getLength(), true) +
+            ' in pricelist, ' +
+            pluralize('listing', this.bot.listingManager.listings.length, true) +
+            ' on www.backpack.tf (cap: ' +
+            this.bot.listingManager.cap +
+            ')'
         );
 
         this.bot.client.gamesPlayed('tf2-automatic');
@@ -138,7 +138,7 @@ export = class MyHandler extends Handler {
                 return resolve();
             }
 
-            this.bot.listings.removeAll().asCallback(function(err) {
+            this.bot.listings.removeAll().asCallback(function (err) {
                 if (err) {
                     log.warn('Failed to r emove all listings: ', err);
                 }
@@ -182,7 +182,7 @@ export = class MyHandler extends Handler {
     onLoginKey(loginKey: string): void {
         log.debug('New login key');
 
-        files.writeFile(paths.files.loginKey, loginKey, false).catch(function(err) {
+        files.writeFile(paths.files.loginKey, loginKey, false).catch(function (err) {
             log.warn('Failed to save login key: ', err);
         });
     }
@@ -197,7 +197,7 @@ export = class MyHandler extends Handler {
     }
 
     onLoginAttempts(attempts: number[]): void {
-        files.writeFile(paths.files.loginAttempts, attempts, true).catch(function(err) {
+        files.writeFile(paths.files.loginAttempts, attempts, true).catch(function (err) {
             log.warn('Failed to save login attempts: ', err);
         });
     }
@@ -528,11 +528,11 @@ export = class MyHandler extends Handler {
                 this.bot.messageAdmins(
                     'trade',
                     'Trade #' +
-                        offer.id +
-                        ' with ' +
-                        offer.partner.getSteamID64() +
-                        ' is accepted. Summary:\n' +
-                        offer.summarize(this.bot.schema)
+                    offer.id +
+                    ' with ' +
+                    offer.partner.getSteamID64() +
+                    ' is accepted. Summary:\n' +
+                    offer.summarize(this.bot.schema)
                 );
                 this.bot.sendMessage(offer.partner, 'Success! The offer went through successfully.');
             } else if (offer.state === TradeOfferManager.ETradeOfferState.InvalidItems) {
@@ -603,7 +603,7 @@ export = class MyHandler extends Handler {
             reclaimed += combineScrap;
             scrap -= combineScrap * 3;
         } else if (minScrap > scrap) {
-            smeltReclaimed = Math.ceil((minReclaimed - reclaimed) / 3);
+            smeltReclaimed = Math.ceil((minScrap - scrap) / 3);
             scrap += smeltReclaimed * 3;
             reclaimed -= smeltReclaimed;
         }
@@ -658,7 +658,7 @@ export = class MyHandler extends Handler {
         this.bot.getAdmins().forEach(steamID => {
             if (!this.bot.friends.isFriend(steamID)) {
                 log.info('Not friends with admin ' + steamID + ', sending friend request...');
-                this.bot.client.addFriend(steamID, function(err) {
+                this.bot.client.addFriend(steamID, function (err) {
                     if (err) {
                         log.warn('Failed to send friend request: ', err);
                     }
@@ -672,7 +672,7 @@ export = class MyHandler extends Handler {
 
         log.debug('Sending friend request to ' + steamID64 + '...');
 
-        this.bot.client.addFriend(steamID, function(err) {
+        this.bot.client.addFriend(steamID, function (err) {
             if (err) {
                 log.warn('Failed to send friend request to ' + steamID64 + ': ', err);
                 return;
@@ -705,8 +705,8 @@ export = class MyHandler extends Handler {
                     this.bot.sendMessage(
                         steamID,
                         'Hi! If you don\'t know how things work, please type "!' +
-                            (isAdmin ? 'help' : 'how2trade') +
-                            '" :)'
+                        (isAdmin ? 'help' : 'how2trade') +
+                        '" :)'
                     );
                     return;
                 }
@@ -725,10 +725,10 @@ export = class MyHandler extends Handler {
             this.bot.sendMessage(
                 steamID,
                 'Hi ' +
-                    friend.player_name +
-                    '! If you don\'t know how things work, please type "!' +
-                    (isAdmin ? 'help' : 'how2trade') +
-                    '" :)'
+                friend.player_name +
+                '! If you don\'t know how things work, please type "!' +
+                (isAdmin ? 'help' : 'how2trade') +
+                '" :)'
             );
         });
     }
@@ -748,7 +748,7 @@ export = class MyHandler extends Handler {
             const friendsWithTrades = this.bot.trades.getTradesWithPeople(friends);
 
             // Ignore friends to keep
-            this.friendsToKeep.forEach(function(steamID) {
+            this.friendsToKeep.forEach(function (steamID) {
                 delete friendsWithTrades[steamID];
             });
 
@@ -804,14 +804,14 @@ export = class MyHandler extends Handler {
                 this.bot.client.myGroups[steamID] !== SteamUser.EClanRelationship.Member &&
                 this.bot.client.myGroups[steamID] !== SteamUser.EClanRelationship.Blocked
             ) {
-                this.bot.community.getSteamGroup(new SteamID(steamID), function(err, group) {
+                this.bot.community.getSteamGroup(new SteamID(steamID), function (err, group) {
                     if (err) {
                         log.warn('Failed to get group: ', err);
                         return;
                     }
 
                     log.info('Not member of group "' + group.name + ' ("' + steamID + '"), joining...');
-                    group.join(function(err) {
+                    group.join(function (err) {
                         if (err) {
                             log.warn('Failed to join group: ', err);
                         }
@@ -822,7 +822,7 @@ export = class MyHandler extends Handler {
     }
 
     onPollData(pollData: PollData): void {
-        files.writeFile(paths.files.pollData, pollData, true).catch(function(err) {
+        files.writeFile(paths.files.pollData, pollData, true).catch(function (err) {
             log.warn('Failed to save polldata: ', err);
         });
     }
@@ -836,7 +836,7 @@ export = class MyHandler extends Handler {
                 pricelist.map(entry => entry.getJSON()),
                 true
             )
-            .catch(function(err) {
+            .catch(function (err) {
                 log.warn('Failed to save pricelist: ', err);
             });
     }
