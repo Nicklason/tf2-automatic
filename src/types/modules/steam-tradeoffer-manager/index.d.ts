@@ -249,6 +249,12 @@ declare module 'steam-tradeoffer-manager' {
 
             decline(callback?: (err: Error | null) => void): void;
 
+            /**
+             * Alias of decline
+             * @param callback - Function to call when done
+             */
+            cancel(callback?: (err: Error | null) => void): void;
+
             // Custom function added to prototype
             log(level: string, message: string, ...meta: any[]);
 
@@ -257,6 +263,12 @@ declare module 'steam-tradeoffer-manager' {
 
             // Custom function added to prototype
             getDiff(): UnknownKeys<any> | null;
+        }
+
+        export class CustomError extends Error {
+            cause?: string;
+
+            eresult?: number;
         }
     }
 

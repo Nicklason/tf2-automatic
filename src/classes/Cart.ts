@@ -29,9 +29,30 @@ abstract class Cart {
 
     protected their: UnknownDictionary<number> = {};
 
+    protected canceled = false;
+
+    protected cancelReason: string;
+
     constructor(partner: SteamID, bot: Bot) {
         this.partner = partner;
         this.bot = bot;
+    }
+
+    isCanceled(): boolean {
+        return this.canceled;
+    }
+
+    setCanceled(reason: string): void {
+        this.canceled = true;
+        this.cancelReason = reason;
+    }
+
+    isMade(): boolean {
+        return this.offer?.state !== TradeOfferManager.ETradeOfferState.Invalid;
+    }
+
+    getCancelReason(): string {
+        return this.cancelReason;
     }
 
     getOurCount(sku: string): number {
@@ -192,8 +213,16 @@ abstract class Cart {
 
         this.offer.setMessage('Powered by TF2 Automatic');
 
+        if (this.isCanceled()) {
+            return Promise.reject('Offer was canceled');
+        }
+
         return this.preSendOffer()
             .then(() => {
+                if (this.isCanceled()) {
+                    return Promise.reject('Offer was canceled');
+                }
+
                 return this.bot.trades.sendOffer(this.offer);
             })
             .then(status => {
@@ -203,30 +232,36 @@ abstract class Cart {
                 return status;
             })
             .catch(err => {
-                if (err.cause === 'TradeBan') {
+                if (!(err instanceof Error)) {
+                    return Promise.reject(err);
+                }
+
+                const error = err as TradeOfferManager.CustomError;
+
+                if (error.cause === 'TradeBan') {
                     return Promise.reject('You are trade banned');
-                } else if (err.cause === 'ItemServerUnavailable') {
+                } else if (error.cause === 'ItemServerUnavailable') {
                     return Promise.reject(
                         "Team Fortress 2's item server may be down or Steam may be experiencing temporary connectivity issues"
                     );
-                } else if (err.message.indexOf('can only be sent to friends') != -1) {
+                } else if (error.message.includes('can only be sent to friends')) {
                     // Just adding it here so that it is saved for future reference
-                    return Promise.reject(err);
-                } else if (err.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory')) {
+                    return Promise.reject(error);
+                } else if (error.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory')) {
                     return Promise.reject("I don't have space for more items in my inventory");
-                } else if (err.eresult == 10 || err.eresult == 16) {
+                } else if (error.eresult == 10 || error.eresult == 16) {
                     return Promise.reject(
                         "An error occurred while sending your trade offer, this is most likely because I've recently accepted a big offer"
                     );
-                } else if (err.eresult == 15) {
+                } else if (error.eresult == 15) {
                     return Promise.reject("I don't, or you don't, have space for more items");
-                } else if (err.eresult == 20) {
+                } else if (error.eresult == 20) {
                     return Promise.reject(
                         "Team Fortress 2's item server may be down or Steam may be experiencing temporary connectivity issues"
                     );
-                } else if (err.eresult !== undefined) {
+                } else if (error.eresult !== undefined) {
                     return Promise.reject(
-                        'An error occurred while sending the offer (' + TradeOfferManager.EResult[err.eresult] + ')'
+                        'An error occurred while sending the offer (' + TradeOfferManager.EResult[error.eresult] + ')'
                     );
                 }
 

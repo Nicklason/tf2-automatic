@@ -32,7 +32,8 @@ const COMMANDS: string[] = [
     '!sellcart [amount] <name> - Adds an item you want to sell to the cart',
     '!cart - See current cart',
     '!clearcart - Clears the current cart',
-    '!checkout - Make the bot send an offer the items in the cart'
+    '!checkout - Make the bot send an offer the items in the cart',
+    '!cancel - Cancel an already made offer, or cancel offer being made'
 ];
 
 const ADMIN_COMMANDS: string[] = [
@@ -82,6 +83,8 @@ export = class Commands {
             this.clearCartCommand(steamID);
         } else if (command === 'checkout') {
             this.checkoutCommand(steamID);
+        } else if (command === 'cancel') {
+            this.cancelCommand(steamID);
         } else if (command === 'deposit' && isAdmin) {
             this.depositCommand(steamID, message);
         } else if (command === 'withdraw' && isAdmin) {
@@ -326,6 +329,54 @@ export = class Commands {
         }
 
         this.addCartToQueue(cart);
+    }
+
+    private cancelCommand(steamID: SteamID): void {
+        const activeOffer = this.bot.trades.getActiveOffer(steamID);
+
+        const positionInQueue = this.cartQueue.getPosition(steamID);
+
+        if (positionInQueue === 0) {
+            const cart = this.cartQueue.getCart(steamID);
+
+            if (cart.isMade()) {
+                this.bot.sendMessage(
+                    steamID,
+                    'Your offer is already being sent! Please try again when the offer is active.'
+                );
+                return;
+            } else if (cart.isCanceled()) {
+                this.bot.sendMessage(
+                    steamID,
+                    'Your offer is already being canceled. Please wait a few seconds for it to be canceled.'
+                );
+                return;
+            }
+
+            cart.setCanceled('BY_USER');
+        } else if (positionInQueue !== -1) {
+            this.cartQueue.dequeue(steamID);
+            this.bot.sendMessage(steamID, 'You have been removed from the queue.');
+        }
+
+        if (activeOffer === null) {
+            return;
+        }
+
+        this.bot.trades.getOffer(activeOffer).asCallback((err, offer) => {
+            if (err) {
+                this.bot.sendMessage(steamID, 'Ohh nooooes! Failed to cancel offer');
+                return;
+            }
+
+            offer.data('canceledByUser', true);
+
+            offer.cancel(err => {
+                if (err) {
+                    this.bot.sendMessage(steamID, 'Ohh nooooes! Something went wrong while trying to cancel the offer');
+                }
+            });
+        });
     }
 
     private addCartToQueue(cart: Cart): void {
