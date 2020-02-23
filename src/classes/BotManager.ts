@@ -9,6 +9,8 @@ import pm2 from 'pm2';
 import log from '../lib/logger';
 import { waitForWriting } from '../lib/files';
 
+const REQUIRED_OPTS = ['STEAM_ACCOUNT_NAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SECRET', 'STEAM_IDENTITY_SECRET'];
+
 export = class BotManager {
     private readonly socket: SocketIOClient.Socket;
 
@@ -73,6 +75,12 @@ export = class BotManager {
 
     start(): Promise<void> {
         return new Promise((resolve, reject) => {
+            REQUIRED_OPTS.forEach(function(optName) {
+                if (!process.env[optName]) {
+                    return reject(new Error('Missing required environment variable "' + optName + '"'));
+                }
+            });
+
             async.eachSeries(
                 [
                     (callback): void => {
