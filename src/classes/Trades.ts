@@ -402,7 +402,9 @@ export = class Trades {
 
                 if (status === 'pending') {
                     // Maybe wait for confirmation to be accepted and then resolve?
-                    this.acceptConfirmation(offer).catch();
+                    this.acceptConfirmation(offer).catch(() => {
+                        // catch errors like a boss
+                    });
                 }
 
                 return resolve(status);
@@ -518,7 +520,9 @@ export = class Trades {
 
                 if (status === 'pending') {
                     // Maybe wait for confirmation to be accepted and then resolve?
-                    this.acceptConfirmation(offer).catch();
+                    this.acceptConfirmation(offer).catch(() => {
+                        // catch errors like a boss
+                    });
                 }
 
                 return resolve(status);

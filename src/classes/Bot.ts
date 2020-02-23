@@ -544,25 +544,26 @@ export = class Bot {
             });
     }
 
-    private async getBptfAPICredentials(): Promise<{
+    private getBptfAPICredentials(): Promise<{
         apiKey: string;
         accessToken: string;
     }> {
-        await this.bptfLogin();
+        return this.bptfLogin().then(() => {
+            log.verbose('Getting API key and access token...');
 
-        log.verbose('Getting API key and access token...');
+            return Promise.all([this.getOrCreateBptfAPIKey(), this.getBptfAccessToken()]).then(
+                ([apiKey, accessToken]) => {
+                    log.verbose('Got backpack.tf API key and access token!');
 
-        const apiKey = await this.getOrCreateBptfAPIKey();
-        const accessToken = await this.getBptfAccessToken();
+                    process.env.BPTF_API_KEY = apiKey;
+                    process.env.BPTF_ACCESS_TOKEN = accessToken;
 
-        log.verbose('Got backpack.tf API key and access token!');
+                    this.handler.onBptfAuth({ apiKey, accessToken });
 
-        process.env.BPTF_API_KEY = apiKey;
-        process.env.BPTF_ACCESS_TOKEN = accessToken;
-
-        this.handler.onBptfAuth({ apiKey, accessToken });
-
-        return { apiKey, accessToken };
+                    return { apiKey, accessToken };
+                }
+            );
+        });
     }
 
     private getBptfAccessToken(): Promise<string> {
