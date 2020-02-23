@@ -597,7 +597,7 @@ export = class MyHandler extends Handler {
             reclaimed += combineScrap;
             scrap -= combineScrap * 3;
         } else if (minScrap > scrap) {
-            smeltReclaimed = Math.ceil((minReclaimed - reclaimed) / 3);
+            smeltReclaimed = Math.ceil((minScrap - scrap) / 3);
             scrap += smeltReclaimed * 3;
             reclaimed -= smeltReclaimed;
         }
