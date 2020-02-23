@@ -337,13 +337,23 @@ export = class Commands {
         const positionInQueue = this.cartQueue.getPosition(steamID);
 
         if (positionInQueue === 0) {
-            // TODO: Mark the cart as canceled and don't send offer. If the bot was already
-            // sending the offer, then tell the user to try again when the offer is made
+            const cart = this.cartQueue.getCart(steamID);
 
-            this.bot.sendMessage(
-                steamID,
-                'Your offer is already being made, wait for it to be made before canceling it.'
-            );
+            if (cart.isMade()) {
+                this.bot.sendMessage(
+                    steamID,
+                    'Your offer is already being sent! Please try again when the offer is active.'
+                );
+                return;
+            } else if (cart.isCanceled()) {
+                this.bot.sendMessage(
+                    steamID,
+                    'Your offer is already being canceled. Please wait a few seconds for it to be canceled.'
+                );
+                return;
+            }
+
+            cart.setCanceled('BY_USER');
         } else if (positionInQueue !== -1) {
             this.cartQueue.dequeue(steamID);
             this.bot.sendMessage(steamID, 'You have been removed from the queue.');
