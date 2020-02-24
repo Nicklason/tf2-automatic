@@ -51,7 +51,7 @@ export function fixItem(item: Item, schema: SchemaManager.Schema): Item {
     }
 
     if (schemaItem.item_class === 'supply_crate') {
-        let series = null;
+        let series: number | null = null;
 
         if (schemaItem.attributes !== undefined) {
             for (let i = 0; i < schemaItem.attributes.length; i++) {
@@ -80,6 +80,11 @@ export function fixItem(item: Item, schema: SchemaManager.Schema): Item {
         }
 
         if (series !== null) {
+            // @ts-ignore
+            // @TODO We are parsing a number from a number.
+            // If you meant to floor the int, use Math.floor()
+            // If you are expecting a string here,
+            // SchemaManager.attributes might be wrong.
             item.crateseries = parseInt(series);
         }
     }
