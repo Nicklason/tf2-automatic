@@ -31,7 +31,7 @@ abstract class Cart {
 
     protected canceled = false;
 
-    protected cancelReason: string;
+    protected cancelReason: string | undefined;
 
     constructor(partner: SteamID, bot: Bot) {
         this.partner = partner;
@@ -51,7 +51,7 @@ abstract class Cart {
         return this.offer?.state !== TradeOfferManager.ETradeOfferState.Invalid;
     }
 
-    getCancelReason(): string {
+    getCancelReason(): string | undefined {
         return this.cancelReason;
     }
 
@@ -303,7 +303,7 @@ abstract class Cart {
         return this.carts[steamID.getSteamID64()] !== undefined;
     }
 
-    static getCart(steamID: SteamID): Cart {
+    static getCart(steamID: SteamID): Cart | null {
         if (!this.hasCart(steamID)) {
             return null;
         }
