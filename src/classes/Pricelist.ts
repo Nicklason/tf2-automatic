@@ -122,7 +122,7 @@ export default class Pricelist extends EventEmitter {
     }
 
     getPrices(): Entry[] {
-        return [].concat(this.prices);
+        return this.prices.slice(0);
     }
 
     hasPrice(sku: string, onlyEnabled = false): boolean {
@@ -159,7 +159,7 @@ export default class Pricelist extends EventEmitter {
     searchByName(search: string, enabledOnly = true): Entry | string[] | null {
         search = search.toLowerCase();
 
-        const match = [];
+        const match: Entry[] = [];
 
         for (let i = 0; i < this.prices.length; i++) {
             const entry = this.prices[i];
