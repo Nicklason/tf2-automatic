@@ -1,5 +1,6 @@
 import winston from 'winston';
 import 'winston-daily-rotate-file';
+import { FormatWrap } from 'logform';
 
 import paths from '../resources/paths';
 
@@ -23,7 +24,7 @@ const colors = {
 
 winston.addColors(colors);
 
-const levelFilter = function(level): any {
+const levelFilter = function(level: string): FormatWrap {
     return winston.format(info => {
         if (info.level !== level) {
             return false;

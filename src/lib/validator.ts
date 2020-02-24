@@ -22,8 +22,8 @@ export = function(...args): string[] | null {
     return errors;
 };
 
-function errorParser(validated): string[] {
-    const errors = [];
+function errorParser(validated: jsonschema.ValidatorResult): string[] {
+    const errors: string[] = [];
     for (let i = 0; i < validated.errors.length; i++) {
         const error = validated.errors[i];
         let property = error.property;

@@ -10,9 +10,9 @@ export = class Inventory {
 
     private readonly schema: SchemaManager.Schema;
 
-    private tradable: UnknownDictionary<string[]>;
+    private tradable: UnknownDictionary<string[]> = {};
 
-    private nonTradable: UnknownDictionary<string[]>;
+    private nonTradable: UnknownDictionary<string[]> = {};
 
     constructor(steamID: SteamID | string, manager: TradeOfferManager, schema: SchemaManager.Schema) {
         this.steamID = new SteamID(steamID.toString());
@@ -136,7 +136,7 @@ export = class Inventory {
 
         if (tradableOnly) {
             // Copies the array
-            return [].concat(tradable);
+            return tradable.slice(0);
         }
 
         const nonTradable = this.nonTradable[sku] || [];

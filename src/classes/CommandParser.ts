@@ -26,7 +26,7 @@ export = class CommandParser {
                     .replace(/&/g, '","')
                     .replace(/=/g, '":"') +
                 '"}'
-        );
+        ) as UnknownDictionaryKnownValues;
 
         const parsed = {};
 
@@ -39,7 +39,7 @@ export = class CommandParser {
                 let value = params[key];
 
                 if (key !== 'sku') {
-                    const lowerCase = value.toLowerCase();
+                    const lowerCase = (value as string).toLowerCase();
                     if (/^-?\d+$/.test(lowerCase)) {
                         value = parseInt(lowerCase);
                     } else if (/^-?\d+(\.\d+)?$/.test(lowerCase)) {

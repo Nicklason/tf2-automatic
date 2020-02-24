@@ -1,5 +1,5 @@
 // TODO: Update version for each release
-process.env.BOT_VERSION = '3.0.0';
+process.env.BOT_VERSION = '3.1.0';
 
 import fs from 'fs';
 import path from 'path';
@@ -55,6 +55,10 @@ const botManager = new BotManager();
 
 import ON_DEATH from 'death';
 
+// @ts-ignore
+// This error is a false positive.
+// The signal and err are being created dynamically.
+// Treat them as any for now.
 ON_DEATH({ uncaughtException: true })(function(signal, err) {
     const crashed = typeof err !== 'string';
 

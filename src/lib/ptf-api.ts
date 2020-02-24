@@ -20,7 +20,7 @@ export function requestCheck(sku: string, source: string): Promise<UnknownDictio
 }
 
 function apiRequest(httpMethod: string, path: string, input: UnknownDictionary<any>): Promise<UnknownDictionary<any>> {
-    const options: OptionsWithUrl = {
+    const options: OptionsWithUrl & { headers: {} } = {
         method: httpMethod,
         url: `https://api.prices.tf${path}`,
         headers: {
