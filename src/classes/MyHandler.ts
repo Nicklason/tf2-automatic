@@ -762,7 +762,7 @@ export = class MyHandler extends Handler {
             }
 
             // Convert object into an array so it can be sorted
-            const tradesWithPeople = [];
+            const tradesWithPeople: { steamID: string; trades: number }[] = [];
 
             for (const steamID in friendsWithTrades) {
                 if (!Object.prototype.hasOwnProperty.call(friendsWithTrades, steamID)) {

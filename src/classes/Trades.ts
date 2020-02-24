@@ -783,7 +783,7 @@ export = class Trades {
             return false;
         }
 
-        const copy = b.concat();
+        const copy = b.slice(0);
 
         for (let i = 0; i < a.length; i++) {
             // Find index of matching item
