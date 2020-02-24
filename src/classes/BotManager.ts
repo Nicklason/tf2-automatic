@@ -48,7 +48,7 @@ export = class BotManager {
             });
         });
 
-        this.socket.on('disconnect', reason => {
+        this.socket.on('disconnect', (reason: string) => {
             log.debug('Disconnected from socket server', { reason: reason });
 
             if (reason === 'io server disconnect') {
