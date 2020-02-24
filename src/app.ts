@@ -55,6 +55,14 @@ const botManager = new BotManager();
 
 import ON_DEATH from 'death';
 
+// @ts-ignore
+// @TODO Fix this error.
+// Argument of type '(signal: any, err: any) => void'
+// is not assignable to parameter of type
+// '(signal: "SIGINT" | "SIGTERM" | "SIGQUIT" | "SIGHUP" | "uncaughtException") => void'.ts(2345)
+//
+// The parameter `err` does not exist in the typescript definion.
+// If `err` does exist, please open a PR against `@types/death`.
 ON_DEATH({ uncaughtException: true })(function(signal, err) {
     const crashed = typeof err !== 'string';
 
