@@ -55,6 +55,10 @@ const botManager = new BotManager();
 
 import ON_DEATH from 'death';
 
+// @ts-ignore
+// This error is a false positive.
+// The signal and err are being created dynamically.
+// Treat them as any for now.
 ON_DEATH({ uncaughtException: true })(function(signal, err) {
     const crashed = typeof err !== 'string';
 
