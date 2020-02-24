@@ -1,5 +1,5 @@
 import InventoryManager from './InventoryManager';
-import Pricelist from './Pricelist';
+import Pricelist, { EntryData } from './Pricelist';
 import Handler from './Handler';
 import Friends from './Friends';
 import Trades from './Trades';
@@ -123,7 +123,7 @@ export = class Bot {
         this.inventoryManager = new InventoryManager(this.pricelist);
 
         this.admins = (process.env.ADMINS === undefined ? [] : JSON.parse(process.env.ADMINS)).map(
-            steamID => new SteamID(steamID)
+            (steamID: string) => new SteamID(steamID)
         );
 
         this.admins.forEach(function(steamID) {
@@ -263,8 +263,13 @@ export = class Bot {
     }
 
     start(): Promise<void> {
-        let data;
-        let cookies;
+        let data: {
+            loginAttempts?: number[];
+            pricelist?: EntryData[];
+            loginKey?: string;
+            pollData?: TradeOfferManager.PollData;
+        };
+        let cookies: string[];
 
         return new Promise((resolve, reject) => {
             async.eachSeries(
