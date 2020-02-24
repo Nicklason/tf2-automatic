@@ -10,7 +10,7 @@ import request from '@nicklason/request-retry';
 export = class Friends {
     private readonly bot: Bot;
 
-    maxFriends: number;
+    maxFriends: number | undefined;
 
     constructor(bot: Bot) {
         this.bot = bot;

@@ -224,7 +224,7 @@ export = class Trades {
         return this.getOffers().then(({ sent, received }) => {
             const match = (isSent ? sent : received).find(v => Trades.offerEquals(offer, v));
 
-            return match;
+            return match === undefined ? null : match;
         });
     }
 
