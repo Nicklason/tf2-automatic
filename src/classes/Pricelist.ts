@@ -20,8 +20,8 @@ export interface EntryData {
     max: number;
     min: number;
     intent: 0 | 1 | 2;
-    buy?: Currency;
-    sell?: Currency;
+    buy?: Currency | null;
+    sell?: Currency | null;
     time?: number | null;
 }
 

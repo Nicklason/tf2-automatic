@@ -2,7 +2,7 @@
  * Gets an action by name
  * @param action - Action to search for
  */
-export = function(action: string): string {
+export = function(action: string): string | null {
     // @ts-ignore
     if (!Array.isArray(this.actions)) {
         return null;
