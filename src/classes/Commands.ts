@@ -17,6 +17,7 @@ import CartQueue from './CartQueue';
 import { Item } from '../types/TeamFortress2';
 import { UnknownDictionaryKnownValues } from '../types/common';
 import { fixItem } from '../lib/items';
+import { requestCheck } from '../lib/ptf-api';
 import validator from '../lib/validator';
 import log from '../lib/logger';
 import SchemaManager from 'tf2-schema';
@@ -44,6 +45,7 @@ const ADMIN_COMMANDS: string[] = [
     '!add - Add a pricelist entry',
     '!remove - Remove a pricelist entry',
     '!update - Update a pricelist entry',
+    '!pricecheck - Requests an item to be priced by PricesTF',
     '!stop - Stop the bot',
     '!restart - Restart the bot',
     '!version - Get version that the bot is running',
@@ -106,6 +108,8 @@ export = class Commands {
             this.removeCommand(steamID, message);
         } else if (command === 'update' && isAdmin) {
             this.updateCommand(steamID, message);
+        } else if (command === 'pricecheck' && isAdmin) {
+            this.pricecheckCommand(steamID, message);
         } else if (command === 'stop' && isAdmin) {
             this.stopCommand(steamID);
         } else if (command === 'restart' && isAdmin) {
@@ -1012,6 +1016,35 @@ export = class Commands {
                         (err.body && err.body.message ? err.body.message : err.message)
                 );
             });
+    }
+
+    private pricecheckCommand(steamID: SteamID, message: string): void {
+        const params = CommandParser.parseParams(CommandParser.removeCommand(message));
+
+        if (params.sku === undefined) {
+            const item = this.getItemFromParams(steamID, params);
+
+            if (item === null) {
+                return;
+            }
+
+            params.sku = SKU.fromObject(item);
+        }
+
+        params.sku = SKU.fromObject(fixItem(SKU.fromString(params.sku), this.bot.schema));
+
+        requestCheck(params.sku, 'bptf').asCallback((err, body) => {
+            if (err) {
+                this.bot.sendMessage(
+                    steamID,
+                    'Error while requesting price check: ' +
+                        (err.body && err.body.message ? err.body.message : err.message)
+                );
+                return;
+            }
+
+            this.bot.sendMessage(steamID, 'Price check requested for ' + body.name + ', the item will be checked.');
+        });
     }
 
     private stopCommand(steamID: SteamID): void {
