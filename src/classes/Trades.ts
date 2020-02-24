@@ -570,6 +570,8 @@ export = class Trades {
                                     return reject(err);
                                 }
 
+                                // @nicklason you know that match might be undefined here?
+                                // It doesn't look like your code can handle undefined.
                                 if (match === null) {
                                     // Did not find a matching offer, retry sending the offer
                                     this.sendOfferRetry(offer, attempts);
