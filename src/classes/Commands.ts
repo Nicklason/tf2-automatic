@@ -917,7 +917,7 @@ export = class Commands {
             return;
         }
 
-        if (typeof params.buy === 'object') {
+        if (typeof params.buy === 'object' && params.buy !== null) {
             params.buy.keys = params.buy.keys || 0;
             params.buy.metal = params.buy.metal || 0;
 
@@ -925,7 +925,7 @@ export = class Commands {
                 params.autoprice = false;
             }
         }
-        if (typeof params.sell === 'object') {
+        if (typeof params.sell === 'object' && params.sell !== null) {
             params.sell.keys = params.sell.keys || 0;
             params.sell.metal = params.sell.metal || 0;
 

@@ -5,12 +5,12 @@
     "main": "app.js",
     "scripts": {
         "start": "node dist/app.js",
-        "lint": "eslint src/**/*",
-        "prettier": "prettier --check src/**/*",
         "release": "np --no-cleanup --no-publish",
-        "compile": "tsc -p .",
-        "prepare": "npm run compile",
-        "pretest": "npm run compile",
+        "build": "tsc -p .",
+        "pretest": "npm run eslint-check",
+        "test": "npm run lint",
+        "lint": "eslint \"src/**/*\"",
+        "prettier": "prettier --check src/**/*",
         "eslint-check": "eslint --print-config src/app.ts | eslint-config-prettier-check"
     },
     "repository": {
