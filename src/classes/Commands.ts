@@ -19,6 +19,7 @@ import { UnknownDictionaryKnownValues } from '../types/common';
 import { fixItem } from '../lib/items';
 import validator from '../lib/validator';
 import log from '../lib/logger';
+import SchemaManager from 'tf2-schema';
 
 const COMMANDS: string[] = [
     '!help - Get list of commands',
@@ -225,7 +226,7 @@ export = class Commands {
     private stockCommand(steamID: SteamID): void {
         const dict = this.bot.inventoryManager.getInventory().getItems();
 
-        const items = [];
+        const items: { amount: number; name: string }[] = [];
 
         for (const sku in dict) {
             if (!Object.prototype.hasOwnProperty.call(dict, sku)) {
@@ -276,7 +277,7 @@ export = class Commands {
 
         const parsed = pure.concat(items);
 
-        const stock = [];
+        const stock: string[] = [];
         let left = 0;
 
         for (let i = 0; i < parsed.length; i++) {
@@ -916,7 +917,7 @@ export = class Commands {
             return;
         }
 
-        if (typeof params.buy === 'object') {
+        if (typeof params.buy === 'object' && params.buy !== null) {
             params.buy.keys = params.buy.keys || 0;
             params.buy.metal = params.buy.metal || 0;
 
@@ -924,7 +925,7 @@ export = class Commands {
                 params.autoprice = false;
             }
         }
-        if (typeof params.sell === 'object') {
+        if (typeof params.sell === 'object' && params.sell !== null) {
             params.sell.keys = params.sell.keys || 0;
             params.sell.metal = params.sell.metal || 0;
 
@@ -1267,7 +1268,7 @@ export = class Commands {
         };
     }
 
-    private getItemFromParams(steamID: SteamID | string, params: UnknownDictionaryKnownValues): Item {
+    private getItemFromParams(steamID: SteamID | string, params: UnknownDictionaryKnownValues): Item | null {
         const item = SKU.fromString('');
 
         delete item.paint;
@@ -1279,7 +1280,7 @@ export = class Commands {
             foundSomething = true;
             // Look for all items that have the same name
 
-            const match = [];
+            const match: SchemaManager.SchemaItem[] = [];
 
             for (let i = 0; i < this.bot.schema.raw.schema.items.length; i++) {
                 const schemaItem = this.bot.schema.raw.schema.items[i];
@@ -1412,7 +1413,7 @@ export = class Commands {
         } else if (item.output !== null) {
             // Look for all items that have the same name
 
-            const match = [];
+            const match: SchemaManager.SchemaItem[] = [];
 
             for (let i = 0; i < this.bot.schema.raw.schema.items.length; i++) {
                 const schemaItem = this.bot.schema.raw.schema.items[i];
