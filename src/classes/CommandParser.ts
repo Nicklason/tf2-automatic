@@ -2,7 +2,6 @@ import dotProp from 'dot-prop';
 
 import { UnknownDictionaryKnownValues } from '../types/common';
 import { parseJSON } from '../lib/helpers';
-import log from '../lib/logger';
 
 export = class CommandParser {
     static getCommand(message: string): string | null {
@@ -40,9 +39,6 @@ export = class CommandParser {
                 let value = params[key];
 
                 if (key !== 'sku') {
-                    if (typeof value !== 'string') {
-                        log.debug(`Programmer error, expect value to be of type string, got ${typeof value}`);
-                    }
                     const lowerCase = (value as string).toLowerCase();
                     if (/^-?\d+$/.test(lowerCase)) {
                         value = parseInt(lowerCase);
