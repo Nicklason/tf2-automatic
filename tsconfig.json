@@ -2,8 +2,8 @@
     "compilerOptions": {
         "target": "es2018",
         "module": "commonjs",
-        "allowJs": true,
-        "checkJs": true,
+        "allowJs": false,
+        "checkJs": false,
         "outDir": "./dist",
         "rootDir": "./src",
         "removeComments": true,
