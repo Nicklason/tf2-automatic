@@ -225,7 +225,7 @@ export = class Commands {
     private stockCommand(steamID: SteamID): void {
         const dict = this.bot.inventoryManager.getInventory().getItems();
 
-        const items = [];
+        const items: { amount: number; name: string }[] = [];
 
         for (const sku in dict) {
             if (!Object.prototype.hasOwnProperty.call(dict, sku)) {

@@ -2,7 +2,7 @@ import { TradeOffer } from 'steam-tradeoffer-manager';
 
 import { UnknownDictionary } from '../../../types/common';
 
-export = function(): UnknownDictionary<number> {
+export = function(): UnknownDictionary<number> | null {
     // @ts-ignore
     const self = this as TradeOffer;
 
