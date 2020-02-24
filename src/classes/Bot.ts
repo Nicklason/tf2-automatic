@@ -69,7 +69,7 @@ export = class Bot {
     private readonly loginPeriodTime: number = 60 * 1000;
 
     // Values
-    lastNotifiedVersion: string;
+    lastNotifiedVersion: string | undefined;
 
     private sessionReplaceCount = 0;
 

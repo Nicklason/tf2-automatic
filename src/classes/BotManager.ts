@@ -57,7 +57,7 @@ export = class BotManager {
         });
     }
 
-    getSchema(): SchemaManager.Schema {
+    getSchema(): SchemaManager.Schema | null {
         return this.schemaManager.schema;
     }
 
