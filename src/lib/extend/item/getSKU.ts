@@ -159,13 +159,13 @@ function getWear(item: EconItem): number {
  * Get skin from item
  * @param item - Item object
  */
-function getPaintKit(item: EconItem, schema: SchemaManager.Schema): number {
+function getPaintKit(item: EconItem, schema: SchemaManager.Schema): number | null {
     if (getWear(item) === null) {
         return null;
     }
 
     let hasCaseCollection = false;
-    let skin = null;
+    let skin: string | null = null;
 
     for (let i = 0; i < item.descriptions.length; i++) {
         const description = item.descriptions[i].value;
@@ -185,7 +185,7 @@ function getPaintKit(item: EconItem, schema: SchemaManager.Schema): number {
         return null;
     }
 
-    if (skin.indexOf('Mk.I') !== -1) {
+    if (skin.includes('Mk.I')) {
         return schema.getSkinIdByName(skin);
     }
 

@@ -19,6 +19,7 @@ import { UnknownDictionaryKnownValues } from '../types/common';
 import { fixItem } from '../lib/items';
 import validator from '../lib/validator';
 import log from '../lib/logger';
+import SchemaManager from 'tf2-schema';
 
 const COMMANDS: string[] = [
     '!help - Get list of commands',
@@ -276,7 +277,7 @@ export = class Commands {
 
         const parsed = pure.concat(items);
 
-        const stock = [];
+        const stock: string[] = [];
         let left = 0;
 
         for (let i = 0; i < parsed.length; i++) {
@@ -1267,7 +1268,7 @@ export = class Commands {
         };
     }
 
-    private getItemFromParams(steamID: SteamID | string, params: UnknownDictionaryKnownValues): Item {
+    private getItemFromParams(steamID: SteamID | string, params: UnknownDictionaryKnownValues): Item | null {
         const item = SKU.fromString('');
 
         delete item.paint;
@@ -1279,7 +1280,7 @@ export = class Commands {
             foundSomething = true;
             // Look for all items that have the same name
 
-            const match = [];
+            const match: SchemaManager.SchemaItem[] = [];
 
             for (let i = 0; i < this.bot.schema.raw.schema.items.length; i++) {
                 const schemaItem = this.bot.schema.raw.schema.items[i];
@@ -1412,7 +1413,7 @@ export = class Commands {
         } else if (item.output !== null) {
             // Look for all items that have the same name
 
-            const match = [];
+            const match: SchemaManager.SchemaItem[] = [];
 
             for (let i = 0; i < this.bot.schema.raw.schema.items.length; i++) {
                 const schemaItem = this.bot.schema.raw.schema.items[i];
