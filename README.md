@@ -11,7 +11,7 @@ A free and open source fully automated TF2 trading bot advertising on www.backpa
 
 Before you install the bot, there are a few things you need to have taken care off before you will be able to run the bot.
 
-- You need a seperate Steam account with a mobile authenticator. I suggest using the [Steam Desktop Authenticator](https://github.com/Jessecar96/SteamDesktopAuthenticator) to authenticate the account and get the secret keys used to automate generating 2FA codes and managing mobile confirmations.
+- You need a separate Steam account with a mobile authenticator. I suggest using the [Steam Desktop Authenticator](https://github.com/Jessecar96/SteamDesktopAuthenticator) to authenticate the account and get the secret keys used to automate generating 2FA codes and managing mobile confirmations.
 - NodeJS version 8 or more
 - Typescript 3.7 or above
 
@@ -23,4 +23,4 @@ You can clone or download the bot by clicking on the green button in the top rig
 
 ## Configuration
 
-Once you have downloaded the source and installed the neccesary packages, you can move on to configuring the bot. Follow the [configuration guide](https://github.com/Nicklason/tf2-automatic/wiki/Configuration).
+Once you have downloaded the source and installed the necessary packages, you can move on to configuring the bot. Follow the [configuration guide](https://github.com/Nicklason/tf2-automatic/wiki/Configuration).
