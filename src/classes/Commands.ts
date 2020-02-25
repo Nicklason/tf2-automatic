@@ -337,11 +337,14 @@ export = class Commands {
     }
 
     private cancelCommand(steamID: SteamID): void {
-        const activeOffer = this.bot.trades.getActiveOffer(steamID);
+        // Maybe have the cancel command only cancel the offer in the queue, and have a command for canceling the offer?
 
         const positionInQueue = this.cartQueue.getPosition(steamID);
 
+        // If a user is in the queue, then they can't have an active offer
+
         if (positionInQueue === 0) {
+            // The user is in the queue and the offer is already being processed
             const cart = this.cartQueue.getCart(steamID);
 
             if (cart.isMade()) {
@@ -360,28 +363,43 @@ export = class Commands {
 
             cart.setCanceled('BY_USER');
         } else if (positionInQueue !== -1) {
+            // The user is in the queu
             this.cartQueue.dequeue(steamID);
             this.bot.sendMessage(steamID, 'You have been removed from the queue.');
-        }
+        } else {
+            // User is not in the queue, check if they have an active offer
 
-        if (activeOffer === null) {
-            return;
-        }
+            const activeOffer = this.bot.trades.getActiveOffer(steamID);
 
-        this.bot.trades.getOffer(activeOffer).asCallback((err, offer) => {
-            if (err) {
-                this.bot.sendMessage(steamID, 'Ohh nooooes! Failed to cancel offer');
+            if (activeOffer === null) {
+                this.bot.sendMessage(steamID, "You don't have an active offer.");
                 return;
             }
 
-            offer.data('canceledByUser', true);
-
-            offer.cancel(err => {
+            this.bot.trades.getOffer(activeOffer).asCallback((err, offer) => {
                 if (err) {
-                    this.bot.sendMessage(steamID, 'Ohh nooooes! Something went wrong while trying to cancel the offer');
+                    this.bot.sendMessage(
+                        steamID,
+                        'Ohh nooooes! Something went wrong while trying to cancel the offer.'
+                    );
+                    return;
                 }
+
+                offer.data('canceledByUser', true);
+
+                offer.cancel(err => {
+                    // Only react to error, if the offer is canceled then the user
+                    // will get an alert from the onTradeOfferChanged handler
+
+                    if (err) {
+                        this.bot.sendMessage(
+                            steamID,
+                            'Ohh nooooes! Something went wrong while trying to cancel the offer.'
+                        );
+                    }
+                });
             });
-        });
+        }
     }
 
     private addCartToQueue(cart: Cart): void {

@@ -1,7 +1,7 @@
 import SteamID from 'steamid';
 import moment from 'moment';
 import SKU from 'tf2-sku';
-import TradeOfferManager from 'steam-tradeoffer-manager';
+import TradeOfferManager, { TradeOffer } from 'steam-tradeoffer-manager';
 import pluralize from 'pluralize';
 
 import Bot from './Bot';
@@ -49,6 +49,10 @@ abstract class Cart {
 
     isMade(): boolean {
         return this.offer?.state !== TradeOfferManager.ETradeOfferState.Invalid;
+    }
+
+    getOffer(): TradeOffer | null {
+        return this.offer;
     }
 
     getCancelReason(): string | undefined {
