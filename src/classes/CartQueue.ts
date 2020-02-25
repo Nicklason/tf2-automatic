@@ -90,6 +90,9 @@ class CartQueue {
                         cart.partner,
                         'Your offer has been made! Please wait while I accept the mobile confirmation.'
                     );
+
+                    // Wait for confirmation to be accepted
+                    return this.bot.trades.acceptConfirmation(cart.getOffer()).reflect();
                 }
             })
             .catch(err => {

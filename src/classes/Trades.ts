@@ -412,7 +412,7 @@ export = class Trades {
         });
     }
 
-    private acceptConfirmation(offer: TradeOfferManager.TradeOffer): Promise<void> {
+    acceptConfirmation(offer: TradeOfferManager.TradeOffer): Promise<void> {
         return new Promise((resolve, reject) => {
             log.debug('Accepting mobile confirmation...', {
                 offerId: offer.id
@@ -517,13 +517,6 @@ export = class Trades {
                 }
 
                 offer.log('trade', 'successfully created' + (status === 'pending' ? '; confirmation required' : ''));
-
-                if (status === 'pending') {
-                    // Maybe wait for confirmation to be accepted and then resolve?
-                    this.acceptConfirmation(offer).catch(() => {
-                        // catch errors like a boss
-                    });
-                }
 
                 return resolve(status);
             });

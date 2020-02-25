@@ -394,18 +394,21 @@ export = class Bot {
                         async.parallel(
                             [
                                 (callback): void => {
+                                    log.debug('Getting inventory...');
                                     this.inventoryManager
                                         .getInventory()
                                         .fetch()
                                         .asCallback(callback);
                                 },
                                 (callback): void => {
+                                    log.debug('Initializing bptf-listings...');
                                     this.listingManager.token = process.env.BPTF_ACCESS_TOKEN;
                                     this.listingManager.steamid = this.client.steamID;
 
                                     this.listingManager.init(callback);
                                 },
                                 (callback): void => {
+                                    log.debug('Updating profile settings...');
                                     if (process.env.SKIP_UPDATE_PROFILE_SETTINGS !== 'true') {
                                         return callback(null);
                                     }
