@@ -694,7 +694,7 @@ export = class Trades {
             // Mark items as in trade
             offer.itemsToGive.forEach(item => this.setItemInTrade(item.id));
 
-            if (offer.isOurOffer && offer.data('_ourItems') === null) {
+            if (offer.isOurOffer && offer.data('_ourItems') === undefined) {
                 // Items are not saved for sent offer, save them
                 offer.data(
                     '_ourItems',
