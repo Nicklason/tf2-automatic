@@ -1171,8 +1171,7 @@ export = class Commands {
     }
 
     private tradesCommand(steamID: SteamID): void {
-        const now = moment();
-        const aDayAgo = moment().subtract(24, 'day');
+        const aDayAgo = moment().subtract(24, 'hour');
         const startOfDay = moment().startOf('day');
 
         let tradesToday = 0;
@@ -1195,7 +1194,7 @@ export = class Commands {
                     trades24Hours++;
                 }
 
-                if (offerData[offerID].finishTimestamp >= now.valueOf() - startOfDay.valueOf()) {
+                if (offerData[offerID].finishTimestamp >= startOfDay.valueOf()) {
                     // All trades since 0:00 in the morning.
                     tradesToday++;
                 }
