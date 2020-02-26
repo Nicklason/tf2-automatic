@@ -1415,6 +1415,7 @@ export = class Commands {
 
             if (item[key] !== undefined) {
                 foundSomething = true;
+                item[key] = params[key];
                 break;
             }
         }
