@@ -308,7 +308,10 @@ export = class Bot {
                             return callback(null);
                         }
 
-                        log.verbose('Checking account limitations...');
+                        log.warn(
+                            'Checking account limitations - Please disable this in the config by setting `SKIP_ACCOUNT_LIMITATIONS` to true'
+                        );
+
                         this.getAccountLimitations().asCallback(function(err, limitations) {
                             if (err) {
                                 return callback(err);
