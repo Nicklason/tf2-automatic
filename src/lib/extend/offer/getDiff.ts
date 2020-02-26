@@ -8,7 +8,7 @@ export = function(): UnknownDictionary<number> | null {
 
     const dict = self.data('dict');
 
-    if (dict === null) {
+    if (dict === undefined) {
         return null;
     }
 
