@@ -21,12 +21,17 @@ class CartQueue {
     enqueue(cart: Cart): number {
         // TODO: Priority queueing
 
+        log.debug('Enqueueing cart');
+
         if (this.getPosition(cart.partner) !== -1) {
+            log.debug('Already in the queue');
             // Already in the queue
             return -1;
         }
 
         const position = this.carts.length;
+
+        log.debug('Added cart to queue at position ' + position);
 
         this.carts.push(cart);
 
@@ -39,13 +44,17 @@ class CartQueue {
     }
 
     dequeue(steamID: SteamID | string): boolean {
+        log.debug('Dequeueing cart');
         const position = this.getPosition(steamID);
 
         if (position === -1) {
+            log.debug('Cart is not in the queue');
             return false;
         }
 
         this.carts.splice(position, 1);
+
+        log.debug('Removed cart from the queue');
 
         return true;
     }
@@ -66,7 +75,10 @@ class CartQueue {
     }
 
     private handleQueue(): void {
+        log.debug('Handling queue...');
+
         if (this.busy || this.carts.length === 0) {
+            log.debug('Already handling queue or queue is empty');
             return;
         }
 
@@ -74,22 +86,31 @@ class CartQueue {
 
         const cart = this.carts[0];
 
+        log.debug('Handling cart for ' + cart.partner.getSteamID64());
+
+        log.debug('Constructing offer');
+
         cart.constructOffer()
             .then(alteredMessage => {
+                log.debug('Constructed offer');
                 if (alteredMessage) {
                     this.bot.sendMessage(cart.partner, 'Your offer has been altered: ' + alteredMessage + '.');
                 }
 
                 this.bot.sendMessage(cart.partner, 'Please wait while I process your offer! ' + cart.summarize() + '.');
 
+                log.debug('Sending offer...');
                 return cart.sendOffer();
             })
             .then(status => {
+                log.debug('Sent offer');
                 if (status === 'pending') {
                     this.bot.sendMessage(
                         cart.partner,
                         'Your offer has been made! Please wait while I accept the mobile confirmation.'
                     );
+
+                    log.debug('Accepting mobile confirmation...');
 
                     // Wait for confirmation to be accepted
                     return this.bot.trades.acceptConfirmation(cart.getOffer()).reflect();
@@ -109,6 +130,8 @@ class CartQueue {
                 }
             })
             .finally(() => {
+                log.debug('Done handling cart ' + cart.partner.getSteamID64());
+
                 // Remove cart from the queue
                 this.carts.shift();
 
