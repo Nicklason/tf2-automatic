@@ -335,6 +335,8 @@ class UserCart extends Cart {
                     continue;
                 }
 
+                let alteredMessage: string;
+
                 let amount = this.getOurCount(sku);
                 const ourAssetids = ourInventory.findBySKU(sku, true);
 
@@ -345,14 +347,12 @@ class UserCart extends Cart {
                     this.removeOurItem(sku, Infinity);
 
                     if (ourAssetids.length === 0) {
-                        alteredMessages.push(
-                            "I don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false))
-                        );
+                        alteredMessage =
+                            "I don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false));
                     } else {
-                        alteredMessages.push(
+                        alteredMessage =
                             'I only have ' +
-                                pluralize(this.bot.schema.getName(SKU.fromString(sku), false), ourAssetids.length, true)
-                        );
+                            pluralize(this.bot.schema.getName(SKU.fromString(sku), false), ourAssetids.length, true);
 
                         // Add the max amount to the cart
                         this.addOurItem(sku, amount);
@@ -362,12 +362,23 @@ class UserCart extends Cart {
                 const amountCanTrade = this.bot.inventoryManager.amountCanTrade(sku, false);
 
                 if (amount > amountCanTrade) {
-                    alteredMessages.push(
-                        'I can only buy ' +
+                    this.removeOurItem(sku, Infinity);
+                    if (amountCanTrade === 0) {
+                        alteredMessage = "I can't sell more " + this.bot.schema.getName(SKU.fromString(sku), false);
+                    } else {
+                        amount = amountCanTrade;
+                        alteredMessage =
+                            'I can only sell ' +
                             amountCanTrade +
                             ' more ' +
-                            this.bot.schema.getName(SKU.fromString(sku), false)
-                    );
+                            this.bot.schema.getName(SKU.fromString(sku), false);
+
+                        this.addOurItem(sku, amount);
+                    }
+                }
+
+                if (alteredMessage) {
+                    alteredMessages.push(alteredMessage);
                 }
             }
 
@@ -387,6 +398,8 @@ class UserCart extends Cart {
                         continue;
                     }
 
+                    let alteredMessage: string;
+
                     let amount = this.getTheirCount(sku);
                     const theirAssetids = theirInventory.findBySKU(sku, true);
 
@@ -395,28 +408,48 @@ class UserCart extends Cart {
                         this.removeTheirItem(sku, Infinity);
 
                         if (theirAssetids.length === 0) {
-                            alteredMessages.push(
-                                "you don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false))
-                            );
+                            alteredMessage =
+                                "you don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false));
                         } else {
                             amount = theirAssetids.length;
-                            alteredMessages.push(
+                            alteredMessage =
                                 'you only have ' +
-                                    pluralize(
-                                        this.bot.schema.getName(SKU.fromString(sku), false),
-                                        theirAssetids.length,
-                                        true
-                                    )
-                            );
+                                pluralize(
+                                    this.bot.schema.getName(SKU.fromString(sku), false),
+                                    theirAssetids.length,
+                                    true
+                                );
 
                             // Add the max amount to the cart
                             this.addTheirItem(sku, amount);
                         }
                     }
+
+                    const amountCanTrade = this.bot.inventoryManager.amountCanTrade(sku, true);
+
+                    if (amount > amountCanTrade) {
+                        this.removeTheirItem(sku, Infinity);
+                        if (amountCanTrade === 0) {
+                            alteredMessage = "I can't buy more " + this.bot.schema.getName(SKU.fromString(sku), false);
+                        } else {
+                            amount = amountCanTrade;
+                            alteredMessage =
+                                'I can only buy ' +
+                                amountCanTrade +
+                                ' more ' +
+                                this.bot.schema.getName(SKU.fromString(sku), false);
+
+                            this.addTheirItem(sku, amount);
+                        }
+                    }
+
+                    if (alteredMessage) {
+                        alteredMessages.push(alteredMessage);
+                    }
                 }
 
                 if (this.isEmpty()) {
-                    return reject("I don't or you don't have the items for this trade");
+                    return reject(alteredMessages.join(', '));
                 }
 
                 const itemsDict: {
