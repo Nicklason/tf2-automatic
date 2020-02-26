@@ -232,11 +232,16 @@ export = class Trades {
         if (!this.receivedOffers.includes(offer.id)) {
             this.receivedOffers.push(offer.id);
 
+            log.debug('Added offer to queue');
+
             if (this.receivedOffers.length === 1) {
                 this.processingOffer = true;
 
+                log.debug('Only offer in queue, process it');
+
                 this.handlerProcessOffer(offer);
             } else {
+                log.debug('There are more offers in the queue');
                 this.processNextOffer();
             }
         }
@@ -311,7 +316,9 @@ export = class Trades {
     }
 
     private processNextOffer(): void {
+        log.debug('Processing next offer');
         if (this.processingOffer || this.receivedOffers.length === 0) {
+            log.debug('Already processing offer or queue is empty');
             return;
         }
 
@@ -333,9 +340,11 @@ export = class Trades {
             }
 
             if (!offer) {
+                log.debug('Failed to get offer');
                 // Failed to get the offer
                 this.finishProcessingOffer(offerId);
             } else {
+                log.debug('Got offer, handling it');
                 // Got the offer, give it to the handler
                 this.handlerProcessOffer(offer);
             }
