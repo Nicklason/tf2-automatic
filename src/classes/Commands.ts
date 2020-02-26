@@ -46,6 +46,7 @@ const ADMIN_COMMANDS: string[] = [
     '!remove - Remove a pricelist entry',
     '!update - Update a pricelist entry',
     '!pricecheck - Requests an item to be priced by PricesTF',
+    '!expand - Uses Backpack Expanders to increase the inventory limit',
     '!stop - Stop the bot',
     '!restart - Restart the bot',
     '!version - Get version that the bot is running',
@@ -110,6 +111,8 @@ export = class Commands {
             this.updateCommand(steamID, message);
         } else if (command === 'pricecheck' && isAdmin) {
             this.pricecheckCommand(steamID, message);
+        } else if (command === 'expand' && isAdmin) {
+            this.expandCommand(steamID, message);
         } else if (command === 'stop' && isAdmin) {
             this.stopCommand(steamID);
         } else if (command === 'restart' && isAdmin) {
@@ -1062,6 +1065,41 @@ export = class Commands {
             }
 
             this.bot.sendMessage(steamID, 'Price check requested for ' + body.name + ', the item will be checked.');
+        });
+    }
+
+    private expandCommand(steamID: SteamID, message: string): void {
+        const params = CommandParser.parseParams(CommandParser.removeCommand(message));
+
+        if (typeof params.craftable !== 'boolean') {
+            this.bot.sendMessage(steamID, 'Missing `craftable=true|false`');
+            return;
+        }
+
+        const item = SKU.fromString('5050;6');
+
+        if (params.craftable === false) {
+            item.craftable = false;
+        }
+
+        const assetids = this.bot.inventoryManager.getInventory().findBySKU(SKU.fromObject(item));
+
+        const name = this.bot.schema.getName(item);
+
+        if (assetids.length === 0) {
+            // No backpack expanders
+            this.bot.sendMessage(steamID, "I couldn't find any " + pluralize(name, 0));
+            return;
+        }
+
+        this.bot.tf2gc.useItem(assetids[0], err => {
+            if (err) {
+                log.warn('Error trying to expand inventory: ', err);
+                this.bot.sendMessage(steamID, 'Failed to expand inventory: ' + err.message);
+                return;
+            }
+
+            this.bot.sendMessage(steamID, 'Used ' + name + '!');
         });
     }
 
