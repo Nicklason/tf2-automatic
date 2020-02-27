@@ -19,6 +19,8 @@ abstract class Cart {
 
     readonly partner: SteamID;
 
+    protected notify = false;
+
     protected offer: TradeOfferManager.TradeOffer | null = null;
 
     protected readonly bot: Bot;
@@ -45,6 +47,20 @@ abstract class Cart {
     setCanceled(reason: string): void {
         this.canceled = true;
         this.cancelReason = reason;
+    }
+
+    getNotify(): boolean {
+        return this.notify;
+    }
+
+    setNotify(allowed: boolean): void {
+        this.notify = allowed;
+    }
+
+    sendNotification(message: string): void {
+        if (this.notify) {
+            this.bot.sendMessage(this.partner, message);
+        }
     }
 
     isMade(): boolean {
@@ -216,6 +232,10 @@ abstract class Cart {
         this.offer.data('handleTimestamp', moment().valueOf());
 
         this.offer.setMessage('Powered by TF2 Automatic');
+
+        if (this.notify === true) {
+            this.offer.data('notify', true);
+        }
 
         if (this.isCanceled()) {
             return Promise.reject('Offer was canceled');
