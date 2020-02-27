@@ -35,6 +35,7 @@ const COMMANDS: string[] = [
     '!cart - See current cart',
     '!clearcart - Clears the current cart',
     '!checkout - Make the bot send an offer the items in the cart',
+    '!queue - See your position in the queue',
     '!cancel - Cancel an already made offer, or cancel offer being made'
 ];
 
@@ -87,6 +88,8 @@ export = class Commands {
             this.clearCartCommand(steamID);
         } else if (command === 'checkout') {
             this.checkoutCommand(steamID);
+        } else if (command === 'queue') {
+            this.queueCommand(steamID);
         } else if (command === 'cancel') {
             this.cancelCommand(steamID);
         } else if (command === 'deposit' && isAdmin) {
@@ -337,6 +340,18 @@ export = class Commands {
         }
 
         this.addCartToQueue(cart);
+    }
+
+    private queueCommand(steamID: SteamID): void {
+        const position = (this.bot.handler as MyHandler).cartQueue.getPosition(steamID);
+
+        if (position === -1) {
+            this.bot.sendMessage(steamID, 'You are not in the queue.');
+        } else if (position === 0) {
+            this.bot.sendMessage(steamID, 'Your offer is being made.');
+        } else {
+            this.bot.sendMessage(steamID, 'There is ' + position + ' infront of you.');
+        }
     }
 
     private cancelCommand(steamID: SteamID): void {
