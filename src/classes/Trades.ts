@@ -297,7 +297,6 @@ export = class Trades {
             actionFunc().asCallback(err => {
                 if (err) {
                     log.warn('Failed to ' + response.action + ' the offer: ', err);
-                    return;
                 }
 
                 offer.log('debug', 'done doing action on offer', {
