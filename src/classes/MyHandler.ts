@@ -67,7 +67,7 @@ export = class MyHandler extends Handler {
             this.groups = groups;
         }
 
-        const friendsToKeep = parseJSON(process.env.KEEP_FRIENDS);
+        const friendsToKeep = parseJSON(process.env.KEEP);
         if (friendsToKeep !== null && Array.isArray(friendsToKeep)) {
             friendsToKeep.forEach(function(steamID64) {
                 if (!new SteamID(steamID64).isValid()) {
