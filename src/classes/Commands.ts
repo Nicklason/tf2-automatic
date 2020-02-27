@@ -339,6 +339,8 @@ export = class Commands {
             return;
         }
 
+        cart.setNotify(true);
+
         this.addCartToQueue(cart);
     }
 
@@ -722,6 +724,7 @@ export = class Commands {
         const amount = info.amount;
 
         const cart = new UserCart(steamID, this.bot);
+        cart.setNotify(true);
 
         cart.addOurItem(match.sku, amount);
 
@@ -739,6 +742,7 @@ export = class Commands {
         const amount = info.amount;
 
         const cart = new UserCart(steamID, this.bot);
+        cart.setNotify(true);
 
         cart.addTheirItem(match.sku, amount);
 
