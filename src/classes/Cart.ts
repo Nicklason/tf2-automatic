@@ -215,7 +215,7 @@ abstract class Cart {
 
         this.offer.data('handleTimestamp', moment().valueOf());
 
-        this.offer.setMessage('Powered by TF2 Automatic');
+        this.offer.setMessage('Powered by TF2 Automatic. ' + process.env.OFFER_MESSAGE || 'Powered by TF2 Automatic');
 
         if (this.isCanceled()) {
             return Promise.reject('Offer was canceled');
