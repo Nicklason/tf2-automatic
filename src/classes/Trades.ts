@@ -279,7 +279,7 @@ export = class Trades {
                 response: response
             });
 
-            let actionFunc;
+            let actionFunc: () => Promise<any>;
 
             if (response.action === 'accept') {
                 actionFunc = this.acceptOffer.bind(this, offer);
@@ -287,24 +287,24 @@ export = class Trades {
                 actionFunc = this.declineOffer.bind(this, offer);
             }
 
-            if (!actionFunc) {
+            if (actionFunc === undefined) {
                 this.finishProcessingOffer(offer.id);
                 return;
             }
 
             offer.data('action', response);
 
-            actionFunc().asCallback(err => {
-                if (err) {
+            actionFunc()
+                .catch(err => {
                     log.warn('Failed to ' + response.action + ' the offer: ', err);
-                }
+                })
+                .finally(() => {
+                    offer.log('debug', 'done doing action on offer', {
+                        action: response.action
+                    });
 
-                offer.log('debug', 'done doing action on offer', {
-                    action: response.action
+                    this.finishProcessingOffer(offer.id);
                 });
-
-                this.finishProcessingOffer(offer.id);
-            });
         });
     }
 
