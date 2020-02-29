@@ -231,7 +231,11 @@ abstract class Cart {
 
         this.offer.data('handleTimestamp', moment().valueOf());
 
-        this.offer.setMessage('Powered by TF2 Automatic');
+        if (process.env.OFFER_MESSAGE == undefined || process.env.OFFER_MESSAGE == " ") {
+            this.offer.setMessage('Powered by TF2 Automatic');
+        } else {
+            this.offer.setMessage('Powered by TF2 Automatic. ' + process.env.OFFER_MESSAGE);
+        }
 
         if (this.notify === true) {
             this.offer.data('notify', true);
