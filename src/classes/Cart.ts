@@ -19,6 +19,8 @@ abstract class Cart {
 
     readonly partner: SteamID;
 
+    protected token: string | null = null;
+
     protected notify = false;
 
     protected offer: TradeOfferManager.TradeOffer | null = null;
@@ -35,9 +37,20 @@ abstract class Cart {
 
     protected cancelReason: string | undefined;
 
-    constructor(partner: SteamID, bot: Bot) {
-        this.partner = partner;
-        this.bot = bot;
+    constructor(partner: SteamID, bot: Bot);
+
+    constructor(partner: SteamID, token: string, bot: Bot);
+
+    constructor(...args) {
+        this.partner = args[0];
+
+        if (args.length === 2) {
+            this.bot = args[1];
+        } else {
+            this.bot = args[2];
+
+            this.setToken(args[1]);
+        }
     }
 
     isCanceled(): boolean {
@@ -47,6 +60,14 @@ abstract class Cart {
     setCanceled(reason: string): void {
         this.canceled = true;
         this.cancelReason = reason;
+    }
+
+    getToken(): string {
+        return this.token;
+    }
+
+    setToken(token: string | null): void {
+        this.token = token;
     }
 
     getNotify(): boolean {
@@ -239,6 +260,10 @@ abstract class Cart {
 
         if (this.isCanceled()) {
             return Promise.reject('Offer was canceled');
+        }
+
+        if (this.token !== null) {
+            this.offer.setToken(this.token);
         }
 
         return this.preSendOffer()
