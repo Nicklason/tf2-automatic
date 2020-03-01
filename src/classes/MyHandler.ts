@@ -313,6 +313,12 @@ export = class MyHandler extends Handler {
 
             offer.data('dict', itemsDict);
 
+            // Check if the offer is from an admin
+            if (this.bot.isAdmin(offer.partner)) {
+                offer.log('trade', 'is from an admin, accepting. Summary:\n' + offer.summarize(this.bot.schema));
+                return resolve({ action: 'accept', reason: 'ADMIN' });
+            }
+
             if (hasInvalidItems) {
                 // Using boolean because items dict always needs to be saved
                 offer.log('info', 'contains items not from TF2, declining...');
@@ -320,12 +326,6 @@ export = class MyHandler extends Handler {
             }
 
             const itemsDiff = offer.getDiff();
-
-            // Check if the offer is from an admin
-            if (this.bot.isAdmin(offer.partner)) {
-                offer.log('trade', 'is from an admin, accepting. Summary:\n' + offer.summarize(this.bot.schema));
-                return resolve({ action: 'accept', reason: 'ADMIN' });
-            }
 
             if (offer.itemsToGive.length === 0 && ['donate', 'gift'].includes(offer.message.toLowerCase())) {
                 offer.log('trade', 'is a gift offer, accepting. Summary:\n' + offer.summarize(this.bot.schema));
