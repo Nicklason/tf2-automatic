@@ -126,7 +126,7 @@ export = class Commands {
             this.nameCommand(steamID, message);
         } else if (command === 'avatar' && isAdmin) {
             this.avatarCommand(steamID, message);
-        } else if (command === 'trades') {
+        } else if (command === 'trades' && isAdmin) {
             this.tradesCommand(steamID);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
