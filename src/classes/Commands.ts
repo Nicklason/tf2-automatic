@@ -126,7 +126,7 @@ export = class Commands {
             this.nameCommand(steamID, message);
         } else if (command === 'avatar' && isAdmin) {
             this.avatarCommand(steamID, message);
-        } else if (command === 'trades') {
+        } else if (command === 'trades' && isAdmin) {
             this.tradesCommand(steamID);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
@@ -338,6 +338,8 @@ export = class Commands {
             this.bot.sendMessage(steamID, 'Your cart is empty.');
             return;
         }
+
+        cart.setNotify(true);
 
         this.addCartToQueue(cart);
     }
@@ -722,6 +724,7 @@ export = class Commands {
         const amount = info.amount;
 
         const cart = new UserCart(steamID, this.bot);
+        cart.setNotify(true);
 
         cart.addOurItem(match.sku, amount);
 
@@ -739,6 +742,7 @@ export = class Commands {
         const amount = info.amount;
 
         const cart = new UserCart(steamID, this.bot);
+        cart.setNotify(true);
 
         cart.addTheirItem(match.sku, amount);
 

@@ -19,6 +19,10 @@ abstract class Cart {
 
     readonly partner: SteamID;
 
+    protected token: string | null = null;
+
+    protected notify = false;
+
     protected offer: TradeOfferManager.TradeOffer | null = null;
 
     protected readonly bot: Bot;
@@ -33,9 +37,20 @@ abstract class Cart {
 
     protected cancelReason: string | undefined;
 
-    constructor(partner: SteamID, bot: Bot) {
-        this.partner = partner;
-        this.bot = bot;
+    constructor(partner: SteamID, bot: Bot);
+
+    constructor(partner: SteamID, token: string, bot: Bot);
+
+    constructor(...args) {
+        this.partner = args[0];
+
+        if (args.length === 2) {
+            this.bot = args[1];
+        } else {
+            this.bot = args[2];
+
+            this.setToken(args[1]);
+        }
     }
 
     isCanceled(): boolean {
@@ -45,6 +60,28 @@ abstract class Cart {
     setCanceled(reason: string): void {
         this.canceled = true;
         this.cancelReason = reason;
+    }
+
+    getToken(): string {
+        return this.token;
+    }
+
+    setToken(token: string | null): void {
+        this.token = token;
+    }
+
+    getNotify(): boolean {
+        return this.notify;
+    }
+
+    setNotify(allowed: boolean): void {
+        this.notify = allowed;
+    }
+
+    sendNotification(message: string): void {
+        if (this.notify) {
+            this.bot.sendMessage(this.partner, message);
+        }
     }
 
     isMade(): boolean {
@@ -215,10 +252,20 @@ abstract class Cart {
 
         this.offer.data('handleTimestamp', moment().valueOf());
 
-        this.offer.setMessage('Powered by TF2 Automatic');
+        this.offer.setMessage(
+            'Powered by TF2 Automatic' + (process.env.OFFER_MESSAGE ? '. ' + process.env.OFFER_MESSAGE : '')
+        );
+
+        if (this.notify === true) {
+            this.offer.data('notify', true);
+        }
 
         if (this.isCanceled()) {
             return Promise.reject('Offer was canceled');
+        }
+
+        if (this.token !== null) {
+            this.offer.setToken(this.token);
         }
 
         return this.preSendOffer()

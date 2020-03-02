@@ -67,7 +67,7 @@ export = class MyHandler extends Handler {
             this.groups = groups;
         }
 
-        const friendsToKeep = parseJSON(process.env.KEEP_FRIENDS);
+        const friendsToKeep = parseJSON(process.env.KEEP);
         if (friendsToKeep !== null && Array.isArray(friendsToKeep)) {
             friendsToKeep.forEach(function(steamID64) {
                 if (!new SteamID(steamID64).isValid()) {
@@ -240,6 +240,9 @@ export = class MyHandler extends Handler {
         return new Promise(resolve => {
             offer.log('info', 'is being processed...');
 
+            // Allow sending notifications
+            offer.data('notify', true);
+
             const ourItems = Inventory.fromItems(
                 this.bot.client.steamID,
                 offer.itemsToGive,
@@ -310,6 +313,12 @@ export = class MyHandler extends Handler {
 
             offer.data('dict', itemsDict);
 
+            // Check if the offer is from an admin
+            if (this.bot.isAdmin(offer.partner)) {
+                offer.log('trade', 'is from an admin, accepting. Summary:\n' + offer.summarize(this.bot.schema));
+                return resolve({ action: 'accept', reason: 'ADMIN' });
+            }
+
             if (hasInvalidItems) {
                 // Using boolean because items dict always needs to be saved
                 offer.log('info', 'contains items not from TF2, declining...');
@@ -317,12 +326,6 @@ export = class MyHandler extends Handler {
             }
 
             const itemsDiff = offer.getDiff();
-
-            // Check if the offer is from an admin
-            if (this.bot.isAdmin(offer.partner)) {
-                offer.log('trade', 'is from an admin, accepting. Summary:\n' + offer.summarize(this.bot.schema));
-                return resolve({ action: 'accept', reason: 'ADMIN' });
-            }
 
             if (offer.itemsToGive.length === 0 && ['donate', 'gift'].includes(offer.message.toLowerCase())) {
                 offer.log('trade', 'is a gift offer, accepting. Summary:\n' + offer.summarize(this.bot.schema));
@@ -501,35 +504,51 @@ export = class MyHandler extends Handler {
         }
 
         const handledByUs = offer.data('handledByUs') === true;
+        const notify = offer.data('notify') === true;
 
         if (handledByUs && offer.data('switchedState') !== offer.state) {
-            if (offer.isOurOffer) {
-                if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
-                    this.bot.sendMessage(
-                        offer.partner,
-                        'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.'
-                    );
-                } else if (offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
-                    if (offer.data('canceledByUser') === true) {
+            if (notify) {
+                if (offer.isOurOffer) {
+                    if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
                         this.bot.sendMessage(
                             offer.partner,
-                            'Ohh nooooes! The offer is no longer available. Reason: Offer was canceled by user.'
+                            'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.'
                         );
-                    } else if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+                    } else if (offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
+                        let reason: string;
+
+                        if (offer.data('canceledByUser') === true) {
+                            reason = 'Offer was canceled by user';
+                        } else if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+                            reason = 'Failed to accept mobile confirmation';
+                        } else {
+                            reason = 'The offer has been active for a while';
+                        }
+
                         this.bot.sendMessage(
                             offer.partner,
-                            'Ohh nooooes! The offer is no longer available. Reason: Failed to accept mobile confirmation.'
-                        );
-                    } else {
-                        this.bot.sendMessage(
-                            offer.partner,
-                            'Ohh nooooes! The offer is no longer available. Reason: The offer has been active for a while.'
+                            'Ohh nooooes! The offer is no longer available. Reason: ' + reason + '.'
                         );
                     }
+                }
+
+                if (offer.state === TradeOfferManager.ETradeOfferState.InvalidItems) {
+                    this.bot.sendMessage(
+                        offer.partner,
+                        'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).'
+                    );
+                } else if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
+                    this.bot.sendMessage(offer.partner, 'Success! The offer went through successfully.');
                 }
             }
 
             if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
+                // Only run this if the bot handled the offer
+
+                offer.data('isAccepted', true);
+
+                offer.log('trade', 'has been accepted.');
+
                 this.bot.messageAdmins(
                     'trade',
                     'Trade #' +
@@ -539,21 +558,11 @@ export = class MyHandler extends Handler {
                         ' is accepted. Summary:\n' +
                         offer.summarize(this.bot.schema)
                 );
-                this.bot.sendMessage(offer.partner, 'Success! The offer went through successfully.');
-            } else if (offer.state === TradeOfferManager.ETradeOfferState.InvalidItems) {
-                this.bot.sendMessage(
-                    offer.partner,
-                    'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).'
-                );
             }
         }
 
         if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
             // Offer is accepted
-
-            offer.data('isAccepted', true);
-
-            offer.log('trade', 'has been accepted.');
 
             // Smelt / combine metal
             this.keepMetalSupply();
