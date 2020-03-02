@@ -6,7 +6,7 @@
             "exec_mode": "fork",
             "exp_backoff_restart_delay": 1000,
             "shutdown_with_message": true,
-            "kill_timeout": 60000,
+            "kill_timeout": 300000,
             "out_file": "NULL",
             "error_file": "NULL",
             "env": {
@@ -23,6 +23,7 @@
 
                 "BPTF_DETAILS_BUY": "I am buying your %name% for %price%, I have %current_stock% / %max_stock%.",
                 "BPTF_DETAILS_SELL": "I am selling my %name% for %price%, I am selling %amount_trade%.",
+                "OFFER_MESSAGE": "",
 
                 "AUTOBUMP": true,
 
