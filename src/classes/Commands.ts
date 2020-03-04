@@ -4,6 +4,7 @@ import pluralize from 'pluralize';
 import moment from 'moment';
 import Currencies from 'tf2-currencies';
 import validUrl from 'valid-url';
+import TradeOfferManager from 'steam-tradeoffer-manager';
 
 import Bot from './Bot';
 import CommandParser from './CommandParser';
@@ -15,7 +16,7 @@ import MyHandler from './MyHandler';
 import CartQueue from './CartQueue';
 
 import { Item } from '../types/TeamFortress2';
-import { UnknownDictionaryKnownValues } from '../types/common';
+import { UnknownDictionaryKnownValues, UnknownDictionary } from '../types/common';
 import { fixItem } from '../lib/items';
 import { requestCheck } from '../lib/ptf-api';
 import validator from '../lib/validator';
@@ -133,7 +134,7 @@ export = class Commands {
         } else if (command === 'stats' && isAdmin) {
             this.statsCommand(steamID);
         } else if (command === 'trades' && isAdmin) {
-            throw new Error('Not implemented yet'); // TODO: Implement this
+            this.tradesCommand(steamID, message);
         } else if (command === 'trade' && isAdmin) {
             throw new Error('Not implemented yet'); // TODO: Implement this
         } else if (command === 'accepttrade' && isAdmin) {
@@ -1279,6 +1280,67 @@ export = class Commands {
                 ' \n Since beginning of today: ' +
                 tradesToday
         );
+    }
+
+    private tradesCommand(steamID: SteamID, message: string): void {
+        if (process.env.ENABLE_MANUAL_REVIEW !== 'true') {
+            this.bot.sendMessage(
+                steamID,
+                'Manual review is disabled, enable it by setting `ENABLE_MANUAL_REVIEW` to true'
+            );
+            return;
+        }
+
+        // show a list of active offers
+        // Go through polldata and find active offers
+
+        const pollData = this.bot.manager.pollData;
+
+        const offers: UnknownDictionaryKnownValues[] = [];
+
+        for (const id in pollData.received) {
+            if (!Object.prototype.hasOwnProperty.call(pollData.received, id)) {
+                continue;
+            }
+
+            if (pollData.received[id] !== TradeOfferManager.ETradeOfferState.Active) {
+                continue;
+            }
+
+            const data = pollData.offerData[id] || null;
+            if (data === null) {
+                continue;
+            } else if (data?.action !== 'skip') {
+                continue;
+            }
+
+            offers.push({ id: id, data: data });
+        }
+
+        if (offers.length === 0) {
+            this.bot.sendMessage(steamID, 'There are no active offers pending for review.');
+            return;
+        }
+
+        offers.sort((a, b) => a.id - b.id);
+
+        let reply =
+            'There is ' + offers.length + ' active ' + pluralize('offer', offers.length) + ' that you can review:';
+
+        for (let i = 0; i < offers.length; i++) {
+            const offer = offers[i];
+
+            reply +=
+                '\n- Offer #' +
+                offer.id +
+                ' from ' +
+                offer.data.partner +
+                ' (reason: ' +
+                offer.data.action.reason +
+                ')';
+        }
+
+        this.bot.sendMessage(steamID, reply);
     }
 
     private removeCommand(steamID: SteamID, message: string): void {

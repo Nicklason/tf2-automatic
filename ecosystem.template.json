@@ -25,6 +25,7 @@
                 "BPTF_DETAILS_SELL": "I am selling my %name% for %price%, I am selling %amount_trade%.",
                 "OFFER_MESSAGE": "",
 
+                "ENABLE_MANUAL_REVIEW": true,
                 "AUTOBUMP": true,
 
                 "MINIMUM_SCRAP": 9,

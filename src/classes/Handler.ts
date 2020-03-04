@@ -55,8 +55,8 @@ abstract class Handler {
     abstract onNewTradeOffer(
         offer: TradeOfferManager.TradeOffer
     ): Promise<{
-        action: 'accept' | 'decline' | null;
-        reason: string | null;
+        action: 'accept' | 'decline' | 'skip';
+        reason: string;
     }>;
 
     /**
