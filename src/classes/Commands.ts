@@ -53,7 +53,11 @@ const ADMIN_COMMANDS: string[] = [
     '!version - Get version that the bot is running',
     '!avatar - Change avatar',
     '!name - Change name',
-    '!trades - Get statistics for accepted trades'
+    '!stats - Get statistics for accepted trades',
+    '!trades - Get a list of offers received and sent by the bot',
+    '!trade - Get info about a trade',
+    '!accepttrade - Manually accept an active offer',
+    '!declinetrade - Manually decline an active offer'
 ];
 
 export = class Commands {
@@ -126,8 +130,16 @@ export = class Commands {
             this.nameCommand(steamID, message);
         } else if (command === 'avatar' && isAdmin) {
             this.avatarCommand(steamID, message);
+        } else if (command === 'stats' && isAdmin) {
+            this.statsCommand(steamID);
         } else if (command === 'trades' && isAdmin) {
-            this.tradesCommand(steamID);
+            throw new Error('Not implemented yet'); // TODO: Implement this
+        } else if (command === 'trade' && isAdmin) {
+            throw new Error('Not implemented yet'); // TODO: Implement this
+        } else if (command === 'accepttrade' && isAdmin) {
+            throw new Error('Not implemented yet'); // TODO: Implement this
+        } else if (command === 'declinetrade' && isAdmin) {
+            throw new Error('Not implemented yet'); // TODO: Implement this
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
@@ -1227,7 +1239,7 @@ export = class Commands {
         });
     }
 
-    private tradesCommand(steamID: SteamID): void {
+    private statsCommand(steamID: SteamID): void {
         const aDayAgo = moment().subtract(24, 'hour');
         const startOfDay = moment().startOf('day');
 
