@@ -427,6 +427,7 @@ export = class MyHandler extends Handler {
                             exchange[which].keys += amount;
                         } else if (match === null || match.intent === (buying ? 1 : 0)) {
                             // Offer contains an item that we are not trading
+                            offer.log('info', 'contains items we are not trading, declining...');
                             return resolve({ action: 'decline', reason: 'INVALID_ITEMS' });
                         }
                     }
