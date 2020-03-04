@@ -55,7 +55,7 @@ const ADMIN_COMMANDS: string[] = [
     '!avatar - Change avatar',
     '!name - Change name',
     '!stats - Get statistics for accepted trades',
-    '!trades - Get a list of offers received and sent by the bot',
+    '!trades - Get a list of offers pending for manual review',
     '!trade - Get info about a trade',
     '!accepttrade - Manually accept an active offer',
     '!declinetrade - Manually decline an active offer'
