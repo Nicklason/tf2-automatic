@@ -134,7 +134,7 @@ export = class Commands {
         } else if (command === 'stats' && isAdmin) {
             this.statsCommand(steamID);
         } else if (command === 'trades' && isAdmin) {
-            this.tradesCommand(steamID, message);
+            this.tradesCommand(steamID);
         } else if (command === 'trade' && isAdmin) {
             throw new Error('Not implemented yet'); // TODO: Implement this
         } else if (command === 'accepttrade' && isAdmin) {
@@ -1282,7 +1282,7 @@ export = class Commands {
         );
     }
 
-    private tradesCommand(steamID: SteamID, message: string): void {
+    private tradesCommand(steamID: SteamID): void {
         if (process.env.ENABLE_MANUAL_REVIEW !== 'true') {
             this.bot.sendMessage(
                 steamID,
