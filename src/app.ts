@@ -95,6 +95,16 @@ ON_DEATH({ uncaughtException: true })(function(signal, err) {
     botManager.stop(crashed ? err : null, true, signal === 'SIGKILL');
 });
 
+process.on('message', function(message) {
+    if (message === 'shutdown') {
+        log.warn('Process received shutdown message, stopping...');
+
+        botManager.stop(null, true, false);
+    } else {
+        log.warn('Process received unknown message `' + message + '`');
+    }
+});
+
 import EconItem from 'steam-tradeoffer-manager/lib/classes/EconItem.js';
 import CEconItem from 'steamcommunity/classes/CEconItem.js';
 
