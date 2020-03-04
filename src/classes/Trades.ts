@@ -279,33 +279,43 @@ export = class Trades {
                 response: response
             });
 
-            let actionFunc: () => Promise<any>;
-
-            if (response.action === 'accept') {
-                actionFunc = this.acceptOffer.bind(this, offer);
-            } else if (response.action === 'decline') {
-                actionFunc = this.declineOffer.bind(this, offer);
-            }
-
-            offer.data('action', response);
-
-            if (actionFunc === undefined) {
+            this.applyActionToOffer(response.action, response.reason, offer).finally(() => {
                 this.finishProcessingOffer(offer.id);
-                return;
-            }
-
-            actionFunc()
-                .catch(err => {
-                    log.warn('Failed to ' + response.action + ' the offer: ', err);
-                })
-                .finally(() => {
-                    offer.log('debug', 'done doing action on offer', {
-                        action: response.action
-                    });
-
-                    this.finishProcessingOffer(offer.id);
-                });
+            });
         });
+    }
+
+    applyActionToOffer(
+        action: 'accept' | 'decline' | 'skip',
+        reason: string,
+        offer: TradeOfferManager.TradeOffer
+    ): Promise<void> {
+        let actionFunc: () => Promise<any>;
+
+        if (action === 'accept') {
+            actionFunc = this.acceptOffer.bind(this, offer);
+        } else if (action === 'decline') {
+            actionFunc = this.declineOffer.bind(this, offer);
+        }
+
+        offer.data('action', {
+            action: action,
+            reason: reason
+        });
+
+        if (actionFunc === undefined) {
+            return Promise.resolve();
+        }
+
+        return actionFunc()
+            .catch(err => {
+                log.warn('Failed to ' + action + ' the offer: ', err);
+            })
+            .finally(() => {
+                offer.log('debug', 'done doing action on offer', {
+                    action: action
+                });
+            });
     }
 
     private finishProcessingOffer(offerId): void {

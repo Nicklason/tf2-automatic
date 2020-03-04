@@ -138,9 +138,9 @@ export = class Commands {
         } else if (command === 'trade' && isAdmin) {
             this.tradeCommand(steamID, message);
         } else if (command === 'accepttrade' && isAdmin) {
-            throw new Error('Not implemented yet'); // TODO: Implement this
+            this.accepttradeCommand(steamID, message);
         } else if (command === 'declinetrade' && isAdmin) {
-            throw new Error('Not implemented yet'); // TODO: Implement this
+            this.declinetradeCommand(steamID, message);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
@@ -1367,7 +1367,7 @@ export = class Commands {
         const offerData = this.bot.manager.pollData.offerData[offerId];
 
         if (offerData?.action.action !== 'skip') {
-            this.bot.sendMessage(steamID, 'Offer is not active.');
+            this.bot.sendMessage(steamID, "Offer can't be reviewed.");
             return;
         }
 
@@ -1382,7 +1382,7 @@ export = class Commands {
             offerData.partner +
             ' is pending for review (reason: ' +
             offerData.action.reason +
-            '), summary:\n';
+            '). Summary:\n';
 
         const value: { our: Currency; their: Currency } = offerData.value;
 
@@ -1411,6 +1411,100 @@ export = class Commands {
         }
 
         this.bot.sendMessage(steamID, reply);
+    }
+
+    private accepttradeCommand(steamID: SteamID, message: string): void {
+        const offerId = CommandParser.removeCommand(message).trim();
+
+        if (!offerId) {
+            this.bot.sendMessage(steamID, 'Missing offer id. Example: "!accepttrade 1234"');
+            return;
+        }
+
+        const state = this.bot.manager.pollData.received[offerId];
+
+        if (state === undefined) {
+            this.bot.sendMessage(steamID, 'Offer does not exist.');
+            return;
+        }
+
+        if (state !== TradeOfferManager.ETradeOfferState.Active) {
+            // TODO: Add what the offer is now, accepted / declined and why
+            this.bot.sendMessage(steamID, 'Offer is not active.');
+            return;
+        }
+
+        const offerData = this.bot.manager.pollData.offerData[offerId];
+
+        if (offerData?.action.action !== 'skip') {
+            this.bot.sendMessage(steamID, "Offer can't be reviewed.");
+            return;
+        }
+
+        this.bot.trades.getOffer(offerId).asCallback((err, offer) => {
+            if (err) {
+                this.bot.sendMessage(steamID, 'Ohh nooooes! Something went wrong while trying to accept the offer.');
+                return;
+            }
+
+            this.bot.sendMessage(steamID, 'Accepting offer...');
+
+            this.bot.trades.applyActionToOffer('accept', 'MANUAL', offer).asCallback(err => {
+                if (err) {
+                    this.bot.sendMessage(
+                        steamID,
+                        'Ohh nooooes! Something went wrong while trying to accept the offer.'
+                    );
+                }
+            });
+        });
+    }
+
+    private declinetradeCommand(steamID: SteamID, message: string): void {
+        const offerId = CommandParser.removeCommand(message).trim();
+
+        if (!offerId) {
+            this.bot.sendMessage(steamID, 'Missing offer id. Example: "!accepttrade 1234"');
+            return;
+        }
+
+        const state = this.bot.manager.pollData.received[offerId];
+
+        if (state === undefined) {
+            this.bot.sendMessage(steamID, 'Offer does not exist.');
+            return;
+        }
+
+        if (state !== TradeOfferManager.ETradeOfferState.Active) {
+            // TODO: Add what the offer is now, accepted / declined and why
+            this.bot.sendMessage(steamID, 'Offer is not active.');
+            return;
+        }
+
+        const offerData = this.bot.manager.pollData.offerData[offerId];
+
+        if (offerData?.action.action !== 'skip') {
+            this.bot.sendMessage(steamID, "Offer can't be reviewed.");
+            return;
+        }
+
+        this.bot.trades.getOffer(offerId).asCallback((err, offer) => {
+            if (err) {
+                this.bot.sendMessage(steamID, 'Ohh nooooes! Something went wrong while trying to decline the offer.');
+                return;
+            }
+
+            this.bot.sendMessage(steamID, 'Declining offer...');
+
+            this.bot.trades.applyActionToOffer('decline', 'MANUAL', offer).asCallback(err => {
+                if (err) {
+                    this.bot.sendMessage(
+                        steamID,
+                        'Ohh nooooes! Something went wrong while trying to decline the offer.'
+                    );
+                }
+            });
+        });
     }
 
     private removeCommand(steamID: SteamID, message: string): void {

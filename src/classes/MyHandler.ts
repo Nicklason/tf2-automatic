@@ -233,7 +233,7 @@ export = class MyHandler extends Handler {
 
     onNewTradeOffer(
         offer: TradeOffer
-    ): Promise<{
+    ): Promise<null | {
         action: 'accept' | 'decline' | 'skip';
         reason: string;
     }> {
