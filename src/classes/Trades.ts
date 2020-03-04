@@ -678,12 +678,18 @@ export = class Trades {
     }
 
     onOfferChanged(offer: TradeOfferManager.TradeOffer, oldState: number): void {
+        const action: undefined | { action: 'accept' | 'decline'; reason: string } = offer.data('action');
+
         offer.log(
             'verbose',
             'state changed: ' +
                 TradeOfferManager.ETradeOfferState[oldState] +
                 ' -> ' +
-                TradeOfferManager.ETradeOfferState[offer.state]
+                TradeOfferManager.ETradeOfferState[offer.state] +
+                ((action?.action === 'accept' && offer.state === TradeOfferManager.ETradeOfferState.Accepted) ||
+                (action?.action === 'decline' && offer.state === TradeOfferManager.ETradeOfferState.Declined)
+                    ? ' (reason: ' + action.reason + ')'
+                    : '')
         );
 
         if (
