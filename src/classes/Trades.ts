@@ -83,10 +83,6 @@ export = class Trades {
 
         offer.log('info', 'received offer');
 
-        offer.itemsToGive.forEach(item => this.setItemInTrade(item.assetid));
-
-        offer.data('partner', offer.partner.getSteamID64());
-
         this.enqueueOffer(offer);
     }
 
@@ -230,6 +226,10 @@ export = class Trades {
 
     private enqueueOffer(offer: TradeOfferManager.TradeOffer): void {
         if (!this.receivedOffers.includes(offer.id)) {
+            offer.itemsToGive.forEach(item => this.setItemInTrade(item.assetid));
+
+            offer.data('partner', offer.partner.getSteamID64());
+
             this.receivedOffers.push(offer.id);
 
             log.debug('Added offer to queue');
@@ -287,12 +287,12 @@ export = class Trades {
                 actionFunc = this.declineOffer.bind(this, offer);
             }
 
+            offer.data('action', response);
+
             if (actionFunc === undefined) {
                 this.finishProcessingOffer(offer.id);
                 return;
             }
-
-            offer.data('action', response);
 
             actionFunc()
                 .catch(err => {

@@ -15,7 +15,7 @@ import UserCart from './UserCart';
 import MyHandler from './MyHandler';
 import CartQueue from './CartQueue';
 
-import { Item } from '../types/TeamFortress2';
+import { Item, Currency } from '../types/TeamFortress2';
 import { UnknownDictionaryKnownValues, UnknownDictionary } from '../types/common';
 import { fixItem } from '../lib/items';
 import { requestCheck } from '../lib/ptf-api';
@@ -136,7 +136,7 @@ export = class Commands {
         } else if (command === 'trades' && isAdmin) {
             this.tradesCommand(steamID);
         } else if (command === 'trade' && isAdmin) {
-            throw new Error('Not implemented yet'); // TODO: Implement this
+            this.tradeCommand(steamID, message);
         } else if (command === 'accepttrade' && isAdmin) {
             throw new Error('Not implemented yet'); // TODO: Implement this
         } else if (command === 'declinetrade' && isAdmin) {
@@ -1283,7 +1283,7 @@ export = class Commands {
     }
 
     private tradesCommand(steamID: SteamID): void {
-        if (process.env.ENABLE_MANUAL_REVIEW !== 'true') {
+        if (process.env.ENABLE_MANUAL_REVIEW === 'false') {
             this.bot.sendMessage(
                 steamID,
                 'Manual review is disabled, enable it by setting `ENABLE_MANUAL_REVIEW` to true'
@@ -1291,7 +1291,6 @@ export = class Commands {
             return;
         }
 
-        // show a list of active offers
         // Go through polldata and find active offers
 
         const pollData = this.bot.manager.pollData;
@@ -1307,10 +1306,11 @@ export = class Commands {
                 continue;
             }
 
-            const data = pollData.offerData[id] || null;
+            const data = pollData?.offerData[id] || null;
+
             if (data === null) {
                 continue;
-            } else if (data?.action !== 'skip') {
+            } else if (data?.action.action !== 'skip') {
                 continue;
             }
 
@@ -1337,6 +1337,76 @@ export = class Commands {
                 offer.data.partner +
                 ' (reason: ' +
                 offer.data.action.reason +
+                ')';
+        }
+
+        this.bot.sendMessage(steamID, reply);
+    }
+
+    private tradeCommand(steamID: SteamID, message: string): void {
+        const offerId = CommandParser.removeCommand(message).trim();
+
+        if (!offerId) {
+            this.bot.sendMessage(steamID, 'Missing offer id. Example: "!trade 1234"');
+            return;
+        }
+
+        const state = this.bot.manager.pollData.received[offerId];
+
+        if (state === undefined) {
+            this.bot.sendMessage(steamID, 'Offer does not exist.');
+            return;
+        }
+
+        if (state !== TradeOfferManager.ETradeOfferState.Active) {
+            // TODO: Add what the offer is now, accepted / declined and why
+            this.bot.sendMessage(steamID, 'Offer is not active.');
+            return;
+        }
+
+        const offerData = this.bot.manager.pollData.offerData[offerId];
+
+        if (offerData?.action.action !== 'skip') {
+            this.bot.sendMessage(steamID, 'Offer is not active.');
+            return;
+        }
+
+        // Log offer details
+
+        // TODO: Create static class for trade offer related functions?
+
+        let reply =
+            'Offer #' +
+            offerId +
+            ' from ' +
+            offerData.partner +
+            ' is pending for review (reason: ' +
+            offerData.action.reason +
+            '), summary:\n';
+
+        const value: { our: Currency; their: Currency } = offerData.value;
+
+        const items: {
+            our: UnknownDictionary<number>;
+            their: UnknownDictionary<number>;
+        } = offerData.dict || { our: null, their: null };
+
+        if (!value) {
+            reply +=
+                'Asked: ' +
+                summarizeItems(items.our, this.bot.schema) +
+                '\nOffered: ' +
+                summarizeItems(items.their, this.bot.schema);
+        } else {
+            reply +=
+                'Asked: ' +
+                new Currencies(value.our).toString() +
+                ' (' +
+                summarizeItems(items.our, this.bot.schema) +
+                ')\nOffered: ' +
+                new Currencies(value.their).toString() +
+                ' (' +
+                summarizeItems(items.their, this.bot.schema) +
                 ')';
         }
 
@@ -1667,3 +1737,28 @@ export = class Commands {
         return fixItem(item, this.bot.schema);
     }
 };
+
+function summarizeItems(dict: UnknownDictionary<number>, schema: SchemaManager.Schema): string {
+    if (dict === null) {
+        return 'unknown items';
+    }
+
+    const summary: string[] = [];
+
+    for (const sku in dict) {
+        if (!Object.prototype.hasOwnProperty.call(dict, sku)) {
+            continue;
+        }
+
+        const amount = dict[sku];
+        const name = schema.getName(SKU.fromString(sku), false);
+
+        summary.push(name + (amount > 1 ? ' x' + amount : ''));
+    }
+
+    if (summary.length === 0) {
+        return 'nothing';
+    }
+
+    return summary.join(', ');
+}

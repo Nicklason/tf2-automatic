@@ -234,8 +234,8 @@ export = class MyHandler extends Handler {
     onNewTradeOffer(
         offer: TradeOffer
     ): Promise<{
-        action: 'accept' | 'decline' | null;
-        reason: string | null;
+        action: 'accept' | 'decline' | 'skip';
+        reason: string;
     }> {
         return new Promise(resolve => {
             offer.log('info', 'is being processed...');
@@ -314,10 +314,10 @@ export = class MyHandler extends Handler {
             offer.data('dict', itemsDict);
 
             // Check if the offer is from an admin
-            if (this.bot.isAdmin(offer.partner)) {
+            /* if (this.bot.isAdmin(offer.partner)) {
                 offer.log('trade', 'is from an admin, accepting. Summary:\n' + offer.summarize(this.bot.schema));
                 return resolve({ action: 'accept', reason: 'ADMIN' });
-            }
+            } */
 
             if (hasInvalidItems) {
                 // Using boolean because items dict always needs to be saved
@@ -335,41 +335,13 @@ export = class MyHandler extends Handler {
                 return resolve({ action: 'decline', reason: 'GIFT' });
             }
 
-            if (exchange.contains.metal && !exchange.contains.keys && !exchange.contains.items) {
-                // Offer only contains metal
-                offer.log('info', 'only contains metal, declining...');
-                return resolve({ action: 'decline', reason: 'ONLY_METAL' });
-            } else if (exchange.contains.keys && !exchange.contains.items) {
-                // Offer is for trading keys, check if we are trading them
-                const priceEntry = this.bot.pricelist.getPrice('5021;6', true);
-                if (priceEntry === null) {
-                    // We are not trading keys
-                    offer.log('info', 'we are not trading keys, declining...');
-                    return resolve({ action: 'decline', reason: 'NOT_TRADING_KEYS' });
-                } else if (exchange.our.contains.keys && priceEntry.intent !== 1 && priceEntry.intent !== 2) {
-                    // We are not selling keys
-                    offer.log('info', 'we are not selling keys, declining...');
-                    return resolve({ action: 'decline', reason: 'NOT_TRADING_KEYS' });
-                } else if (exchange.their.contains.keys && priceEntry.intent !== 0 && priceEntry.intent !== 2) {
-                    // We are not buying keys
-                    offer.log('info', 'we are not buying keys, declining...');
-                    return resolve({ action: 'decline', reason: 'NOT_TRADING_KEYS' });
-                } else {
-                    // Check overstock / understock on keys
-                    const diff = itemsDiff['5021;6'];
-                    // If the diff is greater than 0 then we are buying, less than is selling
-
-                    if (diff !== 0 && this.bot.inventoryManager.amountCanTrade('5021;6', diff > 0) < diff) {
-                        // User is taking too many / offering too many
-                        offer.log('info', 'is taking / offering too many keys, declining...');
-                        return resolve({ action: 'decline', reason: 'OVERSTOCKED' });
-                    }
-                }
-            }
+            const manualReviewEnabled = process.env.ENABLE_MANUAL_REVIEW !== 'false';
 
             const itemPrices = {};
 
             const keyPrice = this.bot.pricelist.getKeyPrice();
+
+            let hasOverstock = false;
 
             for (let i = 0; i < states.length; i++) {
                 const buying = states[i];
@@ -418,8 +390,7 @@ export = class MyHandler extends Handler {
 
                             if (diff !== 0 && this.bot.inventoryManager.amountCanTrade(sku, diff > 0) < diff) {
                                 // User is taking too many / offering too many
-                                offer.log('info', 'is taking / offering too many, declining...');
-                                return resolve({ action: 'decline', reason: 'OVERSTOCKED' });
+                                hasOverstock = true;
                             }
                         } else if (sku === '5021;6' && exchange.contains.items) {
                             // Offer contains keys and we are not trading keys, add key value
@@ -427,8 +398,7 @@ export = class MyHandler extends Handler {
                             exchange[which].keys += amount;
                         } else if (match === null || match.intent === (buying ? 1 : 0)) {
                             // Offer contains an item that we are not trading
-                            offer.log('info', 'contains items we are not trading, declining...');
-                            return resolve({ action: 'decline', reason: 'INVALID_ITEMS' });
+                            hasInvalidItems = true;
                         }
                     }
                 }
@@ -450,11 +420,64 @@ export = class MyHandler extends Handler {
 
             offer.data('prices', itemPrices);
 
+            if (exchange.contains.metal && !exchange.contains.keys && !exchange.contains.items) {
+                // Offer only contains metal
+                offer.log('info', 'only contains metal, declining...');
+                return resolve({ action: 'decline', reason: 'ONLY_METAL' });
+            } else if (exchange.contains.keys && !exchange.contains.items) {
+                // Offer is for trading keys, check if we are trading them
+                const priceEntry = this.bot.pricelist.getPrice('5021;6', true);
+                if (priceEntry === null) {
+                    // We are not trading keys
+                    offer.log('info', 'we are not trading keys, declining...');
+                    return resolve({ action: 'decline', reason: 'NOT_TRADING_KEYS' });
+                } else if (exchange.our.contains.keys && priceEntry.intent !== 1 && priceEntry.intent !== 2) {
+                    // We are not selling keys
+                    offer.log('info', 'we are not selling keys, declining...');
+                    return resolve({ action: 'decline', reason: 'NOT_TRADING_KEYS' });
+                } else if (exchange.their.contains.keys && priceEntry.intent !== 0 && priceEntry.intent !== 2) {
+                    // We are not buying keys
+                    offer.log('info', 'we are not buying keys, declining...');
+                    return resolve({ action: 'decline', reason: 'NOT_TRADING_KEYS' });
+                } else {
+                    // Check overstock / understock on keys
+                    const diff = itemsDiff['5021;6'];
+                    // If the diff is greater than 0 then we are buying, less than is selling
+
+                    if (diff !== 0 && this.bot.inventoryManager.amountCanTrade('5021;6', diff > 0) < diff) {
+                        // User is taking too many / offering too many
+                        hasOverstock = true;
+                    }
+                }
+            }
+
+            log.debug(manualReviewEnabled + ' is xd');
+
+            if (hasOverstock) {
+                offer.log(
+                    'info',
+                    'is taking / offering too many, ' + manualReviewEnabled ? 'skipping' : 'declining' + '...'
+                );
+                return resolve({
+                    action: manualReviewEnabled ? 'skip' : 'decline',
+                    reason: 'OVERSTOCKED'
+                });
+            } else if (hasInvalidItems) {
+                offer.log(
+                    'info',
+                    'contains items we are not trading, ' + manualReviewEnabled ? 'skipping' : 'declining' + '...'
+                );
+                return resolve({
+                    action: manualReviewEnabled ? 'skip' : 'decline',
+                    reason: 'INVALID_ITEMS'
+                });
+            }
+
             // Check if the values are correct
             if (exchange.our.value > exchange.their.value) {
                 // We are offering more than them, decline the offer
-                offer.log('info', 'is not offering enough, declining...');
-                return resolve({ action: 'decline', reason: 'INVALID_VALUE' });
+                offer.log('info', 'is not offering enough, ' + manualReviewEnabled ? 'skipping' : 'declining' + '...');
+                return resolve({ action: manualReviewEnabled ? 'skip' : 'decline', reason: 'INVALID_VALUE' });
             } else if (exchange.our.value < exchange.their.value && process.env.ACCEPT_OVERPAY === 'false') {
                 offer.log('info', 'is offering more than needed, declining...');
                 return resolve({ action: 'decline', reason: 'OVERPAY' });
@@ -472,7 +495,7 @@ export = class MyHandler extends Handler {
 
                 if (escrow) {
                     offer.log('info', 'would be held if accepted, declining...');
-                    return resolve({ action: 'decline', reason: 'ESCROW' });
+                    return resolve({ action: manualReviewEnabled ? 'skip' : 'decline', reason: 'ESCROW' });
                 }
 
                 offer.log('info', 'checking bans...');
