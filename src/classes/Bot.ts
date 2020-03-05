@@ -188,7 +188,7 @@ export = class Bot {
     }
 
     messageAdmins(type: string, message: string): void {
-        if (!this.alertTypes.includes(type)) {
+        if (!this.alertTypes.includes(type) && type !== 'review') {
             return;
         }
 
