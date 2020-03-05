@@ -279,6 +279,11 @@ export = class Trades {
                 response: response
             });
 
+            if (!response) {
+                this.finishProcessingOffer(offer.id);
+                return;
+            }
+
             this.applyActionToOffer(response.action, response.reason, offer).finally(() => {
                 this.finishProcessingOffer(offer.id);
             });
