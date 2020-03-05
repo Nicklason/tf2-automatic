@@ -290,6 +290,8 @@ export = class Trades {
         reason: string,
         offer: TradeOfferManager.TradeOffer
     ): Promise<void> {
+        this.bot.handler.onOfferAction(offer, action, reason);
+
         let actionFunc: () => Promise<any>;
 
         if (action === 'accept') {
