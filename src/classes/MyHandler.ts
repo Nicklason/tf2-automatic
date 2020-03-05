@@ -451,12 +451,10 @@ export = class MyHandler extends Handler {
                 }
             }
 
-            log.debug(manualReviewEnabled + ' is xd');
-
             if (hasOverstock) {
                 offer.log(
                     'info',
-                    'is taking / offering too many, ' + manualReviewEnabled ? 'skipping' : 'declining' + '...'
+                    'is taking / offering too many, ' + (manualReviewEnabled ? 'skipping' : 'declining') + '...'
                 );
                 return resolve({
                     action: manualReviewEnabled ? 'skip' : 'decline',
@@ -465,7 +463,7 @@ export = class MyHandler extends Handler {
             } else if (hasInvalidItems) {
                 offer.log(
                     'info',
-                    'contains items we are not trading, ' + manualReviewEnabled ? 'skipping' : 'declining' + '...'
+                    'contains items we are not trading, ' + (manualReviewEnabled ? 'skipping' : 'declining') + '...'
                 );
                 return resolve({
                     action: manualReviewEnabled ? 'skip' : 'decline',
@@ -476,7 +474,10 @@ export = class MyHandler extends Handler {
             // Check if the values are correct
             if (exchange.our.value > exchange.their.value) {
                 // We are offering more than them, decline the offer
-                offer.log('info', 'is not offering enough, ' + manualReviewEnabled ? 'skipping' : 'declining' + '...');
+                offer.log(
+                    'info',
+                    'is not offering enough, ' + (manualReviewEnabled ? 'skipping' : 'declining') + '...'
+                );
                 return resolve({ action: manualReviewEnabled ? 'skip' : 'decline', reason: 'INVALID_VALUE' });
             } else if (exchange.our.value < exchange.their.value && process.env.ACCEPT_OVERPAY === 'false') {
                 offer.log('info', 'is offering more than needed, declining...');
