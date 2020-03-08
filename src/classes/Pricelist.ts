@@ -404,7 +404,7 @@ export default class Pricelist extends EventEmitter {
     }
 
     private handlePriceChange(data: any): void {
-        if (data.soure !== 'bptf') {
+        if (data.source !== 'bptf') {
             return;
         }
 
