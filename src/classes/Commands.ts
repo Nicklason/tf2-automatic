@@ -1101,7 +1101,7 @@ export = class Commands {
             item.craftable = false;
         }
 
-        const assetids = this.bot.inventoryManager.getInventory().findBySKU(SKU.fromObject(item));
+        const assetids = this.bot.inventoryManager.getInventory().findBySKU(SKU.fromObject(item), false);
 
         const name = this.bot.schema.getName(item);
 

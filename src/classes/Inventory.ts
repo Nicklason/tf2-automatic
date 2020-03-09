@@ -141,7 +141,7 @@ export = class Inventory {
 
         const nonTradable = this.nonTradable[sku] || [];
 
-        return tradable.concat(nonTradable);
+        return nonTradable.concat(tradable);
     }
 
     getAmount(sku: string, tradableOnly?: boolean): number {
