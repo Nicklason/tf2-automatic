@@ -172,7 +172,7 @@ export = class Bot {
     }
 
     checkBanned(steamID: SteamID | string): Promise<boolean> {
-        if (process.env.ACCEPT_BANNED === 'true') {
+        if (process.env.ALLOW_BANNED === 'true') {
             return Promise.resolve(false);
         }
 
@@ -180,7 +180,7 @@ export = class Bot {
     }
 
     checkEscrow(offer: TradeOfferManager.TradeOffer): Promise<boolean> {
-        if (process.env.ACCEPT_ESCROW === 'true') {
+        if (process.env.ALLOW_ESCROW === 'true') {
             return Promise.resolve(false);
         }
 
