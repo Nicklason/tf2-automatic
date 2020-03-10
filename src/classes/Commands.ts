@@ -29,7 +29,7 @@ const COMMANDS: string[] = [
     '!stock - Get a list of items that the bot has',
     '!rate - Get current key prices',
     '!buy [amount] <name> - Instantly buy an item',
-    '!sell [amount] <sell> - Instantly sell an item',
+    '!sell [amount] <name> - Instantly sell an item',
     '!buycart [amount] <name> - Adds an item you want to buy to the cart',
     '!sellcart [amount] <name> - Adds an item you want to sell to the cart',
     '!cart - See current cart',
