@@ -455,7 +455,7 @@ export = class MyHandler extends Handler {
                 // We are offering more than them, decline the offer
                 offer.log('info', 'is not offering enough, declining...');
                 return resolve({ action: 'decline', reason: 'INVALID_VALUE' });
-            } else if (exchange.our.value < exchange.their.value && process.env.ACCEPT_OVERPAY === 'false') {
+            } else if (exchange.our.value < exchange.their.value && process.env.ALLOW_OVERPAY === 'false') {
                 offer.log('info', 'is offering more than needed, declining...');
                 return resolve({ action: 'decline', reason: 'OVERPAY' });
             }
