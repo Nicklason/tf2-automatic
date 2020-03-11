@@ -1239,18 +1239,17 @@ export = class Commands {
         const timeSincePoll = this.bot.manager.pollData.timestamps;
         const timeSince = timeSincePoll[Object.keys(timeSincePoll)[0]];
 
-        let operateSince = moment(timeSince * 1000).fromNow();
-        if (operateSince === 'Invalid date') {
-            operateSince = 'Just started. Waiting for the first trade.';
-        }
+        let operateMessage = '';
+        const operateSince = moment(timeSince * 1000).fromNow();
+        operateMessage =
+            operateSince === 'Invalid date'
+                ? '\n Just started. Waiting for the first trade.'
+                : '\n All trades made were recorded from ' + operateSince;
 
-        const totalDaysInSeconds = now.valueOf() - timeSince;
         let totalDays = '';
-        if (totalDaysInSeconds < 2246400 || totalDaysInSeconds === null) {
-            totalDays = '';
-        } else if (totalDaysInSeconds > 2246400) {
-            totalDays = ' (' + Math.round((totalDaysInSeconds / 86400) * 1) + ' days)';
-        }
+        const totalDaysInSeconds = now.valueOf() - timeSince;
+        // it's 25.5 days not 26 days to be exact until it changes from days to month.
+        totalDays = totalDaysInSeconds >= 2203200 ? ' (' + Math.round((totalDaysInSeconds / 86400) * 1) + ' days)' : '';
 
         const offerData = this.bot.manager.pollData.offerData;
         for (const offerID in offerData) {
@@ -1282,8 +1281,7 @@ export = class Commands {
                 trades24Hours +
                 ' \n Since beginning of today: ' +
                 tradesToday +
-                ' \n In operation since: ' +
-                operateSince +
+                operateMessage +
                 totalDays
         );
     }
