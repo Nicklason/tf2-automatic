@@ -1247,7 +1247,7 @@ export = class Commands {
         if (totalDays < 1) {
             totalDays = 0;
         }
-        reply += totalDays + ' ' + pluralize('day', totalDays) + ' ago';
+        reply += totalDays + ' ' + pluralize('day', totalDays, true) + ' ago';
 
         const offerData = this.bot.manager.pollData.offerData;
         for (const offerID in offerData) {
