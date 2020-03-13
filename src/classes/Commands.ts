@@ -1240,13 +1240,14 @@ export = class Commands {
         const timeSince = timeSincePoll[Object.keys(timeSincePoll)[0]];
 
         let reply = '';
-        reply += !timeSince
-            ? '\n Just started. Waiting for the first trade.'
-            : '\n Trades recorded from ' + moment(timeSince * 1000).fromNow();
+        reply += !timeSince ? '\n Just started. Waiting for the first trade.' : '\n Trades recorded from ';
 
         const totalDaysInSeconds = now.valueOf() - timeSince;
-        // it's 25.5 days not 26 days to be exact until it changes from days to month.
-        reply += totalDaysInSeconds >= 2203200 ? ' (' + Math.round((totalDaysInSeconds / 86400) * 1) + ' days)' : '';
+        let totalDays = Math.round((totalDaysInSeconds / 86400) * 1);
+        if (totalDays < 1) {
+            totalDays = 0;
+        }
+        reply += totalDays + ' ' + pluralize('day', totalDays) + ' ago';
 
         const offerData = this.bot.manager.pollData.offerData;
         for (const offerID in offerData) {
