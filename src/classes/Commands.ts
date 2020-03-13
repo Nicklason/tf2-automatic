@@ -1228,6 +1228,7 @@ export = class Commands {
     }
 
     private tradesCommand(steamID: SteamID): void {
+        const now = moment().unix();
         const aDayAgo = moment().subtract(24, 'hour');
         const startOfDay = moment().startOf('day');
 
@@ -1235,8 +1236,20 @@ export = class Commands {
         let trades24Hours = 0;
         let tradesTotal = 0;
 
-        const offerData = this.bot.manager.pollData.offerData;
+        const timeSincePoll = this.bot.manager.pollData.timestamps;
+        const timeSince = timeSincePoll[Object.keys(timeSincePoll)[0]];
 
+        let reply = '';
+        reply += !timeSince ? '\n Just started. Waiting for the first trade.' : '\n Trades recorded from ';
+
+        const totalDaysInSeconds = now.valueOf() - timeSince;
+        let totalDays = Math.round((totalDaysInSeconds / 86400) * 1);
+        if (totalDays < 1) {
+            totalDays = 0;
+        }
+        reply += ' ' + pluralize('day', totalDays, true) + ' ago';
+
+        const offerData = this.bot.manager.pollData.offerData;
         for (const offerID in offerData) {
             if (!Object.prototype.hasOwnProperty.call(offerData, offerID)) {
                 continue;
@@ -1265,7 +1278,8 @@ export = class Commands {
                 ' \n Last 24 hours: ' +
                 trades24Hours +
                 ' \n Since beginning of today: ' +
-                tradesToday
+                tradesToday +
+                reply
         );
     }
 
