@@ -1240,7 +1240,7 @@ export = class Commands {
         const timeSince = timeSincePoll[Object.keys(timeSincePoll)[0]];
 
         let reply = '';
-        reply += !timeSince ? '\n Just started. Waiting for the first trade.' : '\n Trades recorded from ';
+        reply += !timeSince ? 'Just started. Waiting for the first trade.' : 'Trades recorded from ';
 
         const totalDaysInSeconds = now.valueOf() - timeSince;
         let totalDays = Math.round((totalDaysInSeconds / 86400) * 1);
@@ -1273,13 +1273,13 @@ export = class Commands {
 
         this.bot.sendMessage(
             steamID,
-            'Total: ' +
+            reply +
+                '\n Total: ' +
                 tradesTotal +
                 ' \n Last 24 hours: ' +
                 trades24Hours +
                 ' \n Since beginning of today: ' +
-                tradesToday +
-                reply
+                tradesToday
         );
     }
 
