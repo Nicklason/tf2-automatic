@@ -35,7 +35,7 @@ export = class BotManager {
 
         this.socket.on('connect', () => {
             log.debug('Connected to socket server');
-            this.socket.emit('authentication', process.env.PRICESTF_API_KEY);
+            this.socket.emit('authentication', process.env.PRICESTF_API_TOKEN || undefined);
         });
 
         this.socket.on('authenticated', function() {

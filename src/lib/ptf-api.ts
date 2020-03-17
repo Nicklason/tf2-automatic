@@ -31,8 +31,8 @@ function apiRequest(httpMethod: string, path: string, input: UnknownDictionary<a
         timeout: 30000
     };
 
-    if (process.env.PRICESTF_API_KEY) {
-        options.headers.Authorization = `Token ${process.env.PRICESTF_API_KEY}`;
+    if (process.env.PRICESTF_API_TOKEN) {
+        options.headers.Authorization = `Token ${process.env.PRICESTF_API_TOKEN}`;
     }
 
     options[httpMethod === 'GET' ? 'qs' : 'body'] = input;
