@@ -281,9 +281,9 @@ export = class Trades {
 
             let actionFunc: () => Promise<any>;
 
-            if (response.action === 'accept') {
+            if (response?.action === 'accept') {
                 actionFunc = this.acceptOffer.bind(this, offer);
-            } else if (response.action === 'decline') {
+            } else if (response?.action === 'decline') {
                 actionFunc = this.declineOffer.bind(this, offer);
             }
 

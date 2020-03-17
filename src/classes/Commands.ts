@@ -1228,6 +1228,7 @@ export = class Commands {
     }
 
     private tradesCommand(steamID: SteamID): void {
+        const now = moment();
         const aDayAgo = moment().subtract(24, 'hour');
         const startOfDay = moment().startOf('day');
 
@@ -1235,8 +1236,15 @@ export = class Commands {
         let trades24Hours = 0;
         let tradesTotal = 0;
 
-        const offerData = this.bot.manager.pollData.offerData;
+        const pollData = this.bot.manager.pollData;
 
+        const oldestId = pollData.offerData === undefined ? undefined : Object.keys(pollData.offerData)[0];
+
+        const timeSince = pollData.timestamps[oldestId];
+
+        const totalDays = !timeSince ? 0 : now.diff(moment.unix(timeSince), 'days');
+
+        const offerData = this.bot.manager.pollData.offerData;
         for (const offerID in offerData) {
             if (!Object.prototype.hasOwnProperty.call(offerData, offerID)) {
                 continue;
@@ -1260,7 +1268,9 @@ export = class Commands {
 
         this.bot.sendMessage(
             steamID,
-            'Total: ' +
+            'All trades are recorded from ' +
+                pluralize('day', totalDays, true) +
+                ' ago\n\n Total: ' +
                 tradesTotal +
                 ' \n Last 24 hours: ' +
                 trades24Hours +
