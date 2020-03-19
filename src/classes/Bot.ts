@@ -171,6 +171,10 @@ export = class Bot {
         return this.admins;
     }
 
+    getAlertTypes(): String[] {
+        return this.alertTypes;
+    }
+
     checkBanned(steamID: SteamID | string): Promise<boolean> {
         if (process.env.ALLOW_BANNED === 'true') {
             return Promise.resolve(false);

@@ -28,6 +28,7 @@ const COMMANDS: string[] = [
     '!price [amount] <name> - Get the price and stock of an item',
     '!stock - Get a list of items that the bot has',
     '!rate - Get current key prices',
+    '!message <your message> - Send a message to the admin(s)',
     '!buy [amount] <name> - Instantly buy an item',
     '!sell [amount] <name> - Instantly sell an item',
     '!buycart [amount] <name> - Adds an item you want to buy to the cart',
@@ -53,7 +54,8 @@ const ADMIN_COMMANDS: string[] = [
     '!version - Get version that the bot is running',
     '!avatar - Change avatar',
     '!name - Change name',
-    '!trades - Get statistics for accepted trades'
+    '!trades - Get statistics for accepted trades',
+    '!message <steadid64> <your message> - Send a message to a user'
 ];
 
 export = class Commands {
@@ -82,6 +84,8 @@ export = class Commands {
             this.stockCommand(steamID);
         } else if (command === 'rate') {
             this.rateCommand(steamID);
+        } else if (command === 'message') {
+            this.messageCommand(steamID, message);
         } else if (command === 'cart') {
             this.cartCommand(steamID);
         } else if (command === 'clearcart') {
@@ -319,6 +323,63 @@ export = class Commands {
                 keyPrice +
                 ' is the same as one key.'
         );
+    }
+
+    private messageCommand(steamID: SteamID, message: string): void {
+        const isAdmin = this.bot.isAdmin(steamID);
+        const parts = message.split(' ');
+		const details = this.bot.friends.getFriend(steamID);
+
+        if (isAdmin) {
+            if (!this.bot.getAlertTypes().includes('message')) {
+                this.bot.sendMessage(steamID, 'Messages are disabled.');
+                return;
+            }
+
+            if (parts.length < 3) {
+                this.bot.sendMessage(
+                    steamID,
+                    'Your syntax is wrong. Here\'s an example: "!message 76561198120070906 Hi"'
+                );
+                return;
+            }
+			
+			const recipient = parts[1];
+
+            if (!new SteamID(recipient).isValid()) {
+                this.bot.sendMessage(steamID, 'Please enter a valid SteamID64.');
+                return;
+            } else if (!this.bot.friends.isFriend(recipient)) {
+                this.bot.sendMessage(steamID, 'I am not friends with the user.');
+                return;
+            }
+
+            const reply = message.substr(message.toLowerCase().indexOf(recipient) + 18);
+            this.bot.sendMessage(recipient, 'Message from admin: ' + reply);
+            this.bot.sendMessage(steamID, 'Your message has been sent.');
+            this.bot.messageAdmins(
+                'message',
+                (details ? details.player_name + ' (' + steamID + ')' : steamID) + ' replied with "' + reply + '".'
+            );
+        } else {
+            const admins = this.bot.getAdmins();
+            if (!admins || admins.length === 0) {
+                this.bot.sendMessage(steamID, 'Sorry, but there are no one that you can message :(');
+                return;
+            }
+
+            const msg = message.substr(message.toLowerCase().indexOf('message') + 8);
+            if (!msg) {
+                this.bot.sendMessage(steamID, 'Please include a message. Here\'s an example: "!message Hi"');
+				return;
+            }
+
+            this.bot.messageAdmins(
+                'message',
+                'Message from ' + (details ? details.player_name + ' (' + steamID + ')' : steamID) + ': ' + msg
+            );
+            this.bot.sendMessage(steamID, 'Your message has been sent.');
+        }
     }
 
     private cartCommand(steamID: SteamID): void {
