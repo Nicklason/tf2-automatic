@@ -171,7 +171,7 @@ export = class Bot {
         return this.admins;
     }
 
-    getAlertTypes(): String[] {
+    getAlertTypes(): string[] {
         return this.alertTypes;
     }
 

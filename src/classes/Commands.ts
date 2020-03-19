@@ -328,7 +328,7 @@ export = class Commands {
     private messageCommand(steamID: SteamID, message: string): void {
         const isAdmin = this.bot.isAdmin(steamID);
         const parts = message.split(' ');
-		const details = this.bot.friends.getFriend(steamID);
+        const details = this.bot.friends.getFriend(steamID);
 
         if (isAdmin) {
             if (!this.bot.getAlertTypes().includes('message')) {
@@ -343,8 +343,8 @@ export = class Commands {
                 );
                 return;
             }
-			
-			const recipient = parts[1];
+
+            const recipient = parts[1];
 
             if (!new SteamID(recipient).isValid()) {
                 this.bot.sendMessage(steamID, 'Please enter a valid SteamID64.');
@@ -371,7 +371,7 @@ export = class Commands {
             const msg = message.substr(message.toLowerCase().indexOf('message') + 8);
             if (!msg) {
                 this.bot.sendMessage(steamID, 'Please include a message. Here\'s an example: "!message Hi"');
-				return;
+                return;
             }
 
             this.bot.messageAdmins(
