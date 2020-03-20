@@ -336,11 +336,6 @@ export = class Commands {
         }
 
         if (isAdmin) {
-            if (!this.bot.getAlertTypes().includes('message')) {
-                this.bot.sendMessage(steamID, 'Messages are disabled.');
-                return;
-            }
-
             if (parts.length < 3) {
                 this.bot.sendMessage(
                     steamID,
