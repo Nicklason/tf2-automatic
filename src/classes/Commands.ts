@@ -330,6 +330,11 @@ export = class Commands {
         const parts = message.split(' ');
         const details = this.bot.friends.getFriend(steamID);
 
+        if (!this.bot.getAlertTypes().includes('message')) {
+            this.bot.sendMessage(steamID, 'Messages are disabled.');
+            return;
+        }
+
         if (isAdmin) {
             if (!this.bot.getAlertTypes().includes('message')) {
                 this.bot.sendMessage(steamID, 'Messages are disabled.');
