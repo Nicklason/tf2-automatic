@@ -236,6 +236,7 @@ export = class MyHandler extends Handler {
     ): Promise<null | {
         action: 'accept' | 'decline' | 'skip';
         reason: string;
+        meta?: UnknownDictionary<any>;
     }> {
         return new Promise(resolve => {
             offer.log('info', 'is being processed...');

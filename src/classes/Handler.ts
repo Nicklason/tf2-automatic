@@ -6,6 +6,8 @@ import { Entry, EntryData } from './Pricelist';
 import SteamID from 'steamid';
 import TradeOfferManager, { PollData } from 'steam-tradeoffer-manager';
 
+import { UnknownDictionary } from '../types/common';
+
 abstract class Handler {
     readonly bot: Bot;
 
@@ -57,6 +59,7 @@ abstract class Handler {
     ): Promise<null | {
         action: 'accept' | 'decline' | 'skip';
         reason: string;
+        meta?: UnknownDictionary<any>;
     }>;
 
     /**

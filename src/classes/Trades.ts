@@ -284,7 +284,7 @@ export = class Trades {
                 return;
             }
 
-            this.applyActionToOffer(response.action, response.reason, offer).finally(() => {
+            this.applyActionToOffer(response.action, response.reason, response.meta || {}, offer).finally(() => {
                 this.finishProcessingOffer(offer.id);
             });
         });
@@ -293,6 +293,7 @@ export = class Trades {
     applyActionToOffer(
         action: 'accept' | 'decline' | 'skip',
         reason: string,
+        meta: UnknownDictionary<any>,
         offer: TradeOfferManager.TradeOffer
     ): Promise<void> {
         this.bot.handler.onOfferAction(offer, action, reason);
@@ -307,7 +308,8 @@ export = class Trades {
 
         offer.data('action', {
             action: action,
-            reason: reason
+            reason: reason,
+            meta: meta
         });
 
         if (actionFunc === undefined) {
