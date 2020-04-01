@@ -60,6 +60,18 @@ abstract class Handler {
     }>;
 
     /**
+     * Called when an action is applied to an offer
+     * @param offer - The trade offer
+     * @param action - The action
+     * @param reason - The reason for the action
+     */
+    abstract onOfferAction(
+        offer: TradeOfferManager.TradeOffer,
+        action: 'accept' | 'decline' | 'skip',
+        reason: string
+    ): void;
+
+    /**
      * Called when a new login attempt has been made
      * @param loginAttempts - A list of login attempts
      */

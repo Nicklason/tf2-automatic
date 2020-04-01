@@ -533,37 +533,33 @@ export = class MyHandler extends Handler {
 
         if (handledByUs && offer.data('switchedState') !== offer.state) {
             if (notify) {
-                if (offer.isOurOffer) {
-                    if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
-                        this.bot.sendMessage(
-                            offer.partner,
-                            'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.'
-                        );
-                    } else if (offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
-                        let reason: string;
+                if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
+                    this.bot.sendMessage(offer.partner, 'Success! The offer went through successfully.');
+                } else if (offer.state === TradeOfferManager.ETradeOfferState.Declined) {
+                    this.bot.sendMessage(
+                        offer.partner,
+                        'Ohh nooooes! The offer is no longer available. Reason: The offer has been declined.'
+                    );
+                } else if (offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
+                    let reason: string;
 
-                        if (offer.data('canceledByUser') === true) {
-                            reason = 'Offer was canceled by user';
-                        } else if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
-                            reason = 'Failed to accept mobile confirmation';
-                        } else {
-                            reason = 'The offer has been active for a while';
-                        }
-
-                        this.bot.sendMessage(
-                            offer.partner,
-                            'Ohh nooooes! The offer is no longer available. Reason: ' + reason + '.'
-                        );
+                    if (offer.data('canceledByUser') === true) {
+                        reason = 'Offer was canceled by user';
+                    } else if (oldState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+                        reason = 'Failed to accept mobile confirmation';
+                    } else {
+                        reason = 'The offer has been active for a while';
                     }
-                }
 
-                if (offer.state === TradeOfferManager.ETradeOfferState.InvalidItems) {
+                    this.bot.sendMessage(
+                        offer.partner,
+                        'Ohh nooooes! The offer is no longer available. Reason: ' + reason + '.'
+                    );
+                } else if (offer.state === TradeOfferManager.ETradeOfferState.InvalidItems) {
                     this.bot.sendMessage(
                         offer.partner,
                         'Ohh nooooes! Your offer is no longer available. Reason: Items not available (traded away in a different trade).'
                     );
-                } else if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
-                    this.bot.sendMessage(offer.partner, 'Success! The offer went through successfully.');
                 }
             }
 
@@ -607,6 +603,20 @@ export = class MyHandler extends Handler {
             }
 
             this.inviteToGroups(offer.partner);
+        }
+    }
+
+    onOfferAction(offer: TradeOffer, action: 'accept' | 'decline' | 'skip', reason: string): void {
+        const notify = offer.data('notify') === true;
+
+        if (!notify) {
+            return;
+        }
+
+        if (action === 'skip') {
+            // Notify partner and admin that the offer is waiting for manual review
+            this.bot.sendMessage(offer.partner, 'Your offer is waiting for review, reason: ' + reason);
+            this.bot.messageAdmins('review', 'Offer #' + offer.id + ' is waiting for review, reason: ' + reason);
         }
     }
 
