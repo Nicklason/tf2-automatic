@@ -438,7 +438,7 @@ class UserCart extends Cart {
                                 'I can only buy ' +
                                 amountCanTrade +
                                 ' more ' +
-                                pluralize(this.bot.schema.getName(SKU.fromString(sku), false));
+                                pluralize(this.bot.schema.getName(SKU.fromString(sku), false), amountCanTrade);
 
                             this.addTheirItem(sku, amount);
                         }
