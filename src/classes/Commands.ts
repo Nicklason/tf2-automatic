@@ -1282,6 +1282,36 @@ export = class Commands {
     private removeCommand(steamID: SteamID, message: string): void {
         const params = CommandParser.parseParams(CommandParser.removeCommand(message));
 
+        if (params.all === true) {
+            // Remove entire pricelist
+            const pricelistLength = this.bot.pricelist.getLength();
+
+            if (pricelistLength === 0) {
+                this.bot.sendMessage(steamID, 'Your pricelist is already empty!');
+                return;
+            }
+
+            if (params.i_am_sure !== 'yes_i_am') {
+                this.bot.sendMessage(
+                    steamID,
+                    'Are you sure that you want to remove ' +
+                        pluralize('item', pricelistLength, true) +
+                        '? Try again with i_am_sure=yes_i_am'
+                );
+                return;
+            }
+
+            this.bot.pricelist
+                .removeAll()
+                .then(() => {
+                    this.bot.sendMessage(steamID, 'Cleared pricelist!');
+                })
+                .catch(err => {
+                    this.bot.sendMessage(steamID, 'Failed to clear pricelist: ' + err.message);
+                });
+            return;
+        }
+
         if (params.item !== undefined) {
             // Remove by full name
             let match = this.bot.pricelist.searchByName(params.item as string, false);
