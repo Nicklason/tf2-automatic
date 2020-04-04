@@ -47,10 +47,11 @@ declare module 'tf2-schema' {
             craft_class?: string;
             craft_material_type?: string;
             capabilities?: {
-                decodeable?: boolean;
+                decodable?: boolean;
                 paintable?: boolean;
                 nameable?: boolean;
-                useable_gc?: boolean;
+                usable_gc?: boolean;
+                usable?: boolean;
                 can_craft_if_purchased?: boolean;
                 can_gift_wrap?: boolean;
                 usable_out_of_game?: boolean;
@@ -59,7 +60,7 @@ declare module 'tf2-schema' {
                 can_be_restored?: boolean;
                 strange_parts?: boolean;
                 can_card_upgrade?: boolean;
-                can_stringify?: boolean;
+                can_strangify?: boolean;
                 can_killstreakify?: boolean;
                 can_consume?: boolean;
             };
@@ -78,6 +79,15 @@ declare module 'tf2-schema' {
                     can_customize_texture?: boolean;
                     can_gift_wrap?: boolean;
                     paintable_team_colors?: boolean;
+                    strange_parts?: boolean;
+                    nameable?: boolean;
+                    can_card_upgrade?: boolean;
+                    can_consume?: boolean;
+                    can_killstreakify?: boolean;
+                    can_spell_page?: boolean;
+                    can_strangify?: boolean;
+                    can_unusualify?: boolean;
+                    duck_upgradable?: boolean;
                 };
             };
             used_by_classes: string[];
