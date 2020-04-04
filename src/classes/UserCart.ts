@@ -430,14 +430,15 @@ class UserCart extends Cart {
                     if (amount > amountCanTrade) {
                         this.removeTheirItem(sku, Infinity);
                         if (amountCanTrade === 0) {
-                            alteredMessage = "I can't buy more " + this.bot.schema.getName(SKU.fromString(sku), false);
+                            alteredMessage =
+                                "I can't buy more " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false));
                         } else {
                             amount = amountCanTrade;
                             alteredMessage =
                                 'I can only buy ' +
                                 amountCanTrade +
                                 ' more ' +
-                                this.bot.schema.getName(SKU.fromString(sku), false);
+                                pluralize(this.bot.schema.getName(SKU.fromString(sku), false), amountCanTrade);
 
                             this.addTheirItem(sku, amount);
                         }
