@@ -560,6 +560,7 @@ export = class Trades {
                             .asCallback(() => {
                                 reject(err);
                             });
+                        return;
                         // @ts-ignore
                     } else if (err.eresult === TradeOfferManager.EResult.Timeout) {
                         // The offer may or may not have been made, will wait some time and check if if we can find a matching offer
