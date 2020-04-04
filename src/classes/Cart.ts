@@ -298,7 +298,9 @@ abstract class Cart {
                 } else if (error.message.includes('can only be sent to friends')) {
                     // Just adding it here so that it is saved for future reference
                     return Promise.reject(error);
-                } else if (error.message.indexOf('maximum number of items allowed in your Team Fortress 2 inventory')) {
+                } else if (
+                    error.message.includes('maximum number of items allowed in your Team Fortress 2 inventory')
+                ) {
                     return Promise.reject("I don't have space for more items in my inventory");
                 } else if (error.eresult == 10 || error.eresult == 16) {
                     return Promise.reject(
