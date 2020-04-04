@@ -1291,7 +1291,7 @@ export = class Commands {
                 return;
             }
 
-            if (params.i_am_sure !== true) {
+            if (params.i_am_sure !== 'yes_i_am') {
                 this.bot.sendMessage(
                     steamID,
                     'Are you sure that you want to remove ' +
