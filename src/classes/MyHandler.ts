@@ -845,6 +845,11 @@ export = class MyHandler extends Handler {
     onPricelist(pricelist: Entry[]): void {
         log.debug('Pricelist changed');
 
+        if (pricelist.length === 0) {
+            // Ignore errors
+            this.bot.listings.removeAll().asCallback();
+        }
+
         files
             .writeFile(
                 paths.files.pricelist,
