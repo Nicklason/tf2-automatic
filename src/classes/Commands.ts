@@ -329,11 +329,11 @@ export = class Commands {
         const isAdmin = this.bot.isAdmin(steamID);
         const parts = message.split(' ');
 
-        if (process.env.DISABLE_MESSAGES !== 'false') {
+        if (process.env.DISABLE_MESSAGES === 'true') {
             if (isAdmin) {
                 this.bot.sendMessage(
                     steamID,
-                    'The message command is disabled. Enable it in the config with `DISABLE_MESSAGES=true`.'
+                    'The message command is disabled. Enable it in the config with `DISABLE_MESSAGES=false`.'
                 );
             } else {
                 this.bot.sendMessage(steamID, 'The owner has disabled messages.');
