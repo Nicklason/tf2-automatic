@@ -329,7 +329,7 @@ export = class Commands {
         const isAdmin = this.bot.isAdmin(steamID);
         const parts = message.split(' ');
 
-        if (process.env.MESSAGES_ENABLED !== 'false') {
+        if (process.env.ENABLE_MESSAGES !== 'true') {
             if (isAdmin) {
                 this.bot.sendMessage(
                     steamID,
