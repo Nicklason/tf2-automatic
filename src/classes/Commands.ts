@@ -362,7 +362,7 @@ export = class Commands {
                 return;
             }
 
-            const reply = parts[2];
+            const reply = message.substr(message.toLowerCase().indexOf(recipient) + 18);
 
             // Send message to recipient
             this.bot.sendMessage(recipient, 'Message from ' + (details ? details.player_name : 'admin') + ': ' + reply);
@@ -384,7 +384,7 @@ export = class Commands {
                 return;
             }
 
-            const msg = parts[1];
+            const msg = message.substr(message.toLowerCase().indexOf('message') + 8);
             if (!msg) {
                 this.bot.sendMessage(steamID, 'Please include a message. Here\'s an example: "!message Hi"');
                 return;
