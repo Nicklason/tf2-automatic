@@ -557,7 +557,8 @@ export = class MyHandler extends Handler {
                         ' with ' +
                         offer.partner.getSteamID64() +
                         ' is accepted. Summary:\n' +
-                        offer.summarize(this.bot.schema)
+                        offer.summarize(this.bot.schema),
+                    []
                 );
             }
         }
