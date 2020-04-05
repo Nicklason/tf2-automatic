@@ -202,8 +202,8 @@ export = class Bot {
             return;
         }
 
-        const message: string = args[1];
-        const exclude: string[] = args[2].map(steamid => steamid.toString());
+        const message: string = args.length === 2 ? args[0] : args[1];
+        const exclude: string[] = (args.length === 2 ? [] : args[2]).map(steamid => steamid.toString());
 
         this.admins
             .filter(steamID => exclude.includes(steamID.toString()))
