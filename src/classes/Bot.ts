@@ -206,7 +206,7 @@ export = class Bot {
         const exclude: string[] = (args.length === 2 ? [] : args[2]).map(steamid => steamid.toString());
 
         this.admins
-            .filter(steamID => exclude.includes(steamID.toString()))
+            .filter(steamID => !exclude.includes(steamID.toString()))
             .forEach(steamID => {
                 this.sendMessage(steamID, message);
             });
