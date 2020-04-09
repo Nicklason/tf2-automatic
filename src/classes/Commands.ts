@@ -341,7 +341,7 @@ export = class Commands {
             return;
         }
 
-        const details = this.bot.friends.getFriend(steamID);
+        const adminDetails = this.bot.friends.getFriend(steamID);
 
         if (isAdmin) {
             if (parts.length < 3) {
@@ -354,25 +354,37 @@ export = class Commands {
 
             const recipient = parts[1];
 
-            if (!new SteamID(recipient).isValid()) {
+            const recipientSteamID = new SteamID(recipient);
+
+            if (!recipientSteamID.isValid()) {
                 this.bot.sendMessage(steamID, '"' + recipient + '" is not a valid steamid.');
                 return;
-            } else if (!this.bot.friends.isFriend(recipient)) {
+            } else if (!this.bot.friends.isFriend(recipientSteamID)) {
                 this.bot.sendMessage(steamID, 'I am not friends with the user.');
                 return;
             }
 
+            const recipentDetails = this.bot.friends.getFriend(recipientSteamID);
+
             const reply = message.substr(message.toLowerCase().indexOf(recipient) + 18);
 
             // Send message to recipient
-            this.bot.sendMessage(recipient, 'Message from ' + (details ? details.player_name : 'admin') + ': ' + reply);
+            this.bot.sendMessage(
+                recipient,
+                'Message from ' + (adminDetails ? adminDetails.player_name : 'admin') + ': ' + reply
+            );
 
             // Send confirmation message to admin
             this.bot.sendMessage(steamID, 'Your message has been sent.');
 
             // Send message to all other wadmins that an admin replied
             this.bot.messageAdmins(
-                (details ? details.player_name + ' (' + steamID + ')' : steamID) + ' replied with "' + reply + '".',
+                (adminDetails ? adminDetails.player_name + ' (' + steamID + ')' : steamID) +
+                    ' sent a message to ' +
+                    (recipentDetails ? recipentDetails.player_name + ' (' + recipientSteamID + ')' : recipientSteamID) +
+                    ' with "' +
+                    reply +
+                    '".',
                 [steamID]
             );
             return;
@@ -391,7 +403,10 @@ export = class Commands {
             }
 
             this.bot.messageAdmins(
-                'Message from ' + (details ? details.player_name + ' (' + steamID + ')' : steamID) + ': ' + msg,
+                'Message from ' +
+                    (adminDetails ? adminDetails.player_name + ' (' + steamID + ')' : steamID) +
+                    ': ' +
+                    msg,
                 []
             );
             this.bot.sendMessage(steamID, 'Your message has been sent.');
