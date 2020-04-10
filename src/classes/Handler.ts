@@ -71,7 +71,8 @@ abstract class Handler {
     abstract onOfferAction(
         offer: TradeOfferManager.TradeOffer,
         action: 'accept' | 'decline' | 'skip',
-        reason: string
+        reason: string,
+        meta: UnknownDictionary<any>
     ): void;
 
     /**

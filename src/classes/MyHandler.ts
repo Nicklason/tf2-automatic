@@ -344,6 +344,28 @@ export = class MyHandler extends Handler {
 
             let hasOverstock = false;
 
+            // A list of things that is wrong about the offer and other information
+            const wrongAboutOffer: (
+                | {
+                      reason: 'OVERSTOCKED';
+                      sku: string;
+                      buying: boolean;
+                      diff: number;
+                      amountCanTrade: number;
+                  }
+                | {
+                      reason: 'INVALID_ITEMS';
+                      sku: string;
+                      buying: boolean;
+                      amount: number;
+                  }
+                | {
+                      reason: 'INVALID_VALUE';
+                      our: number;
+                      their: number;
+                  }
+            )[] = [];
+
             for (let i = 0; i < states.length; i++) {
                 const buying = states[i];
                 const which = buying ? 'their' : 'our';
@@ -389,9 +411,20 @@ export = class MyHandler extends Handler {
                             // Check stock limits (not for keys)
                             const diff = itemsDiff[sku];
 
-                            if (diff !== 0 && this.bot.inventoryManager.amountCanTrade(sku, diff > 0) < diff) {
+                            const buyingOverstockCheck = diff > 0;
+                            const amountCanTrade = this.bot.inventoryManager.amountCanTrade(sku, buyingOverstockCheck);
+
+                            if (diff !== 0 && amountCanTrade < diff) {
                                 // User is taking too many / offering too many
                                 hasOverstock = true;
+
+                                wrongAboutOffer.push({
+                                    reason: 'OVERSTOCKED',
+                                    sku: sku,
+                                    buying: buyingOverstockCheck,
+                                    diff: diff,
+                                    amountCanTrade: amountCanTrade
+                                });
                             }
                         } else if (sku === '5021;6' && exchange.contains.items) {
                             // Offer contains keys and we are not trading keys, add key value
@@ -400,6 +433,13 @@ export = class MyHandler extends Handler {
                         } else if (match === null || match.intent === (buying ? 1 : 0)) {
                             // Offer contains an item that we are not trading
                             hasInvalidItems = true;
+
+                            wrongAboutOffer.push({
+                                reason: 'INVALID_ITEMS',
+                                sku: sku,
+                                buying: buying,
+                                amount: amount
+                            });
                         }
                     }
                 }
@@ -445,44 +485,92 @@ export = class MyHandler extends Handler {
                     const diff = itemsDiff['5021;6'];
                     // If the diff is greater than 0 then we are buying, less than is selling
 
-                    if (diff !== 0 && this.bot.inventoryManager.amountCanTrade('5021;6', diff > 0) < diff) {
+                    const buying = diff > 0;
+                    const amountCanTrade = this.bot.inventoryManager.amountCanTrade('5021;6', buying);
+
+                    if (diff !== 0 && amountCanTrade < diff) {
                         // User is taking too many / offering too many
                         hasOverstock = true;
+                        wrongAboutOffer.push({
+                            reason: 'OVERSTOCKED',
+                            sku: '5021;6',
+                            buying: buying,
+                            diff: diff,
+                            amountCanTrade: amountCanTrade
+                        });
                     }
                 }
             }
 
-            if (hasOverstock) {
-                offer.log(
-                    'info',
-                    'is taking / offering too many, ' + (manualReviewEnabled ? 'skipping' : 'declining') + '...'
-                );
-                return resolve({
-                    action: manualReviewEnabled ? 'skip' : 'decline',
-                    reason: 'OVERSTOCKED'
-                });
-            } else if (hasInvalidItems) {
-                offer.log(
-                    'info',
-                    'contains items we are not trading, ' + (manualReviewEnabled ? 'skipping' : 'declining') + '...'
-                );
-                return resolve({
-                    action: manualReviewEnabled ? 'skip' : 'decline',
-                    reason: 'INVALID_ITEMS'
+            let hasInvalidValue = false;
+
+            if (exchange.our.value > exchange.their.value) {
+                // Check if the values are correct
+                hasInvalidValue = true;
+                wrongAboutOffer.push({
+                    reason: 'INVALID_VALUE',
+                    our: exchange.our.value,
+                    their: exchange.their.value
                 });
             }
 
-            // Check if the values are correct
-            if (exchange.our.value > exchange.their.value) {
-                // We are offering more than them, decline the offer
-                offer.log(
-                    'info',
-                    'is not offering enough, ' + (manualReviewEnabled ? 'skipping' : 'declining') + '...'
-                );
-                return resolve({ action: manualReviewEnabled ? 'skip' : 'decline', reason: 'INVALID_VALUE' });
-            } else if (exchange.our.value < exchange.their.value && process.env.ACCEPT_OVERPAY === 'false') {
+            const reasons = wrongAboutOffer.map(wrong => wrong.reason);
+            const uniqueReasons = reasons.filter(reason => reasons.includes(reason));
+
+            if (!manualReviewEnabled) {
+                if (hasOverstock) {
+                    offer.log('info', 'is taking / offering too many, declining...');
+                    return resolve({
+                        action: 'decline',
+                        reason: 'OVERSTOCKED',
+                        meta: {
+                            uniqueReasons: uniqueReasons,
+                            reasons: wrongAboutOffer
+                        }
+                    });
+                }
+
+                if (hasInvalidItems) {
+                    offer.log('info', 'contains items we are not trading, declining...');
+                    return resolve({
+                        action: 'decline',
+                        reason: 'INVALID_ITEMS',
+                        meta: {
+                            uniqueReasons: uniqueReasons,
+                            reasons: wrongAboutOffer
+                        }
+                    });
+                }
+
+                if (hasInvalidValue) {
+                    // We are offering more than them, decline the offer
+                    offer.log('info', 'is not offering enough, declining...');
+                    return resolve({
+                        action: 'decline',
+                        reason: 'INVALID_VALUE',
+                        meta: {
+                            uniqueReasons: uniqueReasons,
+                            reasons: wrongAboutOffer
+                        }
+                    });
+                }
+            }
+
+            if (exchange.our.value < exchange.their.value && process.env.ACCEPT_OVERPAY === 'false') {
                 offer.log('info', 'is offering more than needed, declining...');
                 return resolve({ action: 'decline', reason: 'OVERPAY' });
+            }
+
+            if (wrongAboutOffer.length !== 0) {
+                offer.log('info', 'offer needs review (' + uniqueReasons.join(', ') + '), skipping...');
+                return resolve({
+                    action: 'skip',
+                    reason: 'REVIEW',
+                    meta: {
+                        uniqueReasons: uniqueReasons,
+                        reasons: wrongAboutOffer
+                    }
+                });
             }
 
             // TODO: If we are receiving items, mark them as pending and use it to check overstock / understock for new offers
@@ -607,7 +695,12 @@ export = class MyHandler extends Handler {
         }
     }
 
-    onOfferAction(offer: TradeOffer, action: 'accept' | 'decline' | 'skip', reason: string): void {
+    onOfferAction(
+        offer: TradeOffer,
+        action: 'accept' | 'decline' | 'skip',
+        reason: string,
+        meta: UnknownDictionary<any>
+    ): void {
         const notify = offer.data('notify') === true;
 
         if (!notify) {
@@ -616,8 +709,11 @@ export = class MyHandler extends Handler {
 
         if (action === 'skip') {
             // Notify partner and admin that the offer is waiting for manual review
-            this.bot.sendMessage(offer.partner, 'Your offer is waiting for review, reason: ' + reason);
-            this.bot.messageAdmins('review', 'Offer #' + offer.id + ' is waiting for review, reason: ' + reason);
+            this.bot.sendMessage(offer.partner, 'Your offer is waiting for review, reason: ' + meta.uniqueReasons);
+            this.bot.messageAdmins(
+                'review',
+                'Offer #' + offer.id + ' is waiting for review, reason: ' + meta.uniqueReasons
+            );
         }
     }
 

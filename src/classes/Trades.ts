@@ -296,7 +296,7 @@ export = class Trades {
         meta: UnknownDictionary<any>,
         offer: TradeOfferManager.TradeOffer
     ): Promise<void> {
-        this.bot.handler.onOfferAction(offer, action, reason);
+        this.bot.handler.onOfferAction(offer, action, reason, meta);
 
         let actionFunc: () => Promise<any>;
 
