@@ -709,10 +709,13 @@ export = class MyHandler extends Handler {
 
         if (action === 'skip') {
             // Notify partner and admin that the offer is waiting for manual review
-            this.bot.sendMessage(offer.partner, 'Your offer is waiting for review, reason: ' + meta.uniqueReasons);
+            this.bot.sendMessage(
+                offer.partner,
+                'Your offer is waiting for review, reason: ' + meta.uniqueReasons.join(', ')
+            );
             this.bot.messageAdmins(
                 'review',
-                'Offer #' + offer.id + ' is waiting for review, reason: ' + meta.uniqueReasons
+                'Offer #' + offer.id + ' is waiting for review, reason: ' + meta.uniqueReasons.join(', ')
             );
         }
     }
