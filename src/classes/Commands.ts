@@ -1310,7 +1310,7 @@ export = class Commands {
 
             if (data === null) {
                 continue;
-            } else if (data?.action.action !== 'skip') {
+            } else if (data?.action?.action !== 'skip') {
                 continue;
             }
 
