@@ -33,6 +33,7 @@
 
                 "DISABLE_INVENTORY_SORT": false,
                 "DISABLE_LISTINGS": false,
+                "DISABLE_MESSAGES": false,
 
                 "SKIP_BPTF_TRADEOFFERURL": false,
                 "SKIP_ACCOUNT_LIMITATIONS": false,

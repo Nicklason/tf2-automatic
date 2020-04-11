@@ -171,6 +171,10 @@ export = class Bot {
         return this.admins;
     }
 
+    getAlertTypes(): string[] {
+        return this.alertTypes;
+    }
+
     checkBanned(steamID: SteamID | string): Promise<boolean> {
         if (process.env.ALLOW_BANNED === 'true') {
             return Promise.resolve(false);
@@ -187,14 +191,25 @@ export = class Bot {
         return this.trades.checkEscrow(offer);
     }
 
-    messageAdmins(type: string, message: string): void {
-        if (!this.alertTypes.includes(type)) {
+    messageAdmins(message: string, exclude: string[] | SteamID[]): void;
+
+    messageAdmins(type: string, message: string, exclude: string[] | SteamID[]);
+
+    messageAdmins(...args): void {
+        const type: string | null = args.length === 2 ? null : args[0];
+
+        if (type !== null && !this.alertTypes.includes(type)) {
             return;
         }
 
-        this.admins.forEach(steamID => {
-            this.sendMessage(steamID, message);
-        });
+        const message: string = args.length === 2 ? args[0] : args[1];
+        const exclude: string[] = (args.length === 2 ? args[1] : args[2]).map(steamid => steamid.toString());
+
+        this.admins
+            .filter(steamID => !exclude.includes(steamID.toString()))
+            .forEach(steamID => {
+                this.sendMessage(steamID, message);
+            });
     }
 
     setReady(): void {
@@ -235,7 +250,8 @@ export = class Bot {
 
                 this.messageAdmins(
                     'version',
-                    `Update available! Current: v${process.env.BOT_VERSION}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`
+                    `Update available! Current: v${process.env.BOT_VERSION}, Latest: v${latestVersion}.\nSee the wiki for help: https://github.com/Nicklason/tf2-automatic/wiki/Updating`,
+                    []
                 );
             }
 
