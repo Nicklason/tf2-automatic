@@ -561,18 +561,6 @@ export = class MyHandler extends Handler {
                 return resolve({ action: 'decline', reason: 'OVERPAY' });
             }
 
-            if (wrongAboutOffer.length !== 0) {
-                offer.log('info', 'offer needs review (' + uniqueReasons.join(', ') + '), skipping...');
-                return resolve({
-                    action: 'skip',
-                    reason: 'REVIEW',
-                    meta: {
-                        uniqueReasons: uniqueReasons,
-                        reasons: wrongAboutOffer
-                    }
-                });
-            }
-
             // TODO: If we are receiving items, mark them as pending and use it to check overstock / understock for new offers
 
             offer.log('info', 'checking escrow...');
@@ -599,6 +587,18 @@ export = class MyHandler extends Handler {
                     if (banned) {
                         offer.log('info', 'partner is banned in one or more communities, declining...');
                         return resolve({ action: 'decline', reason: 'BANNED' });
+                    }
+
+                    if (wrongAboutOffer.length !== 0) {
+                        offer.log('info', 'offer needs review (' + uniqueReasons.join(', ') + '), skipping...');
+                        return resolve({
+                            action: 'skip',
+                            reason: 'REVIEW',
+                            meta: {
+                                uniqueReasons: uniqueReasons,
+                                reasons: wrongAboutOffer
+                            }
+                        });
                     }
 
                     offer.log('trade', 'accepting. Summary:\n' + offer.summarize(this.bot.schema));
