@@ -1443,7 +1443,10 @@ export = class Commands {
 
         this.bot.trades.getOffer(offerId).asCallback((err, offer) => {
             if (err) {
-                this.bot.sendMessage(steamID, 'Ohh nooooes! Something went wrong while trying to accept the offer.');
+                this.bot.sendMessage(
+                    steamID,
+                    'Ohh nooooes! Something went wrong while trying to accept the offer: ' + err.message
+                );
                 return;
             }
 
@@ -1453,7 +1456,7 @@ export = class Commands {
                 if (err) {
                     this.bot.sendMessage(
                         steamID,
-                        'Ohh nooooes! Something went wrong while trying to accept the offer.'
+                        'Ohh nooooes! Something went wrong while trying to accept the offer: ' + err.message
                     );
                 }
             });
@@ -1490,7 +1493,10 @@ export = class Commands {
 
         this.bot.trades.getOffer(offerId).asCallback((err, offer) => {
             if (err) {
-                this.bot.sendMessage(steamID, 'Ohh nooooes! Something went wrong while trying to decline the offer.');
+                this.bot.sendMessage(
+                    steamID,
+                    'Ohh nooooes! Something went wrong while trying to decline the offer: ' + err.message
+                );
                 return;
             }
 
@@ -1500,7 +1506,7 @@ export = class Commands {
                 if (err) {
                     this.bot.sendMessage(
                         steamID,
-                        'Ohh nooooes! Something went wrong while trying to decline the offer.'
+                        'Ohh nooooes! Something went wrong while trying to decline the offer: ' + err.message
                     );
                 }
             });
