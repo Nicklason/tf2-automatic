@@ -83,10 +83,6 @@ export = class Trades {
 
         offer.log('info', 'received offer');
 
-        offer.itemsToGive.forEach(item => this.setItemInTrade(item.assetid));
-
-        offer.data('partner', offer.partner.getSteamID64());
-
         this.enqueueOffer(offer);
     }
 
@@ -230,6 +226,10 @@ export = class Trades {
 
     private enqueueOffer(offer: TradeOfferManager.TradeOffer): void {
         if (!this.receivedOffers.includes(offer.id)) {
+            offer.itemsToGive.forEach(item => this.setItemInTrade(item.assetid));
+
+            offer.data('partner', offer.partner.getSteamID64());
+
             this.receivedOffers.push(offer.id);
 
             log.debug('Added offer to queue');
@@ -279,33 +279,47 @@ export = class Trades {
                 response: response
             });
 
-            let actionFunc: () => Promise<any>;
-
-            if (response?.action === 'accept') {
-                actionFunc = this.acceptOffer.bind(this, offer);
-            } else if (response?.action === 'decline') {
-                actionFunc = this.declineOffer.bind(this, offer);
-            }
-
-            if (actionFunc === undefined) {
+            this.applyActionToOffer(response.action, response.reason, response.meta || {}, offer).finally(() => {
                 this.finishProcessingOffer(offer.id);
-                return;
-            }
-
-            offer.data('action', response);
-
-            actionFunc()
-                .catch(err => {
-                    log.warn('Failed to ' + response.action + ' the offer: ', err);
-                })
-                .finally(() => {
-                    offer.log('debug', 'done doing action on offer', {
-                        action: response.action
-                    });
-
-                    this.finishProcessingOffer(offer.id);
-                });
+            });
         });
+    }
+
+    applyActionToOffer(
+        action: 'accept' | 'decline' | 'skip',
+        reason: string,
+        meta: UnknownDictionary<any>,
+        offer: TradeOfferManager.TradeOffer
+    ): Promise<void> {
+        this.bot.handler.onOfferAction(offer, action, reason, meta);
+
+        let actionFunc: () => Promise<any>;
+
+        if (action === 'accept') {
+            actionFunc = this.acceptOffer.bind(this, offer);
+        } else if (action === 'decline') {
+            actionFunc = this.declineOffer.bind(this, offer);
+        }
+
+        offer.data('action', {
+            action: action,
+            reason: reason,
+            meta: meta
+        });
+
+        if (actionFunc === undefined) {
+            return Promise.resolve();
+        }
+
+        return actionFunc()
+            .catch(err => {
+                log.warn('Failed to ' + action + ' the offer: ', err);
+            })
+            .finally(() => {
+                offer.log('debug', 'done doing action on offer', {
+                    action: action
+                });
+            });
     }
 
     private finishProcessingOffer(offerId): void {

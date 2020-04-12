@@ -6,6 +6,8 @@ import { Entry, EntryData } from './Pricelist';
 import SteamID from 'steamid';
 import TradeOfferManager, { PollData } from 'steam-tradeoffer-manager';
 
+import { UnknownDictionary } from '../types/common';
+
 abstract class Handler {
     readonly bot: Bot;
 
@@ -54,10 +56,24 @@ abstract class Handler {
      */
     abstract onNewTradeOffer(
         offer: TradeOfferManager.TradeOffer
-    ): Promise<{
-        action: 'accept' | 'decline' | null;
-        reason: string | null;
+    ): Promise<null | {
+        action: 'accept' | 'decline' | 'skip';
+        reason: string;
+        meta?: UnknownDictionary<any>;
     }>;
+
+    /**
+     * Called when an action is applied to an offer
+     * @param offer - The trade offer
+     * @param action - The action
+     * @param reason - The reason for the action
+     */
+    abstract onOfferAction(
+        offer: TradeOfferManager.TradeOffer,
+        action: 'accept' | 'decline' | 'skip',
+        reason: string,
+        meta: UnknownDictionary<any>
+    ): void;
 
     /**
      * Called when a new login attempt has been made
