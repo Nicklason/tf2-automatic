@@ -279,19 +279,6 @@ export = class Trades {
                 response: response
             });
 
-            let actionFunc: () => Promise<any>;
-
-            if (response?.action === 'accept') {
-                actionFunc = this.acceptOffer.bind(this, offer);
-            } else if (response?.action === 'decline') {
-                actionFunc = this.declineOffer.bind(this, offer);
-            }
-
-            if (actionFunc === undefined) {
-                this.finishProcessingOffer(offer.id);
-                return;
-            }
-
             this.applyActionToOffer(response.action, response.reason, response.meta || {}, offer).finally(() => {
                 this.finishProcessingOffer(offer.id);
             });

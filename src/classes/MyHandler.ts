@@ -315,10 +315,10 @@ export = class MyHandler extends Handler {
             offer.data('dict', itemsDict);
 
             // Check if the offer is from an admin
-            if (this.bot.isAdmin(offer.partner)) {
+            /* if (this.bot.isAdmin(offer.partner)) {
                 offer.log('trade', 'is from an admin, accepting. Summary:\n' + offer.summarize(this.bot.schema));
                 return resolve({ action: 'accept', reason: 'ADMIN' });
-            }
+            } */
 
             if (hasInvalidItems) {
                 // Using boolean because items dict always needs to be saved
