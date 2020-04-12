@@ -1385,7 +1385,7 @@ export = class Commands {
     }
 
     private tradesCommand(steamID: SteamID): void {
-        if (process.env.ENABLE_MANUAL_REVIEW === 'false') {
+        if (process.env.ENABLE_MANUAL_REVIEW !== 'true') {
             this.bot.sendMessage(
                 steamID,
                 'Manual review is disabled, enable it by setting `ENABLE_MANUAL_REVIEW` to true'

@@ -336,7 +336,7 @@ export = class MyHandler extends Handler {
                 return resolve({ action: 'decline', reason: 'GIFT' });
             }
 
-            const manualReviewEnabled = process.env.ENABLE_MANUAL_REVIEW !== 'false';
+            const manualReviewEnabled = process.env.ENABLE_MANUAL_REVIEW === 'true';
 
             const itemPrices = {};
 
