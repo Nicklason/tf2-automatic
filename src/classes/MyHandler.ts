@@ -716,7 +716,8 @@ export = class MyHandler extends Handler {
             );
             this.bot.messageAdmins(
                 'review',
-                'Offer #' + offer.id + ' is waiting for review, reason: ' + meta.uniqueReasons.join(', ')
+                'Offer #' + offer.id + ' is waiting for review, reason: ' + meta.uniqueReasons.join(', '),
+                []
             );
         }
     }
