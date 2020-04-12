@@ -279,7 +279,15 @@ export = class Trades {
                 response: response
             });
 
-            if (!response) {
+            let actionFunc: () => Promise<any>;
+
+            if (response?.action === 'accept') {
+                actionFunc = this.acceptOffer.bind(this, offer);
+            } else if (response?.action === 'decline') {
+                actionFunc = this.declineOffer.bind(this, offer);
+            }
+
+            if (actionFunc === undefined) {
                 this.finishProcessingOffer(offer.id);
                 return;
             }
@@ -579,6 +587,7 @@ export = class Trades {
                             .asCallback(() => {
                                 reject(err);
                             });
+                        return;
                         // @ts-ignore
                     } else if (err.eresult === TradeOfferManager.EResult.Timeout) {
                         // The offer may or may not have been made, will wait some time and check if if we can find a matching offer

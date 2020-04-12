@@ -29,8 +29,9 @@ const COMMANDS: string[] = [
     '!price [amount] <name> - Get the price and stock of an item',
     '!stock - Get a list of items that the bot has',
     '!rate - Get current key prices',
+    '!message <your message> - Send a message to the owner of the bot',
     '!buy [amount] <name> - Instantly buy an item',
-    '!sell [amount] <sell> - Instantly sell an item',
+    '!sell [amount] <name> - Instantly sell an item',
     '!buycart [amount] <name> - Adds an item you want to buy to the cart',
     '!sellcart [amount] <name> - Adds an item you want to sell to the cart',
     '!cart - See current cart',
@@ -54,6 +55,7 @@ const ADMIN_COMMANDS: string[] = [
     '!version - Get version that the bot is running',
     '!avatar - Change avatar',
     '!name - Change name',
+    '!message <steamid> <your message> - Send a message to a user',
     '!stats - Get statistics for accepted trades',
     '!trades - Get a list of offers pending for manual review',
     '!trade - Get info about a trade',
@@ -87,6 +89,8 @@ export = class Commands {
             this.stockCommand(steamID);
         } else if (command === 'rate') {
             this.rateCommand(steamID);
+        } else if (command === 'message') {
+            this.messageCommand(steamID, message);
         } else if (command === 'cart') {
             this.cartCommand(steamID);
         } else if (command === 'clearcart') {
@@ -332,6 +336,94 @@ export = class Commands {
                 keyPrice +
                 ' is the same as one key.'
         );
+    }
+
+    private messageCommand(steamID: SteamID, message: string): void {
+        const isAdmin = this.bot.isAdmin(steamID);
+        const parts = message.split(' ');
+
+        if (process.env.DISABLE_MESSAGES === 'true') {
+            if (isAdmin) {
+                this.bot.sendMessage(
+                    steamID,
+                    'The message command is disabled. Enable it in the config with `DISABLE_MESSAGES=false`.'
+                );
+            } else {
+                this.bot.sendMessage(steamID, 'The owner has disabled messages.');
+            }
+            return;
+        }
+
+        const adminDetails = this.bot.friends.getFriend(steamID);
+
+        if (isAdmin) {
+            if (parts.length < 3) {
+                this.bot.sendMessage(
+                    steamID,
+                    'Your syntax is wrong. Here\'s an example: "!message 76561198120070906 Hi"'
+                );
+                return;
+            }
+
+            const recipient = parts[1];
+
+            const recipientSteamID = new SteamID(recipient);
+
+            if (!recipientSteamID.isValid()) {
+                this.bot.sendMessage(steamID, '"' + recipient + '" is not a valid steamid.');
+                return;
+            } else if (!this.bot.friends.isFriend(recipientSteamID)) {
+                this.bot.sendMessage(steamID, 'I am not friends with the user.');
+                return;
+            }
+
+            const recipentDetails = this.bot.friends.getFriend(recipientSteamID);
+
+            const reply = message.substr(message.toLowerCase().indexOf(recipient) + 18);
+
+            // Send message to recipient
+            this.bot.sendMessage(
+                recipient,
+                'Message from ' + (adminDetails ? adminDetails.player_name : 'admin') + ': ' + reply
+            );
+
+            // Send confirmation message to admin
+            this.bot.sendMessage(steamID, 'Your message has been sent.');
+
+            // Send message to all other wadmins that an admin replied
+            this.bot.messageAdmins(
+                (adminDetails ? adminDetails.player_name + ' (' + steamID + ')' : steamID) +
+                    ' sent a message to ' +
+                    (recipentDetails ? recipentDetails.player_name + ' (' + recipientSteamID + ')' : recipientSteamID) +
+                    ' with "' +
+                    reply +
+                    '".',
+                [steamID]
+            );
+            return;
+        } else {
+            const admins = this.bot.getAdmins();
+            if (!admins || admins.length === 0) {
+                // Just default to same message as if it was disabled
+                this.bot.sendMessage(steamID, 'The owner has disabled messages.');
+                return;
+            }
+
+            const msg = message.substr(message.toLowerCase().indexOf('message') + 8);
+            if (!msg) {
+                this.bot.sendMessage(steamID, 'Please include a message. Here\'s an example: "!message Hi"');
+                return;
+            }
+
+            this.bot.messageAdmins(
+                'Message from ' +
+                    (adminDetails ? adminDetails.player_name + ' (' + steamID + ')' : steamID) +
+                    ': ' +
+                    msg,
+                []
+            );
+            this.bot.sendMessage(steamID, 'Your message has been sent.');
+        }
     }
 
     private cartCommand(steamID: SteamID): void {
@@ -1114,7 +1206,7 @@ export = class Commands {
             item.craftable = false;
         }
 
-        const assetids = this.bot.inventoryManager.getInventory().findBySKU(SKU.fromObject(item));
+        const assetids = this.bot.inventoryManager.getInventory().findBySKU(SKU.fromObject(item), false);
 
         const name = this.bot.schema.getName(item);
 
@@ -1241,6 +1333,7 @@ export = class Commands {
     }
 
     private statsCommand(steamID: SteamID): void {
+        const now = moment();
         const aDayAgo = moment().subtract(24, 'hour');
         const startOfDay = moment().startOf('day');
 
@@ -1248,8 +1341,15 @@ export = class Commands {
         let trades24Hours = 0;
         let tradesTotal = 0;
 
-        const offerData = this.bot.manager.pollData.offerData;
+        const pollData = this.bot.manager.pollData;
 
+        const oldestId = pollData.offerData === undefined ? undefined : Object.keys(pollData.offerData)[0];
+
+        const timeSince = pollData.timestamps[oldestId];
+
+        const totalDays = !timeSince ? 0 : now.diff(moment.unix(timeSince), 'days');
+
+        const offerData = this.bot.manager.pollData.offerData;
         for (const offerID in offerData) {
             if (!Object.prototype.hasOwnProperty.call(offerData, offerID)) {
                 continue;
@@ -1273,7 +1373,9 @@ export = class Commands {
 
         this.bot.sendMessage(
             steamID,
-            'Total: ' +
+            'All trades are recorded from ' +
+                pluralize('day', totalDays, true) +
+                ' ago\n\n Total: ' +
                 tradesTotal +
                 ' \n Last 24 hours: ' +
                 trades24Hours +
@@ -1515,6 +1617,36 @@ export = class Commands {
 
     private removeCommand(steamID: SteamID, message: string): void {
         const params = CommandParser.parseParams(CommandParser.removeCommand(message));
+
+        if (params.all === true) {
+            // Remove entire pricelist
+            const pricelistLength = this.bot.pricelist.getLength();
+
+            if (pricelistLength === 0) {
+                this.bot.sendMessage(steamID, 'Your pricelist is already empty!');
+                return;
+            }
+
+            if (params.i_am_sure !== 'yes_i_am') {
+                this.bot.sendMessage(
+                    steamID,
+                    'Are you sure that you want to remove ' +
+                        pluralize('item', pricelistLength, true) +
+                        '? Try again with i_am_sure=yes_i_am'
+                );
+                return;
+            }
+
+            this.bot.pricelist
+                .removeAll()
+                .then(() => {
+                    this.bot.sendMessage(steamID, 'Cleared pricelist!');
+                })
+                .catch(err => {
+                    this.bot.sendMessage(steamID, 'Failed to clear pricelist: ' + err.message);
+                });
+            return;
+        }
 
         if (params.item !== undefined) {
             // Remove by full name

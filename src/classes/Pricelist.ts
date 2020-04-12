@@ -271,6 +271,17 @@ export default class Pricelist extends EventEmitter {
         return entry;
     }
 
+    removeAll(): Promise<any> {
+        return new Promise(resolve => {
+            if (this.getLength() !== 0) {
+                this.prices = [];
+                this.emit('pricelist', []);
+            }
+
+            return resolve();
+        });
+    }
+
     removePrice(sku: string, emitChange: boolean): Promise<Entry> {
         return new Promise((resolve, reject) => {
             const index = this.getIndex(sku);
@@ -404,7 +415,7 @@ export default class Pricelist extends EventEmitter {
     }
 
     private handlePriceChange(data: any): void {
-        if (data.soure !== 'bptf') {
+        if (data.source !== 'bptf') {
             return;
         }
 

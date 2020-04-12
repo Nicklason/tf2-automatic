@@ -67,7 +67,7 @@ export = class MyHandler extends Handler {
             this.groups = groups;
         }
 
-        const friendsToKeep = parseJSON(process.env.KEEP);
+        const friendsToKeep = parseJSON(process.env.KEEP).concat(this.bot.getAdmins());
         if (friendsToKeep !== null && Array.isArray(friendsToKeep)) {
             friendsToKeep.forEach(function(steamID64) {
                 if (!new SteamID(steamID64).isValid()) {
@@ -556,7 +556,7 @@ export = class MyHandler extends Handler {
                 }
             }
 
-            if (exchange.our.value < exchange.their.value && process.env.ACCEPT_OVERPAY === 'false') {
+            if (exchange.our.value < exchange.their.value && process.env.ALLOW_OVERPAY === 'false') {
                 offer.log('info', 'is offering more than needed, declining...');
                 return resolve({ action: 'decline', reason: 'OVERPAY' });
             }
@@ -666,7 +666,8 @@ export = class MyHandler extends Handler {
                         ' with ' +
                         offer.partner.getSteamID64() +
                         ' is accepted. Summary:\n' +
-                        offer.summarize(this.bot.schema)
+                        offer.summarize(this.bot.schema),
+                    []
                 );
             }
         }
@@ -978,6 +979,11 @@ export = class MyHandler extends Handler {
 
     onPricelist(pricelist: Entry[]): void {
         log.debug('Pricelist changed');
+
+        if (pricelist.length === 0) {
+            // Ignore errors
+            this.bot.listings.removeAll().asCallback();
+        }
 
         files
             .writeFile(
