@@ -445,6 +445,12 @@ export = class MyHandler extends Handler {
                 }
             }
 
+            // Doing this so that the prices will always be displayed as only metal
+            exchange.our.scrap += exchange.our.keys * keyPrice.toValue();
+            exchange.our.keys = 0;
+            exchange.their.scrap += exchange.their.keys * keyPrice.toValue();
+            exchange.their.keys = 0;
+
             offer.data('value', {
                 our: {
                     total: exchange.our.value,
