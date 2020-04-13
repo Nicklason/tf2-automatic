@@ -1,9 +1,12 @@
 import pluralize from 'pluralize';
 import SKU from 'tf2-sku';
 import Currencies from 'tf2-currencies';
+import async from 'async';
 
 import Cart from './Cart';
 import Inventory from './Inventory';
+import TF2Inventory from './TF2Inventory';
+import MyHandler from './MyHandler';
 import { CurrencyObject, Currency } from '../types/TeamFortress2';
 import { UnknownDictionary } from '../types/common';
 
@@ -29,6 +32,45 @@ class UserCart extends Cart {
 
         if (escrow) {
             return Promise.reject('trade would be held');
+        }
+
+        // TODO: Check for dupes
+
+        if ((this.bot.handler as MyHandler).hasDupeCheckEnabled) {
+            const assetidsToCheck = this.offer.data('_dupeCheck');
+            this.offer.data('_dupeCheck', undefined);
+
+            const inventory = new TF2Inventory(this.partner, this.bot.manager);
+
+            const requests = assetidsToCheck.map(assetid => {
+                return (callback: (err: Error | null, result: boolean | null) => void): void => {
+                    log.debug('Dupe checking ' + assetid + '...');
+                    Promise.resolve(inventory.isDuped(assetid)).asCallback(function(err, result) {
+                        log.debug('Dupe check for ' + assetid + ' done');
+                        callback(err, result);
+                    });
+                };
+            });
+
+            try {
+                const result: (boolean | null)[] = await Promise.fromCallback(function(callback) {
+                    async.series(requests, callback);
+                });
+
+                log.debug('Got result from dupe checks');
+
+                for (let i = 0; i < result.length; i++) {
+                    if (result[i] === true) {
+                        // Found duped item
+                        return Promise.reject('offer contains duped items');
+                    } else if (result[i] === null) {
+                        // Could not determine if the item was duped, make the offer be pending for review
+                        return Promise.reject('failed to check for duped items, try sending an offer instead');
+                    }
+                }
+            } catch (err) {
+                return Promise.reject('failed to check for duped items, try sending an offer instead');
+            }
         }
     }
 
@@ -539,10 +581,21 @@ class UserCart extends Cart {
             }
         }
 
+        const assetidsToCheck: string[] = [];
+
         // Add their items
         for (const sku in this.their) {
             const amount = this.their[sku];
             const assetids = theirInventory.findBySKU(sku, true);
+
+            const match = this.bot.pricelist.getPrice(sku, true);
+
+            const item = SKU.fromString(sku);
+
+            const addToDupeCheckList =
+                item.effect !== null &&
+                match.buy.toValue(keyPrice.metal) >
+                    (this.bot.handler as MyHandler).getMinimumKeysDupeCheck() * keyPrice.toValue();
 
             let missing = amount;
 
@@ -555,6 +608,11 @@ class UserCart extends Cart {
 
                 if (isAdded) {
                     missing--;
+
+                    if (addToDupeCheckList) {
+                        assetidsToCheck.push(assetids[i]);
+                    }
+
                     if (missing === 0) {
                         break;
                     }
@@ -716,6 +774,8 @@ class UserCart extends Cart {
             rate: keyPrice.metal
         });
         offer.data('prices', itemPrices);
+
+        offer.data('_dupeCheck', assetidsToCheck);
 
         this.offer = offer;
 

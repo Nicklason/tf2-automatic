@@ -99,6 +99,14 @@ export = class MyHandler extends Handler {
         }, 1000);
     }
 
+    hasDupeCheckEnabled(): boolean {
+        return this.dupeCheckEnabled;
+    }
+
+    getMinimumKeysDupeCheck(): number {
+        return this.minimumKeysDupeCheck;
+    }
+
     onRun(): Promise<{
         loginAttempts?: number[];
         pricelist?: EntryData[];
