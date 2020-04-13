@@ -317,417 +317,409 @@ class UserCart extends Cart {
         return summary;
     }
 
-    constructOffer(): Promise<string> {
-        return new Promise((resolve, reject) => {
-            if (this.isEmpty()) {
-                return reject('cart is empty');
+    async constructOffer(): Promise<string> {
+        if (this.isEmpty()) {
+            return Promise.reject('cart is empty');
+        }
+
+        const offer = this.bot.manager.createOffer(this.partner);
+
+        const alteredMessages: string[] = [];
+
+        // Add our items
+        const ourInventory = this.bot.inventoryManager.getInventory();
+
+        for (const sku in this.our) {
+            if (!Object.prototype.hasOwnProperty.call(this.our, sku)) {
+                continue;
             }
 
-            const offer = this.bot.manager.createOffer(this.partner);
+            let alteredMessage: string;
 
-            const alteredMessages: string[] = [];
+            let amount = this.getOurCount(sku);
+            const ourAssetids = ourInventory.findBySKU(sku, true);
 
-            // Add our items
-            const ourInventory = this.bot.inventoryManager.getInventory();
+            if (amount > ourAssetids.length) {
+                amount = ourAssetids.length;
 
-            for (const sku in this.our) {
-                if (!Object.prototype.hasOwnProperty.call(this.our, sku)) {
+                // Remove the item from the cart
+                this.removeOurItem(sku, Infinity);
+
+                if (ourAssetids.length === 0) {
+                    alteredMessage =
+                        "I don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false));
+                } else {
+                    alteredMessage =
+                        'I only have ' +
+                        pluralize(this.bot.schema.getName(SKU.fromString(sku), false), ourAssetids.length, true);
+
+                    // Add the max amount to the cart
+                    this.addOurItem(sku, amount);
+                }
+            }
+
+            const amountCanTrade = this.bot.inventoryManager.amountCanTrade(sku, false);
+
+            if (amount > amountCanTrade) {
+                this.removeOurItem(sku, Infinity);
+                if (amountCanTrade === 0) {
+                    alteredMessage = "I can't sell more " + this.bot.schema.getName(SKU.fromString(sku), false);
+                } else {
+                    amount = amountCanTrade;
+                    alteredMessage =
+                        'I can only sell ' +
+                        amountCanTrade +
+                        ' more ' +
+                        this.bot.schema.getName(SKU.fromString(sku), false);
+
+                    this.addOurItem(sku, amount);
+                }
+            }
+
+            if (alteredMessage) {
+                alteredMessages.push(alteredMessage);
+            }
+        }
+
+        // Load their inventory
+
+        const theirInventory = new Inventory(this.partner, this.bot.manager, this.bot.schema);
+
+        try {
+            await theirInventory.fetch();
+        } catch (err) {
+            return Promise.reject('Failed to load inventories (Steam might be down)');
+        }
+
+        // Add their items
+
+        for (const sku in this.their) {
+            if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
+                continue;
+            }
+
+            let alteredMessage: string;
+
+            let amount = this.getTheirCount(sku);
+            const theirAssetids = theirInventory.findBySKU(sku, true);
+
+            if (amount > theirAssetids.length) {
+                // Remove the item from the cart
+                this.removeTheirItem(sku, Infinity);
+
+                if (theirAssetids.length === 0) {
+                    alteredMessage =
+                        "you don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false));
+                } else {
+                    amount = theirAssetids.length;
+                    alteredMessage =
+                        'you only have ' +
+                        pluralize(this.bot.schema.getName(SKU.fromString(sku), false), theirAssetids.length, true);
+
+                    // Add the max amount to the cart
+                    this.addTheirItem(sku, amount);
+                }
+            }
+
+            const amountCanTrade = this.bot.inventoryManager.amountCanTrade(sku, true);
+
+            if (amount > amountCanTrade) {
+                this.removeTheirItem(sku, Infinity);
+                if (amountCanTrade === 0) {
+                    alteredMessage =
+                        "I can't buy more " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false));
+                } else {
+                    amount = amountCanTrade;
+                    alteredMessage =
+                        'I can only buy ' +
+                        amountCanTrade +
+                        ' more ' +
+                        pluralize(this.bot.schema.getName(SKU.fromString(sku), false), amountCanTrade);
+
+                    this.addTheirItem(sku, amount);
+                }
+            }
+
+            if (alteredMessage) {
+                alteredMessages.push(alteredMessage);
+            }
+        }
+
+        if (this.isEmpty()) {
+            return Promise.reject(alteredMessages.join(', '));
+        }
+
+        const itemsDict: {
+            our: UnknownDictionary<number>;
+            their: UnknownDictionary<number>;
+        } = {
+            our: Object.assign({}, this.our),
+            their: Object.assign({}, this.their)
+        };
+
+        // Done checking if buyer and seller has the items and if the bot wants to buy / sell more
+
+        // Add values to the offer
+
+        // Figure out who the buyer is and what they are offering
+        const { isBuyer, currencies } = this.getCurrencies();
+
+        // We now know who the buyer is, now get their inventory
+        const buyerInventory = isBuyer ? this.bot.inventoryManager.getInventory() : theirInventory;
+
+        if (this.bot.inventoryManager.amountCanAfford(this.canUseKeys(), currencies, buyerInventory) < 1) {
+            // Buyer can't afford the items
+            return Promise.reject((isBuyer ? 'I' : 'You') + " don't have enough pure for this trade");
+        }
+
+        const keyPrice = this.bot.pricelist.getKeyPrice();
+
+        const ourItemsValue = this.getOurCurrencies().toValue(keyPrice.metal);
+        const theirItemsValue = this.getTheirCurrencies().toValue(keyPrice.metal);
+
+        // Create exchange object with our and their items values
+        const exchange = {
+            our: { value: ourItemsValue, keys: 0, scrap: ourItemsValue },
+            their: { value: theirItemsValue, keys: 0, scrap: theirItemsValue }
+        };
+
+        // Figure out what pure to pick from the buyer, and if change is needed
+
+        const buyerCurrenciesWithAssetids = buyerInventory.getCurrencies();
+
+        const buyerCurrenciesCount = {
+            '5021;6': buyerCurrenciesWithAssetids['5021;6'].length,
+            '5002;6': buyerCurrenciesWithAssetids['5002;6'].length,
+            '5001;6': buyerCurrenciesWithAssetids['5001;6'].length,
+            '5000;6': buyerCurrenciesWithAssetids['5000;6'].length
+        };
+
+        const required = this.getRequired(buyerCurrenciesCount, currencies, this.canUseKeys());
+
+        // Add the value that the buyer pays to the exchange
+        exchange[isBuyer ? 'our' : 'their'].value += currencies.toValue(keyPrice.metal);
+        exchange[isBuyer ? 'our' : 'their'].keys += required.currencies['5021;6'];
+        exchange[isBuyer ? 'our' : 'their'].scrap +=
+            required.currencies['5002;6'] * 9 + required.currencies['5001;6'] * 3 + required.currencies['5000;6'];
+
+        // Add items to offer
+
+        // Add our items
+        for (const sku in this.our) {
+            const amount = this.our[sku];
+            const assetids = ourInventory.findBySKU(sku, true);
+
+            let missing = amount;
+
+            for (let i = 0; i < assetids.length; i++) {
+                const isAdded = offer.addMyItem({
+                    appid: 440,
+                    contextid: '2',
+                    assetid: assetids[i]
+                });
+
+                if (isAdded) {
+                    // The item was added to the offer
+                    missing--;
+                    if (missing === 0) {
+                        // We added all the items
+                        break;
+                    }
+                }
+            }
+
+            if (missing !== 0) {
+                log.warn('Failed to create offer because missing our items', {
+                    sku: sku,
+                    required: amount,
+                    missing: missing
+                });
+
+                return Promise.reject('Something went wrong while constructing the offer');
+            }
+        }
+
+        // Add their items
+        for (const sku in this.their) {
+            const amount = this.their[sku];
+            const assetids = theirInventory.findBySKU(sku, true);
+
+            let missing = amount;
+
+            for (let i = 0; i < assetids.length; i++) {
+                const isAdded = offer.addTheirItem({
+                    appid: 440,
+                    contextid: '2',
+                    assetid: assetids[i]
+                });
+
+                if (isAdded) {
+                    missing--;
+                    if (missing === 0) {
+                        break;
+                    }
+                }
+            }
+
+            if (missing !== 0) {
+                log.warn('Failed to create offer because missing their items', {
+                    sku: sku,
+                    required: amount,
+                    missing: missing
+                });
+
+                return Promise.reject('Something went wrong while constructing the offer');
+            }
+        }
+
+        const sellerInventory = isBuyer ? theirInventory : ourInventory;
+
+        if (required.change !== 0) {
+            let change = Math.abs(required.change);
+
+            exchange[isBuyer ? 'their' : 'our'].value += change;
+            exchange[isBuyer ? 'their' : 'our'].scrap += change;
+
+            const currencies = sellerInventory.getCurrencies();
+            // We won't use keys when giving change
+            delete currencies['5021;6'];
+
+            for (const sku in currencies) {
+                if (!Object.prototype.hasOwnProperty.call(currencies, sku)) {
                     continue;
                 }
 
-                let alteredMessage: string;
+                let value = 0;
 
-                let amount = this.getOurCount(sku);
-                const ourAssetids = ourInventory.findBySKU(sku, true);
-
-                if (amount > ourAssetids.length) {
-                    amount = ourAssetids.length;
-
-                    // Remove the item from the cart
-                    this.removeOurItem(sku, Infinity);
-
-                    if (ourAssetids.length === 0) {
-                        alteredMessage =
-                            "I don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false));
-                    } else {
-                        alteredMessage =
-                            'I only have ' +
-                            pluralize(this.bot.schema.getName(SKU.fromString(sku), false), ourAssetids.length, true);
-
-                        // Add the max amount to the cart
-                        this.addOurItem(sku, amount);
-                    }
+                if (sku === '5002;6') {
+                    value = 9;
+                } else if (sku === '5001;6') {
+                    value = 3;
+                } else if (sku === '5000;6') {
+                    value = 1;
                 }
 
-                const amountCanTrade = this.bot.inventoryManager.amountCanTrade(sku, false);
+                if (change / value >= 1) {
+                    const whose = isBuyer ? 'their' : 'our';
 
-                if (amount > amountCanTrade) {
-                    this.removeOurItem(sku, Infinity);
-                    if (amountCanTrade === 0) {
-                        alteredMessage = "I can't sell more " + this.bot.schema.getName(SKU.fromString(sku), false);
-                    } else {
-                        amount = amountCanTrade;
-                        alteredMessage =
-                            'I can only sell ' +
-                            amountCanTrade +
-                            ' more ' +
-                            this.bot.schema.getName(SKU.fromString(sku), false);
-
-                        this.addOurItem(sku, amount);
-                    }
-                }
-
-                if (alteredMessage) {
-                    alteredMessages.push(alteredMessage);
-                }
-            }
-
-            // Load their inventory
-
-            const theirInventory = new Inventory(this.partner, this.bot.manager, this.bot.schema);
-
-            theirInventory.fetch().asCallback(err => {
-                if (err) {
-                    return reject('Failed to load inventories (Steam might be down)');
-                }
-
-                // Add their items
-
-                for (const sku in this.their) {
-                    if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
-                        continue;
-                    }
-
-                    let alteredMessage: string;
-
-                    let amount = this.getTheirCount(sku);
-                    const theirAssetids = theirInventory.findBySKU(sku, true);
-
-                    if (amount > theirAssetids.length) {
-                        // Remove the item from the cart
-                        this.removeTheirItem(sku, Infinity);
-
-                        if (theirAssetids.length === 0) {
-                            alteredMessage =
-                                "you don't have any " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false));
-                        } else {
-                            amount = theirAssetids.length;
-                            alteredMessage =
-                                'you only have ' +
-                                pluralize(
-                                    this.bot.schema.getName(SKU.fromString(sku), false),
-                                    theirAssetids.length,
-                                    true
-                                );
-
-                            // Add the max amount to the cart
-                            this.addTheirItem(sku, amount);
-                        }
-                    }
-
-                    const amountCanTrade = this.bot.inventoryManager.amountCanTrade(sku, true);
-
-                    if (amount > amountCanTrade) {
-                        this.removeTheirItem(sku, Infinity);
-                        if (amountCanTrade === 0) {
-                            alteredMessage =
-                                "I can't buy more " + pluralize(this.bot.schema.getName(SKU.fromString(sku), false));
-                        } else {
-                            amount = amountCanTrade;
-                            alteredMessage =
-                                'I can only buy ' +
-                                amountCanTrade +
-                                ' more ' +
-                                pluralize(this.bot.schema.getName(SKU.fromString(sku), false), amountCanTrade);
-
-                            this.addTheirItem(sku, amount);
-                        }
-                    }
-
-                    if (alteredMessage) {
-                        alteredMessages.push(alteredMessage);
-                    }
-                }
-
-                if (this.isEmpty()) {
-                    return reject(alteredMessages.join(', '));
-                }
-
-                const itemsDict: {
-                    our: UnknownDictionary<number>;
-                    their: UnknownDictionary<number>;
-                } = {
-                    our: Object.assign({}, this.our),
-                    their: Object.assign({}, this.their)
-                };
-
-                // Done checking if buyer and seller has the items and if the bot wants to buy / sell more
-
-                // Add values to the offer
-
-                // Figure out who the buyer is and what they are offering
-                const { isBuyer, currencies } = this.getCurrencies();
-
-                // We now know who the buyer is, now get their inventory
-                const buyerInventory = isBuyer ? this.bot.inventoryManager.getInventory() : theirInventory;
-
-                if (this.bot.inventoryManager.amountCanAfford(this.canUseKeys(), currencies, buyerInventory) < 1) {
-                    // Buyer can't afford the items
-                    return reject((isBuyer ? 'I' : 'You') + " don't have enough pure for this trade");
-                }
-
-                const keyPrice = this.bot.pricelist.getKeyPrice();
-
-                const ourItemsValue = this.getOurCurrencies().toValue(keyPrice.metal);
-                const theirItemsValue = this.getTheirCurrencies().toValue(keyPrice.metal);
-
-                // Create exchange object with our and their items values
-                const exchange = {
-                    our: { value: ourItemsValue, keys: 0, scrap: ourItemsValue },
-                    their: { value: theirItemsValue, keys: 0, scrap: theirItemsValue }
-                };
-
-                // Figure out what pure to pick from the buyer, and if change is needed
-
-                const buyerCurrenciesWithAssetids = buyerInventory.getCurrencies();
-
-                const buyerCurrenciesCount = {
-                    '5021;6': buyerCurrenciesWithAssetids['5021;6'].length,
-                    '5002;6': buyerCurrenciesWithAssetids['5002;6'].length,
-                    '5001;6': buyerCurrenciesWithAssetids['5001;6'].length,
-                    '5000;6': buyerCurrenciesWithAssetids['5000;6'].length
-                };
-
-                const required = this.getRequired(buyerCurrenciesCount, currencies, this.canUseKeys());
-
-                // Add the value that the buyer pays to the exchange
-                exchange[isBuyer ? 'our' : 'their'].value += currencies.toValue(keyPrice.metal);
-                exchange[isBuyer ? 'our' : 'their'].keys += required.currencies['5021;6'];
-                exchange[isBuyer ? 'our' : 'their'].scrap +=
-                    required.currencies['5002;6'] * 9 +
-                    required.currencies['5001;6'] * 3 +
-                    required.currencies['5000;6'];
-
-                // Add items to offer
-
-                // Add our items
-                for (const sku in this.our) {
-                    const amount = this.our[sku];
-                    const assetids = ourInventory.findBySKU(sku, true);
-
-                    let missing = amount;
-
-                    for (let i = 0; i < assetids.length; i++) {
-                        const isAdded = offer.addMyItem({
-                            appid: 440,
-                            contextid: '2',
-                            assetid: assetids[i]
-                        });
-
-                        if (isAdded) {
-                            // The item was added to the offer
-                            missing--;
-                            if (missing === 0) {
-                                // We added all the items
-                                break;
-                            }
-                        }
-                    }
-
-                    if (missing !== 0) {
-                        log.warn('Failed to create offer because missing our items', {
-                            sku: sku,
-                            required: amount,
-                            missing: missing
-                        });
-
-                        return reject('Something went wrong while constructing the offer');
-                    }
-                }
-
-                // Add their items
-                for (const sku in this.their) {
-                    const amount = this.their[sku];
-                    const assetids = theirInventory.findBySKU(sku, true);
-
-                    let missing = amount;
-
-                    for (let i = 0; i < assetids.length; i++) {
-                        const isAdded = offer.addTheirItem({
-                            appid: 440,
-                            contextid: '2',
-                            assetid: assetids[i]
-                        });
-
-                        if (isAdded) {
-                            missing--;
-                            if (missing === 0) {
-                                break;
-                            }
-                        }
-                    }
-
-                    if (missing !== 0) {
-                        log.warn('Failed to create offer because missing their items', {
-                            sku: sku,
-                            required: amount,
-                            missing: missing
-                        });
-
-                        return reject('Something went wrong while constructing the offer');
-                    }
-                }
-
-                const sellerInventory = isBuyer ? theirInventory : ourInventory;
-
-                if (required.change !== 0) {
-                    let change = Math.abs(required.change);
-
-                    exchange[isBuyer ? 'their' : 'our'].value += change;
-                    exchange[isBuyer ? 'their' : 'our'].scrap += change;
-
-                    const currencies = sellerInventory.getCurrencies();
-                    // We won't use keys when giving change
-                    delete currencies['5021;6'];
-
-                    for (const sku in currencies) {
-                        if (!Object.prototype.hasOwnProperty.call(currencies, sku)) {
-                            continue;
-                        }
-
-                        let value = 0;
-
-                        if (sku === '5002;6') {
-                            value = 9;
-                        } else if (sku === '5001;6') {
-                            value = 3;
-                        } else if (sku === '5000;6') {
-                            value = 1;
-                        }
-
-                        if (change / value >= 1) {
-                            const whose = isBuyer ? 'their' : 'our';
-
-                            for (let i = 0; i < currencies[sku].length; i++) {
-                                const isAdded = offer[isBuyer ? 'addTheirItem' : 'addMyItem']({
-                                    assetid: currencies[sku][i],
-                                    appid: 440,
-                                    contextid: '2',
-                                    amount: 1
-                                });
-
-                                if (isAdded) {
-                                    itemsDict[whose][sku] = (itemsDict[whose][sku] || 0) + 1;
-                                    change -= value;
-                                    if (change < value) {
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (change !== 0) {
-                        return reject('I am missing ' + Currencies.toRefined(change) + ' ref as change');
-                    }
-                }
-
-                for (const sku in required.currencies) {
-                    if (!Object.prototype.hasOwnProperty.call(required.currencies, sku)) {
-                        continue;
-                    }
-
-                    if (required.currencies[sku] === 0) {
-                        continue;
-                    }
-
-                    itemsDict[isBuyer ? 'our' : 'their'][sku] = required.currencies[sku];
-
-                    for (let i = 0; i < buyerCurrenciesWithAssetids[sku].length; i++) {
-                        const isAdded = offer[isBuyer ? 'addMyItem' : 'addTheirItem']({
-                            assetid: buyerCurrenciesWithAssetids[sku][i],
+                    for (let i = 0; i < currencies[sku].length; i++) {
+                        const isAdded = offer[isBuyer ? 'addTheirItem' : 'addMyItem']({
+                            assetid: currencies[sku][i],
                             appid: 440,
                             contextid: '2',
                             amount: 1
                         });
 
                         if (isAdded) {
-                            required.currencies[sku]--;
-                            if (required.currencies[sku] === 0) {
+                            itemsDict[whose][sku] = (itemsDict[whose][sku] || 0) + 1;
+                            change -= value;
+                            if (change < value) {
                                 break;
                             }
                         }
                     }
-
-                    if (required.currencies[sku] !== 0) {
-                        log.warn('Failed to create offer because missing buyer pure', {
-                            requiredCurrencies: required.currencies,
-                            sku: sku
-                        });
-
-                        return reject('Something went wrong while constructing the offer');
-                    }
                 }
+            }
 
-                const itemPrices: UnknownDictionary<{ buy: Currency; sell: Currency }> = {};
+            if (change !== 0) {
+                return Promise.reject('I am missing ' + Currencies.toRefined(change) + ' ref as change');
+            }
+        }
 
-                for (const sku in this.our) {
-                    if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
-                        continue;
-                    }
+        for (const sku in required.currencies) {
+            if (!Object.prototype.hasOwnProperty.call(required.currencies, sku)) {
+                continue;
+            }
 
-                    const entry = this.bot.pricelist.getPrice(sku, true);
+            if (required.currencies[sku] === 0) {
+                continue;
+            }
 
-                    itemPrices[sku] = {
-                        buy: entry.buy.toJSON(),
-                        sell: entry.sell.toJSON()
-                    };
-                }
+            itemsDict[isBuyer ? 'our' : 'their'][sku] = required.currencies[sku];
 
-                for (const sku in this.their) {
-                    if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
-                        continue;
-                    }
-
-                    if (itemPrices[sku] !== undefined) {
-                        continue;
-                    }
-
-                    const entry = this.bot.pricelist.getPrice(sku, true);
-
-                    itemPrices[sku] = {
-                        buy: entry.buy.toJSON(),
-                        sell: entry.sell.toJSON()
-                    };
-                }
-
-                // Doing this so that the prices will always be displayed as only metal
-                exchange.our.scrap += exchange.our.keys * keyPrice.toValue();
-                exchange.our.keys = 0;
-                exchange.their.scrap += exchange.their.keys * keyPrice.toValue();
-                exchange.their.keys = 0;
-
-                offer.data('dict', itemsDict);
-                offer.data('value', {
-                    our: {
-                        total: exchange.our.value,
-                        keys: exchange.our.keys,
-                        metal: Currencies.toRefined(exchange.our.scrap)
-                    },
-                    their: {
-                        total: exchange.their.value,
-                        keys: exchange.their.keys,
-                        metal: Currencies.toRefined(exchange.their.scrap)
-                    },
-                    rate: keyPrice.metal
+            for (let i = 0; i < buyerCurrenciesWithAssetids[sku].length; i++) {
+                const isAdded = offer[isBuyer ? 'addMyItem' : 'addTheirItem']({
+                    assetid: buyerCurrenciesWithAssetids[sku][i],
+                    appid: 440,
+                    contextid: '2',
+                    amount: 1
                 });
-                offer.data('prices', itemPrices);
 
-                this.offer = offer;
+                if (isAdded) {
+                    required.currencies[sku]--;
+                    if (required.currencies[sku] === 0) {
+                        break;
+                    }
+                }
+            }
 
-                return resolve(alteredMessages.length === 0 ? undefined : alteredMessages.join(', '));
-            });
+            if (required.currencies[sku] !== 0) {
+                log.warn('Failed to create offer because missing buyer pure', {
+                    requiredCurrencies: required.currencies,
+                    sku: sku
+                });
+
+                return Promise.reject('Something went wrong while constructing the offer');
+            }
+        }
+
+        const itemPrices: UnknownDictionary<{ buy: Currency; sell: Currency }> = {};
+
+        for (const sku in this.our) {
+            if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
+                continue;
+            }
+
+            const entry = this.bot.pricelist.getPrice(sku, true);
+
+            itemPrices[sku] = {
+                buy: entry.buy.toJSON(),
+                sell: entry.sell.toJSON()
+            };
+        }
+
+        for (const sku in this.their) {
+            if (!Object.prototype.hasOwnProperty.call(this.their, sku)) {
+                continue;
+            }
+
+            if (itemPrices[sku] !== undefined) {
+                continue;
+            }
+
+            const entry = this.bot.pricelist.getPrice(sku, true);
+
+            itemPrices[sku] = {
+                buy: entry.buy.toJSON(),
+                sell: entry.sell.toJSON()
+            };
+        }
+
+        // Doing this so that the prices will always be displayed as only metal
+        exchange.our.scrap += exchange.our.keys * keyPrice.toValue();
+        exchange.our.keys = 0;
+        exchange.their.scrap += exchange.their.keys * keyPrice.toValue();
+        exchange.their.keys = 0;
+
+        offer.data('dict', itemsDict);
+        offer.data('value', {
+            our: {
+                total: exchange.our.value,
+                keys: exchange.our.keys,
+                metal: Currencies.toRefined(exchange.our.scrap)
+            },
+            their: {
+                total: exchange.their.value,
+                keys: exchange.their.keys,
+                metal: Currencies.toRefined(exchange.their.scrap)
+            },
+            rate: keyPrice.metal
         });
+        offer.data('prices', itemPrices);
+
+        this.offer = offer;
+
+        return alteredMessages.length === 0 ? undefined : alteredMessages.join(', ');
     }
 
     // We Override the toString function so that the currencies are added
