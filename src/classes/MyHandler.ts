@@ -452,7 +452,7 @@ export = class MyHandler extends Handler {
 
                         if (
                             item.effect !== null &&
-                            match.buy.toValue() > this.minimumKeysDupeCheck * keyPrice.toValue()
+                            match.buy.toValue(keyPrice.metal) > this.minimumKeysDupeCheck * keyPrice.toValue()
                         ) {
                             assetidsToCheck = assetidsToCheck.concat(assetids);
                         }
