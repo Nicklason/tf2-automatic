@@ -11,11 +11,14 @@ import TradeOfferManager, { TradeOffer, PollData } from 'steam-tradeoffer-manage
 import pluralize from 'pluralize';
 import SteamID from 'steamid';
 import Currencies from 'tf2-currencies';
+import SKU from 'tf2-sku';
+import async from 'async';
 
 import log from '../lib/logger';
 import * as files from '../lib/files';
 import paths from '../resources/paths';
 import { parseJSON, exponentialBackoff } from '../lib/helpers';
+import TF2Inventory from './TF2Inventory';
 
 export = class MyHandler extends Handler {
     private readonly commands: Commands;
@@ -31,6 +34,10 @@ export = class MyHandler extends Handler {
     private minimumReclaimed = 9;
 
     private combineThreshold = 9;
+
+    private dupeCheckEnabled = false;
+
+    private minimumKeysDupeCheck = 0;
 
     recentlySentMessage: UnknownDictionary<number> = {};
 
@@ -54,6 +61,15 @@ export = class MyHandler extends Handler {
 
         if (!isNaN(combineThreshold)) {
             this.combineThreshold = combineThreshold;
+        }
+
+        if (process.env.ENABLE_DUPE_CHECK === 'true') {
+            this.dupeCheckEnabled = true;
+        }
+
+        const minimumKeysDupeCheck = parseInt(process.env.MINIMUM_KEYS_DUPE_CHECK);
+        if (!isNaN(minimumKeysDupeCheck)) {
+            this.minimumKeysDupeCheck = minimumKeysDupeCheck;
         }
 
         const groups = parseJSON(process.env.GROUPS);
@@ -358,7 +374,18 @@ export = class MyHandler extends Handler {
                   our: number;
                   their: number;
               }
+            | {
+                  reason: 'DUPE_CHECK_FAILED';
+                  assetid?: string;
+                  error?: string;
+              }
+            | {
+                  reason: 'DUPED_ITEMS';
+                  assetid: string;
+              }
         )[] = [];
+
+        let assetidsToCheck = [];
 
         for (let i = 0; i < states.length; i++) {
             const buying = states[i];
@@ -419,6 +446,15 @@ export = class MyHandler extends Handler {
                                 diff: diff,
                                 amountCanTrade: amountCanTrade
                             });
+                        }
+
+                        const item = SKU.fromString(sku);
+
+                        if (
+                            item.effect !== null &&
+                            match.buy.toValue() > this.minimumKeysDupeCheck * keyPrice.toValue()
+                        ) {
+                            assetidsToCheck = assetidsToCheck.concat(assetids);
                         }
                     } else if (sku === '5021;6' && exchange.contains.items) {
                         // Offer contains keys and we are not trading keys, add key value
@@ -514,12 +550,13 @@ export = class MyHandler extends Handler {
             });
         }
 
-        const reasons = wrongAboutOffer.map(wrong => wrong.reason);
-        const uniqueReasons = reasons.filter(reason => reasons.includes(reason));
-
         if (!manualReviewEnabled) {
             if (hasOverstock) {
                 offer.log('info', 'is taking / offering too many, declining...');
+
+                const reasons = wrongAboutOffer.map(wrong => wrong.reason);
+                const uniqueReasons = reasons.filter(reason => reasons.includes(reason));
+
                 return {
                     action: 'decline',
                     reason: 'OVERSTOCKED',
@@ -532,6 +569,10 @@ export = class MyHandler extends Handler {
 
             if (hasInvalidItems) {
                 offer.log('info', 'contains items we are not trading, declining...');
+
+                const reasons = wrongAboutOffer.map(wrong => wrong.reason);
+                const uniqueReasons = reasons.filter(reason => reasons.includes(reason));
+
                 return {
                     action: 'decline',
                     reason: 'INVALID_ITEMS',
@@ -545,6 +586,10 @@ export = class MyHandler extends Handler {
             if (hasInvalidValue) {
                 // We are offering more than them, decline the offer
                 offer.log('info', 'is not offering enough, declining...');
+
+                const reasons = wrongAboutOffer.map(wrong => wrong.reason);
+                const uniqueReasons = reasons.filter(reason => reasons.includes(reason));
+
                 return {
                     action: 'decline',
                     reason: 'INVALID_VALUE',
@@ -591,9 +636,68 @@ export = class MyHandler extends Handler {
             return;
         }
 
-        // TODO: Check for duped unusuals
+        if (this.dupeCheckEnabled && assetidsToCheck.length > 0) {
+            offer.log('info', 'checking ' + pluralize('item', assetidsToCheck.length, true) + ' for dupes...');
+            const inventory = new TF2Inventory(offer.partner, this.bot.manager);
+
+            const requests = assetidsToCheck.map(assetid => {
+                return (callback: (err: Error | null, result: boolean | null) => void): void => {
+                    log.debug('Dupe checking ' + assetid + '...');
+                    Promise.resolve(inventory.isDuped(assetid)).asCallback(function(err, result) {
+                        log.debug('Dupe check for ' + assetid + ' done');
+                        callback(err, result);
+                    });
+                };
+            });
+
+            try {
+                const result: (boolean | null)[] = await Promise.fromCallback(function(callback) {
+                    async.series(requests, callback);
+                });
+
+                log.debug('Got result from dupe checks');
+
+                // Decline by default
+                const declineDupes = process.env.DECLINE_DUPES !== 'false';
+
+                for (let i = 0; i < result.length; i++) {
+                    if (result[i] === true) {
+                        // Found duped item
+                        if (declineDupes) {
+                            // Offer contains duped items, decline it
+                            return {
+                                action: 'decline',
+                                reason: 'DUPED_ITEMS',
+                                meta: { assetids: assetidsToCheck, result: result }
+                            };
+                        } else {
+                            // Offer contains duped items but we don't decline duped items, instead add it to the wrong about offer list and continue
+                            wrongAboutOffer.push({
+                                reason: 'DUPED_ITEMS',
+                                assetid: assetidsToCheck[i]
+                            });
+                        }
+                    } else if (result[i] === null) {
+                        // Could not determine if the item was duped, make the offer be pending for review
+                        wrongAboutOffer.push({
+                            reason: 'DUPE_CHECK_FAILED',
+                            assetid: assetidsToCheck[i]
+                        });
+                    }
+                }
+            } catch (err) {
+                log.warn('Failed dupe check: ' + err.message);
+                wrongAboutOffer.push({
+                    reason: 'DUPE_CHECK_FAILED',
+                    error: err.message
+                });
+            }
+        }
 
         if (wrongAboutOffer.length !== 0) {
+            const reasons = wrongAboutOffer.map(wrong => wrong.reason);
+            const uniqueReasons = reasons.filter(reason => reasons.includes(reason));
+
             offer.log('info', 'offer needs review (' + uniqueReasons.join(', ') + '), skipping...');
             return {
                 action: 'skip',
