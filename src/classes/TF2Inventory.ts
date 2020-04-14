@@ -158,7 +158,7 @@ export = class TF2Inventory {
 
                     // TODO: Make a list that contains the item history
 
-                    const isDuped = $('dupe-modal-btn').length > 0;
+                    const isDuped = $('#dupe-modal-btn').length > 0;
 
                     return resolve({
                         recorded: true,

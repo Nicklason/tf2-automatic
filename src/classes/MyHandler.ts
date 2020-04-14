@@ -663,7 +663,7 @@ export = class MyHandler extends Handler {
                     async.series(requests, callback);
                 });
 
-                log.debug('Got result from dupe checks');
+                log.debug('Got result from dupe checks', { result: result });
 
                 // Decline by default
                 const declineDupes = process.env.DECLINE_DUPES !== 'false';
