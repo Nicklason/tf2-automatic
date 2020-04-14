@@ -25,6 +25,9 @@
                 "BPTF_DETAILS_SELL": "I am selling my %name% for %price%, I am selling %amount_trade%.",
                 "OFFER_MESSAGE": "",
 
+                "ENABLE_DUPE_CHECK": true,
+                "DECLINE_DUPES": false,
+                "MINIMUM_KEYS_DUPE_CHECK": 10,
                 "ENABLE_MANUAL_REVIEW": true,
                 "AUTOBUMP": true,
 
