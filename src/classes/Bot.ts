@@ -427,10 +427,11 @@ export = class Bot {
                                     this.listingManager.init(callback);
                                 },
                                 (callback): void => {
-                                    log.debug('Updating profile settings...');
                                     if (process.env.SKIP_UPDATE_PROFILE_SETTINGS !== 'true') {
                                         return callback(null);
                                     }
+
+                                    log.debug('Updating profile settings...');
 
                                     this.community.profileSettings(
                                         {
