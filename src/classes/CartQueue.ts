@@ -90,7 +90,7 @@ class CartQueue {
 
         log.debug('Constructing offer');
 
-        cart.constructOffer()
+        Promise.resolve(cart.constructOffer())
             .then(alteredMessage => {
                 log.debug('Constructed offer');
                 if (alteredMessage) {
