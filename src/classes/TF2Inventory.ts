@@ -88,7 +88,7 @@ export = class TF2Inventory {
         const historyFromOriginal = await TF2Inventory.getItemHistory(item.original_id.toString());
 
         if (historyFromOriginal.recorded === true) {
-            return history.isDuped;
+            return historyFromOriginal.isDuped;
         }
 
         // Item has never been seen on backpack.tf before
