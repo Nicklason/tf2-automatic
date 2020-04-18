@@ -59,8 +59,8 @@ const ADMIN_COMMANDS: string[] = [
     '!stats - Get statistics for accepted trades',
     '!trades - Get a list of offers pending for manual review',
     '!trade - Get info about a trade',
-    '!accepttrade - Manually accept an active offer',
-    '!declinetrade - Manually decline an active offer'
+    '!accept - Manually accept an active offer',
+    '!decline - Manually decline an active offer'
 ];
 
 export = class Commands {
@@ -141,9 +141,9 @@ export = class Commands {
             this.tradesCommand(steamID);
         } else if (command === 'trade' && isAdmin) {
             this.tradeCommand(steamID, message);
-        } else if (command === 'accepttrade' && isAdmin) {
+        } else if (command === 'accept' && isAdmin) {
             this.accepttradeCommand(steamID, message);
-        } else if (command === 'declinetrade' && isAdmin) {
+        } else if (command === 'decline' && isAdmin) {
             this.declinetradeCommand(steamID, message);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
