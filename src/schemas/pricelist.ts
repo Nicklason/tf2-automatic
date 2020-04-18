@@ -67,19 +67,6 @@ export = {
             ]
         }
     },
-    additionalProperties: false,
-    required: [
-        'sku',
-        'enabled',
-        'intent',
-        'autoprice',
-        'undercutting',
-        'max',
-        'min',
-        'buy',
-        'sell',
-        'lastBuy',
-        'lastSell',
-        'time'
-    ]
+    additionalProperties: true,
+    required: ['sku', 'enabled', 'intent', 'autoprice', 'max', 'min', 'buy', 'sell', 'time']
 };

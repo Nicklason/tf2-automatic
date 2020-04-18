@@ -44,10 +44,24 @@ export = {
             $ref: 'tf2-currencies'
         },
         lastBuy: {
-            $ref: 'tf2-currencies'
+            anyOf: [
+                {
+                    $ref: 'tf2-currencies'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         },
         lastSell: {
-            $ref: 'tf2-currencies'
+            anyOf: [
+                {
+                    $ref: 'tf2-currencies'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     additionalProperties: false,

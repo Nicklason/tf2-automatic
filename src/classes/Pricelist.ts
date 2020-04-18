@@ -10,7 +10,6 @@ import SchemaManager from 'tf2-schema';
 import log from '../lib/logger';
 import { getPricelist, getPrice } from '../lib/ptf-api';
 import validator from '../lib/validator';
-import { Listing } from 'bptf-listings';
 
 const maxAge = parseInt(process.env.MAX_PRICE_AGE) || 8 * 60 * 60;
 
@@ -103,13 +102,13 @@ export class Entry {
             this.time = null;
         }
 
-        if (entry.lastBuy !== null) {
+        if (entry.lastBuy) {
             this.lastBuy = new Currencies(entry.lastBuy);
         } else {
             this.lastBuy = null;
         }
 
-        if (entry.lastSell !== null) {
+        if (entry.lastSell) {
             this.lastSell = new Currencies(entry.lastSell);
         } else {
             this.lastSell = null;
@@ -371,6 +370,8 @@ export default class Pricelist extends EventEmitter {
                     undercutting: prices[0].undercutting,
                     buy: prices[0].buy,
                     sell: prices[0].sell,
+                    lastBuy: prices[0].lastBuy,
+                    lastSell: prices[0].lastSell,
                     time: prices[0].time
                 },
                 'pricelist'
