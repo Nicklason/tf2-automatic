@@ -10,20 +10,46 @@ import SchemaManager from 'tf2-schema';
 import log from '../lib/logger';
 import { getPricelist, getPrice } from '../lib/ptf-api';
 import validator from '../lib/validator';
+import { Listing } from 'bptf-listings';
 
 const maxAge = parseInt(process.env.MAX_PRICE_AGE) || 8 * 60 * 60;
 
-export interface EntryData {
+export type Snapshot = {
+    id: string;
+    sku: string;
+    name: string;
+    source: 'bptf' | 'scm';
+    currency: string | null;
+    listings: Listing[];
+};
+
+export type Listing = {
+    id: string;
+    steamid: string;
+    automatic: boolean;
+    attributes: UnknownDictionary<any>;
+    intent: 0 | 1;
+    currencies: {
+        keys: number;
+        metal: number;
+    };
+    time: number;
+};
+
+export type EntryData = {
     sku: string;
     enabled: boolean;
     autoprice: boolean;
+    undercutting?: boolean;
     max: number;
     min: number;
     intent: 0 | 1 | 2;
     buy?: Currency | null;
     sell?: Currency | null;
+    lastBuy?: Currency | null;
+    lastSell?: Currency | null;
     time?: number | null;
-}
+};
 
 export class Entry {
     sku: string;
@@ -33,6 +59,8 @@ export class Entry {
     enabled: boolean;
 
     autoprice: boolean;
+
+    undercutting: boolean;
 
     max: number;
 
@@ -44,6 +72,10 @@ export class Entry {
 
     sell: Currencies | null;
 
+    lastBuy: Currencies | null;
+
+    lastSell: Currencies | null;
+
     time: number | null;
 
     constructor(entry: EntryData, schema: SchemaManager.Schema) {
@@ -51,6 +83,7 @@ export class Entry {
         this.name = schema.getName(SKU.fromString(entry.sku), false);
         this.enabled = entry.enabled;
         this.autoprice = entry.autoprice;
+        this.undercutting = entry.undercutting !== undefined ? entry.undercutting : false;
         this.max = entry.max;
         this.min = entry.min;
         this.intent = entry.intent;
@@ -69,6 +102,18 @@ export class Entry {
             this.sell = null;
             this.time = null;
         }
+
+        if (entry.lastBuy !== null) {
+            this.lastBuy = new Currencies(entry.lastBuy);
+        } else {
+            this.lastBuy = null;
+        }
+
+        if (entry.lastSell !== null) {
+            this.lastSell = new Currencies(entry.lastSell);
+        } else {
+            this.lastSell = null;
+        }
     }
 
     hasPrice(): boolean {
@@ -81,11 +126,14 @@ export class Entry {
             sku: this.sku,
             enabled: this.enabled,
             autoprice: this.autoprice,
+            undercutting: this.undercutting,
             max: this.max,
             min: this.min,
             intent: this.intent,
             buy: this.buy === null ? null : this.buy.toJSON(),
             sell: this.sell === null ? null : this.sell.toJSON(),
+            lastBuy: this.lastBuy === null ? null : this.lastBuy.toJSON(),
+            lastSell: this.lastSell === null ? null : this.lastSell.toJSON(),
             time: this.time
         };
     }
@@ -107,6 +155,8 @@ export default class Pricelist extends EventEmitter {
 
         this.socket.removeListener('price', this.handlePriceChange.bind(this));
         this.socket.on('price', this.handlePriceChange.bind(this));
+        this.socket.removeListener('snapshot', this.handleSnapshot.bind(this));
+        this.socket.on('snapshot', this.handleSnapshot.bind(this));
     }
 
     getKeyPrices(): { buy: Currencies; sell: Currencies } {
@@ -318,6 +368,7 @@ export default class Pricelist extends EventEmitter {
                     max: prices[0].max,
                     min: prices[0].min,
                     autoprice: prices[0].autoprice,
+                    undercutting: prices[0].undercutting,
                     buy: prices[0].buy,
                     sell: prices[0].sell,
                     time: prices[0].time
@@ -412,6 +463,21 @@ export default class Pricelist extends EventEmitter {
                 this.emit('pricelist', this.prices);
             }
         });
+    }
+
+    private handleSnapshot(data: Snapshot): void {
+        if (data.source !== 'bptf') {
+            return;
+        }
+
+        const match = this.getPrice(data.sku, false);
+
+        if (match === null || !match.autoprice || !match.undercutting) {
+            // If we are not trading the item, or if the item is not autopriced, or it is not undercutting, then skip it
+            return;
+        }
+
+        // TODO: Add undercutting logic
     }
 
     private handlePriceChange(data: any): void {

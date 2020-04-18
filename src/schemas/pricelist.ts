@@ -24,6 +24,10 @@ export = {
             // if the item is autopriced or not
             type: 'boolean'
         },
+        undercutting: {
+            // if they want to enable undercutting or not
+            type: 'boolean'
+        },
         max: {
             // maximum stock
             type: 'integer',
@@ -43,6 +47,14 @@ export = {
             // sell price
             $ref: 'tf2-currencies'
         },
+        lastBuy: {
+            // last buy price
+            $ref: 'tf2-currencies'
+        },
+        lastSell: {
+            // last sell price
+            $ref: 'tf2-currencies'
+        },
         time: {
             // time when the price changed
             anyOf: [
@@ -56,5 +68,18 @@ export = {
         }
     },
     additionalProperties: false,
-    required: ['sku', 'enabled', 'intent', 'autoprice', 'max', 'min', 'buy', 'sell', 'time']
+    required: [
+        'sku',
+        'enabled',
+        'intent',
+        'autoprice',
+        'undercutting',
+        'max',
+        'min',
+        'buy',
+        'sell',
+        'lastBuy',
+        'lastSell',
+        'time'
+    ]
 };
