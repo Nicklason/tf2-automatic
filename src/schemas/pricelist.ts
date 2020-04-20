@@ -49,11 +49,25 @@ export = {
         },
         lastBuy: {
             // last buy price
-            $ref: 'tf2-currencies'
+            anyOf: [
+                {
+                    $ref: 'tf2-currencies'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         },
         lastSell: {
             // last sell price
-            $ref: 'tf2-currencies'
+            anyOf: [
+                {
+                    $ref: 'tf2-currencies'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         },
         time: {
             // time when the price changed

@@ -954,6 +954,9 @@ export = class Commands {
         if (params.autoprice === undefined) {
             params.autoprice = true;
         }
+        if (params.undercutting === undefined) {
+            params.undercutting = false;
+        }
 
         if (params.sku === undefined) {
             const item = this.getItemFromParams(steamID, params);
@@ -1028,8 +1031,11 @@ export = class Commands {
                             max: pricelist[i].max,
                             min: pricelist[i].min,
                             autoprice: pricelist[i].autoprice,
+                            undercutting: pricelist[i].undercutting,
                             buy: pricelist[i].buy.toJSON(),
                             sell: pricelist[i].sell.toJSON(),
+                            lastBuy: pricelist[i].lastBuy === null ? null : pricelist[i].lastBuy.toJSON(),
+                            lastSell: pricelist[i].lastSell === null ? null : pricelist[i].lastSell.toJSON(),
                             time: pricelist[i].time
                         },
                         'pricelist'
