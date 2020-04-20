@@ -384,7 +384,8 @@ export default class Pricelist extends EventEmitter {
                 }
 
                 const item = SKU.fromString(currPrice.sku);
-                const name = this.schema.getName(item, false);
+                // PricesTF includes "The" in t he name, we need to use proper name
+                const name = this.schema.getName(item, true);
 
                 // Go through pricestf prices
                 for (let j = 0; j < groupedPrices[item.quality][item.killstreak].length; j++) {
