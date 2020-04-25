@@ -36,7 +36,7 @@ class UserCart extends Cart {
 
         // TODO: Check for dupes
 
-        if ((this.bot.handler as MyHandler).hasDupeCheckEnabled) {
+        if ((this.bot.handler as MyHandler).hasDupeCheckEnabled()) {
             const assetidsToCheck = this.offer.data('_dupeCheck');
             this.offer.data('_dupeCheck', undefined);
 
