@@ -1759,7 +1759,7 @@ export = class Commands {
 
             for (let i = 0; i < this.bot.schema.raw.schema.items.length; i++) {
                 const schemaItem = this.bot.schema.raw.schema.items[i];
-                if (schemaItem.item_name === params.name) {
+                if (schemaItem.item_name.toLowerCase() === params.name.toLowerCase()) {
                     match.push(schemaItem);
                 }
             }
