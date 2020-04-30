@@ -90,7 +90,11 @@ export = class TF2GC {
         const job = this.jobs[0];
 
         if (!this.canProcessJob(job)) {
-            log.debug("Can't handle job", { job });
+            if (process.env.ENABLE_CRAFTING === 'false') {
+                log.debug('Crafting or smelting disabled');
+            } else {
+                log.debug("Can't handle job", { job });
+            }
         }
 
         this.startedProcessing = true;
@@ -121,6 +125,9 @@ export = class TF2GC {
     }
 
     private handleCraftJob(job: Job): void {
+        if (process.env.ENABLE_CRAFTING === 'false') {
+            return this.finishedProcessingJob(new Error('Crafting or smelting disabled'));
+        }
         if (!this.canProcessJob(job)) {
             return this.finishedProcessingJob(new Error("Can't process job"));
         }
