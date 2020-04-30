@@ -31,6 +31,7 @@
                 "ENABLE_MANUAL_REVIEW": true,
                 "AUTOBUMP": true,
 
+                "ENABLE_CRAFTING": true,
                 "MINIMUM_SCRAP": 9,
                 "MINIMUM_RECLAIMED": 9,
                 "METAL_THRESHOLD": 9,
