@@ -582,8 +582,7 @@ export = class Commands {
             return;
         }
 
-        message = removeLinkProtocol(message);
-        const paramStr = CommandParser.removeCommand(message);
+        const paramStr = CommandParser.removeCommand(removeLinkProtocol(message));
 
         const params = CommandParser.parseParams(paramStr);
 
@@ -624,8 +623,7 @@ export = class Commands {
             return;
         }
 
-        message = removeLinkProtocol(message);
-        const paramStr = CommandParser.removeCommand(message);
+        const paramStr = CommandParser.removeCommand(removeLinkProtocol(message));
 
         const params = CommandParser.parseParams(paramStr);
 
@@ -857,8 +855,7 @@ export = class Commands {
     }
 
     private getCommand(steamID: SteamID, message: string): void {
-        message = removeLinkProtocol(message);
-        const params = CommandParser.parseParams(CommandParser.removeCommand(message));
+        const params = CommandParser.parseParams(CommandParser.removeCommand(removeLinkProtocol(message)));
 
         if (params.item !== undefined) {
             // Remove by full name
@@ -917,8 +914,7 @@ export = class Commands {
     }
 
     private addCommand(steamID: SteamID, message: string): void {
-        message = removeLinkProtocol(message);
-        const params = CommandParser.parseParams(CommandParser.removeCommand(message)) as any;
+        const params = CommandParser.parseParams(CommandParser.removeCommand(removeLinkProtocol(message))) as any;
 
         if (params.enabled === undefined) {
             params.enabled = true;
@@ -980,8 +976,7 @@ export = class Commands {
     }
 
     private updateCommand(steamID: SteamID, message: string): void {
-        message = removeLinkProtocol(message);
-        const params = CommandParser.parseParams(CommandParser.removeCommand(message));
+        const params = CommandParser.parseParams(CommandParser.removeCommand(removeLinkProtocol(message)));
 
         if (typeof params.intent === 'string') {
             const intent = ['buy', 'sell', 'bank'].indexOf(params.intent.toLowerCase());
@@ -1169,8 +1164,7 @@ export = class Commands {
     }
 
     private pricecheckCommand(steamID: SteamID, message: string): void {
-        message = removeLinkProtocol(message);
-        const params = CommandParser.parseParams(CommandParser.removeCommand(message));
+        const params = CommandParser.parseParams(CommandParser.removeCommand(removeLinkProtocol(message)));
 
         if (params.sku === undefined) {
             const item = this.getItemFromParams(steamID, params);
@@ -1614,8 +1608,7 @@ export = class Commands {
     }
 
     private removeCommand(steamID: SteamID, message: string): void {
-        message = removeLinkProtocol(message);
-        const params = CommandParser.parseParams(CommandParser.removeCommand(message));
+        const params = CommandParser.parseParams(CommandParser.removeCommand(removeLinkProtocol(message)));
 
         if (params.all === true) {
             // Remove entire pricelist
