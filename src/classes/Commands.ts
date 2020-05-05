@@ -1508,8 +1508,8 @@ export = class Commands {
     }
 
     private accepttradeCommand(steamID: SteamID, message: string): void {
-        const parts = message.split(' ');
-        const offerId = parts[1];
+        const offerIdAndMessage = CommandParser.removeCommand(message);
+        const offerId = new RegExp(/\d+/).exec(offerIdAndMessage).toString();
 
         if (!offerId) {
             this.bot.sendMessage(steamID, 'Missing offer id. Example: "!accepttrade 3957959294"');
@@ -1548,7 +1548,7 @@ export = class Commands {
             this.bot.sendMessage(steamID, 'Accepting offer...');
 
             const partnerId = new SteamID(this.bot.manager.pollData.offerData[offerId].partner);
-            const reply = message.substr(message.toLowerCase().indexOf(offerId) + 11);
+            const reply = offerIdAndMessage.substr(offerId.length);
             const adminDetails = this.bot.friends.getFriend(steamID);
 
             this.bot.trades.applyActionToOffer('accept', 'MANUAL', {}, offer).asCallback(err => {
@@ -1560,7 +1560,7 @@ export = class Commands {
                     return;
                 }
                 // Send message to recipient if includes some messages
-                if (!err && reply) {
+                if (reply) {
                     this.bot.sendMessage(
                         partnerId,
                         'Message from ' + (adminDetails ? adminDetails.player_name : 'admin') + ': ' + reply
@@ -1571,8 +1571,8 @@ export = class Commands {
     }
 
     private declinetradeCommand(steamID: SteamID, message: string): void {
-        const parts = message.split(' ');
-        const offerId = parts[1];
+        const offerIdAndMessage = CommandParser.removeCommand(message);
+        const offerId = new RegExp(/\d+/).exec(offerIdAndMessage).toString();
 
         if (!offerId) {
             this.bot.sendMessage(steamID, 'Missing offer id. Example: "!declinetrade 3957959294"');
@@ -1611,7 +1611,7 @@ export = class Commands {
             this.bot.sendMessage(steamID, 'Declining offer...');
 
             const partnerId = new SteamID(this.bot.manager.pollData.offerData[offerId].partner);
-            const reply = message.substr(message.toLowerCase().indexOf(offerId) + 11);
+            const reply = offerIdAndMessage.substr(offerId.length);
             const adminDetails = this.bot.friends.getFriend(steamID);
 
             this.bot.trades.applyActionToOffer('decline', 'MANUAL', {}, offer).asCallback(err => {
@@ -1623,7 +1623,7 @@ export = class Commands {
                     return;
                 }
                 // Send message to recipient if includes some messages
-                if (!err && reply) {
+                if (reply) {
                     this.bot.sendMessage(
                         partnerId,
                         'Message from ' + (adminDetails ? adminDetails.player_name : 'admin') + ': ' + reply
