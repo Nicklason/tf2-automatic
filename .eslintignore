@@ -1,3 +1,5 @@
 local
 dist
 *.json
+# Ignore plugins, might have different configs
+plugins

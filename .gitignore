@@ -77,3 +77,6 @@ logs/
 
 # ignore compiled code
 dist/
+
+# ignore plugins folder
+plugins/
