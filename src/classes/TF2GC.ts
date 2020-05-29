@@ -62,13 +62,8 @@ export = class TF2GC {
     }
 
     private newJob(job: Job): void {
-        if (process.env.DISABLE_CRAFTING === 'true' && (job.type === 'smelt' || job.type === 'combine')) {
-            log.debug('Crafting or smelting disabled');
-            return this.finishedProcessingJob();
-        } else {
-            this.jobs.push(job);
-            this.handleJobQueue();
-        }
+        this.jobs.push(job);
+        this.handleJobQueue();
     }
 
     private handleJobQueue(): void {

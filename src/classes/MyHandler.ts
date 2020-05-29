@@ -835,6 +835,9 @@ export = class MyHandler extends Handler {
     }
 
     private keepMetalSupply(): void {
+        if (process.env.DISABLE_CRAFTING === 'true') {
+            return;
+        }
         const currencies = this.bot.inventoryManager.getInventory().getCurrencies();
 
         // let refined = currencies['5002;6'].length;
