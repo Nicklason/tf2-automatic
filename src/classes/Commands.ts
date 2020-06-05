@@ -1236,7 +1236,7 @@ export = class Commands {
         if (params.name !== undefined || params.item !== undefined) {
             this.bot.sendMessage(
                 steamID,
-                `⚠️ Please only use sku property.
+                `Please only use sku property.
 
                 Below are some common items to delete:
                 • Smissamas Sweater: 16391;15;untradable;w1;pk391
@@ -1277,7 +1277,7 @@ export = class Commands {
         }
 
         if (params.sku === undefined) {
-            this.bot.sendMessage(steamID, '⚠️ Missing item sku');
+            this.bot.sendMessage(steamID, 'Missing item sku');
             return;
         }
 
@@ -1309,18 +1309,18 @@ export = class Commands {
 
         if (assetids.length === 0) {
             // No backpack expanders
-            this.bot.sendMessage(steamID, `❌ I couldn't find any ${pluralize(name, 0)}`);
+            this.bot.sendMessage(steamID, `I couldn't find any ${pluralize(name, 0)}`);
             return;
         }
 
         this.bot.tf2gc.deleteItem(assetids[0], err => {
             if (err) {
                 log.warn(`Error trying to delete ${name}: `, err);
-                this.bot.sendMessage(steamID, `❌ Failed to delete ${name}: ${err.message}`);
+                this.bot.sendMessage(steamID, `Failed to delete ${name}: ${err.message}`);
                 return;
             }
 
-            this.bot.sendMessage(steamID, `✅ Deleted ${name}!`);
+            this.bot.sendMessage(steamID, `Deleted ${name}!`);
         });
     }
 
