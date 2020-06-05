@@ -50,6 +50,7 @@ const ADMIN_COMMANDS: string[] = [
     '!update - Update a pricelist entry',
     '!pricecheck - Requests an item to be priced by PricesTF',
     '!expand - Uses Backpack Expanders to increase the inventory limit',
+    '!delete sku=<item sku> - Delete an item (use only sku)',
     '!stop - Stop the bot',
     '!restart - Restart the bot',
     '!version - Get version that the bot is running',
@@ -123,6 +124,8 @@ export = class Commands {
             this.updateCommand(steamID, message);
         } else if (command === 'pricecheck' && isAdmin) {
             this.pricecheckCommand(steamID, message);
+        } else if (command === 'delete' && isAdmin) {
+            this.deleteCommand(steamID, message);
         } else if (command === 'expand' && isAdmin) {
             this.expandCommand(steamID, message);
         } else if (command === 'stop' && isAdmin) {
@@ -1224,6 +1227,100 @@ export = class Commands {
             }
 
             this.bot.sendMessage(steamID, 'Used ' + name + '!');
+        });
+    }
+
+    private deleteCommand(steamID: SteamID, message: string): void {
+        const params = CommandParser.parseParams(CommandParser.removeCommand(message));
+
+        if (params.name !== undefined || params.item !== undefined) {
+            this.bot.sendMessage(
+                steamID,
+                `⚠️ Please only use sku property.
+
+                Below are some common items to delete:
+                • Smissamas Sweater: 16391;15;untradable;w1;pk391
+                • Soul Gargoyle: 5826;6;uncraftable;untradable
+                • Noice Maker - TF Birthday: 536;6;untradable
+                • Bronze Dueling Badge: 242;6;untradable
+                • Silver Dueling Badge: 243;6;untradable
+                • Gold Dueling Badge: 244;6;untradable
+                • Platinum Dueling Badge: 245;6;untradable
+                • Mercenary: 166;6;untradable
+                • Soldier of Fortune: 165;6;untradable
+                • Grizzled Veteran: 164;6;untradable
+                • Primeval Warrior: 170;6;untradable
+                • Professor Speks: 343;6;untradable
+                • Mann Co. Cap: 261;6;untradable
+                • Mann Co. Online Cap: 994;6;untradable
+                • Proof of Purchase: 471;6;untradable
+                • Mildly Disturbing Halloween Mask: 115;6;untradable
+                • Seal Mask: 582;6;untradable
+                • Pyrovision Goggles: 743;6;untradable
+                • Giftapult: 5083;6;untradable
+                • Spirit Of Giving: 655;11;untradable
+                • Party Hat: 537;6;untradable
+                • Name Tag: 5020;6;untradable
+                • Description Tag: 5044;6;untradable
+                • Ghastly Gibus: 584;6;untradable
+                • Ghastlier Gibus: 279;6;untradable
+                • Power Up Canteen: 489;6;untradable
+                • Bombinomicon: 583;6;untradable
+                • Skull Island Topper: 941;6;untradable
+                • Spellbook Page: 8935;6;untradable
+                • Gun Mettle Campaign Coin: 5809;6;untradable
+                • MONOCULUS!: 581;6;untradable
+                
+                Or other items, please refer here: https://bit.ly/3gZQxFQ (defindex)`
+            );
+            return;
+        }
+
+        if (params.sku === undefined) {
+            this.bot.sendMessage(steamID, '⚠️ Missing item sku');
+            return;
+        }
+
+        let uncraft = false;
+        if (params.sku.includes('uncraftable')) {
+            params.sku = params.sku.replace(';uncraftable', '');
+            uncraft = true;
+        }
+
+        let untrade = false;
+        if (params.sku.includes('untradable')) {
+            params.sku = params.sku.replace(';untradable', '');
+            untrade = true;
+        }
+
+        const item = SKU.fromString(params.sku);
+
+        if (uncraft) {
+            item.craftable = false;
+        }
+
+        if (untrade) {
+            item.tradable = false;
+        }
+
+        const assetids = this.bot.inventoryManager.getInventory().findBySKU(SKU.fromObject(item), false);
+
+        const name = this.bot.schema.getName(item, false);
+
+        if (assetids.length === 0) {
+            // No backpack expanders
+            this.bot.sendMessage(steamID, `❌ I couldn't find any ${pluralize(name, 0)}`);
+            return;
+        }
+
+        this.bot.tf2gc.deleteItem(assetids[0], err => {
+            if (err) {
+                log.warn(`Error trying to delete ${name}: `, err);
+                this.bot.sendMessage(steamID, `❌ Failed to delete ${name}: ${err.message}`);
+                return;
+            }
+
+            this.bot.sendMessage(steamID, `✅ Deleted ${name}!`);
         });
     }
 

@@ -3,6 +3,7 @@ declare module 'tf2-sku' {
         defindex: number;
         quality: number;
         craftable?: boolean;
+        tradable?: boolean;
         killstreak?: number;
         australium?: boolean;
         effect?: number;
@@ -24,6 +25,7 @@ declare module 'tf2-sku' {
         defindex: number;
         quality: number;
         craftable: boolean;
+        tradable?: boolean;
         killstreak: number;
         australium: boolean;
         effect: number;
