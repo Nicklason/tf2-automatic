@@ -1119,6 +1119,6 @@ export = class MyHandler extends Handler {
 
     onTF2QueueCompleted(): void {
         log.debug('Queue finished');
-        this.bot.client.gamesPlayed('tf2-automatic');
+        this.bot.client.gamesPlayed('tf2-automatic', true);
     }
 };
