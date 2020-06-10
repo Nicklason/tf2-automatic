@@ -457,10 +457,15 @@ export = class MyHandler extends Handler {
                         }
 
                         const item = SKU.fromString(sku);
+                        const buyPrice = match.buy.toValue(keyPrice.metal);
+                        const sellPrice = match.sell.toValue(keyPrice.metal);
+                        const minimumKeysDupeCheck = this.minimumKeysDupeCheck * keyPrice.toValue();
 
                         if (
-                            item.effect !== null &&
-                            match.buy.toValue(keyPrice.metal) > this.minimumKeysDupeCheck * keyPrice.toValue()
+                            item.effect !== null && // check on only items with effects
+                            buying && // check only items on their side
+                            (buyPrice > minimumKeysDupeCheck || sellPrice > minimumKeysDupeCheck)
+                            // if their side contains invalid_items, will use our side value
                         ) {
                             assetidsToCheck = assetidsToCheck.concat(assetids);
                         }
