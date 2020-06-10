@@ -36,7 +36,12 @@ class UserCart extends Cart {
 
         // TODO: Check for dupes
 
-        if ((this.bot.handler as MyHandler).hasDupeCheckEnabled()) {
+        const isDupedCheckEnabled = (this.bot.handler as MyHandler).hasDupeCheckEnabled();
+        const keyPrice = this.bot.pricelist.getKeyPrice();
+        const theirItemsValue = this.getTheirCurrencies().toValue(keyPrice.metal);
+        const minimumKeysDupeCheck = (this.bot.handler as MyHandler).getMinimumKeysDupeCheck() * keyPrice.toValue();
+
+        if (isDupedCheckEnabled && theirItemsValue > minimumKeysDupeCheck) {
             const assetidsToCheck = this.offer.data('_dupeCheck');
             this.offer.data('_dupeCheck', undefined);
 
