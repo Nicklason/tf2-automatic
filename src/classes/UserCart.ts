@@ -38,11 +38,10 @@ class UserCart extends Cart {
 
         const isDupedCheckEnabled = (this.bot.handler as MyHandler).hasDupeCheckEnabled();
         const keyPrice = this.bot.pricelist.getKeyPrice();
-        const ourItemsValue = this.getOurCurrencies().toValue(keyPrice.metal);
         const theirItemsValue = this.getTheirCurrencies().toValue(keyPrice.metal);
         const minimumKeysDupeCheck = (this.bot.handler as MyHandler).getMinimumKeysDupeCheck() * keyPrice.toValue();
 
-        if (isDupedCheckEnabled && (theirItemsValue > minimumKeysDupeCheck || ourItemsValue > minimumKeysDupeCheck)) {
+        if (isDupedCheckEnabled && theirItemsValue > minimumKeysDupeCheck) {
             const assetidsToCheck = this.offer.data('_dupeCheck');
             this.offer.data('_dupeCheck', undefined);
 
