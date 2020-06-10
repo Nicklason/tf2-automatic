@@ -738,7 +738,7 @@ export = class Trades {
 
             offer.data('finishTimestamp', finishTimestamp);
 
-            const processTime = finishTimestamp - offer.data('handleTimeStamp');
+            const processTime = finishTimestamp - offer.data('handleTimestamp');
 
             log.debug('Took ' + (isNaN(processTime) ? 'unknown' : processTime) + ' ms to process offer', {
                 offerId: offer.id,
