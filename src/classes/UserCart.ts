@@ -64,10 +64,15 @@ class UserCart extends Cart {
 
                 log.debug('Got result from dupe checks', { result: result });
 
+                // Decline by default
+                const declineDupes = process.env.DECLINE_DUPES !== 'false';
+
                 for (let i = 0; i < result.length; i++) {
                     if (result[i] === true) {
                         // Found duped item
-                        return Promise.reject('offer contains duped items');
+                        if (declineDupes) {
+                            return Promise.reject('offer contains duped items');
+                        }
                     } else if (result[i] === null) {
                         // Could not determine if the item was duped, make the offer be pending for review
                         return Promise.reject('failed to check for duped items, try sending an offer instead');
