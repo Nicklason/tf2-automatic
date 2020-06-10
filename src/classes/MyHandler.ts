@@ -663,7 +663,7 @@ export = class MyHandler extends Handler {
                     async.series(requests, callback);
                 });
 
-                log.debug('Got result from dupe checks', { result: result });
+                log.debug('Got result from dupe checks on ' + assetidsToCheck.join(', '), { result: result });
 
                 // Decline by default
                 const declineDupes = process.env.DECLINE_DUPES !== 'false';
@@ -694,7 +694,7 @@ export = class MyHandler extends Handler {
                     }
                 }
             } catch (err) {
-                log.warn('Failed dupe check: ' + err.message);
+                log.warn('Failed dupe check on ' + assetidsToCheck.join(', ') + ': ' + err.message);
                 wrongAboutOffer.push({
                     reason: 'DUPE_CHECK_FAILED',
                     error: err.message

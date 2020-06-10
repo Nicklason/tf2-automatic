@@ -62,7 +62,7 @@ class UserCart extends Cart {
                     async.series(requests, callback);
                 });
 
-                log.debug('Got result from dupe checks', { result: result });
+                log.debug('Got result from dupe checks on ' + assetidsToCheck.join(', '), { result: result });
 
                 // Decline by default
                 const declineDupes = process.env.DECLINE_DUPES !== 'false';

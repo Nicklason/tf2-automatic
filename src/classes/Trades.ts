@@ -317,7 +317,7 @@ export = class Trades {
 
         return actionFunc()
             .catch(err => {
-                log.warn('Failed to ' + action + ' the offer: ', err);
+                log.warn(`Failed to ${action} on the offer #${offer.id}: `, err);
             })
             .finally(() => {
                 offer.log('debug', 'done doing action on offer', {
@@ -453,7 +453,7 @@ export = class Trades {
                 offer.data('confirmationTime', confirmationTime);
 
                 if (err) {
-                    log.debug('Error while trying to accept mobile confirmation: ', err);
+                    log.debug(`Error while trying to accept mobile confirmation on offer #${offer.id}: `, err);
                     return reject(err);
                 }
 
