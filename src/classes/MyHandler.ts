@@ -164,7 +164,7 @@ export = class MyHandler extends Handler {
 
             this.bot.listings.removeAll().asCallback(function(err) {
                 if (err) {
-                    log.warn('Failed to r emove all listings: ', err);
+                    log.warn('Failed to remove all listings: ', err);
                 }
 
                 resolve();
