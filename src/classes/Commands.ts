@@ -1512,7 +1512,7 @@ export = class Commands {
         const offerId = new RegExp(/\d+/).exec(offerIdAndMessage);
         let offerIdString: string;
         if (isNaN(+offerId) || !offerId) {
-            this.bot.sendMessage(steamID, '⚠️ Missing offer id. Example: "!accept 3957959294"');
+            this.bot.sendMessage(steamID, 'Missing offer id. Example: "!accept 3957959294"');
             return;
         } else {
             offerIdString = offerId.toString();
@@ -1577,7 +1577,7 @@ export = class Commands {
         const offerId = new RegExp(/\d+/).exec(offerIdAndMessage);
         let offerIdString: string;
         if (isNaN(+offerId) || !offerId) {
-            this.bot.sendMessage(steamID, '⚠️ Missing offer id. Example: "!accept 3957959294"');
+            this.bot.sendMessage(steamID, 'Missing offer id. Example: "!accept 3957959294"');
             return;
         } else {
             offerIdString = offerId.toString();
