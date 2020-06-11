@@ -11,7 +11,6 @@ import TradeOfferManager, { TradeOffer, PollData } from 'steam-tradeoffer-manage
 import pluralize from 'pluralize';
 import SteamID from 'steamid';
 import Currencies from 'tf2-currencies';
-import SKU from 'tf2-sku';
 import async from 'async';
 
 import log from '../lib/logger';
@@ -456,13 +455,11 @@ export = class MyHandler extends Handler {
                             });
                         }
 
-                        const item = SKU.fromString(sku);
                         const buyPrice = match.buy.toValue(keyPrice.metal);
                         const sellPrice = match.sell.toValue(keyPrice.metal);
                         const minimumKeysDupeCheck = this.minimumKeysDupeCheck * keyPrice.toValue();
 
                         if (
-                            (item.effect !== null || item.australium === true) && // check on only items with effects or australium
                             buying && // check only items on their side
                             (buyPrice > minimumKeysDupeCheck || sellPrice > minimumKeysDupeCheck)
                             // if their side contains invalid_items, will use our side value
