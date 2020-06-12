@@ -1845,7 +1845,7 @@ export = class Commands {
 
         if (params.craftable !== undefined) {
             if (typeof params.craftable !== 'boolean') {
-                this.bot.sendMessage(steamID, `❌ Craftable must be "true" or "false" only.`);
+                this.bot.sendMessage(steamID, `Craftable must be "true" or "false" only.`);
                 return null;
             }
             if (params.craftable === false) {
@@ -1857,7 +1857,7 @@ export = class Commands {
 
         if (params.australium !== undefined) {
             if (typeof params.australium !== 'boolean') {
-                this.bot.sendMessage(steamID, `❌ Australium must be "true" or "false" only.`);
+                this.bot.sendMessage(steamID, `Australium must be "true" or "false" only.`);
                 return null;
             }
             if (params.australium === false) {
@@ -1870,7 +1870,7 @@ export = class Commands {
         if (params.killstreak !== undefined) {
             const killstreak = parseInt(params.killstreak);
             if (isNaN(killstreak) || killstreak > 3) {
-                this.bot.sendMessage(steamID, `❌ Unknown killstreak "${params.killstreak}".`);
+                this.bot.sendMessage(steamID, `Unknown killstreak "${params.killstreak}".`);
                 return null;
             }
             item.killstreak = killstreak;
