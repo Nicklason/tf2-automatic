@@ -1312,26 +1312,20 @@ export = class Commands {
             return;
         }
 
-        let uncraft = false;
-        if (params.sku.includes('uncraftable')) {
-            params.sku = params.sku.replace(';uncraftable', '');
-            uncraft = true;
-        }
+        const uncraft = params.sku.includes(';uncraftable');
+        params.sku = params.sku.replace(';uncraftable', '');
 
-        let untrade = false;
-        if (params.sku.includes('untradable')) {
-            params.sku = params.sku.replace(';untradable', '');
-            untrade = true;
-        }
+        const untrade = params.sku.includes(';untradable');
+        params.sku = params.sku.replace(';untradable', '');
 
         const item = SKU.fromString(params.sku);
 
         if (uncraft) {
-            item.craftable = false;
+            item.craftable = !uncraft;
         }
 
         if (untrade) {
-            item.tradable = false;
+            item.tradable = !untrade;
         }
 
         const assetids = this.bot.inventoryManager.getInventory().findBySKU(SKU.fromObject(item), false);
