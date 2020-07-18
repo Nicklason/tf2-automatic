@@ -1848,11 +1848,7 @@ export = class Commands {
                 this.bot.sendMessage(steamID, `Craftable must be "true" or "false" only.`);
                 return null;
             }
-            if (params.craftable === false) {
-                item.craftable = false;
-            } else {
-                item.craftable = true;
-            }
+            item.craftable = params.craftable;
         }
 
         if (params.australium !== undefined) {
@@ -1860,17 +1856,16 @@ export = class Commands {
                 this.bot.sendMessage(steamID, `Australium must be "true" or "false" only.`);
                 return null;
             }
-            if (params.australium === false) {
-                item.australium = false;
-            } else {
-                item.australium = true;
-            }
+            item.australium = params.australium;
         }
 
         if (params.killstreak !== undefined) {
             const killstreak = parseInt(params.killstreak);
-            if (isNaN(killstreak) || killstreak > 3) {
-                this.bot.sendMessage(steamID, `Unknown killstreak "${params.killstreak}".`);
+            if (isNaN(killstreak) || killstreak < 1 || killstreak > 3) {
+                this.bot.sendMessage(
+                    steamID,
+                    `Unknown killstreak "${params.killstreak}", it must be between 1 (Basic KS), 2(Spec KS) or 3 (Pro KS) only.`
+                );
                 return null;
             }
             item.killstreak = killstreak;
