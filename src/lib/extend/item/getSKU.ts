@@ -114,7 +114,7 @@ function isAustralium(item: EconItem): boolean {
 }
 
 /**
- * Determines if thje item is festivized
+ * Determines if the item is festivized
  * @param item - Item object
  */
 function isFestive(item: EconItem): boolean {
@@ -202,11 +202,7 @@ function getPaintKit(item: EconItem, schema: SchemaManager.Schema): number | nul
  * @param item - Item object
  */
 function getElevatedQuality(item: EconItem): number | null {
-    if (item.hasDescription('Strange Stat Clock Attached')) {
-        return 11;
-    } else {
-        return null;
-    }
+    return ((item.hasDescription('Strange Stat Clock Attached') || (item.type.includes('Points Scored:') && getQuality(self, schema) !== 11)) ? 11 : null);
 }
 
 function getOutput(
