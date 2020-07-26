@@ -202,7 +202,7 @@ function getPaintKit(item: EconItem, schema: SchemaManager.Schema): number | nul
  * @param item - Item object
  */
 function getElevatedQuality(item: EconItem, schema: SchemaManager.Schema): number | null {
-    return ((item.hasDescription('Strange Stat Clock Attached') || (item.type.includes('Points Scored:') && getQuality(item, schema) !== 11)) ? 11 : null);
+    return item.hasDescription('Strange Stat Clock Attached') || (item.type.includes('Points Scored:') && getQuality(item, schema) !== 11) ? 11 : null;
 }
 
 function getOutput(
