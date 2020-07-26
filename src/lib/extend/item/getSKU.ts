@@ -201,7 +201,7 @@ function getPaintKit(item: EconItem, schema: SchemaManager.Schema): number | nul
  * Gets the elevated quality of an item
  * @param item - Item object
  */
-function getElevatedQuality(item: EconItem): number | null {
+function getElevatedQuality(item: EconItem, schema: SchemaManager.Schema): number | null {
     return ((item.hasDescription('Strange Stat Clock Attached') || (item.type.includes('Points Scored:') && getQuality(self, schema) !== 11)) ? 11 : null);
 }
 
