@@ -25,7 +25,7 @@ export = function(schema: SchemaManager.Schema): string {
             effect: getEffect(self, schema),
             wear: getWear(self),
             paintkit: getPaintKit(self, schema),
-            quality2: getElevatedQuality(self)
+            quality2: getElevatedQuality(self, schema)
         },
         getOutput(self, schema)
     );
