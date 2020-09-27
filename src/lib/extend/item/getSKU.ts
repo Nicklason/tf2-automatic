@@ -203,8 +203,8 @@ function getPaintKit(item: EconItem, schema: SchemaManager.Schema): number | nul
  */
 function getElevatedQuality(item: EconItem, schema: SchemaManager.Schema): number | null {
     if (
-        item.hasDescription('Strange·Stat·Clock·Attached') ||
-        (item.type.includes('Points·Scored:') && getQuality(item, schema) !== 11)
+        item.hasDescription('Strange Stat Clock Attached') ||
+        (item.type.includes('Strange') && getQuality(item, schema) !== 11)
     ) {
         return 11;
     } else {
