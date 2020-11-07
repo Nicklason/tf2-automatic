@@ -60,7 +60,8 @@ const ADMIN_COMMANDS: string[] = [
     '!trades - Get a list of offers pending for manual review',
     '!trade - Get info about a trade',
     '!accepttrade - Manually accept an active offer',
-    '!declinetrade - Manually decline an active offer'
+    '!declinetrade - Manually decline an active offer',
+    '!reload - Reload pricelist from file'
 ];
 
 export = class Commands {
@@ -79,6 +80,7 @@ export = class Commands {
 
         const isAdmin = this.bot.isAdmin(steamID);
 
+        // TODO: refactor this
         if (command === 'help') {
             this.helpCommand(steamID);
         } else if (command === 'how2trade') {
@@ -145,6 +147,8 @@ export = class Commands {
             this.accepttradeCommand(steamID, message);
         } else if (command === 'declinetrade' && isAdmin) {
             this.declinetradeCommand(steamID, message);
+        } else if (command === 'reload' && isAdmin) {
+            this.reloadCommand(steamID, message);
         } else {
             this.bot.sendMessage(steamID, 'I don\'t know what you mean, please type "!help" for all my commands!');
         }
@@ -1606,6 +1610,27 @@ export = class Commands {
             });
         });
     }
+
+    private reloadCommand(steamID: SteamID, message: string): void {
+        //TODO: split onRun to different function to load different files
+        this.bot.handler.onRun().asCallback((err, data) => {
+            if (err) {
+                this.bot.sendMessage(steamID, 'Failed to reload pricelist: ' + err.message);
+                return;
+            }
+            if (!Array.isArray(data.pricelist)) {
+                this.bot.sendMessage(steamID, 'Failed to reload pricelist!');
+                return;
+            }
+            this.bot.pricelist.setPricelist(data.pricelist).asCallback(err => {
+                if (err) {
+                    this.bot.sendMessage(steamID, 'Failed to reload pricelist!');
+                } else {
+                    this.bot.sendMessage(steamID, 'Pricelist reload complete!');
+                }
+            });
+        });
+    }   
 
     private removeCommand(steamID: SteamID, message: string): void {
         const params = CommandParser.parseParams(CommandParser.removeCommand(message));

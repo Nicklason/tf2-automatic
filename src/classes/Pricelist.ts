@@ -340,14 +340,16 @@ export default class Pricelist extends EventEmitter {
         log.debug('Getting key price...');
 
         return getPrice('5021;6', 'bptf').then(keyPrices => {
-            log.debug('Got key price');
-
-            this.keyPrices = {
-                buy: new Currencies(keyPrices.buy),
-                sell: new Currencies(keyPrices.sell)
-            };
 
             const entryKey = this.getPrice('5021;6');
+
+            // if we have our keys in price list then we don't need to use their key value
+            this.keyPrices = {
+                buy:  entryKey ? entryKey.buy  : new Currencies(keyPrices.buy),
+                sell: entryKey ? entryKey.sell : new Currencies(keyPrices.sell)
+            };
+
+            log.debug('Got key price + ' + JSON.stringify(this.keyPrices));
 
             if (entryKey !== null && entryKey.autoprice) {
                 // The price of a key in the pricelist can be different from keyPrices because the pricelist is not updated
