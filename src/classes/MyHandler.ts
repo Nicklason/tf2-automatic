@@ -424,17 +424,7 @@ export = class MyHandler extends Handler {
 
                     // TODO: Go through all assetids and check if the item is being sold for a specific price
 
-                    if (match === null || match.intent === (buying ? 1 : 0)) {
-                        // Offer contains an item that we are not trading
-                        hasInvalidItems = true;
-
-                        wrongAboutOffer.push({
-                            reason: 'INVALID_ITEMS',
-                            sku: sku,
-                            buying: buying,
-                            amount: amount
-                        });
-                    } else if (match !== null && (sku !== '5021;6' || !exchange.contains.items)) {
+                    if (match !== null && (sku !== '5021;6' || !exchange.contains.items)) {
                         // If we found a matching price and the item is not a key, or the we are not trading items (meaning that we are trading keys) then add the price of the item
 
                         // Add value of items
@@ -478,6 +468,16 @@ export = class MyHandler extends Handler {
                         // Offer contains keys and we are not trading keys, add key value
                         exchange[which].value += keyPrice.toValue() * amount;
                         exchange[which].keys += amount;
+                    } else if (match === null || match.intent === (buying ? 1 : 0)) {
+                        // Offer contains an item that we are not trading
+                        hasInvalidItems = true;
+
+                        wrongAboutOffer.push({
+                            reason: 'INVALID_ITEMS',
+                            sku: sku,
+                            buying: buying,
+                            amount: amount
+                        });
                     }
                 }
             }
