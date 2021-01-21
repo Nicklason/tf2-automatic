@@ -1438,13 +1438,14 @@ export = class Commands {
     }
 
     private tradeCommand(steamID: SteamID, message: string): void {
-        const offerId = CommandParser.removeCommand(message).trim();
+        const offerIdRegex = /[0-9]+/.exec(message);
 
-        if (offerId === '') {
+        if (isNaN(+offerIdRegex) || !offerIdRegex) {
             this.bot.sendMessage(steamID, 'Missing offer id. Example: "!trade 1234"');
             return;
         }
 
+        const offerId = offerIdRegex[0];
         const state = this.bot.manager.pollData.received[offerId];
 
         if (state === undefined) {
@@ -1508,13 +1509,14 @@ export = class Commands {
     }
 
     private accepttradeCommand(steamID: SteamID, message: string): void {
-        const offerId = CommandParser.removeCommand(message).trim();
+        const offerIdRegex = /[0-9]+/.exec(message);
 
-        if (!offerId) {
+        if (isNaN(+offerIdRegex) || !offerIdRegex) {
             this.bot.sendMessage(steamID, 'Missing offer id. Example: "!accepttrade 1234"');
             return;
         }
 
+        const offerId = offerIdRegex[0];
         const state = this.bot.manager.pollData.received[offerId];
 
         if (state === undefined) {
@@ -1558,13 +1560,14 @@ export = class Commands {
     }
 
     private declinetradeCommand(steamID: SteamID, message: string): void {
-        const offerId = CommandParser.removeCommand(message).trim();
+        const offerIdRegex = /[0-9]+/.exec(message);
 
-        if (!offerId) {
+        if (isNaN(+offerIdRegex) || !offerIdRegex) {
             this.bot.sendMessage(steamID, 'Missing offer id. Example: "!accepttrade 1234"');
             return;
         }
 
+        const offerId = offerIdRegex[0];
         const state = this.bot.manager.pollData.received[offerId];
 
         if (state === undefined) {
