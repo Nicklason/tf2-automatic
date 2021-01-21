@@ -32,7 +32,7 @@
         "callback-queue": "^3.0.0",
         "cheerio": "^1.0.0-rc.5",
         "death": "^1.1.0",
-        "dot-prop": "^5.3.0",
+        "dot-prop": "^6.0.1",
         "dotenv": "^8.2.0",
         "graceful-fs": "^4.2.4",
         "isobject": "^4.0.0",
