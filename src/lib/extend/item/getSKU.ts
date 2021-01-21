@@ -410,9 +410,6 @@ function getCrateSeries(item: EconItem): number | null {
     } else if (defindex === 5068 && Object.keys(crates.is5068).includes(item.market_hash_name)) {
         series = crates.is5068[item.market_hash_name];
     }
-    // } else if (Object.keys(crates.isOther).includes(defindex.toString())) {
-    //     series = crates.isOther[defindex];
-    // }
 
     if (series !== null) {
         isCrate = true;

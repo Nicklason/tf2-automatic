@@ -105,30 +105,6 @@ export function fixItem(item: Item, schema: SchemaManager.Schema): Item {
         }
     }
 
-    // if (item.paintkit !== null) {
-    //     const hasCorrectPaintkitAttribute =
-    //         schema.raw.items_game.items[item.defindex].static_attrs !== undefined &&
-    //         schema.raw.items_game.items[item.defindex].static_attrs['paintkit_proto_def_index'] == item.paintkit;
-
-    //     if (schemaItem.item_quality != 15 || !hasCorrectPaintkitAttribute) {
-    //         for (const defindex in schema.raw.items_game.items) {
-    //             if (!Object.prototype.hasOwnProperty.call(schema.raw.items_game.items, defindex)) {
-    //                 continue;
-    //             }
-
-    //             const itemsGameItem = schema.raw.items_game.items[defindex];
-    //             if (itemsGameItem.prefab === undefined || !itemsGameItem.prefab.startsWith('paintkit')) {
-    //                 continue;
-    //             }
-
-    //             if (itemsGameItem.static_attrs['paintkit_proto_def_index'] == item.paintkit) {
-    //                 item.defindex = parseInt(defindex);
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
-
     return item;
 }
 
