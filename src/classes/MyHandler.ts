@@ -567,7 +567,7 @@ export = class MyHandler extends Handler {
                     wrongAboutOffer.push({
                         reason: 'UNDERSTOCKED',
                         sku: '5021;6',
-                        selling: buying,
+                        selling: !buying,
                         diff: diff,
                         amountCanTrade: amountCanTrade
                     });
