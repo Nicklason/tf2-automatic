@@ -55,18 +55,10 @@ const botManager = new BotManager();
 
 import ON_DEATH from 'death';
 
-// @ts-ignore
-// This error is a false positive.
-// The signal and err are being created dynamically.
-// Treat them as any for now.
-ON_DEATH({ uncaughtException: true })(function(signal, err) {
-    const crashed = typeof err !== 'string';
+ON_DEATH({ uncaughtException: true })((signalOrErr, origin) => {
+    const crashed = signalOrErr !== 'SIGINT';
 
     if (crashed) {
-        if (err.statusCode >= 500 || err.statusCode === 429) {
-            delete err.body;
-        }
-
         const botReady = botManager.isBotReady();
 
         log.error(
@@ -79,7 +71,7 @@ ON_DEATH({ uncaughtException: true })(function(signal, err) {
                     process.platform
                 } ${process.arch}}`,
                 'Stack trace:',
-                require('util').inspect(err)
+                require('util').inspect(origin)
             ].join('\r\n')
         );
 
@@ -89,10 +81,10 @@ ON_DEATH({ uncaughtException: true })(function(signal, err) {
             );
         }
     } else {
-        log.warn('Received kill signal `' + signal + '`');
+        log.warn('Received kill signal `' + signalOrErr + '`');
     }
 
-    botManager.stop(crashed ? err : null, true, signal === 'SIGKILL');
+    botManager.stop(crashed ? (signalOrErr as Error) : null, true, false);
 });
 
 process.on('message', function(message) {
