@@ -462,7 +462,7 @@ export = class MyHandler extends Handler {
                                 diff: diff,
                                 amountCanTrade: amountCanTrade
                             });
-                        } else if (diff !== 0 && !buying && amountCanTrade < Math.abs(diff)) {
+                        } else if (diff !== 0 && !buyingOverstockCheck && amountCanTrade < Math.abs(diff)) {
                             // User is taking too many
                             hasUnderstock = true;
 
