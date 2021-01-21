@@ -1843,6 +1843,34 @@ export = class Commands {
             item.quality = quality;
         }
 
+        if (params.craftable !== undefined) {
+            if (typeof params.craftable !== 'boolean') {
+                this.bot.sendMessage(steamID, `Craftable must be "true" or "false" only.`);
+                return null;
+            }
+            item.craftable = params.craftable;
+        }
+
+        if (params.australium !== undefined) {
+            if (typeof params.australium !== 'boolean') {
+                this.bot.sendMessage(steamID, `Australium must be "true" or "false" only.`);
+                return null;
+            }
+            item.australium = params.australium;
+        }
+
+        if (params.killstreak !== undefined) {
+            const killstreak = parseInt(params.killstreak);
+            if (isNaN(killstreak) || killstreak < 1 || killstreak > 3) {
+                this.bot.sendMessage(
+                    steamID,
+                    `Unknown killstreak "${params.killstreak}", it must be between 1 (Basic KS), 2(Spec KS) or 3 (Pro KS) only.`
+                );
+                return null;
+            }
+            item.killstreak = killstreak;
+        }
+
         if (params.paintkit !== undefined) {
             const paintkit = this.bot.schema.getSkinIdByName(params.paintkit as string);
             if (paintkit === null) {
