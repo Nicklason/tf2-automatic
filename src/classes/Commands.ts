@@ -340,7 +340,6 @@ export = class Commands {
 
     private messageCommand(steamID: SteamID, message: string): void {
         const isAdmin = this.bot.isAdmin(steamID);
-        const parts = message.split(' ');
 
         if (process.env.DISABLE_MESSAGES === 'true') {
             if (isAdmin) {
@@ -357,7 +356,11 @@ export = class Commands {
         const adminDetails = this.bot.friends.getFriend(steamID);
 
         if (isAdmin) {
-            if (parts.length < 3) {
+            const parts = message.split(' ');
+            const steamIdAndMessage = CommandParser.removeCommand(message);
+            const steamIDRegex = /^(\d+)|(STEAM_([0-5]):([0-1]):([0-9]+))|(\[([a-zA-Z]):([0-5]):([0-9]+)(:[0-9]+)?])$/;
+
+            if (!steamIDRegex.test(steamIdAndMessage) || !steamIDRegex || parts.length < 3) {
                 this.bot.sendMessage(
                     steamID,
                     'Your syntax is wrong. Here\'s an example: "!message 76561198120070906 Hi"'
@@ -365,12 +368,12 @@ export = class Commands {
                 return;
             }
 
-            const recipient = parts[1];
+            const steamIDString = steamIDRegex.exec(steamIdAndMessage)[0];
 
-            const recipientSteamID = new SteamID(recipient);
+            const recipientSteamID = new SteamID(steamIDString);
 
             if (!recipientSteamID.isValid()) {
-                this.bot.sendMessage(steamID, '"' + recipient + '" is not a valid steamid.');
+                this.bot.sendMessage(steamID, '"' + steamIDString + '" is not a valid steamid.');
                 return;
             } else if (!this.bot.friends.isFriend(recipientSteamID)) {
                 this.bot.sendMessage(steamID, 'I am not friends with the user.');
@@ -379,11 +382,11 @@ export = class Commands {
 
             const recipentDetails = this.bot.friends.getFriend(recipientSteamID);
 
-            const reply = message.substr(message.toLowerCase().indexOf(recipient) + 18);
+            const reply = message.substr(message.toLowerCase().indexOf(steamIDString) + 18);
 
             // Send message to recipient
             this.bot.sendMessage(
-                recipient,
+                steamIDString,
                 'Message from ' + (adminDetails ? adminDetails.player_name : 'admin') + ': ' + reply
             );
 
