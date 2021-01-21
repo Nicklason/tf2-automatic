@@ -356,11 +356,12 @@ export = class Commands {
         const adminDetails = this.bot.friends.getFriend(steamID);
 
         if (isAdmin) {
-            const parts = message.split(' ');
-            const steamIdAndMessage = CommandParser.removeCommand(message);
-            const steamIDRegex = /^(\d+)|(STEAM_([0-5]):([0-1]):([0-9]+))|(\[([a-zA-Z]):([0-5]):([0-9]+)(:[0-9]+)?])$/;
+            const parts = CommandParser.removeCommand(message).split(' ');
 
-            if (!steamIDRegex.test(steamIdAndMessage) || !steamIDRegex || parts.length < 3) {
+            let recipientSteamID: SteamID;
+            try {
+                recipientSteamID = new SteamID(parts[0]);
+            } catch (err) {
                 this.bot.sendMessage(
                     steamID,
                     'Your syntax is wrong. Here\'s an example: "!message 76561198120070906 Hi"'
@@ -368,9 +369,7 @@ export = class Commands {
                 return;
             }
 
-            const steamIDString = steamIDRegex.exec(steamIdAndMessage)[0];
-
-            const recipientSteamID = new SteamID(steamIDString);
+            const steamIDString = recipientSteamID.getSteamID64();
 
             if (!recipientSteamID.isValid()) {
                 this.bot.sendMessage(steamID, '"' + steamIDString + '" is not a valid steamid.');
