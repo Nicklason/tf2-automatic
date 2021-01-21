@@ -36,7 +36,7 @@
         "dotenv": "^8.2.0",
         "graceful-fs": "^4.2.4",
         "isobject": "^4.0.0",
-        "jsonschema": "^1.2.6",
+        "jsonschema": "^1.4.0",
         "moment": "^2.29.1",
         "pjson": "^1.0.9",
         "pluralize": "^8.0.0",

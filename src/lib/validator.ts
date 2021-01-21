@@ -3,9 +3,9 @@ const Validator = jsonschema.Validator;
 
 const v = new Validator();
 
-import currenciesSchema from '../schemas/tf2-currencies';
-import pricelistSchema from '../schemas/pricelist';
-import addSchema from '../schemas/pricelist-add';
+import { currenciesSchema } from '../schemas/tf2-currencies';
+import { pricelistSchema } from '../schemas/pricelist';
+import { addSchema } from '../schemas/pricelist-add';
 
 v.addSchema(currenciesSchema);
 v.addSchema(pricelistSchema);
