@@ -361,6 +361,7 @@ export = class MyHandler extends Handler {
         const keyPrice = this.bot.pricelist.getKeyPrice();
 
         let hasOverstock = false;
+        let hasUnderstock = false;
 
         // A list of things that is wrong about the offer and other information
         const wrongAboutOffer: (
@@ -368,6 +369,13 @@ export = class MyHandler extends Handler {
                   reason: 'OVERSTOCKED';
                   sku: string;
                   buying: boolean;
+                  diff: number;
+                  amountCanTrade: number;
+              }
+            | {
+                  reason: 'UNDERSTOCKED';
+                  sku: string;
+                  selling: boolean;
                   diff: number;
                   amountCanTrade: number;
               }
@@ -444,13 +452,24 @@ export = class MyHandler extends Handler {
                         const amountCanTrade = this.bot.inventoryManager.amountCanTrade(sku, buyingOverstockCheck);
 
                         if (diff !== 0 && amountCanTrade < diff) {
-                            // User is taking too many / offering too many
+                            // User is offering too many
                             hasOverstock = true;
 
                             wrongAboutOffer.push({
                                 reason: 'OVERSTOCKED',
                                 sku: sku,
                                 buying: buyingOverstockCheck,
+                                diff: diff,
+                                amountCanTrade: amountCanTrade
+                            });
+                        } else if (diff !== 0 && !buyingOverstockCheck && amountCanTrade < Math.abs(diff)) {
+                            // User is taking too many
+                            hasUnderstock = true;
+
+                            wrongAboutOffer.push({
+                                reason: 'UNDERSTOCKED',
+                                sku: sku,
+                                selling: !buyingOverstockCheck,
                                 diff: diff,
                                 amountCanTrade: amountCanTrade
                             });
@@ -533,12 +552,22 @@ export = class MyHandler extends Handler {
                 const amountCanTrade = this.bot.inventoryManager.amountCanTrade('5021;6', buying);
 
                 if (diff !== 0 && amountCanTrade < diff) {
-                    // User is taking too many / offering too many
+                    // User is offering too many
                     hasOverstock = true;
                     wrongAboutOffer.push({
                         reason: 'OVERSTOCKED',
                         sku: '5021;6',
                         buying: buying,
+                        diff: diff,
+                        amountCanTrade: amountCanTrade
+                    });
+                } else if (diff !== 0 && !buying && amountCanTrade < Math.abs(diff)) {
+                    // User is taking too many
+                    hasUnderstock = true;
+                    wrongAboutOffer.push({
+                        reason: 'UNDERSTOCKED',
+                        sku: '5021;6',
+                        selling: !buying,
                         diff: diff,
                         amountCanTrade: amountCanTrade
                     });
@@ -560,7 +589,7 @@ export = class MyHandler extends Handler {
 
         if (!manualReviewEnabled) {
             if (hasOverstock) {
-                offer.log('info', 'is taking / offering too many, declining...');
+                offer.log('info', 'is offering too many, declining...');
 
                 const reasons = wrongAboutOffer.map(wrong => wrong.reason);
                 const uniqueReasons = reasons.filter(reason => reasons.includes(reason));
@@ -568,6 +597,22 @@ export = class MyHandler extends Handler {
                 return {
                     action: 'decline',
                     reason: 'OVERSTOCKED',
+                    meta: {
+                        uniqueReasons: uniqueReasons,
+                        reasons: wrongAboutOffer
+                    }
+                };
+            }
+
+            if (hasUnderstock) {
+                offer.log('info', 'is taking too many, declining...');
+
+                const reasons = wrongAboutOffer.map(wrong => wrong.reason);
+                const uniqueReasons = reasons.filter(reason => reasons.includes(reason));
+
+                return {
+                    action: 'decline',
+                    reason: 'UNDERSTOCKED',
                     meta: {
                         uniqueReasons: uniqueReasons,
                         reasons: wrongAboutOffer
