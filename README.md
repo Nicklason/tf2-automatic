@@ -1,5 +1,7 @@
 # tf2-automatic
 
+**THIS REPOSITORY IS ARCHIVED. PLEASE USE [TF2AUTOBOT](https://github.com/TF2Autobot/tf2autobot) INSTEAD!**
+
 A free and open source fully automated TF2 trading bot advertising on www.backpack.tf using prices from www.prices.tf
 
 ![GitHub package version](https://img.shields.io/github/package-json/v/Nicklason/tf2-automatic.svg)
